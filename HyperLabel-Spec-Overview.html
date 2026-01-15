@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HyperLabel - Product Specification</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #0f172a;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --light-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text: #334155;
+            --text-light: #64748b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: #fff;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .header .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+        
+        /* Meta info */
+        .meta-bar {
+            background: var(--secondary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            font-size: 0.875rem;
+        }
+        
+        .meta-item span {
+            opacity: 0.7;
+        }
+        
+        /* Sections */
+        section {
+            padding: 50px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        section:last-child {
+            border-bottom: none;
+        }
+        
+        h2 {
+            font-size: 1.75rem;
+            color: var(--secondary);
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+            display: inline-block;
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            color: var(--secondary);
+            margin: 25px 0 15px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+        
+        /* Value Prop Box */
+        .value-prop {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid var(--primary);
+            padding: 25px 30px;
+            border-radius: 0 12px 12px 0;
+            font-size: 1.125rem;
+            margin: 25px 0;
+        }
+        
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .card {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border);
+        }
+        
+        .card h4 {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .card p {
+            margin: 0;
+            color: var(--text);
+        }
+        
+        .card.highlight {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        
+        .card.highlight h4,
+        .card.highlight p {
+            color: white;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+        
+        th {
+            background: var(--secondary);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        tr:nth-child(even) {
+            background: var(--light-bg);
+        }
+        
+        tr:hover {
+            background: #e0f2fe;
+        }
+        
+        /* Code styling */
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #0f172a;
+        }
+        
+        pre {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        }
+        
+        /* Specs Box */
+        .specs-box {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 25px 0;
+        }
+        
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+        
+        .spec-item {
+            text-align: center;
+        }
+        
+        .spec-item .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .spec-item .label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Success Metrics */
+        .metrics-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+        
+        .metrics-list li {
+            padding: 12px 15px;
+            background: var(--light-bg);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .metrics-list .check {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        /* Target Metrics - Modern KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 25px 0;
+        }
+        
+        .kpi-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), #60a5fa);
+        }
+        
+        .kpi-card .kpi-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-card .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        
+        .kpi-card .kpi-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .kpi-card .kpi-target {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 10px;
+            background: #eff6ff;
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Timeline */
+        .timeline {
+            margin: 30px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .timeline-marker {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content h4 {
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+        
+        .timeline-content p {
+            color: var(--text-light);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        
+        /* Persona Cards */
+        .persona-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .persona-card.primary {
+            border-color: var(--primary);
+            background: linear-gradient(to right, #eff6ff, white);
+        }
+        
+        .persona-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .persona-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .persona-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .persona-role {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        
+        /* Budget Summary */
+        .budget-box {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 25px 0;
+        }
+        
+        .budget-total {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .budget-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .budget-item .amount {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .budget-item .category {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        
+        /* Status Tags */
+        .status-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-mvp {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-future {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-tbd {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Flow Diagram */
+        .flow-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+            padding: 25px 15px;
+            background: var(--light-bg);
+            border-radius: 12px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .flow-step {
+            text-align: center;
+            min-width: 90px;
+            max-width: 110px;
+        }
+        
+        .flow-step .icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 20px;
+        }
+        
+        .flow-step .name {
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--secondary);
+            line-height: 1.2;
+        }
+        
+        .flow-arrow {
+            font-size: 18px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+        
+        /* Questions Box */
+        .questions-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .questions-box h4 {
+            color: #92400e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .questions-list {
+            list-style: none;
+        }
+        
+        .questions-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #fcd34d;
+            color: #78350f;
+        }
+        
+        .questions-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--secondary);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .footer p {
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+        }
+        
+        /* Print Styles */
+        @media print {
+            .header {
+                background: var(--primary) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            section {
+                page-break-inside: avoid;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .meta-bar {
+                gap: 20px;
+            }
+            
+            .specs-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .flow-diagram {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <h1>HyperLabel</h1>
+    <p class="subtitle">Smart Tracking Label - Product Specification</p>
+    <span class="badge">MVP Definition v1.0</span>
+</header>
+
+<!-- Meta Bar -->
+<div class="meta-bar">
+    <div class="meta-item"><span>Last Updated:</span> January 15, 2026</div>
+    <div class="meta-item"><span>Status:</span> MVP Definition</div>
+    <div class="meta-item"><span>Owner:</span> Denys Chumak</div>
+</div>
+
+<div class="container">
+
+    <!-- Executive Summary -->
+    <section>
+        <h2>Executive Summary</h2>
+        
+        <div class="value-prop">
+            <strong>HyperLabel</strong> is a disposable, ultra-thin LTE tracking label ($20+) that provides transparent door-to-door cargo tracking across all transport modes—eliminating "black holes" even during flights or ocean transit.
+        </div>
+        
+        <h3>Hardware at a Glance</h3>
+        <div class="specs-box">
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <div class="value">10×15cm</div>
+                    <div class="label">Form Factor</div>
+                </div>
+                <div class="spec-item">
+                    <div class="value">3.5mm</div>
+                    <div class="label">Thickness</div>
+                </div>
+                <div class="spec-item">
+                    <div class="value">60 days</div>
+                    <div class="label">Battery Life</div>
+                </div>
+                <div class="spec-item">
+                    <div class="value">180+</div>
+                    <div class="label">Countries</div>
+                </div>
+                <div class="spec-item">
+                    <div class="value">$20-25</div>
+                    <div class="label">Price Point</div>
+                </div>
+                <div class="spec-item">
+                    <div class="value">LTE Cat-1</div>
+                    <div class="label">Connectivity</div>
+                </div>
+            </div>
+        </div>
+        
+        <h3>MVP Success Criteria</h3>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon">📦</div>
+                <div class="kpi-value">50</div>
+                <div class="kpi-label">Labels Sold</div>
+                <span class="kpi-target">3 months</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🏢</div>
+                <div class="kpi-value">10</div>
+                <div class="kpi-label">B2B Customers</div>
+                <span class="kpi-target">Paying</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">⚡</div>
+                <div class="kpi-value">>99%</div>
+                <div class="kpi-label">Platform Uptime</div>
+                <span class="kpi-target">Monthly</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🎯</div>
+                <div class="kpi-value">100%</div>
+                <div class="kpi-label">Tracking Reliability</div>
+                <span class="kpi-target">E2E Works</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">✈️</div>
+                <div class="kpi-value">1+</div>
+                <div class="kpi-label">Real Shipments</div>
+                <span class="kpi-target">China → US/EU</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vision -->
+    <section>
+        <h2>Vision 2030</h2>
+        
+        <div class="value-prop" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left-color: #f59e0b;">
+            <strong>Our Vision:</strong> Become the global standard for transparent cargo tracking, eliminating "black holes" in logistics. By 2030, enable real-time visibility for any shipment, anywhere, with predictive intelligence for delays and route deviations.
+        </div>
+    </section>
+
+    <!-- Problem & Solution -->
+    <section>
+        <h2>Problem & Solution</h2>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Problem: Black Holes</h4>
+                <p>Cargo goes dark during transit (flights, ocean, remote areas) with no visibility</p>
+            </div>
+            <div class="card">
+                <h4>Problem: Fragmentation</h4>
+                <p>Different carriers = different tracking systems, no unified view for customers</p>
+            </div>
+            <div class="card">
+                <h4>Problem: Reactive</h4>
+                <p>Users discover delays after they happen, not before—can't plan ahead</p>
+            </div>
+            <div class="card highlight">
+                <h4>Our Solution</h4>
+                <p>Offline data storage + single interface + proactive alerts = complete visibility</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Differentiators -->
+    <section>
+        <h2>Key Differentiators</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>HyperLabel</th>
+                    <th>Traditional Trackers</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Price</strong></td>
+                    <td>$20-30 (disposable)</td>
+                    <td>$100-500 (reusable)</td>
+                </tr>
+                <tr>
+                    <td><strong>Form Factor</strong></td>
+                    <td>10×15cm, 3.5mm thin</td>
+                    <td>Bulky devices</td>
+                </tr>
+                <tr>
+                    <td><strong>UX</strong></td>
+                    <td>Consumer-grade simplicity</td>
+                    <td>Enterprise complexity</td>
+                </tr>
+                <tr>
+                    <td><strong>Coverage</strong></td>
+                    <td>180+ countries, flight/ocean capable</td>
+                    <td>Carrier-dependent</td>
+                </tr>
+                <tr>
+                    <td><strong>Setup</strong></td>
+                    <td>Scan QR, peel, stick</td>
+                    <td>Complex onboarding</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Target Users -->
+    <section>
+        <h2>Target Users</h2>
+        
+        <div class="persona-card primary">
+            <div class="persona-header">
+                <div class="persona-icon">📦</div>
+                <div>
+                    <div class="persona-name">Consignee (Receiver)</div>
+                    <div class="persona-role">Primary Buyer - B2B Businesses</div>
+                </div>
+                <span class="status-tag status-mvp">Primary</span>
+            </div>
+            <p><strong>Pain Point:</strong> "Where is my cargo? Why is it delayed?"</p>
+            <p><strong>Value:</strong> Knows exactly where cargo is at all times, can plan operations and catch problems early.</p>
+        </div>
+        
+        <div class="persona-card">
+            <div class="persona-header">
+                <div class="persona-icon">🚚</div>
+                <div>
+                    <div class="persona-name">Forwarder (Sender)</div>
+                    <div class="persona-role">Logistics Company</div>
+                </div>
+                <span class="status-tag status-mvp">Secondary</span>
+            </div>
+            <p><strong>Pain Point:</strong> "I need to answer customer questions about shipment status"</p>
+            <p><strong>Value:</strong> Shares tracking links with clients—self-service instead of calls.</p>
+        </div>
+        
+        <h3>Target Cargo Types (MVP)</h3>
+        <div class="cards-grid">
+            <div class="card">
+                <h4>1. Electronics</h4>
+                <p>High-value: phones, laptops, components</p>
+            </div>
+            <div class="card">
+                <h4>2. Automotive Parts</h4>
+                <p>B2B shipments between manufacturers</p>
+            </div>
+            <div class="card">
+                <h4>3. E-commerce</h4>
+                <p>Luxury items, collectibles, high-value goods</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Flow -->
+    <section>
+        <h2>User Flow</h2>
+        
+        <div class="flow-diagram" style="flex-wrap: wrap; justify-content: center; gap: 10px;">
+            <div class="flow-step">
+                <div class="icon">🛒</div>
+                <div class="name">Buy Label</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Consignee</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">📍</div>
+                <div class="name">Enter Destination</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Consignee</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">🔗</div>
+                <div class="name">Share Link</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Consignee</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">📝</div>
+                <div class="name">Enter Origin</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Forwarder</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">📬</div>
+                <div class="name">Receive Label</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Forwarder</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">📱</div>
+                <div class="name">Scan & Attach</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Forwarder</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">✈️</div>
+                <div class="name">Transit</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Shipper</div>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">
+                <div class="icon">✅</div>
+                <div class="name">Delivered</div>
+                <div style="font-size: 0.65rem; color: #64748b;">Consignee</div>
+            </div>
+        </div>
+        
+        <h3>Full User Journey</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-marker">1</div>
+                <div class="timeline-content">
+                    <h4>Buy Label <span class="status-tag status-mvp" style="margin-left: 10px;">Consignee</span></h4>
+                    <p>Consignee (buyer) purchases label from website</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">2</div>
+                <div class="timeline-content">
+                    <h4>Enter Final Destination <span class="status-tag status-mvp" style="margin-left: 10px;">Consignee</span></h4>
+                    <p>Consignee enters their own address (where cargo will be delivered)</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">3</div>
+                <div class="timeline-content">
+                    <h4>Share Link with Forwarder <span class="status-tag status-mvp" style="margin-left: 10px;">Consignee</span></h4>
+                    <p>Consignee sends a link to the forwarder to complete origin address</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">4</div>
+                <div class="timeline-content">
+                    <h4>Enter Origin Address <span class="status-tag status-future" style="margin-left: 10px;">Forwarder</span></h4>
+                    <p>Forwarder clicks link, enters their address (cargo origin) → label ships to them</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">5</div>
+                <div class="timeline-content">
+                    <h4>Receive Label <span class="status-tag status-future" style="margin-left: 10px;">Forwarder</span></h4>
+                    <p>Forwarder receives physical label with quick-start guide</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">6</div>
+                <div class="timeline-content">
+                    <h4>Scan QR & Link to Cargo <span class="status-tag status-future" style="margin-left: 10px;">Forwarder</span></h4>
+                    <p>Forwarder scans QR → enters cargo details → attaches label to shipment</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">7</div>
+                <div class="timeline-content">
+                    <h4>Transit & Track <span class="status-tag" style="background: #e0e7ff; color: #3730a3; margin-left: 10px;">Shipper</span></h4>
+                    <p>Cargo moves through carriers, label transmits location every 15-30 min</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker">8</div>
+                <div class="timeline-content">
+                    <h4>Delivered <span class="status-tag status-mvp" style="margin-left: 10px;">Consignee</span></h4>
+                    <p>Cargo arrives at consignee, notification sent, tracking complete</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="value-prop" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left-color: #f59e0b;">
+            <strong>Key Insight:</strong> The Consignee (buyer) may not know the forwarder's exact address. They share a link so the forwarder can enter their own origin address. This triggers label shipment to the forwarder.
+        </div>
+    </section>
+
+    <!-- Platform Overview -->
+    <section>
+        <h2>Platform Overview</h2>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Landing Page</h4>
+                <p>Marketing site with product info, pricing, and purchase CTA</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Customer Portal</h4>
+                <p>Dashboard for tracking shipments, managing labels, account settings</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Admin Panel</h4>
+                <p>Internal tool for user management, label inventory, support</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Public Tracking</h4>
+                <p>Shareable tracking links for customers to share with others</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+        </div>
+        
+        <h3>Technology Stack</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Layer</th>
+                    <th>Technology</th>
+                    <th>Rationale</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Frontend</td>
+                    <td>React / Next.js</td>
+                    <td>Modern, SEO-friendly</td>
+                </tr>
+                <tr>
+                    <td>Backend</td>
+                    <td>FastAPI or NestJS</td>
+                    <td>API-first, async</td>
+                </tr>
+                <tr>
+                    <td>Database</td>
+                    <td>PostgreSQL + PostGIS</td>
+                    <td>Geospatial queries</td>
+                </tr>
+                <tr>
+                    <td>Auth</td>
+                    <td>Clerk</td>
+                    <td>Managed, fast setup</td>
+                </tr>
+                <tr>
+                    <td>Payments</td>
+                    <td>Stripe</td>
+                    <td>Industry standard</td>
+                </tr>
+                <tr>
+                    <td>Cloud</td>
+                    <td>GCP</td>
+                    <td>Google Credits goal</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>Scalability & Infrastructure</h3>
+        <div class="cards-grid">
+            <div class="card">
+                <h4>MVP Scale</h4>
+                <p>• Hundreds of active labels<br>• ~10,000 location events/day<br>• ~100 concurrent users</p>
+            </div>
+            <div class="card">
+                <h4>Design For</h4>
+                <p>• 10,000+ active labels<br>• 1,000,000+ events/day<br>• 1,000+ concurrent users</p>
+            </div>
+            <div class="card">
+                <h4>Data Residency</h4>
+                <p>• Primary: US (GCP us-central1)<br>• GDPR compliant for EU<br>• Multi-region: Post-MVP</p>
+            </div>
+            <div class="card">
+                <h4>Uptime SLA</h4>
+                <p>• MVP: 99.5% (~1.8 days/year)<br>• Enterprise: 99.9% (~8.7 hrs/year)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Device Communication - FOR ANDRII -->
+    <section>
+        <h2>Device Communication Protocol</h2>
+        
+        <div class="questions-box" style="background: #eff6ff; border-color: #2563eb;">
+            <h4 style="color: #1e40af;">🔧 Technical Spec for Hardware Team (Andrii)</h4>
+            <p style="color: #1e3a8a; margin: 0;">This section defines how the label device communicates with the backend.</p>
+        </div>
+        
+        <h3>Communication Method</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Attribute</th>
+                    <th>Specification</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Protocol</td>
+                    <td><strong>HTTPS REST API</strong></td>
+                </tr>
+                <tr>
+                    <td>Endpoint</td>
+                    <td><code>POST /api/v1/device/report</code></td>
+                </tr>
+                <tr>
+                    <td>Authentication</td>
+                    <td>Device ID + API Key in headers</td>
+                </tr>
+                <tr>
+                    <td>Frequency</td>
+                    <td>Every 15-30 minutes (configurable)</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>Payload Example</h3>
+        <div class="specs-box" style="background: #1e293b; color: #e2e8f0; font-family: monospace; font-size: 0.9rem; overflow-x: auto;">
+<pre style="margin: 0; white-space: pre-wrap;">
+POST /api/v1/device/report
+Content-Type: application/json
+X-Device-ID: HL-001234
+X-API-Key: [device_api_key]
+
+{
+  "device_id": "HL-001234",
+  "timestamp": "2026-01-15T10:30:00Z",
+  "latitude": 25.2048,
+  "longitude": 55.2708,
+  "accuracy_m": 15,
+  "battery_pct": 72,
+  "signal_strength": -85,
+  "offline_queue": [
+    {
+      "timestamp": "2026-01-15T08:00:00Z",
+      "latitude": 22.3193,
+      "longitude": 114.1694,
+      "battery_pct": 75
+    }
+  ]
+}
+</pre>
+        </div>
+        
+        <h3>API Endpoints (MVP)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/api/v1/device/report</code></td>
+                    <td>Send location data from device</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/api/v1/device/heartbeat</code></td>
+                    <td>Device health check</td>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/api/v1/shipments</code></td>
+                    <td>List user's shipments</td>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/api/v1/shipments/{id}</code></td>
+                    <td>Get shipment detail</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/api/v1/shipments</code></td>
+                    <td>Create new shipment</td>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/api/v1/shipments/{id}/tracking</code></td>
+                    <td>Get location history</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td><code>/api/v1/labels/{id}/activate</code></td>
+                    <td>Activate a label</td>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td><code>/api/v1/public/track/{code}</code></td>
+                    <td>Public tracking page</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Responsibility: Hardware (Andrii)</h4>
+                <p>• Firmware that sends HTTPS requests<br>• Offline data queue management<br>• Battery optimization<br>• GPS/LTE module control</p>
+            </div>
+            <div class="card">
+                <h4>Responsibility: Platform (Dev Team)</h4>
+                <p>• Backend API that receives data<br>• Data validation & storage<br>• Real-time dashboard updates<br>• Notification triggers</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section>
+        <h2>Pricing Model</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Quantity</th>
+                    <th>Price per Label</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1 label</td>
+                    <td>$25</td>
+                    <td>$25</td>
+                </tr>
+                <tr>
+                    <td>5-pack</td>
+                    <td>$22</td>
+                    <td>$110</td>
+                </tr>
+                <tr>
+                    <td>10-pack</td>
+                    <td>$20</td>
+                    <td>$200</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>What's Included</h3>
+        <ul class="metrics-list">
+            <li><span class="check">✓</span> Physical label device</li>
+            <li><span class="check">✓</span> 60 days of tracking</li>
+            <li><span class="check">✓</span> Platform access</li>
+            <li><span class="check">✓</span> Email notifications</li>
+            <li><span class="check">✓</span> Shareable tracking link</li>
+            <li><span class="check">✓</span> 90 days data retention</li>
+        </ul>
+    </section>
+
+    <!-- Notifications -->
+    <section>
+        <h2>Notifications</h2>
+        
+        <h3>MVP Notification Channels</h3>
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Email</h4>
+                <p>Primary notification method for all events</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Webhook</h4>
+                <p>For developers and integrations</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>SMS</h4>
+                <p>Text alerts for critical events</p>
+                <span class="status-tag status-future">Post-MVP</span>
+            </div>
+            <div class="card">
+                <h4>Push</h4>
+                <p>Mobile app notifications</p>
+                <span class="status-tag status-future">Post-MVP</span>
+            </div>
+        </div>
+        
+        <h3>Notification Events</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Trigger</th>
+                    <th>Recipient</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>✅ Label Activated</td>
+                    <td>Label begins transmitting</td>
+                    <td>Owner (Consignee)</td>
+                </tr>
+                <tr>
+                    <td>📦 Shipment Delivered</td>
+                    <td>Label detects final location</td>
+                    <td>Owner (Consignee)</td>
+                </tr>
+                <tr>
+                    <td>🔋 Low Battery</td>
+                    <td>Battery drops below 20%, 10%</td>
+                    <td>Owner (Consignee)</td>
+                </tr>
+                <tr>
+                    <td>📡 No Signal</td>
+                    <td>No transmission for >24 hours</td>
+                    <td>Owner (Consignee)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Security & Compliance -->
+    <section>
+        <h2>Security & Compliance</h2>
+        
+        <h3>Data Classification</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data Type</th>
+                    <th>Sensitivity</th>
+                    <th>Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Location data</td>
+                    <td>Medium</td>
+                    <td>Encrypted at rest, TLS in transit</td>
+                </tr>
+                <tr>
+                    <td>User accounts</td>
+                    <td>Medium</td>
+                    <td>Managed by Clerk</td>
+                </tr>
+                <tr>
+                    <td>Payment data</td>
+                    <td>High</td>
+                    <td>Handled by Stripe (not stored)</td>
+                </tr>
+                <tr>
+                    <td>Shipment metadata</td>
+                    <td>Low</td>
+                    <td>Standard protection</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>Compliance Requirements</h3>
+        <div class="cards-grid">
+            <div class="card">
+                <h4>GDPR</h4>
+                <p>Required for EU customers. Users can delete account and all data.</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Data Encryption</h4>
+                <p>TLS 1.3 in transit, encryption at rest</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>SOC 2</h4>
+                <p>Security certification for enterprise</p>
+                <span class="status-tag status-future">Future</span>
+            </div>
+            <div class="card">
+                <h4>FDA (Pharma)</h4>
+                <p>Requires cold chain certification</p>
+                <span class="status-tag status-future">Future</span>
+            </div>
+        </div>
+        
+        <h3>Data Retention & Deletion</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Retention</th>
+                    <th>Deletion</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Location history</td>
+                    <td>90 days post-delivery</td>
+                    <td>Auto-purge after 90 days</td>
+                </tr>
+                <tr>
+                    <td>Account data</td>
+                    <td>Until deletion request</td>
+                    <td>User can delete anytime (GDPR)</td>
+                </tr>
+                <tr>
+                    <td>Audit logs</td>
+                    <td>Immutable, append-only</td>
+                    <td>Available for export</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- MVP Scope -->
+    <section>
+        <h2>MVP Scope</h2>
+        
+        <h3>What's IN the MVP</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Core Tracking</strong></td>
+                    <td>Live tracking, geolocation, status updates</td>
+                </tr>
+                <tr>
+                    <td><strong>Label/Device</strong></td>
+                    <td>Activation, configuration, health metrics (IMEI, FW, battery)</td>
+                </tr>
+                <tr>
+                    <td><strong>Users</strong></td>
+                    <td>Sign up, sign in, account management</td>
+                </tr>
+                <tr>
+                    <td><strong>Business Logic</strong></td>
+                    <td>Purchase flow, shipment management, sharing links</td>
+                </tr>
+                <tr>
+                    <td><strong>Payments</strong></td>
+                    <td>Stripe checkout, order processing</td>
+                </tr>
+                <tr>
+                    <td><strong>Notifications</strong></td>
+                    <td>Email alerts (activation, delivery, low battery)</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>What's NOT in MVP</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Deferred To</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mobile apps</td>
+                    <td>Month 6-12</td>
+                    <td>Web-first approach</td>
+                </tr>
+                <tr>
+                    <td>Delay/deviation alerts</td>
+                    <td>Phase 3</td>
+                    <td>Requires ML/prediction</td>
+                </tr>
+                <tr>
+                    <td>Cold chain sensors</td>
+                    <td>Hardware v2</td>
+                    <td>Different hardware SKU</td>
+                </tr>
+                <tr>
+                    <td>TMS/ERP integrations</td>
+                    <td>Phase 4</td>
+                    <td>Enterprise feature</td>
+                </tr>
+                <tr>
+                    <td>Product analytics</td>
+                    <td>Post-MVP</td>
+                    <td>PostHog setup later</td>
+                </tr>
+                <tr>
+                    <td>Chat support</td>
+                    <td>Post-MVP</td>
+                    <td>Email-only for MVP</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>User Jobs Mapping</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>User Job</th>
+                    <th>Who</th>
+                    <th>MVP</th>
+                    <th>Post-MVP</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Buy label</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
+                <tr><td>Enter final destination</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
+                <tr><td>Share link with forwarder</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
+                <tr><td>Enter forwarder address (origin)</td><td>Forwarder</td><td>✅</td><td></td></tr>
+                <tr><td>Receive label</td><td>Forwarder</td><td>✅</td><td></td></tr>
+                <tr><td>Scan QR & link to cargo</td><td>Forwarder</td><td>✅</td><td></td></tr>
+                <tr><td>Activate & attach label</td><td>Forwarder</td><td>✅</td><td></td></tr>
+                <tr><td>Share tracking link</td><td>Consignee / Forwarder</td><td>✅</td><td></td></tr>
+                <tr><td>Track cargo location</td><td>Anyone with link</td><td>✅</td><td></td></tr>
+                <tr><td>View location history</td><td>Anyone with link</td><td>✅</td><td></td></tr>
+                <tr><td>Live map view</td><td>Anyone with link</td><td>✅</td><td></td></tr>
+                <tr><td>Receive delivery notification</td><td>Consignee</td><td>✅</td><td></td></tr>
+                <tr><td>Track transport type</td><td>—</td><td></td><td>✅</td></tr>
+                <tr><td>Track delivery delays</td><td>—</td><td></td><td>✅</td></tr>
+                <tr><td>Track route deviations</td><td>—</td><td></td><td>✅</td></tr>
+                <tr><td>Expected delivery date</td><td>—</td><td></td><td>✅</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Go-Live Checklist -->
+    <section>
+        <h2>Go-Live Checklist</h2>
+        
+        <div class="questions-box" style="background: #dcfce7; border-color: #22c55e;">
+            <h4 style="color: #166534;">✅ Must Work Before Launch</h4>
+            <ul class="questions-list" style="columns: 2; column-gap: 40px;">
+                <li style="color: #166534; border-color: #86efac;">☐ Label activation flow (QR + Battery → Dashboard)</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Live tracking on map</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Location Geocoding (Google Maps API)</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Payment processing (Stripe)</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Email notifications working</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Shared tracking link functional</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Admin panel operational</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Security review completed</li>
+                <li style="color: #166534; border-color: #86efac;">☐ GDPR compliance verified</li>
+                <li style="color: #166534; border-color: #86efac;">☐ 1+ real shipment tracked end-to-end</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Documentation published</li>
+                <li style="color: #166534; border-color: #86efac;">☐ Support email configured</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Support & Operations -->
+    <section>
+        <h2>Support & Operations</h2>
+        
+        <h3>MVP Support Model</h3>
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Email Support</h4>
+                <p>support@hyperlabel.com<br>Response: 24-48 hours</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Self-Service FAQ</h4>
+                <p>Documentation & help center</p>
+                <span class="status-tag status-mvp">MVP</span>
+            </div>
+            <div class="card">
+                <h4>Chat Support</h4>
+                <p>Business hours only</p>
+                <span class="status-tag status-future">Post-MVP</span>
+            </div>
+            <div class="card">
+                <h4>Phone / Dedicated CSM</h4>
+                <p>Enterprise tier only</p>
+                <span class="status-tag status-future">Post-MVP</span>
+            </div>
+        </div>
+        
+        <h3>Label Fulfillment</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Stage</th>
+                    <th>Responsibility</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Manufacturing</td>
+                    <td>Andrii / Hardware team (China)</td>
+                </tr>
+                <tr>
+                    <td>Inventory</td>
+                    <td>China warehouse</td>
+                </tr>
+                <tr>
+                    <td>Order processing</td>
+                    <td>Platform (Stripe integration)</td>
+                </tr>
+                <tr>
+                    <td>Shipping</td>
+                    <td>3PL partner (TBD)</td>
+                </tr>
+                <tr>
+                    <td>Customer delivery</td>
+                    <td>DHL / FedEx international</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Refund Policy -->
+    <section>
+        <h2>Refund Policy</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Policy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Defective label</td>
+                    <td>✅ Full replacement or refund</td>
+                </tr>
+                <tr>
+                    <td>Unused label (still sealed)</td>
+                    <td>✅ Refund within 30 days</td>
+                </tr>
+                <tr>
+                    <td>Activated label</td>
+                    <td>❌ No refund</td>
+                </tr>
+                <tr>
+                    <td>Cancelled shipment (after activation)</td>
+                    <td>❌ No refund</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Team & Budget -->
+    <section>
+        <h2>Team & Budget</h2>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Andrii Tkachuk</h4>
+                <p><strong>Founder</strong><br>Hardware development, manufacturing, business strategy, investors</p>
+            </div>
+            <div class="card">
+                <h4>Denys Chumak</h4>
+                <p><strong>Product Manager</strong> (Part-time, 3 months)<br>Product spec, user interviews, investor materials, platform oversight</p>
+            </div>
+            <div class="card">
+                <h4>Andrii Pavlov</h4>
+                <p><strong>Designer</strong> (Part-time)<br>Brand identity, landing page, UI kits</p>
+            </div>
+            <div class="card">
+                <h4>Development Team</h4>
+                <p><strong>TBD</strong><br>Out of scope for this document, separate budget</p>
+            </div>
+        </div>
+        
+        <div class="budget-box">
+            <div class="budget-total">£17,250</div>
+            <p style="text-align: center; margin-bottom: 20px; color: #166534;">Total MVP Budget (excl. Development)</p>
+            <div class="budget-breakdown">
+                <div class="budget-item">
+                    <div class="amount">£11,450</div>
+                    <div class="category">Product (Denys)</div>
+                </div>
+                <div class="budget-item">
+                    <div class="amount">£3,500</div>
+                    <div class="category">Design (Andrii P.)</div>
+                </div>
+                <div class="budget-item">
+                    <div class="amount">£300</div>
+                    <div class="category">Services</div>
+                </div>
+                <div class="budget-item">
+                    <div class="amount">£2,000</div>
+                    <div class="category">User Interviews</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section>
+        <h2>Roadmap</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>Timeline</th>
+                    <th>Key Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="status-tag status-mvp">MVP</span></td>
+                    <td>Month 1-3</td>
+                    <td>Core tracking, purchase flow, sharing, notifications</td>
+                </tr>
+                <tr>
+                    <td><span class="status-tag status-future">Phase 2</span></td>
+                    <td>Month 4-6</td>
+                    <td>Mobile app, SMS notifications, analytics</td>
+                </tr>
+                <tr>
+                    <td><span class="status-tag status-future">Phase 3</span></td>
+                    <td>Month 7-9</td>
+                    <td>Delay prediction, route deviation alerts</td>
+                </tr>
+                <tr>
+                    <td><span class="status-tag status-future">Phase 4</span></td>
+                    <td>Month 10-12</td>
+                    <td>TMS integrations, enterprise features</td>
+                </tr>
+                <tr>
+                    <td><span class="status-tag status-future">Year 2</span></td>
+                    <td>12+ months</td>
+                    <td>Cold chain, white-label, international expansion</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>Future Hardware Evolution</h3>
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Temperature Sensor</h4>
+                <p>Cold chain monitoring for pharma & perishables</p>
+                <span class="status-tag status-future">High Priority</span>
+            </div>
+            <div class="card">
+                <h4>Solar Charging</h4>
+                <p>Extended battery life for long voyages</p>
+                <span class="status-tag status-future">Medium</span>
+            </div>
+            <div class="card">
+                <h4>Smaller Form Factor</h4>
+                <p>For small packages and parcels</p>
+                <span class="status-tag status-future">Medium</span>
+            </div>
+            <div class="card">
+                <h4>Reusable Option</h4>
+                <p>Rechargeable for enterprise customers</p>
+                <span class="status-tag status-future">Low</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Questions for Andrii -->
+    <section>
+        <h2>Open Questions</h2>
+        
+        <div class="questions-box">
+            <h4>⚠️ Questions for Andrii (Hardware)</h4>
+            <ul class="questions-list">
+                <li><strong>Label Reuse:</strong> Is there any reuse scenario, or strictly single-use disposable?</li>
+                <li><strong>Activation Mechanism:</strong> QR scan + button press, or sticker peel triggers activation?</li>
+                <li><strong>Offline Storage:</strong> How many location data points can be stored when offline?</li>
+                <li><strong>3PL Partner:</strong> Who will handle label fulfillment and shipping to customers?</li>
+                <li><strong>Device Protocol:</strong> Confirm HTTPS REST API for device → backend communication</li>
+            </ul>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <h4>Pending (Denys)</h4>
+                <p>• TAM/SAM/SOM calculation for investor deck<br>• Pilot customer identification through user interviews</p>
+            </div>
+            <div class="card">
+                <h4>Geography</h4>
+                <p>• Manufacturing: China<br>• Primary market: US<br>• Secondary: UK/EU<br>• Label works: 180+ countries</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Glossary -->
+    <section>
+        <h2>Glossary</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Definition</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Consignee</strong></td>
+                    <td>The recipient/receiver of cargo; the primary buyer of HyperLabel</td>
+                </tr>
+                <tr>
+                    <td><strong>Forwarder</strong></td>
+                    <td>Company that arranges shipment logistics; receives label and attaches to cargo</td>
+                </tr>
+                <tr>
+                    <td><strong>Shipper</strong></td>
+                    <td>Physical carrier (trucking, air, ocean) that transports cargo</td>
+                </tr>
+                <tr>
+                    <td><strong>Black hole</strong></td>
+                    <td>Period when cargo has no tracking visibility (flight, ocean, no signal)</td>
+                </tr>
+                <tr>
+                    <td><strong>Label</strong></td>
+                    <td>HyperLabel physical tracking device</td>
+                </tr>
+                <tr>
+                    <td><strong>Soft-SIM / eSIM</strong></td>
+                    <td>Embedded SIM technology for global cellular connectivity</td>
+                </tr>
+                <tr>
+                    <td><strong>LTE Cat-1</strong></td>
+                    <td>Low-power cellular technology optimized for IoT devices</td>
+                </tr>
+                <tr>
+                    <td><strong>PostGIS</strong></td>
+                    <td>PostgreSQL extension for geospatial data queries</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Competitors -->
+    <section>
+        <h2>Competitive Landscape</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Competitor</th>
+                    <th>Type</th>
+                    <th>Price Point</th>
+                    <th>Differentiator</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Tive</td>
+                    <td>Reusable tracker</td>
+                    <td>$100-300</td>
+                    <td>Enterprise, cold chain</td>
+                </tr>
+                <tr>
+                    <td>Roambee</td>
+                    <td>Reusable tracker</td>
+                    <td>$150-400</td>
+                    <td>Supply chain analytics</td>
+                </tr>
+                <tr>
+                    <td>SODAQ</td>
+                    <td>Smart Label</td>
+                    <td>€50-100</td>
+                    <td>Solar-powered, reusable</td>
+                </tr>
+                <tr>
+                    <td>Sensos</td>
+                    <td>Smart Label</td>
+                    <td>€30-80</td>
+                    <td>AI-powered analytics</td>
+                </tr>
+                <tr>
+                    <td>G+D Smart Label</td>
+                    <td>Smart Label</td>
+                    <td>€40-100</td>
+                    <td>2.4mm thin, iSIM</td>
+                </tr>
+                <tr>
+                    <td>Reelables</td>
+                    <td>Disposable</td>
+                    <td>$15-25</td>
+                    <td>Similar positioning</td>
+                </tr>
+                <tr style="background: #dbeafe;">
+                    <td><strong>HyperLabel</strong></td>
+                    <td><strong>Disposable</strong></td>
+                    <td><strong>$20-25</strong></td>
+                    <td><strong>Price + Simplicity + Global</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>HyperLabel Product Specification v1.0 • Confidential • January 2026</p>
+</footer>
+
+</body>
+</html>
