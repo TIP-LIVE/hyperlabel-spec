@@ -947,9 +947,7 @@ orders (
 - Platform oversight
 
 **Arrangement:**
-- Rate: £50/hour
-- Hours: ~229 hours
-- Total: £11,450
+- Part-time engagement (3 months)
 - Post-MVP: Consider full-time role (20% equity, 2-year vest, 6-month cliff)
 
 #### Andrii Pavlov - Designer (Part-time)
@@ -959,23 +957,20 @@ orders (
 - UI kit (admin panel)
 
 **Arrangement:**
-- Rate: £50/hour
-- Hours: ~70 hours
-- Total: £3,500
+- Part-time engagement
 
 #### Development Team
 - Out of scope for this document
 - Separate budget allocation
 
-### 10.3 Budget Summary
+### 10.3 Team Allocation
 
-| Category | Item | Amount |
-|----------|------|--------|
-| **Product** | Denys Chumak (229 hrs @ £50) | £11,450 |
-| **Design** | Andrii Pavlov (70 hrs @ £50) | £3,500 |
-| **Services** | Website hosting, domain, etc. | £300 |
-| **Services** | User interviews (recruitment, gifts) | £2,000 |
-| **TOTAL** | | **£17,250** |
+| Category | Owner |
+|----------|-------|
+| **Product** | Denys Chumak |
+| **Design** | Andrii Pavlov |
+| **Services** | Website hosting, domain, etc. |
+| **Research** | User interviews (recruitment, gifts) |
 
 *Note: Development & QA costs tracked separately*
 
