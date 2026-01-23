@@ -1864,7 +1864,621 @@ Project: HyperLabel MVP
 - `priority:medium` - Should have
 - `priority:low` - Nice to have
 
-### 11.6 Future Hardware Evolution
+---
+
+### 11.6 Technical Deep-Dive & AI-Ready Prompts
+
+**Purpose:** Detailed task specifications optimized for AI-assisted development (Cursor + Claude/GPT)  
+**Architecture:** Modern, scalable, Google Cloud-first where beneficial  
+**Approach:** Senior developer standards with production-ready code
+
+---
+
+#### ARCHITECTURE DECISIONS
+
+##### Tech Stack (Final)
+
+| Layer | Choice | Rationale |
+|-------|--------|-----------|
+| **Framework** | Next.js 14 (App Router) | SSR, API routes, Google-friendly |
+| **Language** | TypeScript (strict mode) | Type safety, better AI assistance |
+| **Styling** | Tailwind CSS + shadcn/ui | Rapid development, consistent UI |
+| **Database** | Cloud SQL (PostgreSQL 15) + PostGIS | Google Cloud, geospatial native |
+| **ORM** | Prisma | Type-safe, great DX |
+| **Auth** | Clerk | Fast setup, social login, webhooks |
+| **Payments** | Stripe | Industry standard |
+| **Email** | Resend | Modern, React Email templates |
+| **Maps** | Google Maps JavaScript API | Best global coverage, your expertise |
+| **Geocoding** | **LocationIQ** (primary) + Google (fallback) | Cost-effective, see analysis below |
+| **Hosting** | Vercel (frontend) + Cloud Run (API if needed) | Edge functions, easy deploy |
+| **Storage** | Google Cloud Storage | Images, exports |
+| **Monitoring** | Google Cloud Logging + Vercel Analytics | Integrated monitoring |
+| **CI/CD** | GitHub Actions → Vercel | Auto-deploy on push |
+
+##### Geocoding API Comparison
+
+| Provider | Free Tier | Paid Price | Quality | Recommendation |
+|----------|-----------|------------|---------|----------------|
+| **Google Geocoding** | $200/mo credit | $5/1000 req | ⭐⭐⭐⭐⭐ | Fallback for edge cases |
+| **LocationIQ** | 5,000/day FREE | $0.45/1000 | ⭐⭐⭐⭐ | **PRIMARY - Best value** |
+| **OpenCage** | 2,500/day FREE | $0.50/1000 | ⭐⭐⭐⭐ | Good alternative |
+| **Nominatim (OSM)** | Unlimited (self-host) | Free | ⭐⭐⭐ | Rate limited, less accurate |
+| **Mapbox** | 100,000/mo FREE | $0.75/1000 | ⭐⭐⭐⭐ | Good but more expensive |
+| **Geoapify** | 3,000/day FREE | $0.40/1000 | ⭐⭐⭐ | Budget option |
+
+**Strategy:** Use LocationIQ for 95% of requests (free tier = 150,000/month), fallback to Google for failed lookups.
+
+```typescript
+// Geocoding Strategy
+async function reverseGeocode(lat: number, lon: number): Promise<Address> {
+  // Try LocationIQ first (free)
+  const locationIQ = await tryLocationIQ(lat, lon);
+  if (locationIQ.success) return locationIQ.data;
+  
+  // Fallback to Google (paid but reliable)
+  const google = await tryGoogleGeocoding(lat, lon);
+  if (google.success) return google.data;
+  
+  // Return raw coordinates if both fail
+  return { raw: `${lat}, ${lon}` };
+}
+```
+
+---
+
+#### AI-READY TASK PROMPTS
+
+Each task below is written as a prompt you can paste directly into Cursor/Claude.
+
+---
+
+##### EPIC E1: Project Setup & Infrastructure
+
+###### E1-T1: Initialize Next.js Monorepo
+
+```
+TASK: Initialize a Next.js 14 project with TypeScript for HyperLabel
+
+REQUIREMENTS:
+1. Create Next.js 14 app with App Router (not Pages Router)
+2. TypeScript with strict mode enabled
+3. Tailwind CSS configured
+4. ESLint + Prettier with consistent rules
+5. Path aliases (@/ for src/)
+6. Environment variables setup (.env.local, .env.example)
+
+FOLDER STRUCTURE:
+/src
+  /app                 # Next.js App Router
+    /api              # API routes
+    /(auth)           # Auth pages (sign-in, sign-up)
+    /(dashboard)      # Protected dashboard pages
+    /(public)         # Public pages (landing, tracking)
+  /components         # React components
+    /ui               # shadcn/ui components
+    /features         # Feature-specific components
+  /lib                # Utilities, helpers
+    /db               # Database client
+    /api              # API helpers
+  /types              # TypeScript types
+  /hooks              # Custom React hooks
+
+COMMANDS TO RUN:
+- pnpm create next-app@latest hyperlabel --typescript --tailwind --eslint --app --src-dir
+- Install: @clerk/nextjs, @prisma/client, stripe, resend, zod, react-hook-form
+
+OUTPUT: Complete project structure with all configs
+```
+
+###### E1-T2: Database Setup (Cloud SQL + PostGIS)
+
+```
+TASK: Set up PostgreSQL database with PostGIS on Google Cloud SQL
+
+REQUIREMENTS:
+1. Prisma schema with these models:
+   - User (synced from Clerk)
+   - Label (physical device)
+   - Shipment (cargo being tracked)
+   - Location (GPS data points with PostGIS)
+   - Order (Stripe purchases)
+   - Notification (sent alerts)
+
+2. PostGIS extension for geospatial queries
+
+3. Database indexes for performance:
+   - Locations by shipment_id + timestamp
+   - Shipments by user_id + status
+   - Labels by device_id (unique)
+
+PRISMA SCHEMA REQUIREMENTS:
+- Use @db.Uuid for IDs
+- Use @db.Timestamptz for timestamps
+- Location model needs: latitude, longitude, accuracy, battery_pct, signal_strength
+- Support for offline_queue (JSONB array of buffered locations)
+
+ENVIRONMENT:
+- DATABASE_URL for Cloud SQL connection
+- Use Prisma connection pooling (pgbouncer mode)
+
+OUTPUT: Complete schema.prisma file + migration commands
+```
+
+###### E1-T3: Database Schema Design
+
+```
+TASK: Design complete Prisma schema for HyperLabel tracking platform
+
+MODELS NEEDED:
+
+1. User
+   - id, clerkId, email, name, role (CUSTOMER/ADMIN)
+   - createdAt, updatedAt
+   - Relations: shipments, orders, labels
+
+2. Label
+   - id, deviceId (IMEI), status (INVENTORY/ASSIGNED/ACTIVE/DEPLETED)
+   - activatedAt, battery, firmwareVersion
+   - Relations: shipment, locations
+
+3. Shipment
+   - id, trackingCode (public), name, description
+   - status (PENDING/IN_TRANSIT/DELIVERED/CANCELLED)
+   - originAddress, destinationAddress (optional)
+   - cargoPhotoUrl
+   - shareEnabled, shareExpiresAt
+   - Relations: user, label, locations
+
+4. Location
+   - id, shipmentId, labelId
+   - latitude, longitude (PostGIS POINT)
+   - accuracy, battery, signalStrength
+   - address (reverse geocoded), addressSource (LOCATIONIQ/GOOGLE/RAW)
+   - isOfflineData (was buffered)
+   - recordedAt (device time), receivedAt (server time)
+
+5. Order
+   - id, stripeSessionId, stripePaymentIntentId
+   - status (PENDING/PAID/FAILED/REFUNDED)
+   - amount, currency, quantity
+   - shippingAddress (JSON)
+   - Relations: user, labels
+
+6. Notification
+   - id, userId, shipmentId
+   - type (ACTIVATED/LOW_BATTERY/NO_SIGNAL/DELIVERED/STUCK)
+   - channel (EMAIL/WEBHOOK)
+   - sentAt, deliveredAt
+
+OUTPUT: Complete schema.prisma with all relations, indexes, enums
+```
+
+---
+
+##### EPIC E2: Authentication & User Management
+
+###### E2-T1: Clerk Integration
+
+```
+TASK: Integrate Clerk authentication into Next.js 14 App Router
+
+REQUIREMENTS:
+1. Install and configure @clerk/nextjs
+2. Set up ClerkProvider in layout.tsx
+3. Create middleware.ts for route protection:
+   - Public routes: /, /track/*, /api/v1/device/*
+   - Protected routes: /dashboard/*, /admin/*
+   - Admin routes: /admin/* (check role claim)
+
+4. Environment variables:
+   - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+   - CLERK_SECRET_KEY
+   - NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+   - NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+   - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+   - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+
+5. Customize Clerk appearance to match brand (dark theme, green accent #c4f534)
+
+OUTPUT: 
+- middleware.ts with route protection
+- ClerkProvider setup in root layout
+- Sign-in/sign-up pages using Clerk components
+```
+
+###### E2-T5: Clerk Webhook for User Sync
+
+```
+TASK: Create webhook endpoint to sync Clerk users to database
+
+ENDPOINT: POST /api/webhooks/clerk
+
+REQUIREMENTS:
+1. Verify webhook signature using Clerk's svix library
+2. Handle events:
+   - user.created → Create User in DB
+   - user.updated → Update User in DB  
+   - user.deleted → Soft delete User (set deletedAt)
+
+3. Extract user data:
+   - clerkId: event.data.id
+   - email: event.data.email_addresses[0].email_address
+   - name: event.data.first_name + ' ' + event.data.last_name
+   - imageUrl: event.data.image_url
+
+4. Error handling:
+   - Return 200 even if DB fails (prevent Clerk retries)
+   - Log errors to console/monitoring
+   - Idempotent (handle duplicate events)
+
+5. Set up webhook in Clerk Dashboard:
+   - URL: https://hyperlabel.com/api/webhooks/clerk
+   - Events: user.created, user.updated, user.deleted
+
+OUTPUT: Complete webhook handler with signature verification
+```
+
+---
+
+##### EPIC E5: Tracking & Geocoding (Detailed)
+
+###### E5-T1: Device Report API
+
+```
+TASK: Create API endpoint for device location reports
+
+ENDPOINT: POST /api/v1/device/report
+
+AUTHENTICATION:
+- Header: X-Device-ID (required)
+- Header: X-API-Key (required)
+- Validate against Label.deviceId in database
+
+REQUEST BODY:
+{
+  "device_id": "HL-001234",
+  "timestamp": "2026-01-15T10:30:00Z",
+  "latitude": 25.2048,
+  "longitude": 55.2708,
+  "accuracy_m": 15,
+  "battery_pct": 72,
+  "signal_strength": -85,
+  "offline_queue": [
+    {
+      "timestamp": "2026-01-15T08:00:00Z",
+      "latitude": 22.3193,
+      "longitude": 114.1694,
+      "battery_pct": 75
+    }
+  ]
+}
+
+PROCESSING:
+1. Validate device exists and is ACTIVE
+2. Data cleaning:
+   - Reject if lat=0 AND lon=0 (invalid GPS)
+   - Reject if lat outside [-90, 90] or lon outside [-180, 180]
+   - Reject if battery_pct outside [0, 100]
+3. Store current location
+4. Process offline_queue (store each with isOfflineData=true)
+5. Trigger async geocoding (don't block response)
+6. Check for notification triggers:
+   - Battery < 20% → LOW_BATTERY notification
+   - Battery < 10% → CRITICAL_BATTERY notification
+7. Update Label.lastSeenAt, Label.battery
+
+RESPONSE:
+- 200: { "status": "ok", "processed": 3 }
+- 401: { "error": "Invalid device credentials" }
+- 400: { "error": "Invalid location data" }
+
+OUTPUT: Complete API route with validation, storage, and async geocoding
+```
+
+###### E5-T2: Reverse Geocoding Service
+
+```
+TASK: Create reverse geocoding service with LocationIQ primary, Google fallback
+
+FILE: /src/lib/geocoding.ts
+
+REQUIREMENTS:
+1. Primary: LocationIQ API (free tier: 5000/day)
+   - Endpoint: https://us1.locationiq.com/v1/reverse
+   - Params: lat, lon, format=json, key=API_KEY
+   
+2. Fallback: Google Geocoding API
+   - Endpoint: https://maps.googleapis.com/maps/api/geocode/json
+   - Params: latlng={lat},{lng}, key=API_KEY
+
+3. Response normalization:
+   interface GeocodedAddress {
+     formatted: string;        // "Dubai International Airport, Dubai, UAE"
+     city: string | null;      // "Dubai"
+     country: string | null;   // "United Arab Emirates"
+     countryCode: string;      // "AE"
+     source: 'LOCATIONIQ' | 'GOOGLE' | 'RAW';
+   }
+
+4. Caching strategy:
+   - Cache results in Redis or database for 30 days
+   - Round coordinates to 3 decimal places for cache key (111m precision)
+   - Cache key: `geocode:${lat.toFixed(3)}:${lon.toFixed(3)}`
+
+5. Rate limiting:
+   - Track daily LocationIQ usage
+   - Switch to Google if approaching limit
+   - Log when fallback is used
+
+6. Error handling:
+   - Network timeout: 5 seconds
+   - Retry once on failure
+   - Return raw coordinates if both fail
+
+ENVIRONMENT VARIABLES:
+- LOCATIONIQ_API_KEY
+- GOOGLE_GEOCODING_API_KEY
+
+OUTPUT: Complete geocoding module with caching and fallback
+```
+
+###### E5-T4: Google Maps Component
+
+```
+TASK: Create reusable Google Maps component for tracking visualization
+
+FILE: /src/components/features/tracking/TrackingMap.tsx
+
+REQUIREMENTS:
+1. Use @react-google-maps/api library
+2. Props interface:
+   interface TrackingMapProps {
+     locations: Location[];           // Array of location points
+     currentLocation?: Location;      // Latest location (highlighted)
+     originAddress?: string;          // Origin marker
+     destinationAddress?: string;     // Destination marker
+     showRoute?: boolean;             // Show polyline path
+     height?: string;                 // Map height (default: 400px)
+     onMarkerClick?: (location: Location) => void;
+   }
+
+3. Features:
+   - Auto-fit bounds to show all markers
+   - Custom markers: origin (green), destination (red), current (blue pulse)
+   - Polyline for route with gradient (older = faded)
+   - Info window on marker click showing timestamp + address
+   - Dark theme map styling (match app theme)
+   
+4. Performance:
+   - Only render markers for last 100 locations on map
+   - Use marker clustering if > 50 points
+   - Lazy load Google Maps script
+
+5. Loading state:
+   - Skeleton while loading
+   - Error boundary if Maps fails to load
+
+GOOGLE MAPS STYLING (Dark theme):
+[
+  { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] }
+]
+
+OUTPUT: Complete map component with all features
+```
+
+---
+
+##### EPIC E6: Payments (Stripe)
+
+###### E6-T3: Stripe Checkout Flow
+
+```
+TASK: Implement Stripe Checkout for label purchases
+
+FLOW:
+1. User clicks "Buy" on pricing page
+2. Create Stripe Checkout Session (server-side)
+3. Redirect to Stripe hosted checkout
+4. Handle success/cancel redirects
+5. Webhook processes payment → creates Order
+
+ENDPOINT: POST /api/checkout/create-session
+
+REQUEST:
+{
+  "quantity": 5,           // Number of labels
+  "priceId": "price_xxx"   // Stripe Price ID
+}
+
+CHECKOUT SESSION CONFIG:
+{
+  mode: 'payment',
+  payment_method_types: ['card'],
+  line_items: [{
+    price: priceId,
+    quantity: quantity,
+  }],
+  success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${baseUrl}/checkout/cancel`,
+  customer_email: user.email,  // Pre-fill if logged in
+  metadata: {
+    userId: user.id,
+    quantity: quantity.toString(),
+  },
+  shipping_address_collection: {
+    allowed_countries: ['US', 'GB', 'DE', 'FR', 'NL', 'BE', 'CA', 'AU'],
+  },
+  shipping_options: [
+    {
+      shipping_rate_data: {
+        type: 'fixed_amount',
+        fixed_amount: { amount: 0, currency: 'usd' },
+        display_name: 'Free international shipping',
+        delivery_estimate: {
+          minimum: { unit: 'business_day', value: 5 },
+          maximum: { unit: 'business_day', value: 10 },
+        },
+      },
+    },
+  ],
+}
+
+STRIPE PRODUCTS TO CREATE:
+1. Single Label - $25 (price_single)
+2. 5-Pack - $110 ($22 each) (price_5pack)
+3. 10-Pack - $200 ($20 each) (price_10pack)
+
+OUTPUT: 
+- Create checkout session API route
+- Success page that shows order confirmation
+- Cancel page with retry option
+```
+
+###### E6-T5: Stripe Webhook Handler
+
+```
+TASK: Handle Stripe webhooks for payment processing
+
+ENDPOINT: POST /api/webhooks/stripe
+
+EVENTS TO HANDLE:
+1. checkout.session.completed
+   - Create Order in database
+   - Assign labels from inventory to order
+   - Send confirmation email via Resend
+   - Update inventory count
+
+2. payment_intent.payment_failed
+   - Log failure
+   - Send failure notification (optional)
+
+3. charge.refunded
+   - Update Order status to REFUNDED
+   - Return labels to inventory (if not shipped)
+
+WEBHOOK VERIFICATION:
+const sig = request.headers.get('stripe-signature');
+const event = stripe.webhooks.constructEvent(
+  body, sig, process.env.STRIPE_WEBHOOK_SECRET
+);
+
+ORDER CREATION LOGIC:
+1. Parse session metadata (userId, quantity)
+2. Get shipping address from session
+3. Create Order record:
+   - stripeSessionId
+   - amount (from session)
+   - quantity
+   - shippingAddress (JSON)
+   - status: PAID
+4. Find available labels (status: INVENTORY)
+5. Assign labels to order (update Label.orderId)
+6. Update labels status: ASSIGNED
+7. Send confirmation email with:
+   - Order number
+   - Quantity
+   - Shipping address
+   - Expected delivery (5-10 business days)
+
+OUTPUT: Complete webhook handler with all event processing
+```
+
+---
+
+#### BUSINESS & LEGAL SETUP CHECKLIST
+
+##### Company Formation
+
+| Task | Priority | Notes |
+|------|----------|-------|
+| **UK Ltd Company** | 🔴 HIGH | Register via Companies House or use Stripe Atlas |
+| **Registered Address** | 🔴 HIGH | Virtual office or accountant address |
+| **Business Bank Account** | 🔴 HIGH | Tide, Revolut Business, or Starling |
+| **Stripe Account** | 🔴 HIGH | Connect to UK company |
+| **Domain Registration** | 🔴 HIGH | hyperlabel.com (check availability) |
+| **Trademark Search** | 🟡 MEDIUM | UK/EU/US trademark for "HyperLabel" |
+| **Director's Insurance** | 🟡 MEDIUM | D&O insurance |
+| **Accountant** | 🟡 MEDIUM | Xero + accountant for VAT, tax |
+
+##### Legal Documents Needed
+
+| Document | Priority | How to Create |
+|----------|----------|---------------|
+| **Privacy Policy** | 🔴 HIGH | Template + customize for location tracking |
+| **Terms of Service** | 🔴 HIGH | Template + customize for SaaS + hardware |
+| **Cookie Policy** | 🔴 HIGH | Required for EU visitors |
+| **Refund Policy** | 🔴 HIGH | Already defined in spec |
+| **GDPR Data Processing** | 🔴 HIGH | Required for EU customers |
+| **Shipping Policy** | 🟡 MEDIUM | Delivery times, responsibilities |
+| **Acceptable Use Policy** | 🟡 MEDIUM | What users can/cannot track |
+
+##### Financial Setup
+
+| Task | Priority | Notes |
+|------|----------|-------|
+| **Xero/QuickBooks** | 🔴 HIGH | Accounting software |
+| **Stripe fees calculation** | 🔴 HIGH | 2.9% + 30¢ per transaction |
+| **VAT Registration** | 🟡 MEDIUM | Required if UK revenue > £85k |
+| **EORI Number** | 🟡 MEDIUM | For customs (importing labels from China) |
+| **Unit Economics Model** | 🔴 HIGH | Part of investor materials |
+
+##### Cost Projections (Monthly)
+
+| Service | Free Tier | Est. MVP Cost | Scale Cost |
+|---------|-----------|---------------|------------|
+| Vercel | 100GB bandwidth | $0 | $20/mo |
+| Cloud SQL | - | $30/mo | $100/mo |
+| Clerk | 10k MAU | $0 | $25/mo |
+| Stripe | - | 2.9% + 30¢/txn | Same |
+| Resend | 3k emails | $0 | $20/mo |
+| LocationIQ | 5k/day | $0 | $50/mo |
+| Google Maps | $200 credit | $0 | $50/mo |
+| Domain | - | $15/yr | Same |
+| **Total** | | **~$30/mo** | **~$265/mo** |
+
+---
+
+#### PRODUCTION READINESS CHECKLIST
+
+##### Before Launch
+
+- [ ] **Security**
+  - [ ] All API routes validate input (Zod)
+  - [ ] Rate limiting on public APIs (device/report)
+  - [ ] CORS configured correctly
+  - [ ] Environment variables not exposed
+  - [ ] SQL injection prevention (Prisma handles)
+  - [ ] XSS prevention (React handles)
+
+- [ ] **Performance**
+  - [ ] Database indexes created
+  - [ ] Images optimized (next/image)
+  - [ ] API responses cached where appropriate
+  - [ ] Lazy loading for heavy components
+
+- [ ] **Monitoring**
+  - [ ] Error tracking (Sentry or Vercel)
+  - [ ] Uptime monitoring (BetterStack)
+  - [ ] Database connection monitoring
+  - [ ] API latency tracking
+
+- [ ] **Data**
+  - [ ] Database backup configured
+  - [ ] Data export functionality (GDPR)
+  - [ ] User deletion workflow (GDPR)
+
+- [ ] **Legal**
+  - [ ] Privacy Policy published
+  - [ ] Terms of Service published
+  - [ ] Cookie consent banner
+  - [ ] GDPR compliance verified
+
+---
+
+### 11.7 Future Hardware Evolution
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
