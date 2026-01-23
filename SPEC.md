@@ -1191,39 +1191,221 @@ orders (
 
 ---
 
-### 11.5 Development Roadmap (3-Month MVP)
+### 11.5 Full Delivery Roadmap (3-Month MVP)
 
 **Timeline:** January - March 2026  
-**Developer:** Denys Chumak (100 hours / £5,000)  
-**Approach:** Vibe coding with AI assistance (Cursor + Claude/GPT)
+**Owner:** Denys Chumak  
+**Total Budget:** £16,450 (329 hours)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           3-MONTH MVP DEVELOPMENT PLAN                          │
+│                         3-MONTH FULL DELIVERY PLAN                               │
+│                      Product + Development + Research                            │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  HOURS BREAKDOWN                                                                │
+│  ════════════════                                                               │
+│  Platform Development      100 hours   (£5,000)                                 │
+│  User Research              80 hours   (included in PM)                         │
+│  Investor Materials         50 hours   (deadline: 06 Feb)                       │
+│  Grant Application          30 hours   (ongoing)                                │
+│  Product Management         69 hours   (spec, coordination, oversight)          │
+│  ─────────────────────────────────────                                          │
+│  TOTAL                     329 hours   (£16,450)                                │
+│                                                                                  │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  MONTH 1 (Jan)              MONTH 2 (Feb)              MONTH 3 (Mar)           │
 │  ════════════════           ════════════════           ════════════════         │
+│  ~120 hours                 ~115 hours                 ~94 hours                │
 │                                                                                  │
+│  TECH ─────────────────────────────────────────────────────────────────────    │
 │  ┌─────────────┐            ┌─────────────┐            ┌─────────────┐          │
 │  │ E1: Setup   │            │ E4: Portal  │            │ E7: Admin   │          │
 │  │ & Infra     │───────────▶│ & Dashboard │───────────▶│ Panel       │          │
+│  │ (10h)       │            │ (14h)       │            │ (10h)       │          │
 │  └─────────────┘            └─────────────┘            └─────────────┘          │
-│                                                                                  │
 │  ┌─────────────┐            ┌─────────────┐            ┌─────────────┐          │
-│  │ E2: Auth &  │            │ E5: Tracking│            │ E8: Notif-  │          │
-│  │ Users       │───────────▶│ Features    │───────────▶│ ications    │          │
+│  │ E2: Auth    │            │ E5: Tracking│            │ E8: Notif   │          │
+│  │ (12h)       │───────────▶│ (14h)       │───────────▶│ (8h)        │          │
 │  └─────────────┘            └─────────────┘            └─────────────┘          │
-│                                                                                  │
 │  ┌─────────────┐            ┌─────────────┐            ┌─────────────┐          │
 │  │ E3: Landing │            │ E6: Payment │            │ E9: Launch  │          │
-│  │ Page        │───────────▶│ & Orders    │───────────▶│ & Deploy    │          │
+│  │ (10h)       │───────────▶│ (10h)       │───────────▶│ (10h)       │          │
 │  └─────────────┘            └─────────────┘            └─────────────┘          │
 │                                                                                  │
-│  ~35 hours                  ~35 hours                  ~30 hours                │
+│  PRODUCT ──────────────────────────────────────────────────────────────────    │
+│  ┌─────────────┐            ┌─────────────┐            ┌─────────────┐          │
+│  │ P1: Research│            │ P3: Research│            │ P5: Research│          │
+│  │ Prep (20h)  │───────────▶│ Conduct(40h)│───────────▶│ Analysis(20)│          │
+│  └─────────────┘            └─────────────┘            └─────────────┘          │
+│  ┌─────────────┐            ┌─────────────┐            ┌─────────────┐          │
+│  │ P2: Investor│            │ P4: Grant   │            │ P6: Product │          │
+│  │ Docs (50h)  │            │ App (15h)   │            │ Mgmt (24h)  │          │
+│  │ ⚠️ Due 06Feb│            │             │            │             │          │
+│  └─────────────┘            └─────────────┘            └─────────────┘          │
+│                             ┌─────────────┐                                     │
+│                             │Grant (15h)  │ ← continued from M1                 │
+│                             └─────────────┘                                     │
 │                                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+#### SUMMARY: Hours by Category
+
+| Category | Hours | Budget | Notes |
+|----------|-------|--------|-------|
+| **Platform Development** | 100 | £5,000 | 9 technical epics |
+| **User Research** | 80 | — | 15-20 interviews |
+| **Investor Materials** | 50 | — | ⚠️ Deadline: 06 Feb 2026 |
+| **Grant Application** | 30 | — | Tatton Consulting |
+| **Product Management** | 69 | — | Spec, coordination |
+| **TOTAL** | **329** | **£16,450** | |
+
+---
+
+## PRODUCT & BUSINESS EPICS
+
+---
+
+##### Epic P1: User Research - Preparation
+**Goal:** Prepare for user interviews (scripts, recruitment, scheduling)  
+**Estimate:** 20 hours  
+**Timeline:** Month 1 (Weeks 1-2)
+
+| ID | Task | Description | Tools | Hours |
+|----|------|-------------|-------|-------|
+| P1-T1 | Define research objectives | What questions need answering? | Google Docs | 2 |
+| P1-T2 | Create interview script | Questions for each persona | Google Docs | 4 |
+| P1-T3 | Define recruitment criteria | Target profiles, company sizes | Google Docs | 2 |
+| P1-T4 | Source interview candidates | LinkedIn, networks, referrals | LinkedIn, email | 6 |
+| P1-T5 | Schedule interviews | Book 15-20 interviews | Calendly | 3 |
+| P1-T6 | Set up recording tools | Consent forms, recording setup | Zoom, Grain | 2 |
+| P1-T7 | Create incentive plan | Gift cards, thank you process | Amazon | 1 |
+
+**Deliverables:**
+- [ ] Interview script (per persona)
+- [ ] 15-20 interviews scheduled
+- [ ] Recording tools ready
+
+---
+
+##### Epic P2: Investor Materials (⚠️ DEADLINE: 06 Feb 2026)
+**Goal:** Create teaser, financial model, and business plan for investors  
+**Estimate:** 50 hours  
+**Timeline:** Month 1 (Weeks 1-4) - HIGH PRIORITY
+
+| ID | Task | Description | Tools | Hours |
+|----|------|-------------|-------|-------|
+| P2-T1 | Market research | TAM/SAM/SOM, industry data | Google, reports | 8 |
+| P2-T2 | Competitive analysis | Deep dive on competitors | Google, websites | 4 |
+| P2-T3 | Teaser (1-pager) | Executive summary for outreach | Google Docs, Canva | 4 |
+| P2-T4 | Financial model - Revenue | Pricing scenarios, sales projections | Google Sheets | 8 |
+| P2-T5 | Financial model - Costs | COGS, opex, hiring plan | Google Sheets | 6 |
+| P2-T6 | Financial model - Unit economics | CAC, LTV, margins | Google Sheets | 4 |
+| P2-T7 | Business plan - Strategy | GTM, growth strategy | Google Docs | 6 |
+| P2-T8 | Business plan - Operations | Team, milestones, risks | Google Docs | 4 |
+| P2-T9 | Investor deck | 10-15 slide pitch deck | Google Slides, Figma | 6 |
+
+**Deliverables:**
+- [ ] 1-page Teaser
+- [ ] 3-year Financial Model (Excel/Sheets)
+- [ ] Business Plan document
+- [ ] Investor Pitch Deck
+
+---
+
+##### Epic P3: User Research - Conducting Interviews
+**Goal:** Conduct 15-20 user interviews across personas  
+**Estimate:** 40 hours  
+**Timeline:** Month 2 (Weeks 5-8)
+
+| ID | Task | Description | Tools | Hours |
+|----|------|-------------|-------|-------|
+| P3-T1 | Consignee interviews (8-10) | Pain points, willingness to pay | Zoom | 15 |
+| P3-T2 | Forwarder interviews (4-6) | Workflow, activation experience | Zoom | 10 |
+| P3-T3 | Shipper interviews (2-3) | Industry validation, partnerships | Zoom | 5 |
+| P3-T4 | Note-taking & highlights | Key quotes, insights per interview | Notion | 8 |
+| P3-T5 | Send thank you & incentives | Gift cards, follow-up emails | Email, Amazon | 2 |
+
+**Deliverables:**
+- [ ] 15-20 completed interviews
+- [ ] Notes & recordings for each
+- [ ] Initial insights documented
+
+---
+
+##### Epic P4: Grant Application
+**Goal:** Apply for UK Innovation Grant via Tatton Consulting  
+**Estimate:** 30 hours  
+**Timeline:** Month 1-2
+
+| ID | Task | Description | Tools | Hours |
+|----|------|-------------|-------|-------|
+| P4-T1 | Initial consultation | Meet with Tatton, assess eligibility | Zoom | 2 |
+| P4-T2 | Gather company docs | UTEC registration, financials | Email, Andrii | 3 |
+| P4-T3 | Technical narrative | Write innovation/R&D description | Google Docs | 8 |
+| P4-T4 | Market opportunity | Document market size, problem | Google Docs | 4 |
+| P4-T5 | Project plan | Milestones, deliverables, timeline | Google Docs | 4 |
+| P4-T6 | Budget justification | Cost breakdown for grant | Google Sheets | 3 |
+| P4-T7 | Review & iteration | Multiple rounds with Tatton | Email, Zoom | 4 |
+| P4-T8 | Final submission | Submit application | Portal | 2 |
+
+**Deliverables:**
+- [ ] Complete grant application submitted
+- [ ] All supporting documents provided
+
+---
+
+##### Epic P5: User Research - Analysis & Report
+**Goal:** Synthesize research findings into actionable insights  
+**Estimate:** 20 hours  
+**Timeline:** Month 3 (Weeks 9-10)
+
+| ID | Task | Description | Tools | Hours |
+|----|------|-------------|-------|-------|
+| P5-T1 | Transcription review | Review all interview recordings | Grain, Otter | 4 |
+| P5-T2 | Affinity mapping | Group insights by theme | FigJam, Miro | 4 |
+| P5-T3 | Persona refinement | Update personas based on research | Google Docs | 3 |
+| P5-T4 | Key findings document | Top 10 insights + evidence | Google Docs | 4 |
+| P5-T5 | Recommendations | Product/feature recommendations | Google Docs | 3 |
+| P5-T6 | Present to Andrii | Share findings with founder | Slides, Zoom | 2 |
+
+**Deliverables:**
+- [ ] Research report with key findings
+- [ ] Updated personas
+- [ ] Feature recommendations
+
+---
+
+##### Epic P6: Product Management & Coordination
+**Goal:** Ongoing product management, spec updates, coordination  
+**Estimate:** 69 hours  
+**Timeline:** Ongoing (Month 1-3)
+
+| ID | Task | Description | Tools | Hours |
+|----|------|-------------|-------|-------|
+| P6-T1 | Weekly syncs with Andrii | Status updates, decisions | Zoom | 12 |
+| P6-T2 | Spec updates & maintenance | Keep SPEC.md current | GitHub | 8 |
+| P6-T3 | Design coordination | Work with Andrii P. on designs | Figma, Slack | 10 |
+| P6-T4 | Hardware integration planning | Coordinate device API with Andrii | Zoom, Docs | 8 |
+| P6-T5 | Ticket management | Create/groom tickets in Linear | Linear | 8 |
+| P6-T6 | Stakeholder updates | Progress reports, demos | Email, Loom | 6 |
+| P6-T7 | Risk management | Identify/mitigate blockers | Docs | 4 |
+| P6-T8 | Launch planning | GTM checklist, launch prep | Docs | 6 |
+| P6-T9 | Documentation | User guides, help content | Notion | 4 |
+| P6-T10 | Buffer / contingency | Unexpected tasks | Various | 3 |
+
+**Deliverables:**
+- [ ] Weekly progress updates
+- [ ] Updated specifications
+- [ ] Launch-ready platform
+
+---
+
+## TECHNICAL EPICS (Development)
 
 ---
 
@@ -1441,7 +1623,23 @@ orders (
 
 ---
 
-#### Summary: Hours by Epic
+---
+
+#### FULL SUMMARY: Hours by Epic
+
+##### Product & Business Epics
+
+| Epic | Description | Hours | Month | Deadline |
+|------|-------------|-------|-------|----------|
+| **P1** | User Research - Preparation | 20 | 1 | |
+| **P2** | Investor Materials | 50 | 1 | ⚠️ **06 Feb 2026** |
+| **P3** | User Research - Conducting | 40 | 2 | |
+| **P4** | Grant Application | 30 | 1-2 | TBD |
+| **P5** | User Research - Analysis | 20 | 3 | |
+| **P6** | Product Management | 69 | 1-3 | Ongoing |
+| | **Subtotal (Product)** | **229** | | |
+
+##### Technical Epics (Development)
 
 | Epic | Description | Hours | Month |
 |------|-------------|-------|-------|
@@ -1454,7 +1652,76 @@ orders (
 | **E7** | Admin Panel | 10 | 3 |
 | **E8** | Notifications | 8 | 3 |
 | **E9** | Testing, QA & Launch | 10 | 3 |
-| | **TOTAL** | **98** | |
+| | **Subtotal (Tech)** | **98** | |
+
+##### Grand Total
+
+| Category | Hours | % |
+|----------|-------|---|
+| Product & Business | 229 | 70% |
+| Technical Development | 100 | 30% |
+| **TOTAL** | **329** | 100% |
+
+---
+
+#### MONTH-BY-MONTH BREAKDOWN
+
+##### Month 1 (January 2026) — ~120 hours
+
+| Epic | Focus | Hours |
+|------|-------|-------|
+| **P2** | Investor Materials ⚠️ PRIORITY | 50 |
+| **P1** | Research Preparation | 20 |
+| **P4** | Grant Application (start) | 15 |
+| **P6** | Product Management | 23 |
+| **E1** | Project Setup | 10 |
+| **E2** | Authentication | 2 |
+| | **Month 1 Total** | **120** |
+
+**Key Deliverables:**
+- ⚠️ Teaser, Financial Model, Business Plan (06 Feb deadline)
+- Interview scripts ready, 15-20 interviews scheduled
+- Grant application started
+- Dev environment set up, database ready
+
+##### Month 2 (February 2026) — ~115 hours
+
+| Epic | Focus | Hours |
+|------|-------|-------|
+| **P3** | Conduct User Interviews | 40 |
+| **P4** | Grant Application (finish) | 15 |
+| **P6** | Product Management | 23 |
+| **E2** | Authentication (finish) | 10 |
+| **E3** | Landing Page | 10 |
+| **E4** | Customer Portal | 14 |
+| **E5** | Tracking Features (start) | 3 |
+| | **Month 2 Total** | **115** |
+
+**Key Deliverables:**
+- 15-20 user interviews completed
+- Grant application submitted
+- Landing page live
+- Customer portal foundation
+
+##### Month 3 (March 2026) — ~94 hours
+
+| Epic | Focus | Hours |
+|------|-------|-------|
+| **P5** | Research Analysis & Report | 20 |
+| **P6** | Product Management | 23 |
+| **E5** | Tracking Features (finish) | 11 |
+| **E6** | Payment & Orders | 10 |
+| **E7** | Admin Panel | 10 |
+| **E8** | Notifications | 8 |
+| **E9** | Testing & Launch | 10 |
+| **E3** | Landing (polish) | 2 |
+| | **Month 3 Total** | **94** |
+
+**Key Deliverables:**
+- User research report & recommendations
+- Full platform launched
+- Admin panel operational
+- Payment processing live
 
 ---
 
