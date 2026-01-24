@@ -3971,6 +3971,1177 @@ Full shipments table with filtering and search.
 
 ---
 
+## SPRINT 5: DETAILED TASK SPECIFICATIONS
+
+**Sprint:** 5 of 6  
+**Dates:** March 15-28, 2026 (10 working days)  
+**Capacity:** 52 hours  
+**Sprint Goal:** Complete research analysis; build admin panel; implement notifications and payment; begin QA.
+
+---
+
+### P5-T3: Research Report Writing
+
+**Type:** Documentation  
+**Epic:** P5 - User Research Analysis  
+**Priority:** 🔴 High  
+**Estimate:** 6 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Write the comprehensive user research report synthesizing all interview findings.
+
+#### User Story
+**As the** product team and stakeholders,  
+**I need** a clear research report with findings and recommendations,  
+**So that** we can make data-driven product decisions.
+
+#### Report Structure
+
+```
+📄 HyperLabel User Research Report
+├── Executive Summary (1 page)
+│   ├── Key findings (3-5 bullets)
+│   ├── Main recommendations
+│   └── Next steps
+│
+├── Methodology (0.5 page)
+│   ├── Interview approach
+│   ├── Participant criteria
+│   └── Analysis method
+│
+├── Participant Overview (1 page)
+│   ├── Demographics table
+│   ├── Company profiles
+│   └── Interview schedule
+│
+├── Findings by Theme (4-6 pages)
+│   ├── Theme 1: [Problem Severity]
+│   │   ├── Key insight
+│   │   ├── Supporting quotes (3-5)
+│   │   └── Implications
+│   ├── Theme 2: [Current Solutions]
+│   ├── Theme 3: [Feature Priorities]
+│   ├── Theme 4: [Pricing Sensitivity]
+│   └── Theme 5: [Workflow Integration]
+│
+├── Persona Validation (1 page)
+│   ├── Consignee persona confirmed/adjusted
+│   ├── Forwarder persona confirmed/adjusted
+│   └── Key differences from assumptions
+│
+├── Recommendations (1 page)
+│   ├── Product recommendations
+│   ├── Pricing recommendations
+│   └── Go-to-market recommendations
+│
+└── Appendix
+    ├── Interview guide
+    ├── Full affinity map
+    └── Raw quote database
+```
+
+#### Acceptance Criteria
+- [ ] **Report drafted** (10-12 pages)
+- [ ] **All themes covered** with supporting quotes
+- [ ] **Clear recommendations** actionable by team
+- [ ] **Reviewed by Andrii**
+- [ ] **PDF exported** for sharing
+
+---
+
+### P5-T4: Persona Refinement
+
+**Type:** Analysis  
+**Epic:** P5 - User Research Analysis  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Update persona definitions based on research findings.
+
+#### Deliverables
+- Updated Consignee persona
+- Updated Forwarder/Shipper persona
+- Differences from original assumptions documented
+
+#### Acceptance Criteria
+- [ ] **Personas updated** in SPEC.md
+- [ ] **Evidence-based** changes documented
+
+---
+
+### P5-T5: Feature Prioritization Matrix
+
+**Type:** Analysis  
+**Epic:** P5 - User Research Analysis  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create prioritized feature list based on user feedback.
+
+#### Framework
+| Feature | User Value | Effort | Priority |
+|---------|-----------|--------|----------|
+| Real-time map | High | Medium | P1 |
+| Shareable links | High | Low | P1 |
+| Email notifications | Medium | Low | P1 |
+| ... | ... | ... | ... |
+
+#### Acceptance Criteria
+- [ ] **All requested features** listed
+- [ ] **Prioritized by value/effort**
+- [ ] **MVP scope validated**
+
+---
+
+### E4-T4: Shipment Detail Page
+
+**Type:** Development  
+**Epic:** E4 - Customer Portal  
+**Priority:** 🔴 High  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build the detailed view for a single shipment with map and timeline.
+
+#### User Story
+**As a** user tracking a shipment,  
+**I want to** see detailed information and location history,  
+**So that** I know exactly where my cargo is and has been.
+
+#### Components
+
+**1. Header Section**
+- Shipment name/ID
+- Current status badge
+- Last update time
+- Quick actions (share, edit, delete)
+
+**2. Map Section**
+- Full-width interactive map
+- Current location marker (large)
+- Route path (polyline)
+- Click markers for details
+
+**3. Info Cards**
+- Origin address
+- Destination address
+- Label ID / Battery %
+- Cargo photo (if uploaded)
+
+**4. Location Timeline**
+- Chronological list of updates
+- Time + location for each
+- Expandable for details
+
+#### Implementation
+
+```tsx
+// /app/dashboard/shipments/[id]/page.tsx
+
+export default async function ShipmentDetailPage({ 
+  params 
+}: { 
+  params: { id: string } 
+}) {
+  const shipment = await getShipment(params.id)
+  const locations = await getShipmentLocations(params.id)
+  
+  return (
+    <div className="space-y-6">
+      <ShipmentHeader shipment={shipment} />
+      <ShipmentMap locations={locations} />
+      <div className="grid md:grid-cols-2 gap-6">
+        <ShipmentInfo shipment={shipment} />
+        <LocationTimeline locations={locations} />
+      </div>
+    </div>
+  )
+}
+```
+
+#### Acceptance Criteria
+- [ ] **Map displays** current + history
+- [ ] **Info cards** showing all details
+- [ ] **Timeline** with location history
+- [ ] **Share button** generates link
+- [ ] **Responsive** on mobile
+
+---
+
+### E4-T5: Create Shipment Flow
+
+**Type:** Development  
+**Epic:** E4 - Customer Portal  
+**Priority:** 🔴 High  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build the multi-step flow to create/link a new shipment.
+
+#### User Story
+**As a** user with a HyperLabel,  
+**I want to** easily create a shipment and link my label,  
+**So that** I can start tracking my cargo.
+
+#### Flow Steps
+
+```
+Step 1: Scan or Enter Label ID
+├── QR scanner (mobile)
+├── Manual entry field
+└── Validate label exists & unassigned
+
+Step 2: Shipment Details
+├── Name (required)
+├── Description (optional)
+├── Origin address (optional)
+├── Destination address (optional)
+
+Step 3: Cargo Photo (Optional)
+├── Camera capture
+├── File upload
+└── Preview & crop
+
+Step 4: Confirm & Activate
+├── Review all details
+├── Confirm button
+└── Success → redirect to shipment
+```
+
+#### Acceptance Criteria
+- [ ] **QR scanner** works on mobile
+- [ ] **Manual entry** validates label
+- [ ] **Address fields** with autocomplete
+- [ ] **Photo upload** working
+- [ ] **Creates shipment** in database
+- [ ] **Activates label** status change
+
+---
+
+### E5-T3: Tracking Map Component
+
+**Type:** Development  
+**Epic:** E5 - Tracking Features  
+**Priority:** 🔴 High  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build the interactive map component using Google Maps.
+
+#### User Story
+**As a** user viewing a shipment,  
+**I want to** see the location on an interactive map,  
+**So that** I can visually understand where my cargo is.
+
+#### Implementation
+
+```tsx
+// /components/tracking/tracking-map.tsx
+'use client'
+
+import { GoogleMap, Marker, Polyline, useLoadScript } from '@react-google-maps/api'
+import { Location } from '@prisma/client'
+
+interface TrackingMapProps {
+  locations: Location[]
+  className?: string
+}
+
+export function TrackingMap({ locations, className }: TrackingMapProps) {
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+  })
+
+  if (!isLoaded) return <MapSkeleton />
+  
+  const currentLocation = locations[0]
+  const path = locations.map(loc => ({ 
+    lat: loc.latitude, 
+    lng: loc.longitude 
+  }))
+
+  return (
+    <GoogleMap
+      mapContainerClassName={className}
+      center={{ lat: currentLocation.latitude, lng: currentLocation.longitude }}
+      zoom={12}
+      options={{
+        disableDefaultUI: true,
+        zoomControl: true,
+        styles: darkMapStyles, // Custom dark theme
+      }}
+    >
+      {/* Current location - large marker */}
+      <Marker
+        position={{ lat: currentLocation.latitude, lng: currentLocation.longitude }}
+        icon={{
+          url: '/markers/current.svg',
+          scaledSize: new google.maps.Size(40, 40),
+        }}
+      />
+      
+      {/* Route path */}
+      <Polyline
+        path={path}
+        options={{
+          strokeColor: '#c4f534',
+          strokeWeight: 3,
+          strokeOpacity: 0.8,
+        }}
+      />
+      
+      {/* History markers - smaller */}
+      {locations.slice(1).map((loc, i) => (
+        <Marker
+          key={loc.id}
+          position={{ lat: loc.latitude, lng: loc.longitude }}
+          icon={{
+            url: '/markers/history.svg',
+            scaledSize: new google.maps.Size(12, 12),
+          }}
+        />
+      ))}
+    </GoogleMap>
+  )
+}
+```
+
+#### Acceptance Criteria
+- [ ] **Map renders** with Google Maps
+- [ ] **Current location** prominent marker
+- [ ] **Route path** visible
+- [ ] **Dark theme** consistent with brand
+- [ ] **Mobile responsive**
+- [ ] **Loading state** handled
+
+---
+
+### E5-T4: Public Tracking Page
+
+**Type:** Development  
+**Epic:** E5 - Tracking Features  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build the public tracking page accessible via shareable link.
+
+#### User Story
+**As a** recipient of a tracking link,  
+**I want to** view shipment location without logging in,  
+**So that** I can track my incoming cargo easily.
+
+#### URL Structure
+`/track/[trackingCode]` → e.g., `/track/HL-ABC123`
+
+#### Page Content
+- Shipment name (if provided)
+- Current status
+- Map with location
+- Last updated time
+- NO editing, NO sensitive info
+
+#### Implementation
+
+```tsx
+// /app/track/[code]/page.tsx
+
+export default async function PublicTrackingPage({ 
+  params 
+}: { 
+  params: { code: string } 
+}) {
+  const shipment = await getShipmentByTrackingCode(params.code)
+  
+  if (!shipment) {
+    return <NotFoundState />
+  }
+  
+  if (!shipment.shareEnabled) {
+    return <SharingDisabledState />
+  }
+  
+  if (shipment.shareExpiresAt && shipment.shareExpiresAt < new Date()) {
+    return <LinkExpiredState />
+  }
+  
+  const locations = await getShipmentLocations(shipment.id)
+  
+  return (
+    <div className="min-h-screen bg-slate-950">
+      <PublicTrackingHeader />
+      <main className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold text-white mb-4">
+          {shipment.name || 'Shipment Tracking'}
+        </h1>
+        <StatusBadge status={shipment.status} />
+        <TrackingMap locations={locations} className="h-[400px] mt-6" />
+        <p className="text-slate-400 mt-4">
+          Last updated: {formatRelativeTime(locations[0]?.receivedAt)}
+        </p>
+      </main>
+    </div>
+  )
+}
+```
+
+#### Acceptance Criteria
+- [ ] **Public access** without auth
+- [ ] **Map displays** current location
+- [ ] **Invalid codes** show 404
+- [ ] **Disabled sharing** handled
+- [ ] **Expired links** handled
+- [ ] **No sensitive data** exposed
+
+---
+
+### E6-T2: Checkout Session API
+
+**Type:** Development  
+**Epic:** E6 - Payment  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create API endpoint to initiate Stripe checkout session.
+
+#### Endpoint
+`POST /api/checkout`
+
+#### Implementation
+
+```typescript
+// /app/api/checkout/route.ts
+
+import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs'
+import Stripe from 'stripe'
+import { prisma } from '@/lib/db'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+const PRODUCTS = {
+  single: { priceId: 'price_xxx', quantity: 1 },
+  '5pack': { priceId: 'price_yyy', quantity: 5 },
+  '10pack': { priceId: 'price_zzz', quantity: 10 },
+}
+
+export async function POST(req: Request) {
+  const { userId } = auth()
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { productId } = await req.json()
+  
+  if (!PRODUCTS[productId]) {
+    return NextResponse.json({ error: 'Invalid product' }, { status: 400 })
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { clerkId: userId }
+  })
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    line_items: [{
+      price: PRODUCTS[productId].priceId,
+      quantity: 1,
+    }],
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/orders?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout?cancelled=true`,
+    customer_email: user?.email,
+    metadata: {
+      userId: user?.id,
+      productId,
+      labelQuantity: PRODUCTS[productId].quantity,
+    },
+  })
+
+  // Create pending order
+  await prisma.order.create({
+    data: {
+      userId: user!.id,
+      stripeSessionId: session.id,
+      status: 'PENDING',
+      amount: session.amount_total!,
+      currency: session.currency!,
+      quantity: PRODUCTS[productId].quantity,
+    }
+  })
+
+  return NextResponse.json({ url: session.url })
+}
+```
+
+#### Acceptance Criteria
+- [ ] **Creates Stripe session**
+- [ ] **Creates pending order** in DB
+- [ ] **Returns checkout URL**
+- [ ] **Handles errors** gracefully
+
+---
+
+### E6-T3: Stripe Webhook Handler
+
+**Type:** Development  
+**Epic:** E6 - Payment  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Handle Stripe webhooks for payment completion.
+
+#### Events to Handle
+- `checkout.session.completed` → Mark order paid, assign labels
+- `payment_intent.payment_failed` → Update order status
+
+#### Acceptance Criteria
+- [ ] **Webhook endpoint** created
+- [ ] **Signature verification** working
+- [ ] **Order status updated** on success
+- [ ] **Labels assigned** to order
+
+---
+
+### E7-T1: Admin Dashboard Layout
+
+**Type:** Development  
+**Epic:** E7 - Admin Panel  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create the admin dashboard layout with navigation.
+
+#### Admin Routes
+```
+/admin
+├── /dashboard    - Overview stats
+├── /labels       - Label inventory
+├── /orders       - Order management
+├── /users        - User list
+└── /shipments    - All shipments
+```
+
+#### Acceptance Criteria
+- [ ] **Admin layout** created
+- [ ] **Navigation** working
+- [ ] **Role check** (ADMIN only)
+- [ ] **Stats overview** page
+
+---
+
+### E7-T2: Label Inventory Management
+
+**Type:** Development  
+**Epic:** E7 - Admin Panel  
+**Priority:** 🟡 Medium  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build admin interface to manage label inventory.
+
+#### Features
+- List all labels with status
+- Filter by status (Inventory, Assigned, Active, etc.)
+- Add new labels (import from device shipment)
+- View label details
+
+#### Acceptance Criteria
+- [ ] **Label list** with filtering
+- [ ] **Add labels** functionality
+- [ ] **Status visible** for each label
+
+---
+
+### E7-T3: Order Management
+
+**Type:** Development  
+**Epic:** E7 - Admin Panel  
+**Priority:** 🟡 Medium  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build admin interface to view and manage orders.
+
+#### Features
+- List all orders
+- Filter by status
+- View order details
+- Update shipping tracking
+- Process refunds (link to Stripe)
+
+#### Acceptance Criteria
+- [ ] **Order list** displayed
+- [ ] **Status filtering** working
+- [ ] **Can update** shipping info
+
+---
+
+### E8-T1: Email Service Setup (Resend)
+
+**Type:** Development  
+**Epic:** E8 - Notifications  
+**Priority:** 🟡 Medium  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Summary
+Set up Resend for transactional emails.
+
+#### Implementation
+
+```typescript
+// /lib/email.ts
+
+import { Resend } from 'resend'
+
+export const resend = new Resend(process.env.RESEND_API_KEY)
+
+export async function sendEmail({
+  to,
+  subject,
+  react,
+}: {
+  to: string
+  subject: string
+  react: React.ReactElement
+}) {
+  return resend.emails.send({
+    from: 'HyperLabel <notifications@hyperlabel.com>',
+    to,
+    subject,
+    react,
+  })
+}
+```
+
+#### Acceptance Criteria
+- [ ] **Resend configured**
+- [ ] **Helper function** created
+- [ ] **Test email** sends successfully
+
+---
+
+### E8-T2: Email Templates (React Email)
+
+**Type:** Development  
+**Epic:** E8 - Notifications  
+**Priority:** 🟡 Medium  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create email templates for all notification types.
+
+#### Templates
+1. **Welcome Email** - After signup
+2. **Order Confirmation** - After purchase
+3. **Shipment Activated** - Label activated
+4. **Low Battery Alert** - Battery < 20%
+5. **Delivered Notification** - Arrived at destination
+
+#### Implementation
+
+```tsx
+// /emails/shipment-activated.tsx
+
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Link,
+  Preview,
+  Text,
+} from '@react-email/components'
+
+interface ShipmentActivatedEmailProps {
+  shipmentName: string
+  trackingUrl: string
+}
+
+export function ShipmentActivatedEmail({
+  shipmentName,
+  trackingUrl,
+}: ShipmentActivatedEmailProps) {
+  return (
+    <Html>
+      <Head />
+      <Preview>Your HyperLabel is now tracking {shipmentName}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>Shipment Activated!</Heading>
+          <Text style={text}>
+            Your label for "{shipmentName}" is now active and transmitting location data.
+          </Text>
+          <Link href={trackingUrl} style={button}>
+            Track Your Shipment
+          </Link>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
+
+const main = { backgroundColor: '#0f172a', padding: '40px 0' }
+const container = { /* styles */ }
+const h1 = { color: '#ffffff', /* more styles */ }
+const text = { color: '#94a3b8' }
+const button = { backgroundColor: '#c4f534', color: '#0f172a', /* more */ }
+```
+
+#### Acceptance Criteria
+- [ ] **5 templates** created
+- [ ] **Consistent branding**
+- [ ] **Preview in browser** working
+- [ ] **Mobile responsive**
+
+---
+
+### E8-T3: Notification Triggers
+
+**Type:** Development  
+**Epic:** E8 - Notifications  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Implement triggers to send notifications at appropriate times.
+
+#### Trigger Points
+1. **User signup** → Welcome email
+2. **Order paid** → Order confirmation
+3. **Label activated** → Shipment activated email
+4. **Battery < 20%** → Low battery alert
+5. **Status = DELIVERED** → Delivered notification
+
+#### Acceptance Criteria
+- [ ] **Triggers implemented** for each event
+- [ ] **Notifications logged** in database
+- [ ] **No duplicate sends**
+
+---
+
+### E9-T1: Unit Tests Setup
+
+**Type:** Development  
+**Epic:** E9 - Testing & QA  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Set up Vitest for unit testing.
+
+#### Setup
+```bash
+pnpm add -D vitest @testing-library/react @testing-library/jest-dom
+```
+
+#### Tests to Write
+- Utility functions (data cleaning, formatting)
+- API route handlers (mocked DB)
+- Key business logic
+
+#### Acceptance Criteria
+- [ ] **Vitest configured**
+- [ ] **10+ unit tests** passing
+- [ ] **Coverage report** available
+
+---
+
+### E9-T2: Integration Tests
+
+**Type:** Development  
+**Epic:** E9 - Testing & QA  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Write integration tests for critical flows.
+
+#### Critical Flows
+1. User signup → DB record created
+2. Create shipment → Label assigned
+3. Device report → Location stored
+4. Checkout → Order created
+
+#### Acceptance Criteria
+- [ ] **4 integration tests** passing
+- [ ] **Database cleanup** between tests
+
+---
+
+### P6-T10: Weekly Syncs (Sprint 5)
+
+**Type:** Meeting  
+**Epic:** P6 - Product Management  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours (2 meetings)  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **2 meetings** completed
+- [ ] **Research report** presented
+- [ ] **Feature demos** delivered
+
+---
+
+## SPRINT 5 SUMMARY
+
+| Task ID | Task Name | Hours | Category |
+|---------|-----------|-------|----------|
+| P5-T3 | Research Report Writing | 6 | Analysis |
+| P5-T4 | Persona Refinement | 2 | Analysis |
+| P5-T5 | Feature Prioritization | 2 | Analysis |
+| E4-T4 | Shipment Detail Page | 3 | Dev |
+| E4-T5 | Create Shipment Flow | 3 | Dev |
+| E5-T3 | Tracking Map Component | 3 | Dev |
+| E5-T4 | Public Tracking Page | 2 | Dev |
+| E6-T2 | Checkout Session API | 2 | Dev |
+| E6-T3 | Stripe Webhook Handler | 2 | Dev |
+| E7-T1 | Admin Dashboard Layout | 2 | Dev |
+| E7-T2 | Label Inventory Management | 3 | Dev |
+| E7-T3 | Order Management | 3 | Dev |
+| E8-T1 | Email Service Setup | 1 | Dev |
+| E8-T2 | Email Templates | 3 | Dev |
+| E8-T3 | Notification Triggers | 2 | Dev |
+| E9-T1 | Unit Tests Setup | 2 | Dev |
+| E9-T2 | Integration Tests | 2 | Dev |
+| P6-T10 | Weekly Syncs (x2) | 4 | PM |
+| P6-T11 | Spec Updates | 2 | PM |
+| | **TOTAL** | **49** | |
+| | **Buffer** | **3** | |
+
+**Sprint 5 Success Criteria:**
+1. ✅ Research report complete and shared
+2. ✅ Personas updated based on research
+3. ✅ Customer portal fully functional (create, view, track)
+4. ✅ Public tracking pages working
+5. ✅ Payment flow complete (checkout → webhook → order)
+6. ✅ Admin panel managing labels and orders
+7. ✅ Email notifications sending
+8. ✅ Core tests passing
+
+---
+
+## SPRINT 6: DETAILED TASK SPECIFICATIONS (FINAL)
+
+**Sprint:** 6 of 6  
+**Dates:** March 29-31, 2026 (3 working days)  
+**Capacity:** 14 hours  
+**Sprint Goal:** Final QA, production deployment, MVP LAUNCH! 🚀
+
+---
+
+### E9-T3: End-to-End Testing
+
+**Type:** Development  
+**Epic:** E9 - Testing & QA  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Manual end-to-end testing of complete user flows.
+
+#### Test Scenarios
+
+**1. New User Journey**
+- [ ] Visit landing page
+- [ ] Sign up (email + Google)
+- [ ] View dashboard (empty state)
+- [ ] Buy labels (test checkout)
+- [ ] Receive confirmation email
+
+**2. Tracking Flow**
+- [ ] Create shipment
+- [ ] Link label (scan/manual)
+- [ ] Upload cargo photo
+- [ ] View on map
+- [ ] Receive location updates
+
+**3. Sharing Flow**
+- [ ] Generate share link
+- [ ] Open link (incognito)
+- [ ] Verify public view works
+- [ ] Disable sharing → verify blocked
+
+**4. Admin Flow**
+- [ ] Login as admin
+- [ ] View all labels
+- [ ] View all orders
+- [ ] Update order status
+
+#### Acceptance Criteria
+- [ ] **All scenarios** passed
+- [ ] **Bugs documented** and fixed
+- [ ] **Edge cases** handled
+
+---
+
+### E9-T4: Production Environment Setup
+
+**Type:** DevOps  
+**Epic:** E9 - Testing & QA  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Configure production environment and verify all services.
+
+#### Checklist
+
+**1. Vercel Production**
+- [ ] Production domain configured
+- [ ] Environment variables set
+- [ ] Custom domain DNS configured
+- [ ] SSL working
+
+**2. Database (Cloud SQL / Neon)**
+- [ ] Production database created
+- [ ] Connection string configured
+- [ ] Migrations applied
+- [ ] Backups enabled
+
+**3. External Services**
+- [ ] Clerk production keys
+- [ ] Stripe live mode keys
+- [ ] Resend verified domain
+- [ ] Google Maps production key
+
+**4. Monitoring**
+- [ ] Error tracking (Sentry) configured
+- [ ] Logs accessible
+- [ ] Uptime monitoring set
+
+#### Acceptance Criteria
+- [ ] **Production deploys** successfully
+- [ ] **All integrations** working
+- [ ] **Monitoring** active
+
+---
+
+### E9-T5: Production Deploy & Smoke Test
+
+**Type:** DevOps  
+**Epic:** E9 - Testing & QA  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Deploy to production and run smoke tests.
+
+#### Deployment Steps
+1. Merge to main branch
+2. Vercel auto-deploys
+3. Verify deployment successful
+4. Run smoke tests on production URL
+
+#### Smoke Tests
+- [ ] Homepage loads
+- [ ] Sign up works
+- [ ] Sign in works
+- [ ] Dashboard loads
+- [ ] Map loads
+- [ ] API responds
+
+#### Acceptance Criteria
+- [ ] **Production live** at hyperlabel.com
+- [ ] **All smoke tests** pass
+- [ ] **No critical errors** in logs
+
+---
+
+### E9-T6: Documentation Finalization
+
+**Type:** Documentation  
+**Epic:** E9 - Testing & QA  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Finalize all documentation for launch.
+
+#### Documentation to Complete
+
+**1. User Documentation**
+- Quick start guide
+- FAQ section
+- How to activate label
+- How to share tracking
+
+**2. Technical Documentation**
+- API documentation (already at label.utec.ua/api/docs)
+- Webhook integration guide
+- Environment setup guide
+
+**3. Internal Documentation**
+- Admin panel guide
+- Common issues / troubleshooting
+- Support playbook
+
+#### Acceptance Criteria
+- [ ] **User docs** on website
+- [ ] **Tech docs** accessible
+- [ ] **Internal docs** in Notion/docs folder
+
+---
+
+### P6-T12: Launch Preparation
+
+**Type:** Product Management  
+**Epic:** P6 - Product Management  
+**Priority:** 🔴 High  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Final preparation for MVP launch.
+
+#### Launch Checklist
+
+**1. Pre-Launch (Day before)**
+- [ ] All features tested
+- [ ] Production deployed
+- [ ] Team briefed
+- [ ] Support channels ready (email)
+
+**2. Launch Day**
+- [ ] Announcement to early users/waitlist
+- [ ] Social media posts (LinkedIn)
+- [ ] Monitor for issues
+- [ ] Be available for support
+
+**3. Post-Launch (First week)**
+- [ ] Monitor usage metrics
+- [ ] Collect feedback
+- [ ] Fix critical bugs immediately
+- [ ] Weekly report to Andrii
+
+#### Acceptance Criteria
+- [ ] **Launch checklist** complete
+- [ ] **Announcement sent**
+- [ ] **Monitoring active**
+
+---
+
+### P6-T13: Final Sync with Andrii
+
+**Type:** Meeting  
+**Epic:** P6 - Product Management  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Final sync before launch to align on go-live.
+
+#### Agenda
+1. Demo full platform
+2. Review research findings (brief)
+3. Confirm launch plan
+4. Discuss post-launch priorities
+5. Celebrate! 🎉
+
+#### Acceptance Criteria
+- [ ] **Demo delivered**
+- [ ] **Launch approved**
+- [ ] **Post-MVP priorities** agreed
+
+---
+
+## SPRINT 6 SUMMARY (FINAL)
+
+| Task ID | Task Name | Hours | Category |
+|---------|-----------|-------|----------|
+| E9-T3 | End-to-End Testing | 2 | QA |
+| E9-T4 | Production Environment Setup | 2 | DevOps |
+| E9-T5 | Production Deploy & Smoke Test | 2 | DevOps |
+| E9-T6 | Documentation Finalization | 2 | Docs |
+| P6-T12 | Launch Preparation | 3 | PM |
+| P6-T13 | Final Sync with Andrii | 2 | PM |
+| | **TOTAL** | **13** | |
+| | **Buffer** | **1** | |
+
+**Sprint 6 Success Criteria:**
+1. ✅ All E2E tests passing
+2. ✅ Production environment configured
+3. ✅ **MVP DEPLOYED TO PRODUCTION**
+4. ✅ Documentation complete
+5. ✅ Launch announcement sent
+6. ✅ **MVP LAUNCHED! 🚀**
+
+---
+
+## PROJECT COMPLETION SUMMARY
+
+### Total Hours Breakdown
+
+| Sprint | Dates | Hours | Focus |
+|--------|-------|-------|-------|
+| 1 | Jan 26-31 | 35 | Market Research |
+| 2 | Feb 1-14 | 70 | Investor Materials (⚠️ Feb 6) |
+| 3 | Feb 15-28 | 70 | User Interviews, Auth, Landing |
+| 4 | Mar 1-14 | 70 | Interviews Done, Grant Submit, Portal |
+| 5 | Mar 15-28 | 52 | Research Report, Admin, Notifications, Testing |
+| 6 | Mar 29-31 | 14 | QA, Deploy, **LAUNCH** |
+| **TOTAL** | | **311** | |
+| **Buffer** | | **18** | Contingency |
+| **GRAND TOTAL** | | **329** | |
+
+### Key Milestones
+
+| Date | Milestone |
+|------|-----------|
+| **Feb 6** | ⚠️ Investor materials delivered |
+| **Feb 28** | Auth + Landing page live |
+| **Mar 14** | Grant submitted + Portal working |
+| **Mar 28** | Full platform tested |
+| **Mar 31** | 🚀 **MVP LAUNCH** |
+
+### Deliverables at Launch
+
+**Product:**
+- ✅ Landing page (live)
+- ✅ Customer portal (auth, shipments, tracking)
+- ✅ Interactive map tracking
+- ✅ Shareable tracking links
+- ✅ Payment processing
+- ✅ Email notifications
+- ✅ Admin panel
+
+**Research & Business:**
+- ✅ User research report (15-20 interviews)
+- ✅ Validated personas
+- ✅ Investor materials (Teaser, Financial Model, Business Plan)
+- ✅ Grant application submitted
+
+---
+
 ##### Weeks 4-5: Feb 15-28 (10 working days) — 70 hours
 
 | Epic | Focus | Hours |
