@@ -1433,7 +1433,7 @@ orders (
 | E1-T2 | Database setup | PostgreSQL + PostGIS on Supabase/Neon | Supabase, Prisma | 2 |
 | E1-T3 | Database schema | Design tables: users, shipments, labels, locations, orders | Prisma, dbdiagram.io | 2 |
 | E1-T4 | CI/CD pipeline | GitHub Actions for lint, test, deploy to Firebase/Cloud Run | GitHub Actions, Firebase | 2 |
-| E1-T5 | Environment config | .env setup, secrets management, staging/prod split | GCP Secret Manager, 1Password | 1 |
+| E1-T5 | Environment config | .env setup, secrets in GitHub Secrets, staging/prod split | GitHub Secrets | 1 |
 | E1-T6 | Project structure | Folder structure, shared components, API routes | Next.js App Router | 2 |
 
 **Deliverables:**
@@ -4915,7 +4915,7 @@ Configure production environment and verify all services.
 
 **1. Firebase + Cloud Run Production**
 - [ ] Production domain configured (Firebase Hosting)
-- [ ] Environment variables set (GCP Secret Manager)
+- [ ] All secrets configured in **GitHub Secrets**
 - [ ] Custom domain DNS configured
 - [ ] SSL working
 
@@ -5342,6 +5342,141 @@ Project: HyperLabel MVP
 - Resend — Best developer experience for transactional email
 - PostHog — Open-source, more features than GA, privacy-friendly
 - GitHub Actions — Better integration with GitHub repos
+
+---
+
+##### CI/CD: GitHub Actions + GitHub Secrets
+
+**Pipeline:** GitHub Actions deploys to Firebase Hosting (frontend) and Cloud Run (API)  
+**Secrets:** All API keys and credentials stored in **GitHub Secrets**
+
+###### GitHub Secrets Configuration
+
+| Secret Name | Description | Used In |
+|-------------|-------------|---------|
+| `FIREBASE_SERVICE_ACCOUNT` | Firebase service account JSON | Deploy to Firebase Hosting |
+| `GCP_PROJECT_ID` | Google Cloud project ID | Cloud Run, Cloud SQL |
+| `GCP_SA_KEY` | GCP service account JSON | Cloud Run deployment |
+| `DATABASE_URL` | Cloud SQL connection string | API runtime |
+| `CLERK_SECRET_KEY` | Clerk backend API key | API runtime |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk frontend key | Build time |
+| `STRIPE_SECRET_KEY` | Stripe backend API key | API runtime |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret | API runtime |
+| `RESEND_API_KEY` | Resend email API key | API runtime |
+| `GOOGLE_MAPS_API_KEY` | Google Maps JavaScript API key | Build time |
+| `LOCATIONIQ_API_KEY` | LocationIQ geocoding API key | API runtime |
+| `POSTHOG_API_KEY` | PostHog analytics key | Build time |
+
+###### GitHub Actions Workflow
+
+**.github/workflows/deploy.yml**
+```yaml
+name: Deploy to Firebase & Cloud Run
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm test
+
+  deploy-frontend:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.POSTHOG_API_KEY }}
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ${{ secrets.GCP_PROJECT_ID }}
+
+  deploy-api:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: |
+          gcloud run deploy hyperlabel-api \
+            --source . \
+            --region us-central1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
+            --set-env-vars "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" \
+            --set-env-vars "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" \
+            --set-env-vars "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+            --set-env-vars "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" \
+            --set-env-vars "LOCATIONIQ_API_KEY=${{ secrets.LOCATIONIQ_API_KEY }}"
+```
+
+###### Setup Steps
+
+1. **Create GitHub Secrets:**
+   - Go to repo → Settings → Secrets and variables → Actions
+   - Add each secret from the table above
+
+2. **Create GCP Service Account:**
+   ```bash
+   # Create service account
+   gcloud iam service-accounts create github-actions \
+     --display-name="GitHub Actions Deploy"
+   
+   # Grant permissions
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+     --member="serviceAccount:github-actions@$PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/run.admin"
+   
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+     --member="serviceAccount:github-actions@$PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/firebase.admin"
+   
+   # Create and download key
+   gcloud iam service-accounts keys create key.json \
+     --iam-account=github-actions@$PROJECT_ID.iam.gserviceaccount.com
+   ```
+
+3. **Add key.json contents to GitHub Secrets** as `GCP_SA_KEY` and `FIREBASE_SERVICE_ACCOUNT`
+
+---
 
 ##### Geocoding API Comparison
 
