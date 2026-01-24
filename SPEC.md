@@ -3271,26 +3271,703 @@ Weekly alignment meetings with Andrii during Sprint 2 (2 meetings).
 
 ---
 
-##### Weeks 2-3: Feb 1-14 (10 working days) — 70 hours
+## SPRINT 3: DETAILED TASK SPECIFICATIONS
 
-| Epic | Focus | Hours | Priority |
-|------|-------|-------|----------|
-| **P2** | Investor Materials — FINISH ⚠️ | 22 | 🔴 DUE FEB 6 |
-| **P1** | Research Preparation | 20 | |
-| **P4** | Grant Application (start) | 10 | |
-| **P6** | Product Management | 10 | |
-| **E1** | Project Setup & Infra | 8 | |
-| | **Weeks 2-3 Total** | **70** | |
+**Sprint:** 3 of 10  
+**Dates:** February 15-28, 2026 (10 working days)  
+**Capacity:** 70 hours  
+**Sprint Goal:** Conduct first batch of user interviews; complete authentication system; launch landing page draft; continue grant application.
 
-**⚠️ DEADLINE: Feb 6 — Investor materials must be complete!**
+---
 
-**Deliverables:**
-- [ ] ⚠️ Teaser (1-pager) DONE
-- [ ] ⚠️ Financial Model DONE
-- [ ] ⚠️ Business Plan DONE
-- [ ] Interview scripts ready
-- [ ] 15-20 interviews scheduled
-- [ ] Dev environment set up
+### P3-T1: Consignee Interviews (8-10 interviews)
+
+**Type:** User Research  
+**Epic:** P3 - User Research Conducting  
+**Priority:** 🔴 High  
+**Estimate:** 15 hours (this sprint: 10h, finish Sprint 4: 5h)  
+**Assignee:** Denys Chumak
+
+#### Summary
+Conduct 8-10 interviews with Consignees (cargo receivers/buyers) to validate problem, solution, and pricing assumptions.
+
+#### User Story
+**As the** product team building HyperLabel,  
+**I need to** understand consignee pain points deeply,  
+**So that** we build a product that solves real problems people will pay for.
+
+#### Interview Goals
+1. **Problem Validation** — Confirm cargo visibility is painful, quantify cost
+2. **Current Solutions** — What they use today, what they pay
+3. **Solution Fit** — Reaction to HyperLabel, must-have features
+4. **Pricing Validation** — Willingness to pay $20-25/label
+
+#### Target Profile
+| Criteria | Requirement |
+|----------|-------------|
+| Role | Procurement, Supply Chain, Operations |
+| Company | 10-500 employees |
+| Industry | Electronics, manufacturing, e-commerce |
+| Volume | 10+ international shipments/month |
+
+#### Interview Process
+1. Schedule via Calendly (45-60 min)
+2. Send reminder 24h before
+3. Record with permission (Zoom)
+4. Take notes during interview
+5. Send thank you + £30 gift card within 24h
+6. Write summary within 48h
+
+#### Acceptance Criteria
+- [ ] **6-8 interviews completed** this sprint
+- [ ] **Recordings saved** and organized
+- [ ] **Notes documented** with key quotes
+- [ ] **Gift cards sent** to all participants
+- [ ] **Initial patterns** identified
+
+---
+
+### P3-T2: Forwarder Interviews (4-6 interviews)
+
+**Type:** User Research  
+**Epic:** P3 - User Research Conducting  
+**Priority:** 🔴 High  
+**Estimate:** 10 hours (this sprint: 6h, finish Sprint 4: 4h)  
+**Assignee:** Denys Chumak
+
+#### Summary
+Conduct 4-6 interviews with Forwarders to understand their workflow and activation needs.
+
+#### Interview Goals
+1. **Workflow Understanding** — How they handle cargo, who attaches labels
+2. **Technology Adoption** — Comfort with QR scanning, mobile vs desktop
+3. **Value Proposition** — Would they recommend/buy for clients
+4. **Activation Flow Feedback** — React to proposed flow
+
+#### Acceptance Criteria
+- [ ] **3-4 interviews completed** this sprint
+- [ ] **Workflow documented**
+- [ ] **Activation flow validated**
+
+---
+
+### P3-T4: Interview Note-Taking & Highlights
+
+**Type:** Documentation  
+**Epic:** P3 - User Research Conducting  
+**Priority:** 🟡 Medium  
+**Estimate:** 6 hours (ongoing)  
+**Assignee:** Denys Chumak
+
+#### Summary
+Document and organize insights from all interviews.
+
+#### Process
+- Write structured summary within 48h of each interview
+- Extract 3-5 key quotes per interview
+- Update tracking spreadsheet
+- Tag themes for later synthesis
+
+#### Acceptance Criteria
+- [ ] **All interviews documented** within 48h
+- [ ] **Quotes extracted** and tagged
+- [ ] **Tracking spreadsheet** current
+
+---
+
+### P4-T3: Technical Narrative for Grant
+
+**Type:** Document Writing  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 5 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Write the technical innovation narrative explaining HyperLabel's R&D components.
+
+#### Sections
+1. **Technical Innovation** (2 pages) — What's new, challenges solved
+2. **R&D Activities** (1 page) — Hardware + software development
+3. **Technical Feasibility** (1 page) — Evidence solution works
+4. **Team Capability** (0.5 page) — Why we can execute
+
+#### Key Innovation Points
+- Ultra-thin 3.5mm form factor with 60-day battery
+- Offline data storage for "black hole" periods
+- Global eSIM (180+ countries)
+- Consumer-grade UX, price disruption
+
+#### Acceptance Criteria
+- [ ] **Technical narrative drafted** (3-4 pages)
+- [ ] **Reviewed by Andrii** for hardware accuracy
+- [ ] **Aligned with Tatton** requirements
+
+---
+
+### P4-T4: Market Opportunity Section for Grant
+
+**Type:** Document Writing  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Write market opportunity using Sprint 1 research data.
+
+#### Acceptance Criteria
+- [ ] **Market section drafted** (1-2 pages)
+- [ ] **TAM/SAM/SOM included**
+- [ ] **Compelling narrative**
+
+---
+
+### E1-T3: Complete Database Schema
+
+**Type:** Development  
+**Epic:** E1 - Project Setup  
+**Priority:** 🟢 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Finalize and implement complete Prisma schema with all models.
+
+#### Models
+- User, Label, Shipment, Location, Order, Notification
+- All enums (UserRole, LabelStatus, ShipmentStatus, etc.)
+- Relations and indexes
+
+#### Acceptance Criteria
+- [ ] **Schema implemented** in schema.prisma
+- [ ] **Migration created** and applied
+- [ ] **Prisma Client** generates without errors
+
+---
+
+### E2-T1: Clerk Integration
+
+**Type:** Development  
+**Epic:** E2 - Authentication  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Integrate Clerk authentication into Next.js application.
+
+#### Implementation
+1. Install @clerk/nextjs
+2. Configure environment variables
+3. Add ClerkProvider to layout
+4. Create middleware for route protection
+
+#### Acceptance Criteria
+- [ ] **Clerk configured** and working
+- [ ] **Protected routes** enforced
+- [ ] **Public routes** accessible
+
+---
+
+### E2-T2: Sign Up Flow
+
+**Type:** Development  
+**Epic:** E2 - Authentication  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create sign-up page with email/password and Google OAuth.
+
+#### Acceptance Criteria
+- [ ] **Sign-up page** styled to brand
+- [ ] **Email/password** working
+- [ ] **Google OAuth** working
+- [ ] **Redirects** to dashboard
+
+---
+
+### E2-T3: Sign In Flow
+
+**Type:** Development  
+**Epic:** E2 - Authentication  
+**Priority:** 🔴 High  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **Sign-in page** working
+- [ ] **Forgot password** flow works
+- [ ] **Consistent styling**
+
+---
+
+### E2-T5: Clerk Webhook for User Sync
+
+**Type:** Development  
+**Epic:** E2 - Authentication  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create webhook to sync Clerk users to database.
+
+#### Events to Handle
+- `user.created` → Create User in DB
+- `user.updated` → Update User in DB
+- `user.deleted` → Soft delete User
+
+#### Acceptance Criteria
+- [ ] **Webhook endpoint** created
+- [ ] **Signature verification** working
+- [ ] **User sync** working for all events
+
+---
+
+### E3-T1: Landing Page Layout
+
+**Type:** Development  
+**Epic:** E3 - Landing Page  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create responsive layout with navbar, footer, sections.
+
+#### Acceptance Criteria
+- [ ] **Navbar** with logo, links, CTA
+- [ ] **Footer** with links, legal
+- [ ] **Mobile responsive**
+- [ ] **Section structure** ready
+
+---
+
+### E3-T2: Hero Section
+
+**Type:** Development  
+**Epic:** E3 - Landing Page  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Content
+- Headline: "Track Any Cargo, Anywhere"
+- Subheadline: Value proposition
+- CTA buttons: Buy Labels, See Demo
+- Product visual
+
+#### Acceptance Criteria
+- [ ] **Compelling headline** above fold
+- [ ] **CTAs** working
+- [ ] **Mobile optimized**
+
+---
+
+### P6-T6: Weekly Syncs (Sprint 3)
+
+**Type:** Meeting  
+**Epic:** P6 - Product Management  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours (2 meetings)  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **2 meetings** completed
+- [ ] **Research progress** shared
+- [ ] **Demo delivered** (auth + landing draft)
+
+---
+
+## SPRINT 3 SUMMARY
+
+| Task ID | Task Name | Hours | Category |
+|---------|-----------|-------|----------|
+| P3-T1 | Consignee Interviews (partial) | 10 | Research |
+| P3-T2 | Forwarder Interviews (partial) | 6 | Research |
+| P3-T4 | Interview Note-Taking | 6 | Research |
+| P4-T3 | Grant Technical Narrative | 5 | Grant |
+| P4-T4 | Grant Market Opportunity | 4 | Grant |
+| E1-T3 | Complete Database Schema | 2 | Dev |
+| E2-T1 | Clerk Integration | 2 | Dev |
+| E2-T2 | Sign Up Flow | 2 | Dev |
+| E2-T3 | Sign In Flow | 1 | Dev |
+| E2-T5 | Clerk Webhook User Sync | 2 | Dev |
+| E3-T1 | Landing Page Layout | 2 | Dev |
+| E3-T2 | Hero Section | 2 | Dev |
+| P6-T6 | Weekly Syncs (x2) | 4 | PM |
+| P6-T7 | Spec Updates | 2 | PM |
+| | **TOTAL** | **50** | |
+| | **Buffer** | **20** | |
+
+**Sprint 3 Success Criteria:**
+1. ✅ 6-8 user interviews completed with notes
+2. ✅ Grant technical narrative drafted
+3. ✅ Authentication working end-to-end
+4. ✅ Users syncing to database
+5. ✅ Landing page layout and hero built
+
+---
+
+## SPRINT 4: DETAILED TASK SPECIFICATIONS
+
+**Sprint:** 4 of 10  
+**Dates:** March 1-14, 2026 (10 working days)  
+**Capacity:** 70 hours  
+**Sprint Goal:** Complete all user interviews; finish landing page; build customer portal; submit grant application; start tracking features.
+
+---
+
+### P3-T1: Consignee Interviews (FINISH)
+
+**Type:** User Research  
+**Epic:** P3 - User Research Conducting  
+**Priority:** 🔴 High  
+**Estimate:** 5 hours (remaining)  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **8-10 total interviews** completed
+- [ ] **All notes documented**
+- [ ] **Ready for synthesis**
+
+---
+
+### P3-T2: Forwarder Interviews (FINISH)
+
+**Type:** User Research  
+**Epic:** P3 - User Research Conducting  
+**Priority:** 🔴 High  
+**Estimate:** 4 hours (remaining)  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **4-6 total interviews** completed
+- [ ] **Workflow documented**
+
+---
+
+### P3-T3: Shipper Interviews (2-3)
+
+**Type:** User Research  
+**Epic:** P3 - User Research Conducting  
+**Priority:** 🟡 Medium  
+**Estimate:** 5 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Conduct 2-3 interviews with logistics companies for industry validation.
+
+#### Acceptance Criteria
+- [ ] **2-3 interviews** completed
+- [ ] **Industry perspective** captured
+
+---
+
+### P5-T1: Research Transcription Review
+
+**Type:** Research Analysis  
+**Epic:** P5 - User Research Analysis  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Review all recordings and ensure notes are complete.
+
+#### Acceptance Criteria
+- [ ] **All recordings reviewed**
+- [ ] **Quotes extracted** (5+ per interview)
+- [ ] **Ready for affinity mapping**
+
+---
+
+### P5-T2: Affinity Mapping
+
+**Type:** Research Analysis  
+**Epic:** P5 - User Research Analysis  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Group insights by theme using affinity mapping.
+
+#### Process
+1. Write insights on digital sticky notes (FigJam)
+2. Group similar insights
+3. Name themes
+4. Prioritize by frequency
+
+#### Acceptance Criteria
+- [ ] **Affinity map created**
+- [ ] **8-12 themes identified**
+- [ ] **Themes prioritized**
+
+---
+
+### P4-T5: Grant Project Plan
+
+**Type:** Document Writing  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **Project plan drafted** (2 pages)
+- [ ] **Milestones defined**
+- [ ] **Aligned with Tatton**
+
+---
+
+### P4-T6: Grant Budget Justification
+
+**Type:** Document Writing  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **Budget spreadsheet** created
+- [ ] **Each line justified**
+- [ ] **Reviewed by Tatton**
+
+---
+
+### P4-T7: Grant Review & Iteration
+
+**Type:** Review  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **2+ review rounds** with Tatton
+- [ ] **Application finalized**
+
+---
+
+### P4-T8: Grant Final Submission
+
+**Type:** Administration  
+**Epic:** P4 - Grant Application  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **Application submitted**
+- [ ] **Confirmation received**
+
+---
+
+### E3-T3: How It Works Section
+
+**Type:** Development  
+**Epic:** E3 - Landing Page  
+**Priority:** 🟡 Medium  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Content
+1. Order Labels → 2. Peel & Stick → 3. Track Anywhere
+
+#### Acceptance Criteria
+- [ ] **3-step visual** created
+- [ ] **Responsive** design
+
+---
+
+### E3-T4: Features Section
+
+**Type:** Development  
+**Epic:** E3 - Landing Page  
+**Priority:** 🟡 Medium  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Features
+60-day battery, 180+ countries, offline storage, real-time tracking, shareable links, notifications
+
+#### Acceptance Criteria
+- [ ] **6 feature cards** displayed
+
+---
+
+### E3-T5: Pricing Section
+
+**Type:** Development  
+**Epic:** E3 - Landing Page  
+**Priority:** 🟡 Medium  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **3 pricing tiers** displayed
+- [ ] **Buy buttons** link to checkout
+
+---
+
+### E4-T1: Dashboard Layout
+
+**Type:** Development  
+**Epic:** E4 - Customer Portal  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create authenticated dashboard with sidebar navigation.
+
+#### Acceptance Criteria
+- [ ] **Sidebar** with nav links
+- [ ] **Header** with user menu
+- [ ] **Responsive** layout
+
+---
+
+### E4-T2: Shipments Overview
+
+**Type:** Development  
+**Epic:** E4 - Customer Portal  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Main dashboard with shipment summary cards.
+
+#### Acceptance Criteria
+- [ ] **Stats cards** showing counts
+- [ ] **Recent shipments** list
+- [ ] **Empty state** handled
+
+---
+
+### E4-T3: Shipments List
+
+**Type:** Development  
+**Epic:** E4 - Customer Portal  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Full shipments table with filtering and search.
+
+#### Acceptance Criteria
+- [ ] **Table** with TanStack Table
+- [ ] **Status filter** working
+- [ ] **Search** working
+- [ ] **Pagination** working
+
+---
+
+### E5-T1: Device Report API
+
+**Type:** Development  
+**Epic:** E5 - Tracking Features  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Endpoint
+`POST /api/v1/device/report`
+
+#### Acceptance Criteria
+- [ ] **Endpoint created**
+- [ ] **Device authentication** working
+- [ ] **Data validation** rejecting bad data
+- [ ] **Locations stored** in database
+
+---
+
+### E5-T2: Location Storage with PostGIS
+
+**Type:** Development  
+**Epic:** E5 - Tracking Features  
+**Priority:** 🔴 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **Locations stored** correctly
+- [ ] **PostGIS** working
+- [ ] **Indexes** for performance
+
+---
+
+### E6-T1: Stripe Setup
+
+**Type:** Development  
+**Epic:** E6 - Payment  
+**Priority:** 🟡 Medium  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **Stripe account** configured
+- [ ] **Products created** (Single, 5-Pack, 10-Pack)
+- [ ] **Test mode** working
+
+---
+
+### P6-T8: Weekly Syncs (Sprint 4)
+
+**Type:** Meeting  
+**Epic:** P6 - Product Management  
+**Priority:** 🟡 Medium  
+**Estimate:** 4 hours (2 meetings)  
+**Assignee:** Denys Chumak
+
+#### Acceptance Criteria
+- [ ] **2 meetings** completed
+- [ ] **Research findings** shared
+- [ ] **Demos delivered**
+
+---
+
+## SPRINT 4 SUMMARY
+
+| Task ID | Task Name | Hours | Category |
+|---------|-----------|-------|----------|
+| P3-T1 | Consignee Interviews (finish) | 5 | Research |
+| P3-T2 | Forwarder Interviews (finish) | 4 | Research |
+| P3-T3 | Shipper Interviews | 5 | Research |
+| P5-T1 | Research Transcription Review | 4 | Analysis |
+| P5-T2 | Affinity Mapping | 4 | Analysis |
+| P4-T5 | Grant Project Plan | 4 | Grant |
+| P4-T6 | Grant Budget Justification | 3 | Grant |
+| P4-T7 | Grant Review & Iteration | 4 | Grant |
+| P4-T8 | Grant Final Submission | 2 | Grant |
+| E3-T3 | How It Works Section | 1 | Dev |
+| E3-T4 | Features Section | 1 | Dev |
+| E3-T5 | Pricing Section | 1 | Dev |
+| E4-T1 | Dashboard Layout | 2 | Dev |
+| E4-T2 | Shipments Overview | 2 | Dev |
+| E4-T3 | Shipments List | 2 | Dev |
+| E5-T1 | Device Report API | 2 | Dev |
+| E5-T2 | Location Storage (PostGIS) | 2 | Dev |
+| E6-T1 | Stripe Setup | 1 | Dev |
+| P6-T8 | Weekly Syncs (x2) | 4 | PM |
+| P6-T9 | Spec Updates | 2 | PM |
+| | **TOTAL** | **55** | |
+| | **Buffer** | **15** | |
+
+**Sprint 4 Success Criteria:**
+1. ✅ All 15-20 user interviews completed
+2. ✅ Affinity mapping done with themes
+3. ✅ Grant application submitted
+4. ✅ Landing page complete and live
+5. ✅ Customer portal dashboard working
+6. ✅ Device API receiving location data
+7. ✅ Stripe configured
 
 ---
 
