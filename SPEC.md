@@ -2297,6 +2297,980 @@ Workspace: HyperLabel
 
 ---
 
+## SPRINT 2: DETAILED TASK SPECIFICATIONS
+
+**Sprint:** 2 of 10  
+**Dates:** February 1-14, 2026 (10 working days)  
+**Capacity:** 70 hours  
+**Sprint Goal:** COMPLETE investor materials by Feb 6 deadline; prepare for user research; start grant application and dev environment setup.
+
+⚠️ **CRITICAL DEADLINE: February 6, 2026** — All investor materials (Teaser, Financial Model, Business Plan) must be complete and delivered to Andrii.
+
+---
+
+### P2-T3: Teaser Document (1-Pager) - FINISH
+
+**Type:** Document Creation  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 2 hours (finishing work from Sprint 1)  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Complete and polish the 1-page teaser document started in Sprint 1. Finalize design, ensure all numbers are accurate, and prepare for distribution.
+
+#### User Story
+**As an** angel investor receiving this teaser via email,  
+**I want to** quickly understand HyperLabel's opportunity in under 60 seconds,  
+**So that** I can decide whether to request a meeting or full deck.
+
+#### Remaining Work
+- [ ] Incorporate final TAM/SAM/SOM numbers from research
+- [ ] Add team photos (get from Andrii)
+- [ ] Finalize "The Ask" section (confirm raise amount with Andrii)
+- [ ] Design polish (spacing, fonts, colors)
+- [ ] Export to PDF
+- [ ] Create PNG version for email embedding
+
+#### Acceptance Criteria
+
+- [ ] **All sections complete** with accurate data
+- [ ] **Design approved** by Andrii
+- [ ] **PDF version** < 2MB, looks good on screen and print
+- [ ] **Zero typos** — proofread by 2 people
+- [ ] **Contact info** correct and working
+
+#### Definition of Done
+- [ ] PDF delivered to Andrii
+- [ ] Stored in shared Google Drive folder
+- [ ] Ready to send to investors
+
+---
+
+### P2-T4: Financial Model - Revenue (FINISH)
+
+**Type:** Financial Modeling  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 4 hours (finishing work from Sprint 1)  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Complete the revenue projections section of the financial model. Finalize assumptions, create all three scenarios, and generate charts.
+
+#### Remaining Work
+- [ ] Finalize Year 1 monthly projections
+- [ ] Complete Years 2-5 projections
+- [ ] Build Conservative / Base / Optimistic scenarios
+- [ ] Create revenue growth chart
+- [ ] Link to cost model (P2-T5)
+
+#### Acceptance Criteria
+
+- [ ] **5-year projection complete** with monthly/quarterly detail
+- [ ] **All assumptions documented** in separate tab
+- [ ] **3 scenarios** with clear differences
+- [ ] **Charts** ready to paste into deck
+- [ ] **Formula-driven** (no hardcoded numbers except assumptions)
+
+---
+
+### P2-T5: Financial Model - Costs & Operations
+
+**Type:** Financial Modeling  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 6 hours  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Build the cost structure section of the financial model, including COGS (Cost of Goods Sold), operating expenses, and hiring plan.
+
+#### User Story
+**As an** investor analyzing the financial model,  
+**I want to** understand the cost structure and path to profitability,  
+**So that** I can assess capital efficiency and runway requirements.
+
+#### Why This Matters
+- Investors need to see realistic cost assumptions
+- Shows we understand our unit economics
+- Determines funding requirements
+- Highlights path to breakeven
+
+#### What We Will Implement
+
+**1. Cost of Goods Sold (COGS)**
+| Cost Component | Per Unit | Notes |
+|----------------|----------|-------|
+| Hardware (label) | $8-10 | From Andrii |
+| eSIM/data | $2-3 | 60 days LTE |
+| Packaging | $0.50 | Box, quick-start guide |
+| Shipping to warehouse | $0.50 | China to fulfillment |
+| **Total COGS** | **$11-14** | |
+| **Gross Margin** | **45-55%** | At $25 price |
+
+**2. Operating Expenses (Monthly)**
+| Category | MVP | Month 6 | Month 12 |
+|----------|-----|---------|----------|
+| Cloud infrastructure | $50 | $200 | $500 |
+| SaaS tools | $100 | $300 | $500 |
+| Marketing | $0 | $500 | $2,000 |
+| Legal/accounting | $200 | $300 | $500 |
+| **Total OpEx** | **$350** | **$1,300** | **$3,500** |
+
+**3. Team Costs**
+| Role | Start | Monthly Cost | When |
+|------|-------|--------------|------|
+| Andrii (Founder) | M1 | £0 (equity) | Ongoing |
+| Denys (PM/Dev) | M1 | £5,500 | M1-M3 (contract) |
+| Designer | M1 | £1,200 | M1-M3 (contract) |
+| Full-time dev | M6 | £5,000 | Post-MVP |
+| Support | M9 | £2,500 | Scale phase |
+
+**4. Profitability Analysis**
+- Breakeven point (units)
+- Months to profitability
+- Cash runway calculation
+
+#### Acceptance Criteria
+
+- [ ] **COGS breakdown** completed with per-unit costs
+  - Validated with Andrii on hardware costs
+  
+- [ ] **OpEx projections** for 3 years
+  - Monthly for Year 1, quarterly for Year 2-3
+  
+- [ ] **Hiring plan** aligned with roadmap
+  - When each role joins
+  - Cost assumptions documented
+  
+- [ ] **Breakeven analysis** completed
+  - Units needed to break even
+  - Timeline projection
+  
+- [ ] **Linked to revenue model**
+  - P&L summary calculates automatically
+
+#### Output Format
+
+```
+📊 Financial Model (continued)
+├── Tab: COGS
+│   ├── Per-unit breakdown
+│   ├── Volume discounts (future)
+│   └── Gross margin by product
+├── Tab: OpEx
+│   ├── Infrastructure costs
+│   ├── SaaS/tools
+│   ├── Marketing
+│   └── G&A
+├── Tab: Team
+│   ├── Hiring timeline
+│   ├── Salary assumptions
+│   └── Total payroll by month
+└── Tab: P&L Summary
+    ├── Revenue (from revenue model)
+    ├── COGS
+    ├── Gross Profit
+    ├── OpEx
+    ├── EBITDA
+    └── Net Income
+```
+
+#### Definition of Done
+- [ ] All costs validated with Andrii
+- [ ] Model balances (no errors)
+- [ ] Summary P&L generated
+
+---
+
+### P2-T6: Financial Model - Unit Economics
+
+**Type:** Financial Modeling  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 4 hours  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Calculate and document key unit economics metrics that investors use to evaluate business viability.
+
+#### User Story
+**As an** investor evaluating HyperLabel,  
+**I want to** see clear unit economics (CAC, LTV, margins),  
+**So that** I can assess whether the business model is sustainable at scale.
+
+#### Key Metrics to Calculate
+
+**1. Customer Acquisition Cost (CAC)**
+```
+CAC = Total Marketing Spend / New Customers Acquired
+
+MVP Phase (organic): ~$0-50/customer
+Growth Phase (paid): ~$100-200/customer
+```
+
+**2. Lifetime Value (LTV)**
+```
+LTV = Average Order Value × Purchase Frequency × Customer Lifespan
+
+Assumptions:
+- AOV: $50 (avg 2 labels)
+- Frequency: 4x/year (B2B reorders)
+- Lifespan: 3 years
+- LTV = $50 × 4 × 3 = $600
+```
+
+**3. LTV:CAC Ratio**
+```
+Target: >3:1 (healthy SaaS benchmark)
+HyperLabel: $600 / $150 = 4:1 ✓
+```
+
+**4. Gross Margin per Label**
+```
+Revenue: $25
+COGS: $12
+Gross Profit: $13
+Gross Margin: 52%
+```
+
+**5. Contribution Margin**
+```
+Revenue: $25
+COGS: $12
+Variable costs: $1 (transaction fees)
+Contribution: $12 (48%)
+```
+
+**6. Payback Period**
+```
+Payback = CAC / (Monthly Revenue per Customer × Gross Margin)
+= $150 / ($17 × 0.52)
+= 17 months
+```
+
+#### Acceptance Criteria
+
+- [ ] **CAC calculated** with assumptions documented
+- [ ] **LTV calculated** with realistic assumptions
+- [ ] **LTV:CAC ratio** > 3:1 demonstrated
+- [ ] **Payback period** calculated
+- [ ] **Gross margin** by product tier
+- [ ] **Single-page summary** for investor deck
+
+#### Definition of Done
+- [ ] All calculations verified
+- [ ] Assumptions are defensible
+- [ ] Visual chart ready for deck
+
+---
+
+### P2-T7: Business Plan - Strategy Section
+
+**Type:** Document Creation  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 6 hours  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Write the strategy section of the business plan covering go-to-market strategy, growth strategy, and competitive positioning.
+
+#### User Story
+**As an** investor reading the business plan,  
+**I want to** understand how HyperLabel will acquire customers and grow,  
+**So that** I can evaluate the execution strategy.
+
+#### What We Will Implement
+
+**1. Go-to-Market Strategy**
+
+*Phase 1: Founder-led Sales (M1-6)*
+- Direct outreach to freight forwarders
+- LinkedIn + email campaigns
+- Andrii's industry network
+- Target: 10 paying customers
+
+*Phase 2: Inbound Marketing (M6-12)*
+- Content marketing (logistics pain points)
+- SEO for "cargo tracking" keywords
+- Partnership with freight platforms
+- Target: 50 paying customers
+
+*Phase 3: Channel Sales (Year 2)*
+- Freight forwarder partnerships
+- 3PL integrations
+- White-label opportunities
+
+**2. Customer Acquisition Channels**
+| Channel | Cost | Expected CAC | Volume |
+|---------|------|--------------|--------|
+| Founder network | Free | $0 | Low |
+| LinkedIn outreach | $50/mo | $100 | Medium |
+| Google Ads | $500/mo | $200 | Medium |
+| Content/SEO | $200/mo | $50 | High (long-term) |
+| Partnerships | Rev share | $150 | High |
+
+**3. Pricing Strategy**
+- Penetration pricing: Start at $20-25 (below competitors)
+- Value-based tiers: Single, 5-pack, 10-pack
+- Future: Enterprise custom pricing
+
+**4. Competitive Positioning**
+- Position: "The affordable, simple cargo tracker"
+- Against Tive/Roambee: 80% cheaper, no contracts
+- Against Reelables: Better global coverage, more features
+- Avoid: Enterprise features (not our market)
+
+**5. Geographic Expansion**
+- Year 1: US (primary), UK (secondary)
+- Year 2: EU (Germany, Netherlands, France)
+- Year 3: APAC (Singapore, Australia)
+
+#### Acceptance Criteria
+
+- [ ] **GTM strategy** clearly articulated
+  - Phase 1, 2, 3 with timelines
+  
+- [ ] **Channel strategy** with CAC estimates
+  - Ranked by efficiency
+  
+- [ ] **Pricing rationale** documented
+  - Why these price points
+  
+- [ ] **Competitive positioning** statement
+  - How we win against each competitor type
+  
+- [ ] **Geographic plan** with reasoning
+
+#### Output Format
+```
+📄 Business Plan - Strategy (Google Docs)
+├── 1. Executive Summary
+├── 2. Go-to-Market Strategy
+│   ├── Phase 1: Founder-led Sales
+│   ├── Phase 2: Inbound Marketing
+│   └── Phase 3: Channel Sales
+├── 3. Customer Acquisition
+├── 4. Pricing Strategy
+├── 5. Competitive Positioning
+└── 6. Geographic Expansion
+```
+
+---
+
+### P2-T8: Business Plan - Operations Section
+
+**Type:** Document Creation  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 4 hours  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Write the operations section covering team, milestones, risks, and use of funds.
+
+#### User Story
+**As an** investor deciding whether to fund HyperLabel,  
+**I want to** understand the team, execution plan, and risks,  
+**So that** I can assess whether the team can execute on the opportunity.
+
+#### What We Will Implement
+
+**1. Team Overview**
+- Current team with backgrounds
+- Key hires planned
+- Advisory board (if any)
+- Gaps and how we'll fill them
+
+**2. Milestones & Timeline**
+| Milestone | Target Date | Status |
+|-----------|-------------|--------|
+| Hardware prototype | Dec 2025 | ✅ Complete |
+| Product spec | Jan 2026 | ✅ Complete |
+| MVP platform | Mar 2026 | 🔄 In Progress |
+| First paid customer | Apr 2026 | ⏳ Planned |
+| 50 labels sold | Jun 2026 | ⏳ Planned |
+| 10 B2B customers | Jun 2026 | ⏳ Planned |
+| Series A ready | Dec 2026 | ⏳ Planned |
+
+**3. Risk Analysis**
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Hardware delays | Medium | High | Buffer in timeline, backup supplier |
+| Low demand | Medium | High | User research, pivot capability |
+| Competition | Medium | Medium | Speed to market, price advantage |
+| Regulatory | Low | Medium | Compliance-first approach |
+| Team | Low | High | Equity incentives, clear roles |
+
+**4. Use of Funds**
+If raising £250k seed:
+| Category | Amount | % |
+|----------|--------|---|
+| Product & Engineering | £100k | 40% |
+| Hardware inventory | £50k | 20% |
+| Marketing & Sales | £40k | 16% |
+| Operations | £30k | 12% |
+| Legal & Admin | £15k | 6% |
+| Buffer | £15k | 6% |
+
+#### Acceptance Criteria
+
+- [ ] **Team section** complete with bios
+- [ ] **Milestone timeline** with dates
+- [ ] **Risk matrix** with mitigations
+- [ ] **Use of funds** breakdown
+- [ ] **Funding ask** confirmed with Andrii
+
+---
+
+### P2-T9: Investor Pitch Deck
+
+**Type:** Presentation  
+**Epic:** P2 - Investor Materials  
+**Priority:** 🔴 Critical  
+**Estimate:** 6 hours  
+**Deadline:** ⚠️ February 6, 2026  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create a 12-15 slide investor pitch deck that tells the HyperLabel story compellingly.
+
+#### User Story
+**As an** investor in a pitch meeting,  
+**I want to** see a clear, compelling presentation of the opportunity,  
+**So that** I can make an informed investment decision.
+
+#### Deck Structure
+
+| Slide | Content | Key Message |
+|-------|---------|-------------|
+| 1 | Title | HyperLabel - Track Any Cargo, Anywhere |
+| 2 | Problem | Cargo goes dark, costs billions |
+| 3 | Solution | $20 disposable tracking label |
+| 4 | Product Demo | How it works (3 steps) |
+| 5 | Market Size | TAM/SAM/SOM |
+| 6 | Business Model | How we make money |
+| 7 | Traction | Milestones achieved |
+| 8 | Competition | Positioning matrix |
+| 9 | Go-to-Market | How we'll acquire customers |
+| 10 | Team | Why we'll win |
+| 11 | Financials | Revenue projection, unit economics |
+| 12 | The Ask | Funding amount, use of funds |
+| 13 | Appendix | Detailed financials (if needed) |
+
+#### Design Requirements
+- Clean, minimal design
+- Brand colors (dark + green accent)
+- One key message per slide
+- Large fonts (readable from distance)
+- High-quality visuals/mockups
+- Consistent layout
+
+#### Acceptance Criteria
+
+- [ ] **12-15 slides** maximum
+- [ ] **All sections covered** from structure above
+- [ ] **Data from financial model** incorporated
+- [ ] **Competitive matrix** from analysis included
+- [ ] **Design polished** and on-brand
+- [ ] **Presenter notes** added
+- [ ] **PDF export** for sharing
+
+#### Definition of Done
+- [ ] Deck reviewed by Andrii
+- [ ] Practice presentation delivered
+- [ ] Ready for investor meetings
+
+---
+
+### P1-T1: Define Research Objectives
+
+**Type:** Research Planning  
+**Epic:** P1 - User Research Preparation  
+**Priority:** 🟡 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Define clear research objectives and questions that need to be answered through user interviews.
+
+#### User Story
+**As the** product manager conducting user research,  
+**I want to** have clear research objectives,  
+**So that** every interview generates actionable insights.
+
+#### Research Questions to Answer
+
+**1. Problem Validation**
+- Do our target users actually experience cargo visibility problems?
+- How often? How painful?
+- What's the cost of this problem?
+
+**2. Current Solutions**
+- What do they use today?
+- What do they like/dislike?
+- How much do they pay?
+
+**3. Value Proposition**
+- Is $20-25 the right price point?
+- What features are must-have vs nice-to-have?
+- Would they buy today?
+
+**4. User Journey**
+- Who actually attaches the label? (Shipper vs Forwarder)
+- How would this fit into their workflow?
+- What would block adoption?
+
+#### Acceptance Criteria
+
+- [ ] **Research objectives document** created
+- [ ] **10-15 key questions** prioritized
+- [ ] **Hypotheses to validate** listed
+- [ ] **Success metrics** for research defined
+
+---
+
+### P1-T2: Create Interview Script
+
+**Type:** Research Planning  
+**Epic:** P1 - User Research Preparation  
+**Priority:** 🟡 High  
+**Estimate:** 4 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create structured interview scripts for each persona (Consignee, Forwarder, Shipper).
+
+#### User Story
+**As an** interviewer conducting user research,  
+**I want to** have a structured script with good questions,  
+**So that** I get consistent, useful data from every interview.
+
+#### Script Structure (45-60 min interview)
+
+**1. Introduction (5 min)**
+- Thank you, explain purpose
+- Recording consent
+- Confidentiality assurance
+
+**2. Background (5 min)**
+- Role and company
+- Years in industry
+- Types of cargo handled
+
+**3. Current State (15 min)**
+- How do you track shipments today?
+- Walk me through a recent shipment
+- What goes wrong? How often?
+- What's the cost when things go wrong?
+
+**4. Pain Points (10 min)**
+- What's your biggest frustration with tracking?
+- Tell me about a time tracking failed you
+- How do your customers react to poor visibility?
+
+**5. Solution Exploration (10 min)**
+- Show HyperLabel concept
+- Initial reaction? Questions?
+- Would this solve your problem?
+- What's missing?
+
+**6. Pricing & Purchase (5 min)**
+- What would you pay for this?
+- Who makes the buying decision?
+- What would prevent you from buying?
+
+**7. Wrap-up (5 min)**
+- Anything else to add?
+- Can we follow up?
+- Referrals to colleagues?
+
+#### Acceptance Criteria
+
+- [ ] **3 scripts created** (Consignee, Forwarder, Shipper)
+- [ ] **Open-ended questions** (not leading)
+- [ ] **Time estimates** per section
+- [ ] **Probe questions** for each area
+- [ ] **Concept test materials** prepared
+
+---
+
+### P1-T3: Define Recruitment Criteria
+
+**Type:** Research Planning  
+**Epic:** P1 - User Research Preparation  
+**Priority:** 🟡 High  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Define the criteria for recruiting interview participants to ensure we talk to the right people.
+
+#### Recruitment Criteria by Persona
+
+**Consignee (Buyer) - 8-10 interviews**
+| Criteria | Requirement |
+|----------|-------------|
+| Role | Procurement, Supply Chain, Operations |
+| Company size | 10-500 employees |
+| Industry | Electronics, manufacturing, e-commerce |
+| Shipping volume | 10+ international shipments/month |
+| Geography | US or UK based |
+| Exclude | Current HyperLabel contacts |
+
+**Forwarder - 4-6 interviews**
+| Criteria | Requirement |
+|----------|-------------|
+| Role | Operations Manager, Account Manager |
+| Company size | Any (freight forwarder) |
+| Services | International freight |
+| Volume | 50+ shipments/month |
+| Geography | US, UK, or EU |
+
+**Shipper/Logistics - 2-3 interviews**
+| Criteria | Requirement |
+|----------|-------------|
+| Role | Operations, Fleet Manager |
+| Company type | 3PL, carrier |
+| Modes | Air, ocean, or trucking |
+| Geography | Any |
+
+#### Acceptance Criteria
+
+- [ ] **Criteria documented** for each persona
+- [ ] **Screening questions** created
+- [ ] **Disqualification criteria** defined
+- [ ] **Target numbers** set per persona
+
+---
+
+### P1-T4: Source Interview Candidates
+
+**Type:** Research Execution  
+**Epic:** P1 - User Research Preparation  
+**Priority:** 🟡 High  
+**Estimate:** 6 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Find and reach out to potential interview candidates through various channels.
+
+#### Sourcing Channels
+
+**1. LinkedIn Outreach**
+- Search for target roles
+- Personalized connection requests
+- Message template with incentive offer
+
+**2. Andrii's Network**
+- Request introductions
+- Existing industry contacts
+- Trade show connections
+
+**3. Online Communities**
+- Reddit (r/logistics, r/supplychain)
+- Industry forums
+- Slack communities
+
+**4. Respondent.io / UserInterviews.com**
+- Paid recruitment service
+- Pre-screened participants
+- ~$100-150/interview
+
+#### Outreach Template
+```
+Subject: Quick chat about cargo tracking? (£30 gift card)
+
+Hi [Name],
+
+I'm researching cargo tracking challenges for a new product. 
+Your experience in [role] at [company] would be incredibly valuable.
+
+Would you have 45 minutes for a video call? 
+As a thank you, I'll send a £30 Amazon gift card.
+
+No sales pitch - just want to learn from your experience.
+
+Available times: [Calendly link]
+
+Thanks,
+Denys
+```
+
+#### Acceptance Criteria
+
+- [ ] **50+ outreach messages** sent
+- [ ] **15-20 interviews scheduled**
+- [ ] **Mix of personas** achieved
+- [ ] **Scheduling complete** by end of Sprint 2
+
+---
+
+### P4-T1: Initial Grant Consultation
+
+**Type:** Meeting  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Have initial consultation with Tatton Consulting to assess eligibility for UK Innovation grants.
+
+#### User Story
+**As the** team applying for grant funding,  
+**I want to** understand our eligibility and requirements,  
+**So that** we can prepare a strong application.
+
+#### Meeting Agenda
+
+1. **Company Overview**
+   - Explain HyperLabel product
+   - UTEC company structure
+   - Current stage and traction
+
+2. **Grant Options**
+   - Innovate UK programs available
+   - DASA opportunities
+   - Other relevant schemes
+
+3. **Eligibility Assessment**
+   - UK company requirements
+   - R&D component
+   - Innovation criteria
+
+4. **Process & Timeline**
+   - Application steps
+   - Required documents
+   - Success rates
+   - Funding timeline
+
+5. **Next Steps**
+   - What we need to prepare
+   - Tatton's role
+   - Costs/fees
+
+#### Acceptance Criteria
+
+- [ ] **Meeting completed** with Tatton
+- [ ] **Eligibility confirmed** or issues identified
+- [ ] **Grant options** understood
+- [ ] **Timeline** established
+- [ ] **Action items** documented
+
+---
+
+### P4-T2: Gather Company Documents
+
+**Type:** Administration  
+**Epic:** P4 - Grant Application  
+**Priority:** 🟡 Medium  
+**Estimate:** 3 hours  
+**Assignee:** Denys Chumak (coordination with Andrii)
+
+#### Summary
+Collect all required company documents for the grant application from Andrii/UTEC.
+
+#### Documents Needed
+
+| Document | Source | Status |
+|----------|--------|--------|
+| UTEC company registration | Andrii | ⏳ |
+| Certificate of incorporation | Andrii | ⏳ |
+| Latest accounts/financials | Andrii | ⏳ |
+| Director details | Andrii | ⏳ |
+| Proof of UK presence | Andrii | ⏳ |
+| Previous grant history | Andrii | ⏳ |
+| IP ownership documentation | Andrii | ⏳ |
+
+#### Acceptance Criteria
+
+- [ ] **All documents collected** from Andrii
+- [ ] **Organized in shared folder**
+- [ ] **Gaps identified** and plan to address
+- [ ] **Ready for Tatton** review
+
+---
+
+### E1-T1: Initialize Next.js Project
+
+**Type:** Development  
+**Epic:** E1 - Project Setup & Infrastructure  
+**Priority:** 🟢 Medium  
+**Estimate:** 1 hour  
+**Assignee:** Denys Chumak
+
+#### Summary
+Create the Next.js 14 project with TypeScript, Tailwind, and proper configuration.
+
+#### User Story
+**As a** developer starting the HyperLabel platform,  
+**I need** a properly configured Next.js project,  
+**So that** I can build features efficiently with modern tooling.
+
+#### Technical Requirements
+
+```bash
+# Create project
+pnpm create next-app@latest hyperlabel-platform \
+  --typescript \
+  --tailwind \
+  --eslint \
+  --app \
+  --src-dir \
+  --import-alias "@/*"
+
+# Additional dependencies
+pnpm add @clerk/nextjs
+pnpm add prisma @prisma/client
+pnpm add stripe @stripe/stripe-js
+pnpm add resend
+pnpm add zod
+pnpm add react-hook-form @hookform/resolvers
+pnpm add @tanstack/react-query
+pnpm add @tanstack/react-table
+pnpm add @react-google-maps/api
+pnpm add lucide-react
+pnpm add class-variance-authority clsx tailwind-merge
+pnpm add -D @types/node
+
+# shadcn/ui
+pnpm dlx shadcn-ui@latest init
+```
+
+#### Acceptance Criteria
+
+- [ ] **Project created** with Next.js 14 App Router
+- [ ] **TypeScript** configured with strict mode
+- [ ] **Tailwind CSS** working
+- [ ] **ESLint** configured
+- [ ] **All dependencies** installed
+- [ ] **Git repository** initialized
+- [ ] **Deployed to Vercel** (preview)
+
+---
+
+### E1-T2: Database Setup (Cloud SQL)
+
+**Type:** Development  
+**Epic:** E1 - Project Setup & Infrastructure  
+**Priority:** 🟢 Medium  
+**Estimate:** 2 hours  
+**Assignee:** Denys Chumak
+
+#### Summary
+Set up PostgreSQL database on Google Cloud SQL with PostGIS extension.
+
+#### Technical Requirements
+
+**1. Create Cloud SQL Instance**
+- Instance name: hyperlabel-db
+- Region: us-central1
+- Machine type: db-f1-micro (dev) / db-custom-1-3840 (prod)
+- PostgreSQL 15
+- Enable PostGIS extension
+
+**2. Configure Prisma**
+```prisma
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [postgis]
+}
+```
+
+**3. Connection String**
+```
+DATABASE_URL="postgresql://user:password@/hyperlabel?host=/cloudsql/project:region:instance"
+```
+
+#### Acceptance Criteria
+
+- [ ] **Cloud SQL instance** created
+- [ ] **PostGIS extension** enabled
+- [ ] **Prisma connected** successfully
+- [ ] **Connection string** in .env
+- [ ] **Basic migration** runs successfully
+
+---
+
+### P6-T4: Weekly Sync with Andrii (Week 2)
+
+**Type:** Meeting  
+**Epic:** P6 - Product Management  
+**Priority:** 🟡 Medium  
+**Estimate:** 2 hours (per week, x2 in Sprint 2)  
+**Assignee:** Denys Chumak
+
+#### Summary
+Weekly alignment meetings with Andrii during Sprint 2 (2 meetings).
+
+#### Week 2 Agenda (Feb 3-7)
+1. Review investor materials progress
+2. Validate financial model assumptions
+3. Approve teaser document
+4. Hardware development update
+5. Grant application status
+
+#### Week 3 Agenda (Feb 10-14)
+1. Final investor materials review
+2. User research preparation status
+3. Dev environment setup demo
+4. Sprint 3 planning
+5. Any blockers
+
+#### Acceptance Criteria
+
+- [ ] **2 meetings completed**
+- [ ] **Notes documented**
+- [ ] **Investor materials approved** by Feb 6
+- [ ] **No blockers** unresolved
+
+---
+
+## SPRINT 2 SUMMARY
+
+| Task ID | Task Name | Hours | Day(s) | Deadline |
+|---------|-----------|-------|--------|----------|
+| P2-T3 | Teaser (1-Pager) FINISH | 2 | Mon | Feb 6 |
+| P2-T4 | Financial Model - Revenue FINISH | 4 | Mon-Tue | Feb 6 |
+| P2-T5 | Financial Model - Costs | 6 | Tue-Wed | Feb 6 |
+| P2-T6 | Financial Model - Unit Economics | 4 | Wed-Thu | Feb 6 |
+| P2-T7 | Business Plan - Strategy | 6 | Thu-Fri W1 | Feb 6 |
+| P2-T8 | Business Plan - Operations | 4 | Mon W2 | Feb 6 |
+| P2-T9 | Investor Pitch Deck | 6 | Mon-Tue W2 | Feb 6 |
+| P1-T1 | Define Research Objectives | 2 | Wed W2 | — |
+| P1-T2 | Create Interview Script | 4 | Wed-Thu W2 | — |
+| P1-T3 | Define Recruitment Criteria | 2 | Thu W2 | — |
+| P1-T4 | Source Interview Candidates | 6 | Thu-Fri W2 | — |
+| P4-T1 | Initial Grant Consultation | 2 | Flexible | — |
+| P4-T2 | Gather Company Documents | 3 | Flexible | — |
+| E1-T1 | Initialize Next.js Project | 1 | Fri W2 | — |
+| E1-T2 | Database Setup (Cloud SQL) | 2 | Fri W2 | — |
+| P6-T4 | Weekly Syncs (x2) | 4 | Wed W1, Wed W2 | — |
+| P6-T5 | Spec Updates | 2 | Ongoing | — |
+| | **TOTAL** | **60** | | |
+| | **Buffer** | **10** | | |
+| | **Sprint Capacity** | **70** | | |
+
+**Sprint 2 Success Criteria:**
+1. ✅ **ALL investor materials delivered by Feb 6** (Teaser, Financial Model, Business Plan, Deck)
+2. ✅ Interview scripts ready for all personas
+3. ✅ 15-20 interview candidates sourced and scheduled
+4. ✅ Grant consultation completed
+5. ✅ Dev environment set up and deployed to Vercel
+
+---
+
 ##### Weeks 2-3: Feb 1-14 (10 working days) — 70 hours
 
 | Epic | Focus | Hours | Priority |
