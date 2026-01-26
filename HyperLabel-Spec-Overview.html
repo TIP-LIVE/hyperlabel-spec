@@ -931,8 +931,8 @@
             <div class="timeline-item">
                 <div class="timeline-marker">3</div>
                 <div class="timeline-content">
-                    <h4>Share Link with Forwarder <span class="status-tag status-mvp" style="margin-left: 10px;">Consignee</span></h4>
-                    <p>Consignee sends a link to the forwarder to complete origin address</p>
+                    <h4>Share Link with Shipper <span class="status-tag status-mvp" style="margin-left: 10px;">Consignee</span></h4>
+                    <p>Consignee sends a link to the shipper/forwarder to complete origin address</p>
                 </div>
             </div>
             <div class="timeline-item">
@@ -973,7 +973,7 @@
         </div>
         
         <div class="value-prop">
-            <strong>Key Insight:</strong> The Consignee (buyer) may not know the forwarder's exact address. They share a link so the forwarder can enter their own origin address. This triggers label shipment to the forwarder.
+            <strong>Key Insight:</strong> The Consignee (buyer) may not know the shipper's exact address. They share a link so the shipper/forwarder can enter their own origin address. This triggers label shipment to the shipper.
         </div>
     </section>
 
@@ -1463,17 +1463,22 @@ X-API-Key: [device_api_key]
             </thead>
             <tbody>
                 <tr><td>Buy label</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
-                <tr><td>Enter final destination</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
-                <tr><td>Share link with forwarder</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
-                <tr><td>Enter shipper address (origin)</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>Share link with shipper/forwarder</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
+                <tr><td>Receive activation reminders (1-3 emails)</td><td>Consignee (buyer)</td><td>✅</td><td></td></tr>
+                <tr><td>Enter origin address</td><td>Shipper</td><td>✅</td><td></td></tr>
                 <tr><td>Receive label</td><td>Shipper</td><td>✅</td><td></td></tr>
-                <tr><td>Scan QR & link to cargo</td><td>Shipper</td><td>✅</td><td></td></tr>
-                <tr><td>Activate & attach label</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>Scan QR at fulfillment warehouse</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>API integration by SKU</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>Activate label (battery)</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>Enter final destination (optional)</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>Add cargo photo(s)</td><td>Shipper</td><td>✅</td><td></td></tr>
+                <tr><td>Attach label to cargo</td><td>Shipper</td><td>✅</td><td></td></tr>
                 <tr><td>Share tracking link</td><td>Consignee / Forwarder</td><td>✅</td><td></td></tr>
-                <tr><td>Track cargo location</td><td>Anyone with link</td><td>✅</td><td></td></tr>
+                <tr><td>Track cargo location</td><td>Consignee</td><td>✅</td><td></td></tr>
                 <tr><td>View location history</td><td>Anyone with link</td><td>✅</td><td></td></tr>
                 <tr><td>Live map view</td><td>Anyone with link</td><td>✅</td><td></td></tr>
                 <tr><td>Receive delivery notification</td><td>Consignee</td><td>✅</td><td></td></tr>
+                <tr><td>Recognise flight number + ship name</td><td>System</td><td></td><td>✅</td></tr>
                 <tr><td>Track transport type</td><td>—</td><td></td><td>✅</td></tr>
                 <tr><td>Track delivery delays</td><td>—</td><td></td><td>✅</td></tr>
                 <tr><td>Track route deviations</td><td>—</td><td></td><td>✅</td></tr>
@@ -1851,19 +1856,19 @@ X-API-Key: [device_api_key]
             <tbody>
                 <tr>
                     <td><strong>Consignee</strong></td>
-                    <td>The recipient/receiver of cargo; the primary buyer of HyperLabel</td>
+                    <td>The recipient/receiver of cargo; primary buyer of labels</td>
                 </tr>
                 <tr>
                     <td><strong>Forwarder</strong></td>
-                    <td>Company that arranges shipment logistics; receives label and attaches to cargo</td>
+                    <td>Company that arranges shipment logistics</td>
                 </tr>
                 <tr>
                     <td><strong>Shipper</strong></td>
-                    <td>Physical carrier (trucking, air, ocean) that transports cargo</td>
+                    <td>Physical carrier (trucking, air, ocean)</td>
                 </tr>
                 <tr>
                     <td><strong>Black hole</strong></td>
-                    <td>Period when cargo has no tracking visibility (flight, ocean, no signal)</td>
+                    <td>Period when cargo has no tracking visibility</td>
                 </tr>
                 <tr>
                     <td><strong>Label</strong></td>
@@ -1871,15 +1876,19 @@ X-API-Key: [device_api_key]
                 </tr>
                 <tr>
                     <td><strong>Soft-SIM / eSIM</strong></td>
-                    <td>Embedded SIM technology for global cellular connectivity</td>
+                    <td>Embedded SIM technology for global connectivity</td>
                 </tr>
                 <tr>
-                    <td><strong>LTE Cat-1</strong></td>
-                    <td>Low-power cellular technology optimized for IoT devices</td>
+                    <td><strong>Onomondo</strong></td>
+                    <td>eSIM connectivity provider for IoT devices</td>
+                </tr>
+                <tr>
+                    <td><strong>Cell Tower Location</strong></td>
+                    <td>Approximate location based on connected cell tower</td>
                 </tr>
                 <tr>
                     <td><strong>PostGIS</strong></td>
-                    <td>PostgreSQL extension for geospatial data queries</td>
+                    <td>PostgreSQL extension for geospatial data</td>
                 </tr>
             </tbody>
         </table>
