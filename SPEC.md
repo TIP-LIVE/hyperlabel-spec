@@ -1,6 +1,6 @@
 # HyperLabel Product Specification
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** January 26, 2026  
 **Status:** MVP Definition  
 **Document Owner:** Denys Chumak (Product Manager)
@@ -228,8 +228,23 @@
 |-----------|---------------|
 | **Primary** | LTE Cat-1 / Cat-1bis |
 | **SIM** | Global Soft-SIM (eSIM) |
+| **SIM Provider** | **Onomondo** ([onomondo.com](https://onomondo.com)) |
 | **Coverage** | 180+ countries |
 | **Protocol** | HTTPS REST API to backend |
+
+#### Onomondo Integration
+
+Onomondo provides the eSIM connectivity layer with the following capabilities:
+
+| Feature | Use Case |
+|---------|----------|
+| **SIM Management** | Activate/deactivate SIMs, monitor fleet |
+| **Webhooks** | Real-time notifications when device comes online/offline |
+| **API Access** | Programmatic SIM status, data usage monitoring |
+| **Cell Tower Location** | Backup location data when GPS unavailable |
+| **Data Usage Tracking** | Monitor per-device data consumption |
+
+**Dashboard:** [app.onomondo.com](https://app.onomondo.com)
 
 ### 4.3 Sensors & Data
 
@@ -239,6 +254,14 @@
 | GPS/GNSS | Latitude, Longitude | Every 120 min (configurable) |
 | LTE Signal | Cell tower triangulation | Continuous |
 | Battery | Percentage, estimated days | Every transmission |
+
+**Location Data Sources:**
+| Source | Accuracy | Priority | When Used |
+|--------|----------|----------|-----------|
+| **GPS/GNSS** | ~15m | Primary | Default when GPS fix available |
+| **Cell Tower** (via Onomondo) | ~150-500m | Backup | When GPS unavailable or indoors |
+
+*Cell tower location is automatically available via Onomondo API and provides approximate position even when GPS signal is weak or unavailable.*
 
 **Post-MVP Sensors:**
 | Sensor | Use Case |
@@ -511,6 +534,7 @@
 | **Payments** | Stripe | Industry standard, global support |
 | **Email** | SendGrid / Resend | Transactional email |
 | **Maps** | Google Maps API | Best global coverage |
+| **Connectivity** | Onomondo | Global eSIM, cell tower location, webhooks |
 | **Cloud** | GCP | Aligns with Google Credits goal |
 | **CI/CD** | GitHub Actions | Integrated with repo |
 
@@ -765,12 +789,15 @@ orders (
 #### What's Included
 
 - Physical label device
-- Free delivery to shipper
+- **Free shipping** to customer (China, UK, EU, US)
 - 60 days of tracking
+- Global eSIM connectivity (Onomondo)
 - Platform access
 - Email notifications
 - Shareable tracking link
 - 90 days data retention
+
+*Note: Label delivery shipping costs are included in the price for MVP markets (CN/UK/EU/US).*
 
 ### 7.3 Payment Processing
 
@@ -6593,6 +6620,8 @@ export const ErrorCodes = {
 | **Black hole** | Period when cargo has no tracking visibility |
 | **Label** | HyperLabel physical tracking device |
 | **Soft-SIM** | eSIM technology for global connectivity |
+| **Onomondo** | eSIM connectivity provider for IoT devices |
+| **Cell Tower Location** | Approximate location based on connected cell tower |
 | **PostGIS** | PostgreSQL extension for geospatial data |
 
 ### 12.3 Reference Links
@@ -6611,6 +6640,7 @@ export const ErrorCodes = {
 **Technology:**
 - [Clerk (Auth)](https://clerk.com)
 - [Stripe (Payments)](https://stripe.com)
+- [Onomondo (eSIM Connectivity)](https://onomondo.com) - Dashboard: [app.onomondo.com](https://app.onomondo.com)
 - [Google Maps Platform](https://developers.google.com/maps)
 - [PostGIS](https://postgis.net)
 
@@ -6634,6 +6664,7 @@ export const ErrorCodes = {
 |---------|------|--------|---------|
 | 1.0 | 2026-01-15 | Denys Chumak | Initial specification |
 | 1.1 | 2026-01-26 | Denys Chumak | Clarified geography (Label Delivery vs Tracking Coverage); Updated open questions with answers |
+| 1.2 | 2026-01-26 | Denys Chumak | Added Onomondo as eSIM provider; Cell tower location as backup; Free shipping included for MVP |
 
 ---
 
