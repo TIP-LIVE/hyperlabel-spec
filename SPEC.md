@@ -1,6 +1,6 @@
 # HyperLabel Product Specification
 
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** January 26, 2026  
 **Status:** MVP Definition  
 **Document Owner:** Denys Chumak (Product Manager)
@@ -538,77 +538,123 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | **Cloud** | GCP | Aligns with Google Credits goal |
 | **CI/CD** | GitHub Actions | Integrated with repo |
 
-### 6.2 System Architecture
+### 6.2 System Architecture (Hybrid Approach)
+
+**Architecture Decision:** Hybrid approach — use existing device API (label.utec.ua) for tracking data, build new backend for business logic.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        SYSTEM ARCHITECTURE                       │
+│                   HYBRID SYSTEM ARCHITECTURE                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│    CLIENTS                           EXTERNAL                    │
-│    ───────                           ────────                    │
-│    ┌─────────┐  ┌─────────┐         ┌─────────┐                │
-│    │ Landing │  │Customer │         │ Label   │                │
-│    │  Page   │  │ Portal  │         │ Device  │                │
-│    └────┬────┘  └────┬────┘         └────┬────┘                │
-│         │            │                    │                      │
-│         │            │                    │ HTTPS                │
-│         └─────┬──────┘                    │                      │
-│               │                           │                      │
-│    ┌──────────┴──────────────────────────┴────────┐            │
-│    │                 API GATEWAY                   │            │
-│    │              (Cloud Run / GCP)                │            │
-│    └──────────────────────┬───────────────────────┘            │
-│                           │                                      │
-│    ┌──────────────────────┴───────────────────────┐            │
-│    │                BACKEND API                    │            │
-│    │              (FastAPI/NestJS)                 │            │
-│    ├──────────────────────────────────────────────┤            │
-│    │  Auth    │  Tracking  │  Orders  │  Admin   │            │
-│    │ (Clerk)  │  Service   │ Service  │ Service  │            │
-│    └──────────────────────┬───────────────────────┘            │
-│                           │                                      │
-│    ┌──────────┬───────────┼───────────┬──────────┐            │
-│    │          │           │           │          │              │
-│    ▼          ▼           ▼           ▼          ▼              │
-│ ┌──────┐ ┌──────┐   ┌──────────┐ ┌──────┐ ┌──────────┐        │
-│ │Postgr│ │ GCS  │   │  Stripe  │ │Email │ │  Google  │        │
-│ │ SQL  │ │(files│   │(payments)│ │(Send │ │   Maps   │        │
-│ │      │ │      │   │          │ │Grid) │ │          │        │
-│ └──────┘ └──────┘   └──────────┘ └──────┘ └──────────┘        │
+│    CLIENTS                                                       │
+│    ───────                                                       │
+│    ┌─────────┐  ┌─────────┐  ┌─────────┐                       │
+│    │ Landing │  │Customer │  │  Admin  │                       │
+│    │  Page   │  │ Portal  │  │  Panel  │                       │
+│    └────┬────┘  └────┬────┘  └────┬────┘                       │
+│         │            │            │                              │
+│         └────────────┼────────────┘                              │
+│                      │                                           │
+│                      ▼                                           │
+│    ┌─────────────────────────────────────────────┐              │
+│    │         HYPERLABEL BACKEND (NEW)            │              │
+│    │              (Next.js API / GCP)            │              │
+│    ├─────────────────────────────────────────────┤              │
+│    │  Auth     │  Shipments │  Orders  │  Notif │              │
+│    │ (Clerk)   │  Service   │ (Stripe) │ (Email)│              │
+│    └───────────────────┬─────────────────────────┘              │
+│                        │                                         │
+│         ┌──────────────┼──────────────┐                         │
+│         │              │              │                          │
+│         ▼              ▼              ▼                          │
+│    ┌─────────┐   ┌──────────┐   ┌──────────────────┐           │
+│    │PostgreSQL│   │  Stripe  │   │  DEVICE DATA API │           │
+│    │(Business │   │(Payments)│   │  label.utec.ua   │           │
+│    │  Data)   │   │          │   │    (Existing)    │           │
+│    └─────────┘   └──────────┘   └────────┬─────────┘           │
+│                                          │                       │
+│                                          ▼                       │
+│                                   ┌──────────────┐              │
+│                                   │ Label Device │              │
+│                                   │   (Hardware) │              │
+│                                   └──────────────┘              │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.3 Device Communication
+#### What Each System Handles
+
+| System | Responsibility | Database |
+|--------|----------------|----------|
+| **label.utec.ua** (Existing) | Device tracking, GPS data, location history, Onomondo integration | Existing DB |
+| **HyperLabel Backend** (New) | Users, shipments, orders, payments, sharing, notifications | New PostgreSQL |
+
+#### Integration Points
+
+| Data Flow | Method |
+|-----------|--------|
+| Device → label.utec.ua | Direct (existing, managed by Andrii) |
+| HyperLabel → label.utec.ua | API calls to fetch device/tracking data |
+| User auth | Clerk (new platform) |
+| Device linking | API call to label.utec.ua `/devices/link` |
+
+### 6.3 Existing Device API (label.utec.ua)
+
+**Documentation:** [label.utec.ua/api/docs](https://label.utec.ua/api/docs)
+
+The existing backend provides device tracking functionality:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/google` | POST | Google OAuth authentication |
+| `/auth/me` | GET | Get current user info |
+| `/devices/` | GET | List devices for user |
+| `/devices/{id}` | GET | Get latest device data |
+| `/devices/{id}/history` | GET | Get location history |
+| `/devices/{id}/history/all` | GET | Get all data for route visualization |
+| `/devices/{id}/statistics` | GET | Get device usage stats |
+| `/devices/link` | POST | Link device to user (by ICCID or IMEI) |
+
+**DeviceDataOut Schema** (key fields):
+```
+- iccid, imei: Device identifiers
+- latitude, longitude, timestamp: GPS location
+- onomondo_latitude, onomondo_longitude: Cell tower location (backup)
+- battery: Battery percentage
+- mcc, mnc, lac, rssi: Cell tower info
+- airport_name, airport_distance_km: Airport detection
+- accelerometer, magnitude: Movement data
+```
+
+### 6.4 Device Communication
+
+Device data flows through the existing system:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    DEVICE → BACKEND FLOW                         │
+│                    DEVICE DATA FLOW                              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ┌─────────┐         HTTPS POST              ┌─────────────┐   │
-│  │  Label  │ ──────────────────────────────► │  Ingestion  │   │
-│  │ Device  │    /api/v1/device/report        │  Endpoint   │   │
-│  └─────────┘                                 └──────┬──────┘   │
-│                                                     │           │
-│  Payload:                                           ▼           │
-│  {                                            ┌──────────┐     │
-│    "device_id": "HL-001234",                  │ Validate │     │
-│    "timestamp": "2026-01-15T10:30:00Z",       │ & Store  │     │
-│    "latitude": 25.2048,                       └────┬─────┘     │
-│    "longitude": 55.2708,                          │            │
-│    "battery_pct": 72,                             ▼            │
-│    "signal_strength": -85,                  ┌──────────┐      │
-│    "offline_queue": [...]                   │ Database │      │
-│  }                                          └──────────┘      │
+│  ┌─────────┐                          ┌─────────────────┐       │
+│  │  Label  │ ─────────────────────────► │  label.utec.ua  │       │
+│  │ Device  │    (Existing flow)        │  Device API     │       │
+│  └─────────┘                           └────────┬────────┘       │
+│                                                 │                │
+│                                                 │ API calls      │
+│                                                 ▼                │
+│                                        ┌─────────────────┐       │
+│                                        │   HyperLabel    │       │
+│                                        │    Backend      │       │
+│                                        │  (fetches data) │       │
+│                                        └─────────────────┘       │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Responsibility Split:**
-- **Hardware Team (Andrii):** Firmware that sends HTTPS requests
-- **Platform (Denys):** Backend API that receives and processes data
+- **Hardware Team (Andrii):** Device firmware, label.utec.ua backend, device ingestion
+- **Platform (Denys):** HyperLabel frontend + backend, integrates with existing API
 
 ### 6.4 Data Quality & Cleaning
 
@@ -6665,6 +6711,7 @@ export const ErrorCodes = {
 | 1.0 | 2026-01-15 | Denys Chumak | Initial specification |
 | 1.1 | 2026-01-26 | Denys Chumak | Clarified geography (Label Delivery vs Tracking Coverage); Updated open questions with answers |
 | 1.2 | 2026-01-26 | Denys Chumak | Added Onomondo as eSIM provider; Cell tower location as backup; Free shipping included for MVP |
+| 1.3 | 2026-01-26 | Denys Chumak | **Hybrid architecture decision**: Use existing label.utec.ua for device data, new backend for business logic; Documented existing API endpoints and DeviceDataOut schema |
 
 ---
 

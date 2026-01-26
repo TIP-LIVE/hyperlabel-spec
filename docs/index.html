@@ -656,7 +656,7 @@
     <h1>HyperLabel</h1>
     <p class="subtitle">Smart Tracking Label - Product Specification</p>
     <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
-        <span class="badge">MVP Definition v1.1</span>
+        <span class="badge">MVP Definition v1.3</span>
         <a href="https://github.com/D4umak/hyperlabel-spec/blob/main/SPEC.md" target="_blank" class="badge" style="background: var(--primary); color: var(--bg-dark); text-decoration: none; font-weight: 700;">
             📄 SPEC.md (Tech Requirements)
         </a>
@@ -990,26 +990,31 @@
     <section>
         <h2>Platform Overview</h2>
         
+        <div class="value-prop">
+            <strong>Architecture Decision:</strong> Hybrid approach — use existing Device API (<code>label.utec.ua</code>) for tracking data, build new backend for business logic (users, shipments, payments, notifications).
+        </div>
+        
+        <h3>System Components</h3>
         <div class="cards-grid">
-            <div class="card">
-                <h4>Landing Page</h4>
-                <p>Marketing site with product info, pricing, and purchase CTA</p>
-                <span class="status-tag status-mvp">MVP</span>
+            <div class="card" style="border-color: var(--primary);">
+                <h4>Device Data API (Existing)</h4>
+                <p><code>label.utec.ua</code><br>• Device tracking & GPS data<br>• Location history<br>• Onomondo integration<br>• Managed by Andrii</p>
+                <span class="status-tag status-mvp">EXISTS</span>
+            </div>
+            <div class="card highlight">
+                <h4>HyperLabel Backend (New)</h4>
+                <p>• User management (Clerk)<br>• Shipments & orders<br>• Stripe payments<br>• Email notifications<br>• Public sharing links</p>
+                <span class="status-tag status-mvp">TO BUILD</span>
             </div>
             <div class="card">
                 <h4>Customer Portal</h4>
                 <p>Dashboard for tracking shipments, managing labels, account settings</p>
-                <span class="status-tag status-mvp">MVP</span>
+                <span class="status-tag status-mvp">TO BUILD</span>
             </div>
             <div class="card">
-                <h4>Admin Panel</h4>
-                <p>Internal tool for user management, label inventory, support</p>
-                <span class="status-tag status-mvp">MVP</span>
-            </div>
-            <div class="card">
-                <h4>Public Tracking</h4>
-                <p>Shareable tracking links for customers to share with others</p>
-                <span class="status-tag status-mvp">MVP</span>
+                <h4>Landing Page</h4>
+                <p>Marketing site with product info, pricing, and purchase CTA</p>
+                <span class="status-tag status-mvp">TO BUILD</span>
             </div>
         </div>
         
@@ -2005,7 +2010,7 @@ X-API-Key: [device_api_key]
 
 <!-- Footer -->
 <footer class="footer">
-    <p>HyperLabel Product Specification v1.1 • Confidential • January 2026</p>
+    <p>HyperLabel Product Specification v1.3 • Confidential • January 2026</p>
 </footer>
 
 </body>
