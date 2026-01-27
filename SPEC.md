@@ -1,6 +1,6 @@
 # HyperLabel Product Specification
 
-**Version:** 1.5  
+**Version:** 1.6  
 **Last Updated:** January 26, 2026  
 **Status:** MVP Definition  
 **Document Owner:** Denys Chumak (Product Manager)
@@ -129,21 +129,25 @@
 │                                                    USER JOURNEY                                                                    │
 ├───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬──────────┤
 │   BUY     │  SHARE    │  ENTER    │FULFILLMENT│  RECEIVE  │  SCAN QR  │ ACTIVATE  │  TRANSIT  │    GET    │  ARCHIVE  │          │
-│  LABEL    │   LINK    │  ORIGIN   │(LINK SKU) │  LABEL    │ (optional)│ & ATTACH  │  & TRACK  │YOUR CARGO │           │          │
+│  LABEL(S) │   LINK    │  ORIGIN   │(LINK SKU) │  LABEL(S) │ (CREATE   │ & ATTACH  │  & TRACK  │YOUR CARGO │           │          │
+│           │           │           │ to ORDER) │           │ SHIPMENT) │           │           │           │           │          │
 ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼──────────┤
 │★Consignee │★Consignee │  Shipper  │ HyperLabel│  Shipper  │  Shipper  │  Shipper  │★Consignee │★Consignee │  Service  │          │
-│  (buyer)  │  (buyer)  │ (origin)  │ Warehouse │ (origin)  │(warehouse)│ (origin)  │ (tracker) │ (receiver)│   Team    │          │
+│  (buyer)  │  (buyer)  │ (origin)  │ Warehouse │ (origin)  │(MANDATORY)│ (origin)  │ (tracker) │ (receiver)│   Team    │          │
 └───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴──────────┘
 ```
 
 **Key Flow:** 
-1. Consignee buys label
+1. Consignee buys label(s) — can buy 1 or 10+ at once
 2. Consignee shares link with Shipper/Forwarder (email reminders until activated)
 3. Shipper enters origin address
-4. **HyperLabel fulfillment scans label → Label ID linked to Order → Ships to shipper**
-5. Shipper receives label, scans QR to confirm (optional, API integration for enterprise)
-6. Shipper activates label, enters destination, adds cargo photo(s), attaches to cargo
-7. Consignee tracks cargo → gets their cargo
+4. **HyperLabel fulfillment scans labels → Label IDs linked to Order → Ships to shipper**
+5. Shipper receives label(s)
+6. **Shipper scans QR → Creates Shipment → Links label to specific cargo** (mandatory)
+7. Shipper activates label (pull tab), enters destination, adds cargo photo(s), attaches to cargo
+8. Consignee tracks cargo → gets their cargo
+
+**Important:** For bulk orders (e.g., 10 labels), shipper must scan each label separately to create 10 shipments.
 
 ### 3.2 Primary Persona: Consignee (Buyer/Receiver)
 
@@ -317,9 +321,10 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 │  5. RECEIVE LABEL (Shipper)                                     │
 │           │    Label arrives at shipper with quick-start guide   │
 │           ▼                                                      │
-│  6. SCAN QR - SHIPPER WAREHOUSE (Optional)                      │
-│           │    • Shipper scans to confirm receipt                │
-│           │    • API integration by SKU (for enterprise)         │
+│  6. SCAN QR & CREATE SHIPMENT (Shipper) — MANDATORY             │
+│           │    • Shipper scans QR → creates Shipment record      │
+│           │    • Links THIS label to THIS cargo                  │
+│           │    • Required for bulk orders (10 labels = 10 scans) │
 │           ▼                                                      │
 │  7. ACTIVATE & ATTACH (Shipper)                                 │
 │           │    • Activate label (battery)                        │
@@ -980,12 +985,26 @@ orders (
 | Customer delivery | DHL/FedEx international |
 | **Shipping SLA** | 3-5 business days (UK/EU), 5-7 days (US) |
 
-**Label Linking Process:**
+**Label Linking Process (Two-Stage):**
+
+| Stage | What's Linked | When | Example (10 labels) |
+|-------|---------------|------|---------------------|
+| **Fulfillment** | Label ID → Order | Before shipping to shipper | 10 labels → 1 Order |
+| **QR Scan** | Label ID → Shipment | When shipper scans | 1 label → 1 Shipment (×10) |
+
+**Fulfillment (Stage 1):**
 1. Shipper enters origin address → Order marked "Ready to Ship"
-2. Fulfillment picks label from inventory
-3. **Fulfillment scans label barcode → System links Label ID to Order**
-4. Consignee notified: "Your label is on its way to shipper"
-5. Label ships to shipper via DHL/FedEx
+2. Fulfillment picks label(s) from inventory
+3. Fulfillment scans each label barcode → Label IDs linked to Order
+4. Consignee notified: "Your label(s) are on the way to shipper"
+5. Labels ship to shipper via DHL/FedEx
+
+**QR Scan at Shipper (Stage 2):**
+1. Shipper receives labels
+2. **Shipper scans QR on label → Creates new Shipment record**
+3. Shipment linked to Consignee (via Order)
+4. Shipper enters destination for THIS shipment
+5. Repeat for each label (bulk order = multiple scans)
 
 ### 9.3 Pilot Customers
 
@@ -1271,19 +1290,20 @@ orders (
 │                                                    CARGO DELIVERY STAGES                                                                 │
 ├───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬───────────┬─────────────────────────────┤
 │   BUY     │  SHARE    │  ENTER    │FULFILLMENT│  RECEIVE  │  SCAN QR  │ ACTIVATE  │  TRANSIT  │    GET    │          ARCHIVE            │
-│  LABEL    │   LINK    │  ORIGIN   │(LINK SKU) │  LABEL    │ (optional)│ & ATTACH  │  & TRACK  │YOUR CARGO │                             │
+│  LABEL(S) │   LINK    │  ORIGIN   │(LINK TO   │  LABEL(S) │ (CREATE   │ & ATTACH  │  & TRACK  │YOUR CARGO │                             │
+│           │           │           │  ORDER)   │           │ SHIPMENT) │           │           │           │                             │
 ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼─────────────────────────────┤
 │ Consignee │ Consignee │ Shipper   │ HyperLabel│ Shipper   │ Shipper   │ Shipper   │ Consignee │ Cargo     │ Data retained               │
-│ buys      │ sends     │ enters    │ warehouse │ gets      │ scans to  │ activates │ tracks    │ arrives   │ 30 days (free)              │
-│ label     │ link to   │ their     │ scans     │ label     │ confirm   │ battery,  │ cargo     │ at        │ 90+ days (premium)          │
-│           │ shipper/  │ address   │ label →   │           │ receipt   │ enters    │ real-time │ consignee │                             │
-│           │ forwarder │           │ links to  │           │ (API/SKU) │ dest,     │           │           │                             │
-│           │           │           │ order     │           │           │ adds photo│           │           │                             │
+│ buys 1-N  │ sends     │ enters    │ warehouse │ gets      │ scans QR  │ activates │ tracks    │ arrives   │ 30 days (free)              │
+│ labels    │ link to   │ their     │ scans →   │ labels    │ → creates │ battery,  │ cargo     │ at        │ 90+ days (premium)          │
+│           │ shipper/  │ address   │ links to  │           │ SHIPMENT  │ enters    │ real-time │ consignee │                             │
+│           │ forwarder │           │ ORDER     │           │ (per label│ dest,     │           │           │                             │
+│           │           │           │           │           │ MANDATORY)│ adds photo│           │           │                             │
 ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼─────────────────────────────┤
 │ Platform: │ Platform: │ Platform: │ Platform: │           │ Platform: │ Platform: │ Platform: │ Platform: │ Platform:                   │
-│ Checkout  │ Share     │ Address   │ Label-    │           │ QR scan   │ Activation│ Live track│ Delivery  │ Export                      │
-│ Order     │ flow      │ capture   │ Order     │           │ API integ │ Photo     │ Map view  │ detection │ Delete                      │
-│           │ Reminders │           │ linking   │           │ (optional)│ Dest entry│ Alerts    │ Complete  │                             │
+│ Checkout  │ Share     │ Address   │ Label→    │           │ Label→    │ Activation│ Live track│ Delivery  │ Export                      │
+│ Order     │ flow      │ capture   │ Order     │           │ Shipment  │ Photo     │ Map view  │ detection │ Delete                      │
+│           │ Reminders │           │ linking   │           │ linking   │ Dest entry│ Alerts    │ Complete  │                             │
 └───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴─────────────────────────────┘
 ```
 
@@ -6683,7 +6703,7 @@ export const ErrorCodes = {
 | Destination entry - mandatory? | Denys | ✅ Resolved | **Optional for Consignee, Mandatory for Shipper** at activation |
 | "Stuck" detection algorithm | Denys | ✅ Resolved | **No location change >500m for 24+ hours** (configurable). Excludes expected stops. |
 | API integration by SKU with fulfillment? | Andrii T. | 🔶 TBD | Do we need API integration with fulfillment warehouse by SKU? |
-| QR scan at shipper warehouse? | Denys | ✅ Resolved | **Optional** — for shipper to confirm receipt. API integration for enterprise. |
+| QR scan at shipper warehouse? | Denys | ✅ Resolved | **MANDATORY** — creates Shipment record, links label to specific cargo. Required for bulk orders (10 labels = 10 scans). |
 | Label-to-Order linking? | Denys | ✅ Resolved | **At HyperLabel fulfillment** — warehouse scans label barcode when shipping to shipper, links Label ID to Order. |
 
 ### 12.5 Document History
@@ -6695,7 +6715,8 @@ export const ErrorCodes = {
 | 1.2 | 2026-01-26 | Denys Chumak | Added Onomondo as eSIM provider; Cell tower location as backup; Free shipping included for MVP |
 | 1.3 | 2026-01-26 | Denys Chumak | **Hybrid architecture decision**: Use existing label.utec.ua for device data, new backend for business logic; Documented existing API endpoints and DeviceDataOut schema |
 | 1.4 | 2026-01-26 | Denys Chumak | **Clarified flows**: Delivery detection (geofence 100m/30min), Stuck detection (500m/24h), Destination mandatory for shipper, QR scan mandatory, Shipping SLA added, Currency USD+GBP, Data retention fixed (30 days free) |
-| 1.5 | 2026-01-26 | Denys Chumak | **Label-to-Order linking**: Clarified that Label ID is linked to Order at HyperLabel fulfillment (when shipping to shipper). Updated user journey to 9 steps. QR scan at shipper warehouse is now optional. |
+| 1.5 | 2026-01-26 | Denys Chumak | **Label-to-Order linking**: Clarified that Label ID is linked to Order at HyperLabel fulfillment (when shipping to shipper). Updated user journey to 9 steps. |
+| 1.6 | 2026-01-26 | Denys Chumak | **Two-stage linking**: Fulfillment links Label→Order, QR Scan creates Shipment (Label→Shipment). QR scan now MANDATORY to support bulk orders (10 labels = 10 shipments). |
 
 ---
 
