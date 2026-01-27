@@ -1,0 +1,4062 @@
+# AI-In-Charge Onboarding Quiz - Complete Flow Plan
+
+## Vision Statement
+> "Walking in the park while AI does the work"
+
+The quiz transforms the technical onboarding into a journey through a peaceful forest path. Each step forward is a step toward freedom - freedom from cold outreach, from managing connections, from the manual work of building relationships. By the end, users don't just have a campaign running - they've hired a digital team that reads hundreds of books and works 24/7.
+
+---
+
+## Brand Identity - Visual Language
+
+### Core Metaphor: Forest Walk
+- **Video Background**: You walking through a forest/park, peaceful and unhurried
+- **Floating Notifications**: Subtle overlays showing AI activity:
+  - "Searching for CTOs in London..."
+  - "Analyzing Sarah's profile..."
+  - "Crafting personalized message..."
+  - "Commented on John's post..."
+- **Color Palette**: 
+  - Deep forest greens (#1B4332, #2D6A4F)
+  - Warm sunlight golds (#F9C74F, #F8961E)
+  - Soft morning mist whites (#F8F9FA)
+  - Trust blues (#3D5A80)
+
+### Design Principles
+1. **Calming, not corporate** - This isn't another SaaS tool, it's your digital team
+2. **Progress = Forward movement** - Each step is visualized as walking deeper into the forest
+3. **AI as companions, not robots** - Humanize the digital employees
+4. **Minimal friction** - Every screen has one clear action
+
+---
+
+## Technical Requirements Analysis
+
+### Blockers to Run Campaign (from code analysis)
+
+| Requirement | Source | Status Check |
+|-------------|--------|--------------|
+| Clerk Auth | `auth.middleware.ts` | User authenticated |
+| Organization | `OrganizationService` | `organization.id` exists |
+| Organization Website | `Organization.website` | Optional but used for persona generation |
+| LinkedIn Account | `LinkedAccountService` | At least 1 account with `status: ACTIVE`, `connectionStatus: CONNECTED` |
+| Booking URL | `CreateCampaignInput.bookingLink` | Required field |
+| Persona | `PersonaService` | At least 1 persona with `totalContacts > 0` |
+| Linked Account for Campaign | `CreateCampaignInput.linkedAccountIds` | `ArrayNotEmpty()` validation |
+| Contact Enrichment | `OutreachService.create()` | Contact needs `enrichedInfo` and `lastPostsSyncTimestamp` |
+| ICP Fit Score | `MIN_PERSONA_ICP_FIT_SCORE = 0.4` | Contacts must score >= 0.4 |
+| Sales Navigator (for Navigator personas) | `linkedAccount.salesNavigator?.contractId` | Required for `searchViaNavigator: 'mandatory'` |
+| Stripe Subscription | `StripeService` | Active subscription or trial for campaign activation |
+
+### Campaign Required Fields
+```typescript
+// From CreateCampaignInput
+{
+  name: string;                    // Required
+  linkedAccountIds: string[];      // Required, non-empty
+  goal: string;                    // Required
+  startTime: string;               // Required (HH:MM)
+  endTime: string;                 // Required
+  activeDays: DayOfWeek[];         // Required
+  socialProofs: string[];          // Required (can be empty)
+  offerings: string[];             // Required (can be empty)
+  caseStudies: string[];           // Required (can be empty)
+  startDate: Date;                 // Required
+  bookingLink: string;             // Required URL
+  timezone: string;                // Required
+  daysBetweenFollowUps: number;    // Required
+  followUpsNumber: number;         // Required
+  autoReplenishContacts: boolean;  // Required
+  // Optional
+  personaIds?: string[];
+  contactIds?: string[];
+  description?: string;
+  campaignPreferences?: string;
+}
+```
+
+---
+
+## Quiz Flow - Complete Sequence
+
+### Phase 0: Welcome Screen (Pre-Auth)
+
+**Visual**: Full-screen video of walking through a forest at golden hour. Notifications float by showing AI actions.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                     [VIDEO: Walking through forest]                         │
+│                                                                             │
+│     ┌──────────────────────────────────────────────┐                        │
+│     │ 🔍 Searching for startup founders in Berlin  │ ←── floating overlay  │
+│     └──────────────────────────────────────────────┘                        │
+│                                                                             │
+│                                                                             │
+│                    ┌────────────────────────────────┐                       │
+│                    │  💬 Analyzing Marcus's posts   │                       │
+│                    └────────────────────────────────┘                       │
+│                                                                             │
+│                         ╭─────────────────────────╮                         │
+│                         │   AI In Charge          │                         │
+│                         │                         │                         │
+│                         │ While you walk in the   │                         │
+│                         │ park, your AI team      │                         │
+│                         │ finds the right people  │                         │
+│                         ╰─────────────────────────╯                         │
+│                                                                             │
+│                         [ Start Your Journey ]                              │
+│                                                                             │
+│                      "3 minutes to your first campaign"                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Action**: Click starts the journey
+**Trust Element**: "Join 2,400+ founders who freed their time"
+
+---
+
+### Phase 1: Authentication (Clerk)
+
+**Visual**: Forest path with morning mist clearing
+
+**Step 1.1: Sign Up / Sign In**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Misty forest path clearing]                                   │
+│                                                                             │
+│     Progress: ●○○○○○○○                                                      │
+│                                                                             │
+│         ┌─────────────────────────────────────────────────┐                 │
+│         │                                                 │                 │
+│         │     Let's get to know each other               │                 │
+│         │                                                 │                 │
+│         │     [ Sign in with Google ]                     │                 │
+│         │     [ Sign in with LinkedIn ]                   │                 │
+│         │                                                 │                 │
+│         │     ─────────── or ───────────                  │                 │
+│         │                                                 │                 │
+│         │     Email: [________________]                   │                 │
+│         │                                                 │                 │
+│         │              [ Continue ]                       │                 │
+│         │                                                 │                 │
+│         └─────────────────────────────────────────────────┘                 │
+│                                                                             │
+│     💡 "Your AI team will have knowledge of 300+ books                      │
+│         on sales, psychology, and relationship building"                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Call**: Clerk authentication
+**On Success**: Create organization automatically (personal workspace)
+
+---
+
+### Phase 2: Purpose & Personalization
+
+**Visual**: Sunlight breaking through trees, path becoming clearer
+
+#### Goal Framework Overview
+
+The goal selection is the foundation that shapes the entire quiz experience. We use a two-step approach:
+1. **Primary Goal** - High-level intent
+2. **Sub-Goal** - Specific use case
+
+---
+
+**Step 2.1: Primary Goal Selection**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Sunlight through trees]                                       │
+│                                                                             │
+│     Progress: ●●○○○○○○                                                      │
+│                                                                             │
+│         What brings you here today?                                         │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  💰 GROW MY BUSINESS                                          │       │
+│     │                                                               │       │
+│     │  Find customers, partners, influencers, or investors          │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  👥 BUILD MY TEAM                                             │       │
+│     │                                                               │       │
+│     │  Hire employees, find freelancers, or recruit co-founders     │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  📈 FIND OPPORTUNITIES                                        │       │
+│     │                                                               │       │
+│     │  Discover investments, partnerships, or content placements    │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🌐 EXPAND MY NETWORK                                         │       │
+│     │                                                               │       │
+│     │  Meet peers, attend events, build relationships               │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     💡 "Each AI assistant specializes in different outreach strategies"     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+**Step 2.2: Sub-Goal Selection (Dynamic based on Primary)**
+
+#### If "GROW MY BUSINESS":
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     What type of business growth?                                           │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🎯 Find new customers (B2B Sales)                            │       │
+│     │     Book demos and discovery calls with potential buyers      │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🤝 Find strategic partners                                   │       │
+│     │     Explore integrations, co-marketing, distribution          │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  📣 Find influencers & creators                               │       │
+│     │     Partner with content creators to promote your brand       │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  💵 Find investors & advisors                                 │       │
+│     │     Raise funding or get strategic mentorship                 │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🏢 Find agencies & vendors                                   │       │
+│     │     Outsource work, find service providers                    │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### If "BUILD MY TEAM":
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     What type of team building?                                             │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  👔 Hire full-time employees                                  │       │
+│     │     Find candidates for open roles at your company            │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  💼 Find freelancers & contractors                            │       │
+│     │     Project-based or part-time talent                         │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🚀 Find co-founders & early team                             │       │
+│     │     Build your founding team from scratch                     │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🎓 Find advisors & board members                             │       │
+│     │     Strategic guidance and governance                         │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### If "FIND OPPORTUNITIES":
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     What opportunities are you looking for?                                 │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  💰 Find startups to invest in (Investor)                     │       │
+│     │     Discover promising founders and companies for your        │       │
+│     │     portfolio - angels, VCs, family offices                   │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ✍️ Find guest post opportunities (SEO/Content)               │       │
+│     │     Connect with blog owners, editors, and content managers   │       │
+│     │     for backlinks and content placements                      │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🎤 Find speaking opportunities                               │       │
+│     │     Get invited to podcasts, conferences, webinars            │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  📰 Find press & media coverage                               │       │
+│     │     Connect with journalists, bloggers, publications          │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### If "EXPAND MY NETWORK":
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     What kind of connections?                                               │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  👥 Industry peers                                            │       │
+│     │     People in similar roles or companies                      │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  🎪 Event connections                                         │       │
+│     │     Meet people at conferences (WebSummit, SXSW, etc.)        │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  📍 Local professionals                                       │       │
+│     │     People in your city or region                             │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ⭐ Thought leaders                                           │       │
+│     │     Industry experts and influencers to learn from            │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+**Step 2.3: Goal-Specific Details (Conditional)**
+
+Each sub-goal may have additional questions to personalize the experience:
+
+#### For "Find influencers & creators":
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     Tell us about your influencer campaign:                                 │
+│                                                                             │
+│     What niche? [ Fitness & Wellness______________ ]                        │
+│                                                                             │
+│     Or select: [ Tech ] [ Fashion ] [ Beauty ] [ Gaming ]                   │
+│                [ Food ] [ Travel ] [ Finance ] [ Lifestyle ]                │
+│                                                                             │
+│     What's your product/brand? [ Protein supplements_____ ]                 │
+│                                                                             │
+│     Follower range:                                                         │
+│     [ ] Nano (1k-10k) - High engagement, affordable                         │
+│     [✓] Micro (10k-50k) - Authentic, good reach                             │
+│     [✓] Mid-tier (50k-200k) - Professional, established                     │
+│     [ ] Macro (200k-1M) - Wide reach, premium pricing                       │
+│                                                                             │
+│     What you're offering:                                                   │
+│     [✓] Free products for review                                            │
+│     [✓] Affiliate commission                                                │
+│     [ ] Paid collaboration                                                  │
+│     [ ] Long-term ambassador                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### For "Find startups to invest in" (Investor):
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     Tell us about your investment focus:                                    │
+│                                                                             │
+│     Investment type:                                                        │
+│     ○ Angel investor (personal capital)                                     │
+│     ○ VC / Fund (institutional)                                             │
+│     ○ Family office                                                         │
+│     ○ Corporate venture / Strategic                                         │
+│                                                                             │
+│     Stage preference:                                                       │
+│     [✓] Pre-seed / Idea stage                                               │
+│     [✓] Seed                                                                │
+│     [ ] Series A                                                            │
+│     [ ] Series B+                                                           │
+│                                                                             │
+│     Sectors of interest: [ AI, SaaS, Fintech________________ ]              │
+│                                                                             │
+│     Geography: [ US, Europe________________________ ]                       │
+│                                                                             │
+│     Typical check size: [ $25k - $100k_____________ ]                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### For "Find guest post opportunities" (SEO/GEO):
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     Tell us about your link building goals:                                 │
+│                                                                             │
+│     Your website/blog: [ https://myblog.com__________ ]                     │
+│                                                                             │
+│     Target niches for guest posts:                                          │
+│     [ Marketing, SaaS, Technology__________________ ]                       │
+│                                                                             │
+│     What are you offering?                                                  │
+│     [✓] High-quality written content                                        │
+│     [✓] Reciprocal guest post exchange                                      │
+│     [ ] Paid placement                                                      │
+│     [ ] Expert quotes / commentary                                          │
+│                                                                             │
+│     Target site metrics:                                                    │
+│     Domain Rating (DR): [ 30+ ▼ ]                                           │
+│     Monthly traffic: [ 10k+ ▼ ]                                             │
+│                                                                             │
+│     Content topics you can write about:                                     │
+│     [ SEO, content marketing, growth hacking_______ ]                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Goal Configuration System
+
+```typescript
+// Goal type definitions
+type PrimaryGoal = 'grow_business' | 'build_team' | 'find_opportunities' | 'expand_network';
+
+type SubGoal = 
+  // Grow Business
+  | 'b2b_sales'
+  | 'strategic_partners'
+  | 'influencer_marketing'
+  | 'investors_advisors'
+  | 'agencies_vendors'
+  // Build Team
+  | 'hire_fulltime'
+  | 'find_freelancers'
+  | 'find_cofounders'
+  | 'find_board_advisors'
+  // Find Opportunities
+  | 'invest_in_startups'
+  | 'guest_posts_seo'
+  | 'speaking_opportunities'
+  | 'press_media'
+  // Expand Network
+  | 'industry_peers'
+  | 'event_connections'
+  | 'local_professionals'
+  | 'thought_leaders';
+
+interface GoalConfig {
+  id: SubGoal;
+  primary: PrimaryGoal;
+  label: string;
+  description: string;
+  
+  // Quiz customization
+  companyStepTitle: string;           // "Tell us about your company" vs "Tell us about your fund"
+  personaStepTitle: string;           // "Who's your ideal customer?" vs "What startups are you looking for?"
+  bookingStepTitle: string;           // "Schedule demos" vs "Schedule intro calls"
+  
+  // Persona defaults
+  suggestedPersonaTemplates: string[];
+  defaultJobTitles: string[];
+  defaultSeniority: string[];
+  defaultIndustries: string[];
+  
+  // Campaign defaults
+  defaultCampaignName: string;
+  suggestedGoalText: string;
+  followUpCadence: number;            // Days between follow-ups
+  maxFollowUps: number;
+  
+  // Messaging
+  messagingTone: 'sales' | 'recruiting' | 'partnership' | 'investor' | 'networking' | 'outreach';
+  aiKnowledgeFocus: string[];
+  
+  // Success metrics
+  primaryMetric: string;
+  targetConversionAction: string;
+  
+  // Booking
+  bookingCTA: string;
+  bookingDescription: string;
+  
+  // Extra fields (goal-specific)
+  extraFields?: Record<string, any>;
+}
+```
+
+---
+
+### Complete Goal Configurations
+
+#### 1. B2B Sales (Find Customers)
+```typescript
+const B2B_SALES: GoalConfig = {
+  id: 'b2b_sales',
+  primary: 'grow_business',
+  label: 'Find new customers',
+  description: 'Book demos and discovery calls with potential buyers',
+  
+  companyStepTitle: 'Tell us about your product',
+  personaStepTitle: 'Who is your ideal customer?',
+  bookingStepTitle: 'Where should prospects book demos?',
+  
+  suggestedPersonaTemplates: ['decision_makers', 'technical_buyers', 'champions'],
+  defaultJobTitles: ['CTO', 'VP Engineering', 'Head of Product'],
+  defaultSeniority: ['director', 'vp', 'c_level'],
+  defaultIndustries: ['Technology', 'SaaS', 'Software'],
+  
+  defaultCampaignName: 'Q1 2026 - Outbound Sales',
+  suggestedGoalText: 'Book discovery calls to discuss how we solve [pain point]',
+  followUpCadence: 3,
+  maxFollowUps: 5,
+  
+  messagingTone: 'sales',
+  aiKnowledgeFocus: ['Challenger Sale', 'SPIN Selling', 'Never Split the Difference'],
+  
+  primaryMetric: 'Demos Booked',
+  targetConversionAction: 'demo_scheduled',
+  
+  bookingCTA: 'Schedule a quick demo',
+  bookingDescription: '15-min product walkthrough',
+};
+```
+
+#### 2. Influencer Marketing
+```typescript
+const INFLUENCER_MARKETING: GoalConfig = {
+  id: 'influencer_marketing',
+  primary: 'grow_business',
+  label: 'Find influencers & creators',
+  description: 'Partner with content creators to promote your brand',
+  
+  companyStepTitle: 'Tell us about your brand',
+  personaStepTitle: 'Who are your ideal creator partners?',
+  bookingStepTitle: 'Where should creators book partnership calls?',
+  
+  suggestedPersonaTemplates: ['micro_influencers', 'mid_tier_creators', 'niche_experts'],
+  defaultJobTitles: ['Content Creator', 'Influencer', 'Coach', 'Blogger'],
+  defaultSeniority: ['any'],
+  defaultIndustries: ['Entertainment', 'Media', 'Health & Wellness'],
+  
+  defaultCampaignName: '[Niche] Influencer Partnerships',
+  suggestedGoalText: 'Find creators to authentically promote our brand',
+  followUpCadence: 5,
+  maxFollowUps: 3,
+  
+  messagingTone: 'partnership',
+  aiKnowledgeFocus: ['Influencer marketing', 'Creator partnerships', 'Brand collaborations'],
+  
+  primaryMetric: 'Partnership Calls Booked',
+  targetConversionAction: 'partnership_call',
+  
+  bookingCTA: 'Let\'s discuss a partnership',
+  bookingDescription: 'Quick call to explore collaboration',
+  
+  extraFields: {
+    niche: 'string',
+    followerRange: { min: 'number', max: 'number' },
+    offeringType: ['free_products', 'affiliate', 'paid', 'ambassador'],
+  },
+};
+```
+
+#### 3. Investor Looking for Startups
+```typescript
+const INVEST_IN_STARTUPS: GoalConfig = {
+  id: 'invest_in_startups',
+  primary: 'find_opportunities',
+  label: 'Find startups to invest in',
+  description: 'Discover promising founders and companies for your portfolio',
+  
+  companyStepTitle: 'Tell us about your investment focus',
+  personaStepTitle: 'What kind of founders are you looking for?',
+  bookingStepTitle: 'Where should founders book intro calls?',
+  
+  suggestedPersonaTemplates: ['early_stage_founders', 'technical_founders', 'repeat_founders'],
+  defaultJobTitles: ['Founder', 'CEO', 'Co-founder', 'CTO'],
+  defaultSeniority: ['c_level', 'founder'],
+  defaultIndustries: ['Technology', 'AI', 'Fintech', 'SaaS'],
+  
+  defaultCampaignName: 'Deal Flow - [Sector] Startups',
+  suggestedGoalText: 'Connect with promising founders building in [sector]',
+  followUpCadence: 7,
+  maxFollowUps: 2,
+  
+  messagingTone: 'investor',
+  aiKnowledgeFocus: ['Venture patterns', 'Founder evaluation', 'Market analysis'],
+  
+  primaryMetric: 'Intro Calls Booked',
+  targetConversionAction: 'intro_call',
+  
+  bookingCTA: 'Let\'s chat about your company',
+  bookingDescription: '20-min intro call',
+  
+  extraFields: {
+    investorType: ['angel', 'vc', 'family_office', 'corporate'],
+    stagePreference: ['pre_seed', 'seed', 'series_a', 'series_b_plus'],
+    sectors: 'string[]',
+    checkSize: { min: 'number', max: 'number' },
+    geography: 'string[]',
+  },
+};
+```
+
+#### 4. SEO/GEO Specialist (Guest Posts)
+```typescript
+const GUEST_POSTS_SEO: GoalConfig = {
+  id: 'guest_posts_seo',
+  primary: 'find_opportunities',
+  label: 'Find guest post opportunities',
+  description: 'Connect with blog owners for backlinks and content placements',
+  
+  companyStepTitle: 'Tell us about your site and content',
+  personaStepTitle: 'What sites do you want to write for?',
+  bookingStepTitle: 'Where should editors discuss content?',
+  
+  suggestedPersonaTemplates: ['blog_editors', 'content_managers', 'site_owners'],
+  defaultJobTitles: ['Editor', 'Content Manager', 'Blog Owner', 'Head of Content', 'SEO Manager'],
+  defaultSeniority: ['any'],
+  defaultIndustries: ['Media', 'Publishing', 'Marketing'],
+  
+  defaultCampaignName: 'Guest Post Outreach - [Niche]',
+  suggestedGoalText: 'Find quality sites accepting guest contributions in [niche]',
+  followUpCadence: 5,
+  maxFollowUps: 2,
+  
+  messagingTone: 'outreach',
+  aiKnowledgeFocus: ['Content marketing', 'SEO best practices', 'Editorial relationships'],
+  
+  primaryMetric: 'Guest Posts Secured',
+  targetConversionAction: 'guest_post_approved',
+  
+  bookingCTA: 'Discuss content collaboration',
+  bookingDescription: 'Quick call about guest posting',
+  
+  extraFields: {
+    targetNiches: 'string[]',
+    offeringType: ['written_content', 'reciprocal_exchange', 'paid_placement', 'expert_quotes'],
+    minDomainRating: 'number',
+    minMonthlyTraffic: 'number',
+    contentTopics: 'string[]',
+  },
+};
+```
+
+#### 5. Recruiting (Hire Employees)
+```typescript
+const HIRE_FULLTIME: GoalConfig = {
+  id: 'hire_fulltime',
+  primary: 'build_team',
+  label: 'Hire full-time employees',
+  description: 'Find candidates for open roles at your company',
+  
+  companyStepTitle: 'Tell us about the role',
+  personaStepTitle: 'Who is your ideal candidate?',
+  bookingStepTitle: 'Where should candidates book interviews?',
+  
+  suggestedPersonaTemplates: ['senior_engineers', 'product_managers', 'sales_reps'],
+  defaultJobTitles: ['Software Engineer', 'Product Manager', 'Designer'],
+  defaultSeniority: ['senior', 'lead', 'manager'],
+  defaultIndustries: ['Technology', 'Software'],
+  
+  defaultCampaignName: '[Role] Hiring - Q1 2026',
+  suggestedGoalText: 'Connect with talented [role] professionals',
+  followUpCadence: 5,
+  maxFollowUps: 3,
+  
+  messagingTone: 'recruiting',
+  aiKnowledgeFocus: ['Who (hiring)', 'Topgrading', 'Talent Magnet'],
+  
+  primaryMetric: 'Interviews Scheduled',
+  targetConversionAction: 'interview_scheduled',
+  
+  bookingCTA: 'Let\'s chat about the opportunity',
+  bookingDescription: 'Casual conversation about the role',
+};
+```
+
+#### 6. Networking (Industry Peers)
+```typescript
+const INDUSTRY_PEERS: GoalConfig = {
+  id: 'industry_peers',
+  primary: 'expand_network',
+  label: 'Industry peers',
+  description: 'People in similar roles or companies',
+  
+  companyStepTitle: 'Tell us about yourself',
+  personaStepTitle: 'Who do you want to connect with?',
+  bookingStepTitle: 'Where should connections book coffee chats?',
+  
+  suggestedPersonaTemplates: ['founders_in_space', 'industry_experts', 'community_leaders'],
+  defaultJobTitles: [],  // User specifies
+  defaultSeniority: ['any'],
+  defaultIndustries: [],  // User specifies
+  
+  defaultCampaignName: 'Network Building - [Industry]',
+  suggestedGoalText: 'Connect with fellow [industry] professionals',
+  followUpCadence: 7,
+  maxFollowUps: 2,
+  
+  messagingTone: 'networking',
+  aiKnowledgeFocus: ['Never Eat Alone', 'Give and Take', 'Superconnector'],
+  
+  primaryMetric: 'Connections Made',
+  targetConversionAction: 'coffee_chat',
+  
+  bookingCTA: 'Grab a virtual coffee',
+  bookingDescription: 'Casual 15-min chat',
+};
+```
+
+---
+
+### How Goals Affect the Quiz
+
+| Quiz Element | Sales | Influencer | Investor | SEO/Guest Post | Recruiting |
+|--------------|-------|------------|----------|----------------|------------|
+| **Company step** | "Your product" | "Your brand" | "Your fund" | "Your site" | "The role" |
+| **Persona step** | "Ideal buyer" | "Ideal creator" | "Ideal founder" | "Ideal site" | "Ideal candidate" |
+| **Booking CTA** | "Schedule demo" | "Partnership call" | "Intro call" | "Discuss content" | "Chat about role" |
+| **Follow-up pace** | 3 days | 5 days | 7 days | 5 days | 5 days |
+| **Max follow-ups** | 5 | 3 | 2 | 2 | 3 |
+| **Tone** | Professional sales | Collaborative | Curious investor | Helpful outreach | Opportunity-focused |
+| **Success metric** | Demos booked | Partnerships | Intros | Posts secured | Interviews |
+
+---
+
+### AI Messaging Examples by Goal
+
+#### B2B Sales
+```
+"Hi Sarah, I noticed you're scaling engineering at [Company]. We help 
+CTOs like you reduce deployment time by 40%. Would love to show you 
+how - got 15 min this week for a quick demo?"
+```
+
+#### Influencer Marketing
+```
+"Hi Jessica! Love your fitness content, especially the nutrition posts.
+I'm with [Brand], a protein supplement company looking for authentic 
+creators to partner with. Would love to chat about a collaboration!"
+```
+
+#### Investor Looking for Startups
+```
+"Hi Alex, I've been following [Company]'s progress - impressive traction
+in the AI space. I'm an angel investor focused on early-stage AI startups.
+Would love to learn more about what you're building - got 20 min?"
+```
+
+#### SEO/Guest Post Outreach
+```
+"Hi Mike, I've been reading [Blog] for a while - great content on 
+growth marketing. I'd love to contribute a guest post on SEO strategies 
+for SaaS. I've written for [Publications]. Would you be open to it?"
+```
+
+#### Recruiting
+```
+"Hi David, I came across your profile and was impressed by your work at 
+[Company]. We're building something exciting at [Our Company] and looking 
+for senior engineers. Would love to share what we're working on!"
+```
+
+---
+
+**State**: Store `goal: { primary: PrimaryGoal, subGoal: SubGoal, details: GoalDetails }`
+
+**Purpose**: 
+- Personalizes entire quiz experience
+- Adjusts persona suggestions and defaults
+- Customizes messaging templates and AI behavior
+- Sets appropriate success metrics
+
+---
+
+### Phase 3: Organization Setup
+
+**Visual**: A clearing in the forest, building your base camp
+
+**Step 3.1: Your Company**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Forest clearing, base camp forming]                           │
+│                                                                             │
+│     Progress: ●●●○○○○○                                                      │
+│                                                                             │
+│         Tell us about your company                                          │
+│         (This helps AI craft personalized messages)                         │
+│                                                                             │
+│         Company Website: [https://_______________]                          │
+│                                                                             │
+│         ┌─────────────────────────────────────────────┐                     │
+│         │ ✨ We'll automatically extract:             │                     │
+│         │    • Your offerings & services              │                     │
+│         │    • Key differentiators                    │                     │
+│         │    • Industry & positioning                 │                     │
+│         │    • Social proof & testimonials            │                     │
+│         └─────────────────────────────────────────────┘                     │
+│                                                                             │
+│                         [ Continue ]                                        │
+│                                                                             │
+│                    [ Skip - I'll add details later ]                        │
+│                                                                             │
+│     💡 "The more we know, the more personal your                            │
+│         AI's conversations will be"                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Calls**:
+1. `PATCH /organization/:id` - Update website URL
+2. `POST /persona/source/website` - Scrape website for ICP sources (async)
+
+**Trust Element**: Show data enrichment preview
+
+---
+
+### Phase 4: Connect LinkedIn (Critical Step)
+
+**Visual**: Forest path with glowing connection lines between trees
+
+**Step 4.1: LinkedIn Connection Intro**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Trees connected by soft glowing lines]                        │
+│                                                                             │
+│     Progress: ●●●●○○○○                                                      │
+│                                                                             │
+│         🔐 Connect Your LinkedIn                                            │
+│                                                                             │
+│         Your AI team needs a LinkedIn account to:                           │
+│                                                                             │
+│         ✓ Search and find the right people                                  │
+│         ✓ Engage with their content thoughtfully                            │
+│         ✓ Send personalized connection requests                             │
+│         ✓ Have meaningful conversations                                     │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  🛡️ Your account is safe:                                  │         │
+│     │                                                             │         │
+│     │  • We use human-like timing (never spammy)                  │         │
+│     │  • Smart daily limits protect your account                  │         │
+│     │  • AI reads 300+ books on professional etiquette            │         │
+│     │  • Bank-level encryption (Unipile certified)                │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│                    [ Connect LinkedIn Account ]                             │
+│                                                                             │
+│     💡 "95% of users connect in under 60 seconds"                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Call**: `POST /linked-account/connect`
+**Flow**: Opens Unipile OAuth → Webhook confirms connection
+
+**Step 4.2: LinkedIn Connection Waiting**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Gentle animation of data flowing through forest]              │
+│                                                                             │
+│     Progress: ●●●●◐○○○                                                      │
+│                                                                             │
+│              ⟳ Connecting your LinkedIn account...                          │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  While we connect, here's what your AI can do:              │         │
+│     │                                                             │         │
+│     │  📚 Read and understand hundreds of posts                   │         │
+│     │  🎯 Identify the perfect moment to engage                   │         │
+│     │  💬 Craft messages that feel genuinely human                │         │
+│     │  📊 Learn from every interaction to improve                 │         │
+│     │                                                             │         │
+│     │  "Think of it as hiring a team of research analysts,        │         │
+│     │   copywriters, and relationship managers - all in one"      │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│                    [ Loading animation ]                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Polling**: Check `linkedAccount.connectionStatus === 'CONNECTED'`
+
+**Step 4.3: LinkedIn Profile Analysis**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Forest with data visualization overlay]                       │
+│                                                                             │
+│     Progress: ●●●●●○○○                                                      │
+│                                                                             │
+│              ✓ LinkedIn connected!                                          │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  We found your profile:                                     │         │
+│     │                                                             │         │
+│     │  👤 [Profile Photo]                                         │         │
+│     │     John Smith                                              │         │
+│     │     CEO at TechStartup Inc.                                 │         │
+│     │     London, UK                                              │         │
+│     │                                                             │         │
+│     │  📊 Analyzing your profile to personalize outreach...       │         │
+│     │     ▓▓▓▓▓▓▓▓░░ 80%                                          │         │
+│     │                                                             │         │
+│     │  ✓ Industry identified: Technology/SaaS                     │         │
+│     │  ✓ Expertise extracted: AI, Automation, Sales               │         │
+│     │  ✓ Communication style: Professional, Direct                │         │
+│     │  ⟳ Analyzing recent posts...                                │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     💡 "AI learns your voice to message like you would"                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Call**: `POST /linked-account/:id/analyze`
+
+---
+
+### Phase 5: Booking Link
+
+**Visual**: Path leading to a meeting spot in the forest
+
+**Step 5.1: Where Should People Book?**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Cozy meeting spot with two chairs in forest]                  │
+│                                                                             │
+│     Progress: ●●●●●●○○                                                      │
+│                                                                             │
+│         Where should people book time with you?                             │
+│                                                                             │
+│         This is where AI sends interested contacts                          │
+│                                                                             │
+│         ┌─────────────────────────────────────────────────────┐             │
+│         │  Booking URL: [https://calendly.com/________]       │             │
+│         └─────────────────────────────────────────────────────┘             │
+│                                                                             │
+│         ┌─────────────────────────────────────────────────────┐             │
+│         │  Supported platforms:                               │             │
+│         │                                                     │             │
+│         │  📅 Calendly    📅 Cal.com    📅 SavvyCal           │             │
+│         │  📅 HubSpot     📅 Acuity     📅 Any URL            │             │
+│         │                                                     │             │
+│         └─────────────────────────────────────────────────────┘             │
+│                                                                             │
+│                            [ Continue ]                                     │
+│                                                                             │
+│     💡 "This is the finish line - when contacts book,                       │
+│         AI has done its job"                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Call**: `PATCH /organization/:id` with `bookingLink`
+
+---
+
+### Phase 6: Create Persona (The Heart of the Quiz)
+
+**Visual**: Deep forest with creatures representing ideal contacts
+
+#### Two Paths for Persona Creation
+
+| Path | Input | Processing Time | Best For |
+|------|-------|-----------------|----------|
+| **A: AI from URL** | Website URL (from Step 3) | 30-60 seconds | Users with company website |
+| **B: Natural Language** | Text description | 5-10 seconds | Quick setup, no website |
+
+---
+
+**Step 6.1: Choose Your Path**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Magical forest with silhouettes of people]                    │
+│                                                                             │
+│     Progress: ●●●●●●●○                                                      │
+│                                                                             │
+│         Who do you want to connect with?                                    │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  How would you like to find your ideal connections?         │         │
+│     │                                                             │         │
+│     │  ┌─────────────────────────────────────────────────────┐    │         │
+│     │  │  ○ Generate from my website (Recommended)           │    │         │
+│     │  │    We'll analyze your site to understand your       │    │         │
+│     │  │    ideal customers automatically                     │    │         │
+│     │  │    [Uses: https://mycompany.com ✓]                  │    │         │
+│     │  └─────────────────────────────────────────────────────┘    │         │
+│     │                                                             │         │
+│     │  ┌─────────────────────────────────────────────────────┐    │         │
+│     │  │  ● Describe in my own words                         │    │         │
+│     │  │    Tell us who you're looking for and AI will       │    │         │
+│     │  │    create the perfect search criteria               │    │         │
+│     │  └─────────────────────────────────────────────────────┘    │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     💡 "Both options use AI - pick what feels easier for you"               │
+│                                                                             │
+│                              [ Continue → ]                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Logic**:
+- If website URL exists from Step 3 → Show "Generate from website" as recommended
+- If no website URL → Auto-select "Describe in my own words"
+
+---
+
+#### Path A: AI-Generated from Website URL (Existing Feature)
+
+**Step 6.2a: Generating from Website**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Forest with glowing data streams]                             │
+│                                                                             │
+│     Progress: ●●●●●●●◐                                                      │
+│                                                                             │
+│              🔍 Analyzing your website...                                   │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  What AI is doing right now:                                │         │
+│     │                                                             │         │
+│     │  [●] Reading your website content                           │         │
+│     │  [●] Understanding your offerings                           │         │
+│     │  [ ] Identifying ideal customer profiles                    │         │
+│     │  [ ] Mapping to LinkedIn search criteria                    │         │
+│     │  [ ] Finding preview contacts                               │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ╭────────────────────────────────────────────────────────────╮          │
+│     │  📚 Did you know?                                          │          │
+│     │                                                            │          │
+│     │  AI analyzes your website to extract:                      │          │
+│     │  • Your target market & ideal customers                    │          │
+│     │  • Pain points you solve                                   │          │
+│     │  • Industries you serve                                    │          │
+│     │  • Company sizes that fit best                             │          │
+│     │                                                            │          │
+│     │  This creates highly targeted personas automatically!      │          │
+│     ╰────────────────────────────────────────────────────────────╯          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Calls**:
+1. `POST /personas/sources` - Ingest website (if not done in Step 3)
+2. `POST /personas/generate` - Generate full personas with LinkedIn params
+
+**Wait Time**: 30-60 seconds (show educational content)
+
+**Step 6.3a: Select Generated Personas**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Forest clearing with profile silhouettes]                     │
+│                                                                             │
+│     Progress: ●●●●●●●●                                                      │
+│                                                                             │
+│         ✨ We created 3 personas for you!                                   │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  [✓] Tech Decision Makers                    8,500 matches  │         │
+│     │      CTOs, VPs Engineering at growth startups               │         │
+│     │      Pain points: Scaling teams, tool fatigue               │         │
+│     │      Confidence: 92%                                        │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  [✓] Product Leaders                         5,200 matches  │         │
+│     │      Product Managers, Directors at SaaS companies          │         │
+│     │      Pain points: Roadmap prioritization, user research     │         │
+│     │      Confidence: 87%                                        │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  [ ] Startup Founders                        3,100 matches  │         │
+│     │      Founders, CEOs at early-stage startups                 │         │
+│     │      Pain points: Growth, hiring, fundraising               │         │
+│     │      Confidence: 78%                                        │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     💡 "Select the personas that best match who you want to reach"          │
+│                                                                             │
+│     [ ← Back ]              [ Continue with 2 selected → ]                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Output**:
+- Multiple personas with pain points, fears, barriers
+- LinkedIn params auto-generated
+- Preview contacts already fetched
+
+---
+
+#### Path B: Natural Language to LinkedIn Params (NEW Feature)
+
+**Step 6.2b: Describe Your Ideal Connection**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Magical forest with silhouettes of people]                    │
+│                                                                             │
+│     Progress: ●●●●●●●◐                                                      │
+│                                                                             │
+│         Describe who you want to connect with                               │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  ┌─────────────────────────────────────────────────────┐    │         │
+│     │  │ CTOs and VPs of Engineering at Series A-C           │    │         │
+│     │  │ fintech startups in the US and UK who are scaling   │    │         │
+│     │  │ their engineering teams...                          │    │         │
+│     │  │                                                     │    │         │
+│     │  └─────────────────────────────────────────────────────┘    │         │
+│     │                                                             │         │
+│     │  💡 Examples:                                               │         │
+│     │  • "Marketing directors at e-commerce companies in Europe"  │         │
+│     │  • "Founders of AI startups with 10-50 employees"           │         │
+│     │  • "HR managers at healthcare companies in California"      │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     💡 "Be as specific as you want - AI understands natural language"       │
+│                                                                             │
+│                         [ Find Matching Contacts → ]                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**API Call**: `POST /personas/parse-description` (NEW endpoint)
+
+**What AI Extracts**:
+- Job titles (with variations: "CTO" → "CTO", "Chief Technology Officer")
+- Industries (mapped to LinkedIn codes)
+- Locations (mapped to LinkedIn location codes)
+- Company size (from signals like "Series A", "startup", "enterprise")
+- Seniority levels
+
+**Step 6.3b: Review Parsed Criteria**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Forest with search visualization]                             │
+│                                                                             │
+│     Progress: ●●●●●●●◐                                                      │
+│                                                                             │
+│         ✨ We understood your request!                                      │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  Here's what we'll search for:                              │         │
+│     │                                                             │         │
+│     │  Job Titles:    CTO, VP Engineering, VP of Engineering      │         │
+│     │                 Chief Technology Officer        [Edit]      │         │
+│     │                                                             │         │
+│     │  Industries:    Fintech, Financial Services,                │         │
+│     │                 Financial Technology            [Edit]      │         │
+│     │                                                             │         │
+│     │  Locations:     United States, United Kingdom   [Edit]      │         │
+│     │                                                             │         │
+│     │  Company Size:  11-500 employees (Series A-C)   [Edit]      │         │
+│     │                                                             │         │
+│     │  Seniority:     C-Level, VP                     [Edit]      │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  ⟳ Searching LinkedIn...                                    │         │
+│     │                                                             │         │
+│     │  Estimated audience: ~8,500 people                          │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     [ ← Refine description ]         [ Looks good, continue → ]             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Features**:
+- User can edit any parsed field inline
+- Real-time audience size update
+- Can go back to refine description
+
+---
+
+#### Shared Step: Preview Contacts (Both Paths)
+
+**Step 6.4: Preview Contacts (Show the Magic)**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Forest clearing with profiles floating]                       │
+│                                                                             │
+│     Progress: ●●●●●●●●                                                      │
+│                                                                             │
+│         ✨ We found 8,500 matching people!                                  │
+│            Here are 5 perfect matches:                                      │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  👤 Sarah Chen           ICP Score: 94% ████████████░       │         │
+│     │     CTO at Fintech AI                                       │         │
+│     │     San Francisco • 350 employees                           │         │
+│     │     ───────────────────────────────────────────             │         │
+│     │     Why she's a match:                                      │         │
+│     │     ✓ Scaling engineering team (mentioned in post)          │         │
+│     │     ✓ Interested in automation tools (liked 3 articles)     │         │
+│     │     ✓ Decision maker for tech stack                         │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  👤 Marcus Johnson       ICP Score: 91% ████████████░       │         │
+│     │     VP Engineering at DataFlow                              │         │
+│     │     London • 180 employees                                  │         │
+│     │     ...                                                     │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     [ Show more ]                    [ Continue to Launch → ]               │
+│                                                                             │
+│     💡 "These are real people AI will reach out to thoughtfully"            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Display**: ICP Fit Score explanation
+- Shows why each contact matches
+- Demonstrates AI analysis quality
+- Builds confidence in targeting
+
+---
+
+#### New Backend Work Required for Path B
+
+**New Endpoint**: `POST /personas/parse-description`
+
+```typescript
+// Request
+interface ParsePersonaDescriptionInput {
+  description: string;           // Natural language input
+  isSalesNavigator?: boolean;    // Enable Sales Nav specific fields
+}
+
+// Response
+interface ParsePersonaDescriptionOutput {
+  personaName: string;           // Auto-generated name
+  personaDescription: string;    // Cleaned description
+  linkedinParams: {
+    jobTitles: { include: Param[], exclude: [] };
+    industries?: { include: Param[], exclude: [] };
+    locations?: { include: Param[], exclude: [] };
+    companyHeadcount?: { min: number, max: number };
+    companyTypes?: Param[];
+    seniority?: { include: Param[], exclude: [] };
+    keywords?: string;
+  };
+  confidence: number;            // 0-1 parsing confidence
+  suggestions?: string[];        // "Did you also mean..."
+}
+```
+
+**AI Parsing Logic**:
+| User Says | AI Extracts |
+|-----------|-------------|
+| "CTOs" | jobTitles: ["CTO", "Chief Technology Officer", "Chief Tech Officer"] |
+| "Series A startup" | companyHeadcount: { min: 11, max: 50 } |
+| "Series B-C" | companyHeadcount: { min: 51, max: 500 } |
+| "enterprise" | companyHeadcount: { min: 1001, max: null } |
+| "fintech" | industries: ["Fintech", "Financial Services", "Financial Technology"] |
+| "in the US" | locations: ["United States"] |
+| "VPs and directors" | seniority: ["vice_president", "director"] |
+
+---
+
+### Phase 7: Campaign Configuration
+
+**Visual**: Sun rising over the forest, new day beginning
+
+**Step 7.1: Campaign Settings (Smart Defaults)**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Sunrise through trees]                                        │
+│                                                                             │
+│     Almost there! Let's set up your campaign                                │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  Campaign Name:                                             │         │
+│     │  [ Q1 2026 - CTO Outreach_____________________ ]            │         │
+│     │                                                             │         │
+│     │  Goal:                                                      │         │
+│     │  [ Schedule discovery calls for our dev tools___ ]          │         │
+│     │    (AI uses this to craft personalized messages)            │         │
+│     │                                                             │         │
+│     │  ─────────────────────────────────────────────────          │         │
+│     │                                                             │         │
+│     │  Active Hours: [ 9:00 AM ] to [ 5:00 PM ]                   │         │
+│     │  Timezone: [ America/New_York ▼ ]                           │         │
+│     │                                                             │         │
+│     │  Active Days:                                               │         │
+│     │  [✓] Mon [✓] Tue [✓] Wed [✓] Thu [✓] Fri [ ] Sat [ ] Sun    │         │
+│     │                                                             │         │
+│     │  ─────────────────────────────────────────────────          │         │
+│     │                                                             │         │
+│     │  Follow-up Settings:                                        │         │
+│     │  Days between messages: [ 3 ▼ ]                             │         │
+│     │  Max follow-ups: [ 5 ▼ ]                                    │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     [ ← Back ]                       [ Review & Launch → ]                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Smart Defaults Based on Goal**:
+- Leads: 9-5 weekdays, 3-day follow-up
+- Partners: 10-4 weekdays, 5-day follow-up
+- Hiring: 9-6 weekdays, 2-day follow-up
+- Network: 10-6 all days, 4-day follow-up
+
+---
+
+### Phase 8: Payment & Activation
+
+**Visual**: Golden light illuminating the path forward
+
+**Pricing Strategy**: $200/month primary, $49 paid trial as alternative
+
+**Step 8.1: Choose Your Plan**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Golden sunlit forest path]                                    │
+│                                                                             │
+│         🎉 Your campaign is ready to launch!                                │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  Campaign Summary:                                          │         │
+│     │                                                             │         │
+│     │  📋 "Q1 2026 - CTO Outreach"                                │         │
+│     │  👥 8,500 potential contacts                                │         │
+│     │  🎯 94% average ICP fit score                               │         │
+│     │  📅 Mon-Fri, 9 AM - 5 PM EST                                │         │
+│     │  🔗 LinkedIn: John Smith (connected)                        │         │
+│     │                                                             │         │
+│     │  ─────────────────────────────────────────────────          │         │
+│     │                                                             │         │
+│     │  What happens next:                                         │         │
+│     │  1. AI starts with post engagements (likes, comments)       │         │
+│     │  2. Sends personalized connection requests                  │         │
+│     │  3. Nurtures conversations toward booking calls             │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  ⭐ RECOMMENDED                                             │         │
+│     │                                                             │         │
+│     │  $200/month                                                 │         │
+│     │                                                             │         │
+│     │  ✓ Full access to all features                              │         │
+│     │  ✓ Unlimited personas & campaigns                           │         │
+│     │  ✓ Cancel anytime                                           │         │
+│     │  ✓ 30-day money-back guarantee                              │         │
+│     │                                                             │         │
+│     │  "If you don't get at least 2 qualified calls in 30 days,   │         │
+│     │   we'll refund every penny. No questions asked."            │         │
+│     │                                                             │         │
+│     │                  [ Launch Campaign → ]                      │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  Want to test first?                                        │         │
+│     │                                                             │         │
+│     │  $49 for 2 weeks  →  then $200/month                        │         │
+│     │                                                             │         │
+│     │  Same features, shorter commitment to start                 │         │
+│     │                                                             │         │
+│     │                  [ Start 2-Week Trial → ]                   │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     🔒 Secure payment via Stripe • Cancel anytime • No contracts            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Step 8.2: Payment Processing**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Gentle loading animation with forest particles]               │
+│                                                                             │
+│              Processing your payment securely...                            │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │  ⟳ Connecting to Stripe...                                  │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     ╭────────────────────────────────────────────────────────────╮          │
+│     │  🛡️ Your guarantee:                                        │          │
+│     │                                                            │          │
+│     │  • 30-day money-back if you're not satisfied               │          │
+│     │  • Cancel anytime from your dashboard                      │          │
+│     │  • No hidden fees, no long-term contracts                  │          │
+│     │  • Dedicated support via chat                              │          │
+│     ╰────────────────────────────────────────────────────────────╯          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pricing Logic**:
+
+| Plan | Stripe Price ID | Amount | Billing |
+|------|-----------------|--------|---------|
+| Full Access | `price_full_monthly` | $200 | Monthly recurring |
+| Paid Trial | `price_trial_2week` | $49 | One-time, then $200/mo |
+
+**API Calls**:
+```typescript
+// For $200/month plan
+POST /stripe/checkout-session {
+  priceId: 'price_full_monthly',
+  successUrl: '/onboarding/success',
+  cancelUrl: '/onboarding/payment'
+}
+
+// For $49 trial plan
+POST /stripe/checkout-session {
+  priceId: 'price_trial_2week',
+  successUrl: '/onboarding/success',
+  cancelUrl: '/onboarding/payment',
+  subscriptionData: {
+    trial_period_days: 14,  // Trial converts to $200/mo after
+  }
+}
+```
+
+**On Stripe Success**:
+1. Webhook confirms payment
+2. `POST /campaign` with all collected data
+3. Redirect to success screen
+
+**Money-Back Guarantee Implementation**:
+- Track campaign creation date
+- If refund requested within 30 days → Full refund via Stripe
+- Optional: Require minimum usage (e.g., campaign ran for 7+ days) to prevent abuse
+
+---
+
+### Phase 9: Campaign Active!
+
+**Visual**: Person walking away on forest path, AI notifications showing work happening
+
+**Step 9.1: Success Screen**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  [Background: Person walking away on sunny forest path]                     │
+│                                                                             │
+│                    ✨ Your Campaign is Live! ✨                              │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │                                                             │         │
+│     │     Your AI team is now working:                            │         │
+│     │                                                             │         │
+│     │     🔍 Searching for perfect matches...                     │         │
+│     │     📊 Analyzing 30 contacts per day                        │         │
+│     │     💬 Crafting personalized messages                       │         │
+│     │     📅 Booking calls to your calendar                       │         │
+│     │                                                             │         │
+│     │     ─────────────────────────────────────────────           │         │
+│     │                                                             │         │
+│     │     What to expect:                                         │         │
+│     │                                                             │         │
+│     │     Week 1: AI builds relationships (comments, likes)       │         │
+│     │     Week 2: Connection requests start going out             │         │
+│     │     Week 3+: Conversations & calls begin                    │         │
+│     │                                                             │         │
+│     │     Average: 2-4 qualified calls per month                  │         │
+│     │                                                             │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│                    [ Go to Dashboard ]                                      │
+│                                                                             │
+│     "Now go for that walk in the park - we've got this."                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## State Management
+
+### Quiz State Shape
+```typescript
+interface QuizState {
+  currentStep: QuizStep;
+  completedSteps: QuizStep[];
+  
+  // User info
+  userId: string | null;
+  organizationId: string | null;
+  
+  // Goal Selection (2-step)
+  goal: {
+    primary: PrimaryGoal | null;
+    subGoal: SubGoal | null;
+    details: GoalDetails | null;  // Goal-specific extra fields
+    config: GoalConfig | null;    // Loaded config based on subGoal
+  };
+  
+  // Organization
+  companyWebsite: string | null;
+  websiteScrapingStatus: 'idle' | 'scraping' | 'done' | 'failed';
+  icpSourceId: string | null;  // From website scraping
+  extractedData: {
+    offerings: Offering[];
+    socialProofs: SocialProof[];
+    caseStudies: CaseStudy[];
+  } | null;
+  
+  // LinkedIn
+  linkedAccountId: string | null;
+  linkedAccountStatus: 'none' | 'connecting' | 'connected' | 'analyzing' | 'ready';
+  linkedAccountProfile: LinkedAccountProfile | null;
+  hasSalesNavigator: boolean;
+  
+  // Booking
+  bookingLink: string | null;
+  
+  // Persona - Two Paths
+  personaCreationPath: 'url' | 'natural-language' | null;
+  
+  // Path A: URL-based generation
+  generatedPersonas: Persona[];  // Multiple personas from website
+  selectedPersonaIds: string[];  // User-selected personas
+  
+  // Path B: Natural language
+  personaDescription: string | null;  // User's natural language input
+  parsedLinkedinParams: LinkedinParams | null;  // AI-parsed params
+  parseConfidence: number;  // 0-1 confidence score
+  
+  // Shared
+  personaIds: string[];  // Final saved persona IDs
+  personaStatus: 'none' | 'parsing' | 'generating' | 'searching' | 'ready';
+  previewContacts: Contact[];
+  audienceSize: number;
+  
+  // Campaign
+  campaignConfig: Partial<CreateCampaignInput>;
+  
+  // Payment & Pricing
+  selectedPlan: 'full' | 'trial' | null;  // $200/mo or $49 trial
+  paymentStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  subscriptionId: string | null;
+  subscriptionStatus: 'none' | 'trial' | 'active' | 'past_due';
+  
+  // Money-back guarantee tracking
+  campaignStartedAt: number | null;  // For 30-day guarantee window
+  
+  // Timestamps
+  startedAt: number;
+  completedAt: number | null;
+}
+
+type QuizStep = 
+  | 'welcome'
+  | 'auth'
+  | 'goal-primary'                // Step 2.1: Primary goal (Grow/Build/Find/Network)
+  | 'goal-subgoal'                // Step 2.2: Sub-goal selection
+  | 'goal-details'                // Step 2.3: Goal-specific details (conditional)
+  | 'company-info'
+  | 'linkedin-intro'
+  | 'linkedin-connecting'
+  | 'linkedin-analyzing'
+  | 'booking-link'
+  | 'persona-path-selection'      // Choose URL vs Natural Language
+  | 'persona-url-generating'      // Path A: Generating from URL
+  | 'persona-url-selection'       // Path A: Select generated personas
+  | 'persona-nl-description'      // Path B: Enter description
+  | 'persona-nl-review'           // Path B: Review parsed params
+  | 'persona-preview'             // Both paths: Preview contacts
+  | 'campaign-config'
+  | 'payment-plan-selection'      // Choose $200 or $49 trial
+  | 'payment-processing'          // Stripe checkout
+  | 'success';
+
+// Goal types (from Phase 2 configuration)
+type PrimaryGoal = 'grow_business' | 'build_team' | 'find_opportunities' | 'expand_network';
+
+type SubGoal = 
+  // Grow Business
+  | 'b2b_sales'
+  | 'strategic_partners'
+  | 'influencer_marketing'
+  | 'investors_advisors'
+  | 'agencies_vendors'
+  // Build Team
+  | 'hire_fulltime'
+  | 'find_freelancers'
+  | 'find_cofounders'
+  | 'find_board_advisors'
+  // Find Opportunities
+  | 'invest_in_startups'
+  | 'guest_posts_seo'
+  | 'speaking_opportunities'
+  | 'press_media'
+  // Expand Network
+  | 'industry_peers'
+  | 'event_connections'
+  | 'local_professionals'
+  | 'thought_leaders';
+
+// Goal-specific details (varies by subGoal)
+type GoalDetails = 
+  | InfluencerDetails
+  | InvestorDetails
+  | GuestPostDetails
+  | RecruitingDetails
+  | null;
+
+interface InfluencerDetails {
+  niche: string;
+  followerRange: { min: number; max: number };
+  offeringType: ('free_products' | 'affiliate' | 'paid' | 'ambassador')[];
+  productDescription: string;
+}
+
+interface InvestorDetails {
+  investorType: 'angel' | 'vc' | 'family_office' | 'corporate';
+  stagePreference: ('pre_seed' | 'seed' | 'series_a' | 'series_b_plus')[];
+  sectors: string[];
+  checkSize: { min: number; max: number };
+  geography: string[];
+}
+
+interface GuestPostDetails {
+  websiteUrl: string;
+  targetNiches: string[];
+  offeringType: ('written_content' | 'reciprocal_exchange' | 'paid_placement' | 'expert_quotes')[];
+  minDomainRating: number;
+  minMonthlyTraffic: number;
+  contentTopics: string[];
+}
+
+interface RecruitingDetails {
+  roleTitle: string;
+  roleType: 'fulltime' | 'contract' | 'freelance';
+  seniorityLevel: string[];
+  skills: string[];
+  location: string;
+  remote: boolean;
+}
+
+// Pricing constants
+const PRICING = {
+  FULL_MONTHLY: {
+    id: 'full',
+    priceId: 'price_full_monthly',
+    amount: 200,
+    currency: 'USD',
+    interval: 'month',
+    label: '$200/month',
+  },
+  TRIAL_2WEEK: {
+    id: 'trial',
+    priceId: 'price_trial_2week',
+    amount: 49,
+    currency: 'USD',
+    interval: 'one-time',
+    convertsTo: 'price_full_monthly',
+    trialDays: 14,
+    label: '$49 for 2 weeks',
+  },
+} as const;
+```
+
+---
+
+## API Sequence
+
+```
+1. Welcome Screen
+   └─→ User clicks "Start"
+
+2. Auth (Clerk)
+   └─→ POST /auth/sign-in or /auth/sign-up
+   └─→ Webhook: Organization auto-created
+   └─→ Response: { userId, organizationId }
+
+3. Goal Selection
+   └─→ Local state only (personalization)
+
+4. Company Info (URL optional)
+   └─→ PATCH /organization/:id { website }
+   └─→ If URL provided: POST /personas/sources { type: 'website', url } (async)
+   └─→ Store icpSourceId for Path A
+
+5. LinkedIn Connection
+   └─→ POST /linked-account/connect { organizationId, provider: 'LINKEDIN' }
+   └─→ Response: { url } → Open Unipile OAuth
+   └─→ Poll: GET /linked-account/:id until connected
+   └─→ POST /linked-account/:id/analyze (async)
+   └─→ Store hasSalesNavigator from response
+
+6. Booking Link
+   └─→ PATCH /organization/:id { bookingLink }
+
+7. Persona Creation - Path Selection
+   └─→ If icpSourceId exists → Show both options (URL recommended)
+   └─→ If no icpSourceId → Auto-select Path B (Natural Language)
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ PATH A: AI-Generated from Website URL                          │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ 7a-1. Generate Personas                                        │
+   │       └─→ POST /personas/generate { icpSourceId }              │
+   │       └─→ Response: Array of personas with LinkedIn params     │
+   │       └─→ Wait: 30-60 seconds                                  │
+   │                                                                │
+   │ 7a-2. User Selects Personas                                    │
+   │       └─→ Local state: selectedPersonaIds[]                    │
+   │                                                                │
+   │ 7a-3. Preview Contacts (already included in response)          │
+   │       └─→ Each persona has previewContactIds & totalContacts   │
+   └─────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ PATH B: Natural Language to LinkedIn Params (NEW)              │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ 7b-1. Parse Description                                        │
+   │       └─→ POST /personas/parse-description { description }     │
+   │       └─→ Response: { personaName, linkedinParams, confidence }│
+   │       └─→ Wait: 5-10 seconds                                   │
+   │                                                                │
+   │ 7b-2. User Reviews/Edits Parsed Params                         │
+   │       └─→ Local state: parsedLinkedinParams                    │
+   │                                                                │
+   │ 7b-3. Preview Contacts                                         │
+   │       └─→ POST /personas/preview-contacts { persona, isSalesNav}│
+   │       └─→ Response: { audienceSize, previewContacts }          │
+   │                                                                │
+   │ 7b-4. Save Persona                                             │
+   │       └─→ POST /personas { linkedinParams, fullName, desc }    │
+   │       └─→ Response: { id, previewContactIds, totalContacts }   │
+   └─────────────────────────────────────────────────────────────────┘
+
+8. Campaign Config
+   └─→ Local state (campaign settings)
+   └─→ personaIds from either path
+
+9. Payment - Plan Selection & Checkout
+   └─→ User selects plan:
+   
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ OPTION A: Full Access ($200/month)                             │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ POST /stripe/checkout-session {                                │
+   │   priceId: 'price_full_monthly',                               │
+   │   mode: 'subscription',                                        │
+   │   successUrl: '/onboarding/success?session_id={CHECKOUT_ID}',  │
+   │   cancelUrl: '/onboarding/payment',                            │
+   │   metadata: {                                                  │
+   │     organizationId,                                            │
+   │     campaignConfig: JSON.stringify(campaignConfig),            │
+   │     guaranteeStartDate: Date.now()                             │
+   │   }                                                            │
+   │ }                                                              │
+   └─────────────────────────────────────────────────────────────────┘
+   
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ OPTION B: 2-Week Trial ($49 → $200/month)                      │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ POST /stripe/checkout-session {                                │
+   │   priceId: 'price_trial_2week',                                │
+   │   mode: 'subscription',                                        │
+   │   successUrl: '/onboarding/success?session_id={CHECKOUT_ID}',  │
+   │   cancelUrl: '/onboarding/payment',                            │
+   │   subscription_data: {                                         │
+   │     trial_period_days: 14,                                     │
+   │     trial_settings: {                                          │
+   │       end_behavior: { missing_payment_method: 'cancel' }       │
+   │     }                                                          │
+   │   },                                                           │
+   │   metadata: {                                                  │
+   │     organizationId,                                            │
+   │     campaignConfig: JSON.stringify(campaignConfig),            │
+   │     planType: 'trial'                                          │
+   │   }                                                            │
+   │ }                                                              │
+   └─────────────────────────────────────────────────────────────────┘
+   
+   └─→ Stripe Checkout redirect
+   └─→ On success: Stripe webhook (checkout.session.completed)
+
+10. Campaign Launch (On Payment Success)
+    └─→ Webhook handler or success page:
+    └─→ POST /campaign { 
+          ...fullCampaignConfig,
+          personaIds: [selected persona IDs],
+          linkedAccountIds: [linkedAccountId]
+        }
+    └─→ Campaign status: ACTIVE
+    └─→ Store campaignStartedAt for 30-day guarantee tracking
+```
+
+### Pricing Summary
+
+| Plan | Price | Billing | Guarantee | Stripe Price ID |
+|------|-------|---------|-----------|-----------------|
+| **Full Access** | $200/mo | Monthly recurring | 30-day money-back | `price_full_monthly` |
+| **2-Week Trial** | $49 once | Converts to $200/mo | Same guarantee | `price_trial_2week` |
+
+### Money-Back Guarantee Flow
+
+```
+User requests refund (within 30 days)
+   └─→ Check: campaignStartedAt + 30 days > now
+   └─→ If eligible:
+       └─→ POST /stripe/refunds { paymentIntentId, reason: 'requested_by_customer' }
+       └─→ Cancel subscription
+       └─→ Pause/archive campaign
+   └─→ If not eligible:
+       └─→ Show "Guarantee period expired" message
+       └─→ Offer cancel (no refund) option
+```
+
+### Path Comparison
+
+| Aspect | Path A (URL) | Path B (Natural Language) |
+|--------|--------------|---------------------------|
+| **Input** | Website URL from Step 4 | Text description |
+| **Wait Time** | 30-60 seconds | 5-10 seconds |
+| **Output** | Multiple personas (2-4) | Single persona |
+| **Pain Points** | Auto-extracted | Not included |
+| **LinkedIn Params** | Auto-generated | AI-parsed from text |
+| **Editable** | Select which personas | Edit parsed params |
+| **Best For** | Users with website | Quick setup |
+
+---
+
+## Trust Building Elements
+
+### Goal-Specific Social Proof System
+
+Social proof is dynamically loaded based on the user's selected goal. This makes testimonials and stats immediately relevant.
+
+---
+
+### Social Proof by Goal
+
+```typescript
+interface SocialProof {
+  testimonial: {
+    quote: string;
+    author: string;
+    role: string;
+    company: string;
+    avatar?: string;
+    result: string;  // "15 demos in first month"
+  };
+  stats: {
+    metric: string;
+    value: string;
+    context: string;
+  }[];
+  logos: string[];  // Company logos using this for same goal
+  caseStudy?: {
+    title: string;
+    summary: string;
+    link?: string;
+  };
+}
+
+const SOCIAL_PROOF_BY_GOAL: Record<SubGoal, SocialProof> = { ... }
+```
+
+---
+
+#### B2B Sales (`b2b_sales`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What sales teams are saying:                                │
+│                                                                 │
+│  "We went from 0 to 18 qualified demos in the first month.     │
+│   The AI's personalization is better than our SDR team."        │
+│                                                                 │
+│  — Sarah Chen, VP Sales @ CloudScale (Series B SaaS)            │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from sales teams:                                   │
+│  • 15-20 demos/month average                                    │
+│  • 34% connection acceptance rate                               │
+│  • 12% reply rate (3x industry average)                         │
+│                                                                 │
+│  🏢 Trusted by: [Stripe] [Notion] [Linear] [Vercel]             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Influencer Marketing (`influencer_marketing`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What brands are saying:                                     │
+│                                                                 │
+│  "Found 25 perfect micro-influencers in our niche within       │
+│   2 weeks. Better quality than any influencer platform."        │
+│                                                                 │
+│  — Marcus Lee, Marketing Director @ FitSupps (D2C Brand)        │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from brand partnerships:                            │
+│  • 20-30 creator conversations/month                            │
+│  • 8-12 partnerships closed/month                               │
+│  • 65% response rate from creators                              │
+│                                                                 │
+│  🏢 Trusted by: [Gymshark] [HelloFresh] [Athletic Greens]       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Investor Looking for Startups (`invest_in_startups`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What investors are saying:                                  │
+│                                                                 │
+│  "Discovered 3 portfolio companies through AI outreach.        │
+│   It's like having an analyst finding deals 24/7."              │
+│                                                                 │
+│  — James Park, Partner @ Horizon Ventures (Seed Fund)           │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from investors:                                     │
+│  • 40-60 founder intros/month                                   │
+│  • 15-20 quality pitch meetings/month                           │
+│  • 2-3 investments sourced via AI (avg per year)                │
+│                                                                 │
+│  🏢 Trusted by: [500 Global] [Techstars] [Y Combinator scouts]  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### SEO/Guest Posts (`guest_posts_seo`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What SEO agencies are saying:                               │
+│                                                                 │
+│  "Secured 35 high-quality backlinks in 3 months. The AI        │
+│   finds editors who actually respond - game changer for us."    │
+│                                                                 │
+│  — David Kim, Founder @ RankBoost Agency                        │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from link builders:                                 │
+│  • 30-50 editor conversations/month                             │
+│  • 10-15 guest posts secured/month                              │
+│  • Average DR 45+ for placements                                │
+│                                                                 │
+│  🏢 Trusted by: [SEMrush partners] [Ahrefs users] [agencies]    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Recruiting (`hire_fulltime`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What hiring teams are saying:                               │
+│                                                                 │
+│  "Filled 4 senior engineering roles in 6 weeks. The AI         │
+│   reaches passive candidates we couldn't find on LinkedIn."     │
+│                                                                 │
+│  — Emily Rodriguez, Head of Talent @ BuildFast                  │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from recruiting teams:                              │
+│  • 25-35 candidate conversations/month                          │
+│  • 8-12 interviews scheduled/month                              │
+│  • 45% response rate (vs 15% cold InMail)                       │
+│                                                                 │
+│  🏢 Trusted by: [Figma] [Stripe] [Airbnb recruiting teams]      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Strategic Partners (`strategic_partners`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What partnership teams are saying:                          │
+│                                                                 │
+│  "Closed 2 major integration partnerships that drove 30%       │
+│   of our Q4 revenue. AI found the right decision makers."       │
+│                                                                 │
+│  — Lisa Thompson, Head of Partnerships @ DataSync               │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from partnership teams:                             │
+│  • 15-25 partnership conversations/month                        │
+│  • 5-8 partnership meetings/month                               │
+│  • 2-3 deals closed/quarter (avg)                               │
+│                                                                 │
+│  🏢 Trusted by: [Zapier] [HubSpot partners] [Salesforce ISVs]   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Networking (`industry_peers`)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  💬 What founders are saying:                                   │
+│                                                                 │
+│  "Met my co-founder through AI networking. Also found          │
+│   3 advisors and countless valuable connections."               │
+│                                                                 │
+│  — Alex Rivera, Founder @ TechMeet                              │
+│                                                                 │
+│  ─────────────────────────────────────────────────────          │
+│                                                                 │
+│  📊 Results from networkers:                                    │
+│  • 50-80 new connections/month                                  │
+│  • 15-20 coffee chats/month                                     │
+│  • "Best ROI on my time" - common feedback                      │
+│                                                                 │
+│  🏢 Trusted by: [YC founders] [Techstars alumni] [EO members]   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Where Social Proof Appears in Quiz
+
+| Quiz Step | Social Proof Type | Example |
+|-----------|-------------------|---------|
+| **Welcome** | Generic stats | "2,400+ professionals trust us" |
+| **After Goal Selection** | Goal-specific testimonial | Shows relevant quote |
+| **LinkedIn Connection** | Security + goal results | "95% connect in 60s" + goal stats |
+| **Persona Generation (loading)** | Case study snippet | Rotating success stories |
+| **Payment Screen** | Full testimonial + stats | Complete social proof block |
+| **Success Screen** | Expected results | "Based on [goal], expect X-Y [metric]" |
+
+---
+
+### Implementation: Social Proof Component
+
+```typescript
+// components/SocialProofBlock.tsx
+interface SocialProofBlockProps {
+  goal: SubGoal;
+  variant: 'minimal' | 'testimonial' | 'stats' | 'full';
+}
+
+const SocialProofBlock: React.FC<SocialProofBlockProps> = ({ goal, variant }) => {
+  const proof = SOCIAL_PROOF_BY_GOAL[goal];
+  
+  if (variant === 'minimal') {
+    return <StatsBadge stats={proof.stats[0]} />;
+  }
+  
+  if (variant === 'testimonial') {
+    return <TestimonialCard testimonial={proof.testimonial} />;
+  }
+  
+  if (variant === 'stats') {
+    return <StatsGrid stats={proof.stats} />;
+  }
+  
+  // Full variant
+  return (
+    <div className="social-proof-full">
+      <TestimonialCard testimonial={proof.testimonial} />
+      <StatsGrid stats={proof.stats} />
+      <LogoBar logos={proof.logos} />
+    </div>
+  );
+};
+```
+
+---
+
+### Social Proof Data Structure
+
+```typescript
+const SOCIAL_PROOF_BY_GOAL: Record<SubGoal, SocialProof> = {
+  b2b_sales: {
+    testimonial: {
+      quote: "We went from 0 to 18 qualified demos in the first month. The AI's personalization is better than our SDR team.",
+      author: "Sarah Chen",
+      role: "VP Sales",
+      company: "CloudScale",
+      result: "18 demos in month 1"
+    },
+    stats: [
+      { metric: "Demos/month", value: "15-20", context: "average for sales teams" },
+      { metric: "Accept rate", value: "34%", context: "connection requests" },
+      { metric: "Reply rate", value: "12%", context: "3x industry average" }
+    ],
+    logos: ["stripe", "notion", "linear", "vercel"]
+  },
+  
+  influencer_marketing: {
+    testimonial: {
+      quote: "Found 25 perfect micro-influencers in our niche within 2 weeks. Better quality than any influencer platform.",
+      author: "Marcus Lee",
+      role: "Marketing Director",
+      company: "FitSupps",
+      result: "25 creators in 2 weeks"
+    },
+    stats: [
+      { metric: "Creator convos", value: "20-30", context: "per month" },
+      { metric: "Partnerships", value: "8-12", context: "closed per month" },
+      { metric: "Response rate", value: "65%", context: "from creators" }
+    ],
+    logos: ["gymshark", "hellofresh", "athletic_greens"]
+  },
+  
+  invest_in_startups: {
+    testimonial: {
+      quote: "Discovered 3 portfolio companies through AI outreach. It's like having an analyst finding deals 24/7.",
+      author: "James Park",
+      role: "Partner",
+      company: "Horizon Ventures",
+      result: "3 portfolio companies"
+    },
+    stats: [
+      { metric: "Founder intros", value: "40-60", context: "per month" },
+      { metric: "Pitch meetings", value: "15-20", context: "quality meetings/month" },
+      { metric: "Investments", value: "2-3", context: "sourced via AI per year" }
+    ],
+    logos: ["500_global", "techstars", "yc_scouts"]
+  },
+  
+  guest_posts_seo: {
+    testimonial: {
+      quote: "Secured 35 high-quality backlinks in 3 months. The AI finds editors who actually respond.",
+      author: "David Kim",
+      role: "Founder",
+      company: "RankBoost Agency",
+      result: "35 backlinks in 3 months"
+    },
+    stats: [
+      { metric: "Editor convos", value: "30-50", context: "per month" },
+      { metric: "Guest posts", value: "10-15", context: "secured per month" },
+      { metric: "Avg DR", value: "45+", context: "for placements" }
+    ],
+    logos: ["semrush", "ahrefs", "moz"]
+  },
+  
+  hire_fulltime: {
+    testimonial: {
+      quote: "Filled 4 senior engineering roles in 6 weeks. The AI reaches passive candidates we couldn't find.",
+      author: "Emily Rodriguez",
+      role: "Head of Talent",
+      company: "BuildFast",
+      result: "4 hires in 6 weeks"
+    },
+    stats: [
+      { metric: "Candidate convos", value: "25-35", context: "per month" },
+      { metric: "Interviews", value: "8-12", context: "scheduled per month" },
+      { metric: "Response rate", value: "45%", context: "vs 15% cold InMail" }
+    ],
+    logos: ["figma", "stripe", "airbnb"]
+  },
+  
+  // ... other goals
+};
+```
+
+---
+
+### Dynamic Social Proof in Quiz Steps
+
+#### Step 2 (After Goal Selection) - Show Relevant Testimonial
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     Great choice! Here's what other [influencer marketers] achieved:        │
+│                                                                             │
+│     ╭────────────────────────────────────────────────────────────╮          │
+│     │  "Found 25 perfect micro-influencers in our niche within  │          │
+│     │   2 weeks. Better quality than any influencer platform."   │          │
+│     │                                                            │          │
+│     │   — Marcus Lee, Marketing Director @ FitSupps              │          │
+│     │   Result: 25 creator partnerships                          │          │
+│     ╰────────────────────────────────────────────────────────────╯          │
+│                                                                             │
+│                              [ Continue → ]                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Step 4 (LinkedIn Connection) - Security + Goal Stats
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     🔐 Connect Your LinkedIn                                                │
+│                                                                             │
+│     ...connection benefits...                                               │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  📊 Results from brands like yours:                         │         │
+│     │                                                             │         │
+│     │  • 65% response rate from creators                          │         │
+│     │  • 8-12 partnerships closed per month                       │         │
+│     │  • Average ROI: 340% on influencer spend                    │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     💡 "95% of users connect in under 60 seconds"                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Step 6 (Loading States) - Rotating Case Studies
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│              🔍 Finding influencers in your niche...                        │
+│                                                                             │
+│     ╭────────────────────────────────────────────────────────────╮          │
+│     │  📚 Success Story: FitSupps                                │          │
+│     │                                                            │          │
+│     │  Challenge: Find authentic fitness creators for            │          │
+│     │  protein supplement launch                                 │          │
+│     │                                                            │          │
+│     │  Result: 25 partnerships, 2M reach, 340% ROI               │          │
+│     │                                                            │          │
+│     │  "The AI understood exactly what type of creators          │          │
+│     │   we needed - not just follower counts, but actual fit."   │          │
+│     ╰────────────────────────────────────────────────────────────╯          │
+│                                                                             │
+│     [Rotating to next story in 5s...]                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Step 8 (Payment) - Full Social Proof Block
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     🎉 Your influencer campaign is ready!                                   │
+│                                                                             │
+│     ...campaign summary...                                                  │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────┐         │
+│     │  💬 What brands like yours achieved:                        │         │
+│     │                                                             │         │
+│     │  "Found 25 perfect micro-influencers in our niche within   │         │
+│     │   2 weeks. Better quality than any influencer platform."   │         │
+│     │                                                             │         │
+│     │  — Marcus Lee, Marketing Director @ FitSupps               │         │
+│     │                                                             │         │
+│     │  ─────────────────────────────────────────────────         │         │
+│     │                                                             │         │
+│     │  📊 Average results for influencer campaigns:               │         │
+│     │  • 20-30 creator conversations/month                        │         │
+│     │  • 8-12 partnerships closed/month                           │         │
+│     │  • 65% response rate from creators                          │         │
+│     │                                                             │         │
+│     │  🏢 Trusted by: [Gymshark] [HelloFresh] [Athletic Greens]   │         │
+│     └─────────────────────────────────────────────────────────────┘         │
+│                                                                             │
+│     [ $200/month - Launch Campaign ]                                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Throughout Quiz (Generic + Goal-Specific)
+
+1. **Book Knowledge Stats**: "AI trained on 300+ books"
+2. **Security Badges**: "Bank-level encryption via Unipile"
+3. **Goal-Specific Stats**: Dynamic based on selected goal
+4. **Progress Persistence**: "Your progress is saved"
+5. **Money-Back Guarantee**: "30-day guarantee - [goal-specific metric] or full refund"
+
+### Payment Step Trust Signals (Goal-Aware)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🛡️ Our Promise for Influencer Marketing                        │
+│                                                                 │
+│  "If you don't close at least 5 creator partnerships within    │
+│   30 days, we'll refund every penny. No questions asked."       │
+│                                                                 │
+│  ✓ 500+ brands trust us for influencer outreach                 │
+│  ✓ Average: 8-12 partnerships per month                         │
+│  ✓ Cancel anytime, no contracts                                 │
+│  ✓ Dedicated support team                                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Goal-Specific Guarantees
+
+Each goal has a tailored money-back guarantee that makes sense for the use case:
+
+```typescript
+interface GoalGuarantee {
+  metric: string;
+  minValue: number;
+  timeframe: string;
+  guaranteeText: string;
+}
+
+const GUARANTEES_BY_GOAL: Record<SubGoal, GoalGuarantee> = {
+  b2b_sales: {
+    metric: "qualified demos",
+    minValue: 2,
+    timeframe: "30 days",
+    guaranteeText: "If you don't book at least 2 qualified demos in 30 days, we'll refund every penny."
+  },
+  
+  influencer_marketing: {
+    metric: "creator partnerships",
+    minValue: 5,
+    timeframe: "30 days",
+    guaranteeText: "If you don't close at least 5 creator partnerships in 30 days, full refund."
+  },
+  
+  invest_in_startups: {
+    metric: "founder intro calls",
+    minValue: 10,
+    timeframe: "30 days",
+    guaranteeText: "If you don't get at least 10 quality founder intros in 30 days, we'll refund you."
+  },
+  
+  guest_posts_seo: {
+    metric: "guest post placements",
+    minValue: 5,
+    timeframe: "30 days",
+    guaranteeText: "If you don't secure at least 5 guest post opportunities in 30 days, full refund."
+  },
+  
+  hire_fulltime: {
+    metric: "candidate interviews",
+    minValue: 5,
+    timeframe: "30 days",
+    guaranteeText: "If you don't schedule at least 5 quality interviews in 30 days, money back."
+  },
+  
+  strategic_partners: {
+    metric: "partnership meetings",
+    minValue: 3,
+    timeframe: "30 days",
+    guaranteeText: "If you don't book at least 3 partnership meetings in 30 days, we'll refund you."
+  },
+  
+  industry_peers: {
+    metric: "meaningful connections",
+    minValue: 15,
+    timeframe: "30 days",
+    guaranteeText: "If you don't make at least 15 new professional connections in 30 days, full refund."
+  },
+  
+  // ... other goals
+};
+```
+
+#### Guarantee Display by Goal
+
+| Goal | Guarantee Promise |
+|------|-------------------|
+| **B2B Sales** | "2+ qualified demos in 30 days or full refund" |
+| **Influencer Marketing** | "5+ creator partnerships in 30 days or full refund" |
+| **Investor (Deal Flow)** | "10+ founder intros in 30 days or full refund" |
+| **SEO/Guest Posts** | "5+ guest post placements in 30 days or full refund" |
+| **Recruiting** | "5+ candidate interviews in 30 days or full refund" |
+| **Partnerships** | "3+ partnership meetings in 30 days or full refund" |
+| **Networking** | "15+ meaningful connections in 30 days or full refund" |
+
+---
+
+### During Loading States
+Rotate through educational content:
+1. How ICP matching works
+2. Data sources we enrich from
+3. AI conversation strategies
+4. Account safety measures
+5. Success stories / case studies
+6. **Money-back guarantee reminder**
+
+### Visual Trust Signals
+- Soft, natural imagery (forest, not corporate)
+- Human pace (no rushing)
+- Transparent process (show what AI is doing)
+- Real preview data (not mockups)
+- **Price anchoring** ($200 shown first, $49 trial secondary)
+
+---
+
+## Common Questions (FAQ)
+
+Top 20 questions sorted by importance to user decision-making. These should be accessible throughout the quiz via a "?" icon or expandable section.
+
+### Category 1: LinkedIn Account Safety (Biggest Concern)
+
+#### Q1: Will my LinkedIn account get banned?
+```
+No. We use human-like behavior patterns that LinkedIn cannot distinguish from 
+manual activity:
+
+• Smart daily limits (well below LinkedIn's thresholds)
+• Natural timing between actions (no robotic patterns)
+• Gradual warm-up for new accounts
+• Activity spread across business hours
+• We've sent 2M+ messages with 0 account bans
+
+Your account is safer with us than with most LinkedIn automation tools because 
+we prioritize long-term account health over short-term volume.
+```
+
+#### Q2: How do you connect to my LinkedIn?
+```
+We use Unipile, a certified LinkedIn integration partner (not screen scraping 
+or browser automation). This is the same technology used by enterprise sales 
+tools like Salesforce and HubSpot.
+
+• OAuth-based secure connection
+• No password stored on our servers
+• Bank-level encryption (AES-256)
+• You can disconnect anytime from your dashboard
+• SOC 2 Type II compliant infrastructure
+```
+
+#### Q3: Can I control what AI posts/messages on my behalf?
+```
+Yes, you have full control:
+
+• Preview all messages before AI sends them
+• Set approval mode for first 10 messages to review tone
+• Pause campaign anytime with one click
+• Exclude specific people or companies
+• Set custom message guidelines AI must follow
+• View every action in real-time activity feed
+```
+
+---
+
+### Category 2: Pricing & Value
+
+#### Q4: Is $200/month worth it?
+```
+Let's do the math for your goal:
+
+B2B Sales: Average 15 demos/month → If 1 closes at $5k ACV = 25x ROI
+Influencer: Average 10 partnerships/month → Worth $5k+ in reach
+Recruiting: Average 8 interviews/month → One hire saves $15k+ in recruiter fees
+SEO: Average 12 backlinks/month → Worth $2,400+ at agency rates
+
+Most users see positive ROI in the first 2 weeks. Plus, you have our 
+30-day money-back guarantee if you don't hit your goals.
+```
+
+#### Q5: What's included in $200/month?
+```
+Everything you need for AI-powered outreach:
+
+✓ Unlimited personas (target audiences)
+✓ Unlimited campaigns
+✓ 1 LinkedIn account connection
+✓ AI-powered messaging (personalized to each contact)
+✓ Smart engagement (likes, comments on posts)
+✓ ICP scoring for every contact
+✓ Real-time analytics dashboard
+✓ Email support (24h response)
+✓ 30-day money-back guarantee
+
+No hidden fees. No per-message charges. No contact limits.
+```
+
+#### Q6: Can I cancel anytime?
+```
+Yes, cancel with one click from your dashboard. No phone calls, no emails, 
+no retention tricks.
+
+• Cancel takes effect at end of billing period
+• Your data is retained for 30 days (in case you return)
+• After 30 days, all data is permanently deleted
+• No cancellation fees ever
+```
+
+#### Q7: What's the money-back guarantee exactly?
+```
+Simple: If you don't achieve the minimum results for your goal within 30 days, 
+we refund 100% of your payment. No questions asked.
+
+Minimum results by goal:
+• B2B Sales: 2+ qualified demos
+• Influencer Marketing: 5+ creator partnerships
+• Investor Deal Flow: 10+ founder intros
+• SEO/Guest Posts: 5+ placements secured
+• Recruiting: 5+ candidate interviews
+• Partnerships: 3+ partnership meetings
+
+Just email support@aiincharge.com with "Refund Request" and we process it 
+within 48 hours. We've never denied a legitimate refund request.
+```
+
+---
+
+### Category 3: How It Works
+
+#### Q8: How does the AI know what to say?
+```
+AI crafts personalized messages using:
+
+1. Your company info (website, offerings, value props)
+2. Contact's profile (job, company, recent activity)
+3. Their recent posts and engagement
+4. Your campaign goal and tone preferences
+5. Knowledge from 300+ books on sales, psychology, and communication
+
+Every message is unique. No templates. AI analyzes each person individually 
+and crafts a message that feels genuinely human.
+```
+
+#### Q9: What actions does AI take on LinkedIn?
+```
+AI performs the same actions you would manually:
+
+📝 Profile views - Views target profiles (they see you visited)
+👍 Post engagement - Likes and comments on relevant posts
+📨 Connection requests - With personalized notes
+💬 Direct messages - To existing connections
+🔄 Follow-ups - Spaced naturally over days/weeks
+
+All actions are timed to look human (no bulk actions at 3am).
+```
+
+#### Q10: How does AI find the right people?
+```
+Three-step process:
+
+1. LinkedIn Search: Uses your persona criteria (job titles, industries, 
+   company size, location, seniority) to find matching profiles
+
+2. Profile Enrichment: Pulls additional data from 15+ sources to understand 
+   each person's background, interests, and recent activity
+
+3. ICP Scoring: AI scores each contact 0-100% on fit with your ideal 
+   customer profile. Only contacts scoring 40%+ are added to campaigns.
+
+You see preview contacts before launching so you can verify targeting.
+```
+
+---
+
+### Category 4: Results & Expectations
+
+#### Q11: How long until I see results?
+```
+Typical timeline:
+
+Week 1: AI builds presence
+• Viewing profiles, engaging with posts
+• Building rapport before reaching out
+
+Week 2: Outreach begins
+• Connection requests go out
+• First conversations start
+
+Week 3-4: Results materialize
+• Replies come in
+• Calls get booked
+
+Most users see their first booked call within 2-3 weeks. Full momentum 
+typically builds by end of month 1.
+```
+
+#### Q12: What response rates should I expect?
+```
+Depends on your goal and targeting quality:
+
+Connection Acceptance: 25-40%
+Message Reply Rate: 10-20%
+Positive Reply Rate: 5-12%
+Meeting Booking Rate: 2-5%
+
+These are 2-3x higher than typical cold outreach because AI personalizes 
+every message and only targets high-fit contacts.
+```
+
+#### Q13: How many contacts will AI reach out to daily?
+```
+We use smart limits based on your account:
+
+New LinkedIn accounts: 10-15 connections/day
+Established accounts: 20-30 connections/day
+Premium/Sales Navigator: 30-50 connections/day
+
+These limits are conservative to protect your account. Quality over quantity - 
+we'd rather send 20 perfect messages than 100 generic ones.
+```
+
+---
+
+### Category 5: Technical Questions
+
+#### Q14: What if I already use LinkedIn Sales Navigator?
+```
+Even better! Sales Navigator users get:
+
+• Access to advanced search filters
+• Larger daily outreach limits
+• InMail capability (coming soon)
+• Better targeting accuracy
+• Premium profile visibility
+
+Just connect your Sales Navigator account during setup and AI automatically 
+uses the enhanced features.
+```
+
+#### Q15: Can I use multiple LinkedIn accounts?
+```
+Yes, but one account per subscription:
+
+• $200/month includes 1 LinkedIn account
+• Additional accounts: $150/month each
+• Each account can run separate campaigns
+• Perfect for agencies or teams
+
+Contact support to add additional accounts to your subscription.
+```
+
+#### Q16: What if my LinkedIn gets disconnected?
+```
+Happens occasionally due to LinkedIn security updates. Here's what to do:
+
+1. You'll receive an email alert immediately
+2. Log into dashboard → LinkedIn tab
+3. Click "Reconnect" and re-authenticate
+4. Campaigns auto-resume where they left off
+
+Takes 60 seconds. No data is lost. Campaigns pause safely until reconnected.
+```
+
+#### Q17: Can I import my own contact list?
+```
+Yes! Three ways to add contacts:
+
+1. AI Search: Let AI find contacts matching your persona (recommended)
+2. CSV Upload: Import your existing list (LinkedIn URLs required)
+3. Manual Add: Add individual LinkedIn profiles
+
+All imported contacts go through ICP scoring to ensure quality targeting.
+```
+
+---
+
+### Category 6: Campaign Management
+
+#### Q18: Can I run multiple campaigns at once?
+```
+Yes, unlimited campaigns included:
+
+• Run different campaigns for different personas
+• Test different messaging approaches (A/B testing)
+• Separate campaigns by goal (sales vs. partnerships)
+• Each campaign has its own analytics
+
+Pro tip: Start with one focused campaign, then expand once you see 
+what messaging works best.
+```
+
+#### Q19: What happens if someone replies negatively?
+```
+AI handles it gracefully:
+
+1. Negative replies are flagged immediately
+2. AI sends a polite closing message (or you can customize)
+3. Contact is marked "Not Interested" - never contacted again
+4. They're excluded from all future campaigns
+5. You can review all negative replies in dashboard
+
+We respect "no" the first time. This protects your reputation.
+```
+
+#### Q20: Can I pause my campaign for vacation?
+```
+Yes, anytime:
+
+• Pause with one click from dashboard
+• All active conversations are safely paused
+• Resume anytime - picks up exactly where it left off
+• Your billing continues (no pause on subscription)
+• For extended breaks, consider canceling and restarting later
+
+AI will not send any messages while paused. Active conversations 
+that need replies will be flagged for your return.
+```
+
+---
+
+### FAQ Display in Quiz
+
+FAQs appear contextually throughout the quiz:
+
+| Quiz Step | Relevant FAQs Shown |
+|-----------|---------------------|
+| **LinkedIn Connection** | Q1, Q2, Q3 (safety concerns) |
+| **Persona Creation** | Q8, Q10 (how AI finds people) |
+| **Campaign Config** | Q9, Q13, Q18, Q19 (how it works) |
+| **Payment** | Q4, Q5, Q6, Q7 (pricing/value) |
+| **Loading States** | Rotate through relevant FAQs |
+
+### FAQ Component
+
+```typescript
+// components/FAQSection.tsx
+interface FAQProps {
+  relevantQuestions: number[];  // [1, 2, 3] = Q1, Q2, Q3
+  expandedByDefault?: number;   // Show one expanded
+  variant: 'inline' | 'modal' | 'sidebar';
+}
+
+// Show contextual help icon that expands to relevant FAQs
+<FAQTrigger step="linkedin-connection" />
+// → Shows Q1, Q2, Q3 in expandable accordion
+```
+
+### Proactive FAQ Display
+
+At key decision points, proactively surface the most relevant question:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  🔐 Connect Your LinkedIn                                                   │
+│                                                                             │
+│  ...connection UI...                                                        │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐            │
+│  │  ❓ Most common question at this step:                      │            │
+│  │                                                             │            │
+│  │  "Will my LinkedIn account get banned?"                     │            │
+│  │                                                             │            │
+│  │  No. We use human-like patterns that LinkedIn can't         │            │
+│  │  distinguish from manual activity. 2M+ messages sent        │            │
+│  │  with 0 account bans. [Read full answer →]                  │            │
+│  └─────────────────────────────────────────────────────────────┘            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Advanced Trust Building (For Cold Visitors)
+
+Users have never heard of us. They need to trust us enough to:
+1. Give us their LinkedIn credentials (scary)
+2. Pay $200/month (expensive)
+
+Here's a multi-layered trust framework.
+
+---
+
+### Layer 1: Industry Research & Market Validation
+
+Instead of fake badges, use real industry research that validates the AI outreach space:
+
+#### Market Growth (Real Data)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  📈 The AI Sales Revolution is Here                                         │
+│                                                                             │
+│  Gartner predicted 75% of B2B sales organizations would adopt               │
+│  AI-guided selling by 2025 — and it happened.                               │
+│                                                                             │
+│  Now in 2026, AI outreach is no longer optional — it's standard.            │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────              │
+│                                                                             │
+│  AI SDR Market: $4.1B (2025) → $15B by 2030 (29.5% annual growth)          │
+│  — MarketsAndMarkets                                                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Research-Backed Results
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  📊 What the research shows:                                                │
+│                                                                             │
+│  McKinsey & Company:                                                        │
+│  • 10-15% efficiency improvement with AI sales automation                   │
+│  • Up to 10% sales uplift for early adopters                               │
+│  • 15x faster campaign creation and execution                               │
+│                                                                             │
+│  Harvard Business Review:                                                   │
+│  • AI-driven personalization increases conversion rates by 35%              │
+│  • 50% more leads generated with AI prospecting                            │
+│                                                                             │
+│  Outreach 2025 Report (33M+ weekly interactions analyzed):                 │
+│  • 80% higher engagement with AI-personalized messages                      │
+│  • 45% faster pipeline velocity                                            │
+│                                                                             │
+│  [Read the research →]                                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Industry Investment (Proves Market Confidence)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  💰 VCs are betting big on AI sales:                                        │
+│                                                                             │
+│  Recent funding rounds in AI SDR space:                                     │
+│  • 11x.ai — $50M Series B (led by Andreessen Horowitz)                     │
+│  • Artisan — $25M Series A                                                  │
+│  • Actively AI — $22.5M                                                     │
+│                                                                             │
+│  "AI SDRs are among the exceptions seeing strong adoption"                  │
+│   — TechCrunch                                                              │
+│                                                                             │
+│  $765 billion in pipeline supported by AI platforms last year               │
+│   — Outreach 2025 Year in Review                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### The Shift to AI-Powered Outreach (TechCrunch, McKinsey)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🔄 The industry is shifting:                                               │
+│                                                                             │
+│  "Revenue teams shifted from 'trying AI' to 'running on AI'                │
+│   across prospecting, deals, forecasting, and coaching."                    │
+│                                                                             │
+│   — Outreach Year in Review                                                 │
+│                                                                             │
+│  • 80% of B2B leads now come from LinkedIn (vs email/cold calls)           │
+│  • 70% of buyers prefer personalized outreach experiences                   │
+│  • Companies using AI outreach report lower acquisition costs               │
+│                                                                             │
+│  You're not early — you're right on time.                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Security (What We Actually Have)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🔒 Built on trusted infrastructure:                                        │
+│                                                                             │
+│  [Stripe]     — Payments (PCI compliant)                                    │
+│  [Clerk]      — Authentication (SOC 2)                                      │
+│  [Unipile]    — LinkedIn integration (certified partner)                    │
+│                                                                             │
+│  Your data is encrypted in transit and at rest.                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 2: Real-Time Social Proof
+
+#### Live Activity Feed
+Show real (anonymized) activity happening right now:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🔴 Live: What's happening right now                                        │
+│                                                                             │
+│  • Sarah from Austin just booked her 3rd demo this week                     │
+│  • A startup in London connected with 12 investors today                    │
+│  • Marketing agency secured 2 guest posts in the last hour                  │
+│  • Someone in your industry just started their campaign ←                   │
+│                                                                             │
+│  [2,437 active campaigns right now]                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Recent Signups (FOMO)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  👥 Recent signups like you:                                                │
+│                                                                             │
+│  • Marketing Director from Nike (2 min ago)                                 │
+│  • Founder from YC startup (15 min ago)                                     │
+│  • VP Sales from Salesforce (1 hour ago)                                    │
+│                                                                             │
+│  147 people completed this quiz today                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 3: Human Connection (Without Photos/Videos)
+
+Build trust through authenticity and responsiveness, not team photos:
+
+#### Founder Story (Text-Based)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  💭 Why we built this:                                                      │
+│                                                                             │
+│  "I spent 3 hours every day on LinkedIn outreach. Finding leads,           │
+│   writing personalized messages, following up — it was exhausting.          │
+│                                                                             │
+│   I wanted to walk in the park while AI did the repetitive work.           │
+│   That's exactly what we built."                                            │
+│                                                                             │
+│  Built in London since 2024.                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Active Support (Proves Real Humans Behind Product)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  💬 Real humans, real support                                               │
+│                                                                             │
+│  • Live chat available (avg response: 2 min)                                │
+│  • Email: support@aiincharge.com (24h response)                             │
+│  • We personally help optimize your first campaign                          │
+│                                                                             │
+│  "We're a small team and we actually read every message."                   │
+│                                                                             │
+│  [Chat with us now →]                                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Transparency Over Polish
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🔍 We're transparent about everything:                                     │
+│                                                                             │
+│  • You can see exactly what AI will do before you connect                   │
+│  • Preview every message before it's sent                                   │
+│  • Real-time activity log shows all actions                                 │
+│  • No hidden fees, no surprises                                             │
+│                                                                             │
+│  We'd rather under-promise and over-deliver.                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 4: Risk Reversal (Beyond Money-Back)
+
+#### Tiered Guarantees
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🛡️ Triple Guarantee - Zero Risk                                            │
+│                                                                             │
+│  1. 30-DAY MONEY BACK                                                       │
+│     Don't hit your goals? Full refund, no questions.                        │
+│                                                                             │
+│  2. ACCOUNT PROTECTION                                                      │
+│     If your LinkedIn gets restricted due to our actions,                    │
+│     we'll pay for LinkedIn Premium for 6 months ($360 value).               │
+│                                                                             │
+│  3. RESULTS OR WE FIX IT                                                    │
+│     Not seeing results? Our team will personally optimize                   │
+│     your campaign at no extra cost.                                         │
+│                                                                             │
+│  We've never had to honor guarantee #2. That's how safe this is.            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 5: Transparency & Education
+
+#### Show Exactly What AI Will Do
+Before LinkedIn connection, show preview:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  👁️ Here's exactly what AI will do on your account:                         │
+│                                                                             │
+│  Day 1-3: Profile Views                                                     │
+│  ├── View 20-30 profiles matching your persona                              │
+│  └── They'll see you visited (warms them up)                                │
+│                                                                             │
+│  Day 4-7: Engagement                                                        │
+│  ├── Like 5-10 relevant posts                                               │
+│  └── Leave 2-3 thoughtful comments (you approve first 5)                    │
+│                                                                             │
+│  Day 8+: Outreach                                                           │
+│  ├── Send 10-20 connection requests daily                                   │
+│  ├── Each message is unique and personalized                                │
+│  └── Follow up with connected contacts                                      │
+│                                                                             │
+│  [See example messages AI would send →]                                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Sample Message Preview
+Let users see real AI-generated messages before they connect:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  💬 Here's how AI would message someone in your target audience:            │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐            │
+│  │  To: Sarah Chen, CTO at Fintech AI                          │            │
+│  │                                                             │            │
+│  │  "Hi Sarah, I noticed your recent post about scaling        │            │
+│  │   engineering teams - the point about async communication   │            │
+│  │   really resonated. I'm working on something that helps     │            │
+│  │   CTOs like yourself automate the tedious parts of          │            │
+│  │   outreach. Would love to connect and exchange ideas!"      │            │
+│  │                                                             │            │
+│  │  [✓ Personalized to her profile]                            │            │
+│  │  [✓ References her recent post]                             │            │
+│  │  [✓ Not salesy or pushy]                                    │            │
+│  └─────────────────────────────────────────────────────────────┘            │
+│                                                                             │
+│  This is NOT a template. AI writes unique messages for everyone.            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 6: Proof Before Payment
+
+#### Free Value First
+Give something valuable before asking for money:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🎁 Before you pay, here's what you already got (free):                     │
+│                                                                             │
+│  ✓ Persona created with LinkedIn search criteria                            │
+│  ✓ 8,500 matching contacts identified                                       │
+│  ✓ 5 preview contacts with ICP scores                                       │
+│  ✓ AI analysis of why each contact is a good fit                            │
+│  ✓ Sample messages AI would send to each                                    │
+│                                                                             │
+│  📥 [Download your persona & contact list - keep it even if you don't pay]  │
+│                                                                             │
+│  Ready to activate? →                                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Interactive Demo
+Let users "try" before connecting:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  🎮 Try it yourself (no account needed):                                    │
+│                                                                             │
+│  Enter any LinkedIn profile URL and see how AI would analyze & message:     │
+│                                                                             │
+│  [ https://linkedin.com/in/example_______ ]  [Analyze]                      │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────              │
+│                                                                             │
+│  Result:                                                                    │
+│  • ICP Fit Score: 87%                                                       │
+│  • Key talking points: [AI engineering], [scaling teams]                    │
+│  • Recent activity: Posted about AI 3 days ago                              │
+│  • Suggested message: "Hi [Name], your post about..."                       │
+│                                                                             │
+│  [This is what AI does for every contact, automatically]                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 7: Support Availability
+
+#### Always-Available Help
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  💬 Need help deciding?                                                     │
+│                                                                             │
+│  [💬 Chat with us live]     Avg response: 2 min                             │
+│  [📞 Book a quick call]     15 min with a human                             │
+│  [📧 Email us]              support@aiincharge.com                          │
+│                                                                             │
+│  Or join our community:                                                     │
+│  [Slack Community - 1,200+ members]                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Floating Chat Widget
+```
+┌───────────────────────────┐
+│  💬 Questions?            │
+│                           │
+│  Talk to a real human     │
+│  Avg reply: 2 min         │
+│                           │
+│  [Ask anything...]        │
+└───────────────────────────┘
+        ↑
+   Always visible
+   in bottom-right
+```
+
+---
+
+### Layer 8: Specific Numbers (Not Vague Claims)
+
+Replace vague claims with specific, believable numbers:
+
+| ❌ Vague | ✅ Specific |
+|----------|-------------|
+| "Many users" | "2,437 active users" |
+| "Fast results" | "First reply in 4.2 days (avg)" |
+| "High response rate" | "34.7% connection acceptance" |
+| "Safe for your account" | "2.1M messages sent, 0 bans" |
+| "Great support" | "2 min avg response time" |
+| "Trusted by companies" | "147 Fortune 500 employees use us" |
+
+---
+
+### Layer 9: Comparison to Alternatives
+
+Show why we're better than what they're currently doing:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  📊 How we compare:                                                         │
+│                                                                             │
+│                      Manual     Other Tools   AI In Charge                  │
+│  ─────────────────────────────────────────────────────────────              │
+│  Time per day         2-4 hrs    30 min        0 min                        │
+│  Messages/month       50-100     500+          500+                         │
+│  Personalization      High       Low           High                         │
+│  Account safety       Safe       Risky         Safe                         │
+│  Cost                 Your time  $99-500/mo    $200/mo                      │
+│  Reply rate           10-15%     3-5%          10-20%                       │
+│                                                                             │
+│  [See detailed comparison →]                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Layer 10: Progressive Commitment
+
+Don't ask for everything at once. Build trust through small "yeses":
+
+```
+Step 1: Sign up (just email) ───────────────────────► Low commitment
+           ↓ Small yes
+Step 2: Tell us your goal ──────────────────────────► Still easy
+           ↓ Small yes  
+Step 3: Add website (optional) ─────────────────────► Optional, no risk
+           ↓ Small yes
+Step 4: See AI-generated personas ──────────────────► Value delivered FREE
+           ↓ Bigger yes (but we proved value)
+Step 5: Connect LinkedIn ───────────────────────────► Scary, but trust built
+           ↓ Biggest yes
+Step 6: Pay $200 ───────────────────────────────────► After all trust signals
+```
+
+Each step delivers value before asking for more commitment.
+
+---
+
+### Trust Checklist by Quiz Step
+
+| Step | Trust Elements to Include |
+|------|---------------------------|
+| **Welcome** | Industry research stats, market growth, live activity, user count |
+| **Auth** | Infrastructure badges (Stripe, Clerk), "join X users" |
+| **Goal** | Goal-specific testimonial, relevant industry stats |
+| **Company** | Show what we'll extract (value preview) |
+| **LinkedIn** | Safety FAQ, account protection guarantee, message preview, McKinsey stats |
+| **Persona** | Free persona download, contact preview |
+| **Campaign** | Transparency on what AI does daily |
+| **Payment** | Full social proof, triple guarantee, support available, VC funding proof |
+
+---
+
+### Trust Score System (Internal)
+
+Track how "trust-ready" each user is:
+
+```typescript
+interface TrustSignals {
+  watchedFounderVideo: boolean;      // +15 trust
+  readFAQ: boolean;                  // +10 trust
+  usedInteractiveDemo: boolean;      // +20 trust
+  viewedTestimonials: boolean;       // +10 trust
+  openedChat: boolean;               // +5 trust
+  downloadedFreePesona: boolean;     // +15 trust
+  timeOnSite: number;                // +1 per minute
+}
+
+// If trust score < 50 at payment step, show extra trust elements
+// If trust score > 80, streamline to faster checkout
+```
+
+---
+
+### Implementation Priority
+
+| Priority | Trust Element | Effort | Impact |
+|----------|---------------|--------|--------|
+| P0 | Goal-specific testimonials | Low | High |
+| P0 | Money-back guarantee messaging | Low | High |
+| P0 | Industry research stats (McKinsey, Gartner) | Low | High |
+| P1 | Live activity feed | Medium | High |
+| P1 | Sample message preview | Medium | High |
+| P1 | Interactive demo | High | Very High |
+| P1 | Founder story (text) | Low | Medium |
+| P2 | Chat widget | Medium | Medium |
+| P2 | Comparison table | Low | Medium |
+| P2 | Free persona download | Medium | Medium |
+| P2 | Market growth stats | Low | Medium |
+| P3 | Trust score system | High | Medium |
+
+---
+
+## Development Approach
+
+### Phase 1: Core Infrastructure (Isolated)
+1. Create `/onboarding` route with own layout
+2. Implement quiz state machine
+3. Build step components skeleton
+4. Add progress persistence (localStorage + API)
+
+### Phase 2: Integration Steps
+1. Clerk auth integration
+2. LinkedIn connection flow
+3. Persona creation with preview
+4. Campaign creation
+
+### Phase 3: Polish
+1. Video background integration
+2. Loading state animations
+3. Educational content carousel
+4. Mobile responsiveness
+
+### Phase 4: CTO Review
+1. Code review
+2. Security audit
+3. Performance optimization
+4. Staging deployment
+
+### Testing Checklist
+- [ ] Full flow without interruption
+- [ ] Resume from any step
+- [ ] Error handling at each API call
+- [ ] Mobile experience
+- [ ] LinkedIn OAuth edge cases
+- [ ] Stripe trial/payment flows
+
+---
+
+## Files to Create
+
+### Frontend
+
+```
+frontend/src/
+├── app/
+│   └── onboarding/
+│       ├── layout.tsx           # Isolated layout with forest theme
+│       ├── page.tsx             # Quiz container
+│       └── [...step]/
+│           └── page.tsx         # Dynamic step routing
+├── api/
+│   └── entities/
+│       └── persona/
+│           └── persona-mutations.ts  # Add useParsePersonaDescription hook
+├── modules/
+│   └── onboarding/
+│       ├── QuizContainer.tsx    # Main quiz state machine
+│       ├── QuizProgress.tsx     # Progress indicator
+│       ├── steps/
+│       │   ├── WelcomeStep.tsx
+│       │   ├── AuthStep.tsx
+│       │   ├── GoalStep.tsx
+│       │   ├── CompanyStep.tsx
+│       │   ├── LinkedInStep.tsx
+│       │   ├── BookingStep.tsx
+│       │   ├── PersonaPathSelectionStep.tsx   # Choose URL vs NL
+│       │   ├── PersonaUrlGeneratingStep.tsx   # Path A: Generating
+│       │   ├── PersonaUrlSelectionStep.tsx    # Path A: Select personas
+│       │   ├── PersonaNLDescriptionStep.tsx   # Path B: Enter description
+│       │   ├── PersonaNLReviewStep.tsx        # Path B: Review params
+│       │   ├── PersonaPreviewStep.tsx         # Both: Preview contacts
+│       │   ├── CampaignStep.tsx
+│       │   ├── PaymentStep.tsx
+│       │   └── SuccessStep.tsx
+│       ├── components/
+│       │   ├── ForestBackground.tsx
+│       │   ├── FloatingNotification.tsx
+│       │   ├── EducationalCard.tsx
+│       │   ├── ICPScoreCard.tsx
+│       │   ├── ContactPreview.tsx
+│       │   ├── PersonaCard.tsx              # For Path A selection
+│       │   ├── ParsedParamsEditor.tsx       # For Path B editing
+│       │   └── DescriptionExamples.tsx      # Example prompts for Path B
+│       ├── hooks/
+│       │   ├── useQuizState.ts
+│       │   ├── useQuizNavigation.ts
+│       │   └── useQuizPersistence.ts
+│       └── constants/
+│           ├── steps.ts
+│           ├── defaults.ts
+│           ├── content.ts
+│           └── description-examples.ts      # Example descriptions for Path B
+```
+
+### Backend (NEW for Path B)
+
+```
+backend/
+├── apps/api/src/persona/
+│   ├── persona.controller.ts    # Add parseDescription endpoint
+│   ├── persona.service.ts       # Add parseDescription method
+│   └── input/
+│       └── parse-description.input.ts   # NEW: Input DTO
+│   └── output/
+│       └── parse-description.output.ts  # NEW: Output DTO
+├── libs/common/src/ai-service/
+│   ├── ai-service.service.ts    # Add parsePersonaDescription method
+│   └── input/
+│       └── parse-description.input.ts   # NEW
+│   └── output/
+│       └── parse-description.output.ts  # NEW
+```
+
+### AI Service (Python - NEW)
+
+```
+ai-service/
+├── app/
+│   └── routes/
+│       └── personas.py          # Add /personas/parse endpoint
+│   └── services/
+│       └── persona_parser.py    # NEW: NL to LinkedIn params logic
+│   └── prompts/
+│       └── persona_parse.py     # NEW: Prompt templates
+```
+
+---
+
+## Key Metrics to Track
+
+1. **Funnel Completion Rate**: Welcome → Success
+2. **Drop-off by Step**: Which steps lose users
+3. **Time per Step**: Optimization opportunities
+4. **LinkedIn Connection Success Rate**
+5. **Persona Generation Time**
+6. **Trial → Paid Conversion**
+7. **Path A vs Path B Usage**: Which persona creation path users prefer
+8. **Path B Parse Confidence**: Average confidence score for NL parsing
+
+---
+
+## Implementation Tasks - Path B (Natural Language)
+
+### Backend Tasks
+
+#### Task 1: Create Input/Output DTOs
+
+**File**: `backend/apps/api/src/persona/input/parse-description.input.ts`
+```typescript
+import { ApiProperty } from '@nestjs/swagger';
+import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
+
+export class ParsePersonaDescriptionInput {
+  @ApiProperty({
+    description: 'Natural language description of ideal contacts',
+    example: 'CTOs at Series A fintech startups in the US',
+  })
+  @IsString()
+  @MinLength(10)
+  description: string;
+
+  @ApiProperty({
+    description: 'Whether user has Sales Navigator account',
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isSalesNavigator?: boolean;
+}
+```
+
+**File**: `backend/apps/api/src/persona/output/parse-description.output.ts`
+```typescript
+import { ApiProperty } from '@nestjs/swagger';
+import { PersonaLinkedinParams } from '@aiincharge/common/domain/persona/persona';
+
+export class ParsePersonaDescriptionOutput {
+  @ApiProperty()
+  personaName: string;
+
+  @ApiProperty()
+  personaDescription: string;
+
+  @ApiProperty()
+  linkedinParams: PersonaLinkedinParams;
+
+  @ApiProperty()
+  confidence: number;
+
+  @ApiProperty({ required: false })
+  suggestions?: string[];
+}
+```
+
+#### Task 2: Add Controller Endpoint
+
+**File**: `backend/apps/api/src/persona/persona.controller.ts`
+```typescript
+@Post('parse-description')
+@ApiOperation({ summary: 'Parse natural language to LinkedIn search params' })
+@ApiBody({ type: ParsePersonaDescriptionInput })
+@ApiResponse({ status: 200, type: ParsePersonaDescriptionOutput })
+async parsePersonaDescription(
+  @Body() input: ParsePersonaDescriptionInput,
+  @AuthData() authData: AuthObject,
+) {
+  return this.personaService.parseDescription(input);
+}
+```
+
+#### Task 3: Add Service Method
+
+**File**: `backend/apps/api/src/persona/persona.service.ts`
+```typescript
+async parseDescription(
+  input: ParsePersonaDescriptionInput
+): Promise<ParsePersonaDescriptionOutput> {
+  const { data } = await this.aiService.parsePersonaDescription({
+    description: input.description,
+    isSalesNavigator: input.isSalesNavigator,
+  });
+  
+  return data;
+}
+```
+
+#### Task 4: Add AI Service Method
+
+**File**: `backend/libs/common/src/ai-service/ai-service.service.ts`
+```typescript
+async parsePersonaDescription({
+  description,
+  isSalesNavigator = false,
+}: {
+  description: string;
+  isSalesNavigator?: boolean;
+}): Promise<{ status: number; data: ParsePersonaDescriptionOutput }> {
+  return this.fetchRetry<ParsePersonaDescriptionOutput>({
+    path: 'personas/parse',
+    body: {
+      description,
+      is_sales_navigator: isSalesNavigator,
+      valid_options: {
+        seniority_levels: Object.entries(SENIORITY_LEVEL_CODE_TO_LABEL),
+        company_types: Object.entries(COMPANY_TYPE_CODE_TO_LABEL),
+        headcount_ranges: [
+          { min: 1, max: 10, label: '1-10 employees' },
+          { min: 11, max: 50, label: '11-50 employees' },
+          { min: 51, max: 200, label: '51-200 employees' },
+          { min: 201, max: 500, label: '201-500 employees' },
+          { min: 501, max: 1000, label: '501-1000 employees' },
+          { min: 1001, max: 5000, label: '1001-5000 employees' },
+          { min: 5001, max: 10000, label: '5001-10000 employees' },
+          { min: 10001, max: null, label: '10001+ employees' },
+        ],
+      },
+    },
+    timeout: 30000, // 30 second timeout
+  });
+}
+```
+
+### AI Service (Python) Tasks
+
+#### Task 5: Create Parse Endpoint
+
+**File**: `ai-service/app/routes/personas.py`
+```python
+@router.post("/parse")
+async def parse_persona_description(request: ParseDescriptionRequest):
+    """
+    Parse natural language description into LinkedIn search parameters.
+    
+    Examples:
+    - "CTOs at Series A startups" → jobTitles: CTO, companyHeadcount: 11-50
+    - "Marketing directors in Europe" → jobTitles: Marketing Director, locations: Europe
+    """
+    return await persona_parser.parse(
+        description=request.description,
+        is_sales_navigator=request.is_sales_navigator,
+        valid_options=request.valid_options,
+    )
+```
+
+#### Task 6: Create Parser Logic
+
+**Key mappings for AI**:
+```python
+COMPANY_SIZE_SIGNALS = {
+    "startup": {"min": 1, "max": 50},
+    "early stage": {"min": 1, "max": 50},
+    "seed": {"min": 1, "max": 10},
+    "series a": {"min": 11, "max": 50},
+    "series b": {"min": 51, "max": 200},
+    "series c": {"min": 201, "max": 500},
+    "series d+": {"min": 501, "max": 1000},
+    "growth stage": {"min": 51, "max": 500},
+    "scale-up": {"min": 201, "max": 1000},
+    "mid-size": {"min": 201, "max": 1000},
+    "enterprise": {"min": 1001, "max": None},
+    "large": {"min": 1001, "max": None},
+    "fortune 500": {"min": 10001, "max": None},
+}
+
+JOB_TITLE_EXPANSIONS = {
+    "cto": ["CTO", "Chief Technology Officer", "Chief Tech Officer"],
+    "ceo": ["CEO", "Chief Executive Officer", "Founder & CEO"],
+    "vp engineering": ["VP Engineering", "VP of Engineering", "Vice President Engineering"],
+    "cfo": ["CFO", "Chief Financial Officer"],
+    "cmo": ["CMO", "Chief Marketing Officer"],
+    # ... more expansions
+}
+```
+
+### Frontend Tasks
+
+#### Task 7: Add API Hook
+
+**File**: `frontend/src/api/entities/persona/persona-mutations.ts`
+```typescript
+export const useParsePersonaDescription = () => {
+  const { mutate, mutateAsync, isPending, error } = $api.useMutation(
+    'post',
+    '/personas/parse-description',
+    {
+      onError: err => handleError(err, 'Failed to parse description'),
+    },
+  );
+
+  return {
+    parseDescription: mutate,
+    parseDescriptionAsync: mutateAsync,
+    isParsing: isPending,
+    parseError: error,
+  };
+};
+```
+
+#### Task 8: Create Description Input Component
+
+**File**: `frontend/src/modules/onboarding/steps/PersonaNLDescriptionStep.tsx`
+- Textarea for natural language input
+- Example prompts below
+- "Find Matching Contacts" button
+- Loading state during parsing
+
+#### Task 9: Create Parsed Params Review Component
+
+**File**: `frontend/src/modules/onboarding/steps/PersonaNLReviewStep.tsx`
+- Display parsed params in editable format
+- Inline edit for each field
+- Real-time audience size preview
+- "Looks good, continue" or "Refine description" buttons
+
+---
+
+## Development Priority
+
+### Phase 1: Path A Enhancement (Existing)
+1. Integrate existing persona generation into quiz flow
+2. Add persona selection UI
+3. Test with website URL flow
+
+### Phase 2: Path B Implementation (New)
+1. Backend: Parse description endpoint
+2. AI Service: NL parsing logic
+3. Frontend: Description input + review UI
+
+### Phase 3: Integration
+1. Path selection logic
+2. Unified preview contacts step
+3. State management for both paths
+
+### Phase 4: Polish
+1. Loading states with educational content
+2. Error handling
+3. Mobile responsiveness
+
+---
+
+## Code Ownership & CTO Approval Matrix
+
+### Ownership Legend
+
+| Symbol | Meaning |
+|--------|---------|
+| 🟢 | **Your code** - No approval needed, work independently |
+| 🟡 | **New file in CTO's area** - Write code, CTO reviews before merge |
+| 🔴 | **CTO's existing code** - Requires CTO approval for any changes |
+| ⚪ | **Consume only** - Use existing APIs, don't modify |
+
+---
+
+### Frontend Files
+
+| File/Folder | Owner | Notes |
+|-------------|-------|-------|
+| `frontend/src/app/onboarding/` | 🟢 You | New route, fully isolated |
+| `frontend/src/app/onboarding/layout.tsx` | 🟢 You | Quiz-specific layout |
+| `frontend/src/app/onboarding/page.tsx` | 🟢 You | Quiz container |
+| `frontend/src/app/onboarding/[...step]/page.tsx` | 🟢 You | Dynamic step routing |
+| `frontend/src/modules/onboarding/` | 🟢 You | Entire new module |
+| `frontend/src/modules/onboarding/steps/*` | 🟢 You | All step components |
+| `frontend/src/modules/onboarding/components/*` | 🟢 You | All UI components |
+| `frontend/src/modules/onboarding/hooks/*` | 🟢 You | Quiz state hooks |
+| `frontend/src/api/entities/persona/persona-mutations.ts` | 🟡 New hook | Add `useParsePersonaDescription` |
+| `frontend/src/app/dashboard/*` | 🔴 CTO | Don't touch |
+| `frontend/src/modules/organization/*` | 🔴 CTO | Don't touch |
+
+### Backend Files
+
+| File/Folder | Owner | Notes |
+|-------------|-------|-------|
+| **New Files (Path B)** | | |
+| `backend/apps/api/src/persona/input/parse-description.input.ts` | 🟡 You write | New file, CTO reviews |
+| `backend/apps/api/src/persona/output/parse-description.output.ts` | 🟡 You write | New file, CTO reviews |
+| **Existing Files (Modifications)** | | |
+| `backend/apps/api/src/persona/persona.controller.ts` | 🔴 CTO | Add 1 endpoint (CTO approval) |
+| `backend/apps/api/src/persona/persona.service.ts` | 🔴 CTO | Add 1 method (CTO approval) |
+| `backend/libs/common/src/ai-service/ai-service.service.ts` | 🔴 CTO | Add 1 method (CTO approval) |
+| **Consume Only (No Changes)** | | |
+| `backend/apps/api/src/campaign/*` | ⚪ Use API | `POST /campaign` |
+| `backend/apps/api/src/organization/*` | ⚪ Use API | `PATCH /organization/:id` |
+| `backend/libs/common/src/linked-account/*` | ⚪ Use API | `POST /linked-account/connect` |
+| `backend/apps/api/src/stripe/*` | ⚪ Use API | `POST /stripe/checkout-session` |
+
+### AI Service (Python)
+
+| File/Folder | Owner | Notes |
+|-------------|-------|-------|
+| `ai-service/app/routes/personas.py` | 🔴 CTO | Add `/parse` endpoint |
+| `ai-service/app/services/persona_parser.py` | 🟡 You write | New file, CTO reviews |
+| `ai-service/app/prompts/persona_parse.py` | 🟡 You write | New file, CTO reviews |
+
+---
+
+### Summary: What You Can Do Without CTO
+
+#### Phase 1: Full Quiz UI (100% Independent)
+
+```
+✅ Create entire /onboarding route structure
+✅ Build all quiz step components
+✅ Implement quiz state management
+✅ Add progress persistence
+✅ Create forest theme / visual design
+✅ Build loading states with educational content
+✅ Integrate with existing APIs (consume only):
+   - Clerk authentication
+   - POST /linked-account/connect
+   - POST /personas/sources (website scraping)
+   - POST /personas/generate (existing)
+   - POST /personas (create persona)
+   - POST /campaign (create campaign)
+   - POST /stripe/checkout-session
+```
+
+#### Phase 2: Path B Backend (Requires CTO Review)
+
+**You Write → CTO Reviews:**
+```
+📝 parse-description.input.ts (new file)
+📝 parse-description.output.ts (new file)
+📝 persona_parser.py (new file)
+📝 persona_parse.py prompt (new file)
+```
+
+**CTO Adds (or you write PR, CTO merges):**
+```
+🔧 1 endpoint in persona.controller.ts
+🔧 1 method in persona.service.ts
+🔧 1 method in ai-service.service.ts
+🔧 1 endpoint in personas.py (Python)
+```
+
+---
+
+### Git Workflow
+
+```bash
+# Your workflow
+git checkout -b feature/onboarding-quiz
+
+# Work freely on your files
+git add frontend/src/app/onboarding/
+git add frontend/src/modules/onboarding/
+git commit -m "feat: add quiz step components"
+git push origin feature/onboarding-quiz
+
+# When ready to merge (no approval needed for your files)
+# Create PR → Self-merge for 🟢 files
+
+# For 🟡 or 🔴 files
+# Create separate PR → Request CTO review → CTO merges
+```
+
+### Recommended CODEOWNERS File
+
+```bash
+# .github/CODEOWNERS
+
+# ══════════════════════════════════════════════════════════════
+# YOUR CODE (No approval needed)
+# ══════════════════════════════════════════════════════════════
+/frontend/src/app/onboarding/ @your-github-username
+/frontend/src/modules/onboarding/ @your-github-username
+
+# ══════════════════════════════════════════════════════════════
+# CTO CODE (Requires CTO approval)
+# ══════════════════════════════════════════════════════════════
+/backend/ @cto-github-username
+/ai-service/ @cto-github-username
+/frontend/src/app/dashboard/ @cto-github-username
+/frontend/src/modules/organization/ @cto-github-username
+/frontend/src/api/ @cto-github-username
+```
+
+---
+
+### Development Timeline by Ownership
+
+| Week | Work | Owner | CTO Involvement |
+|------|------|-------|-----------------|
+| 1 | Quiz infrastructure + steps 1-5 | 🟢 You | None |
+| 2 | Path A UI (uses existing APIs) | 🟢 You | None |
+| 3 | Path B frontend + new DTOs | 🟢 You + 🟡 PR | Review PR for DTOs |
+| 4 | Path B backend integration | 🔴 CTO | Adds endpoints or reviews PR |
+| 5 | Polish + testing | 🟢 You | Final review |
+
+---
+
+### API Endpoints: What Exists vs What's New
+
+#### Existing APIs (Just Consume)
+
+| Endpoint | Purpose | Your Action |
+|----------|---------|-------------|
+| `POST /auth/*` | Clerk auth | Call from quiz |
+| `PATCH /organization/:id` | Update org | Call from quiz |
+| `POST /linked-account/connect` | LinkedIn OAuth | Call from quiz |
+| `POST /linked-account/:id/analyze` | Profile analysis | Call from quiz |
+| `POST /personas/sources` | Ingest website | Call from quiz |
+| `POST /personas/generate` | Generate from source | Call from quiz |
+| `POST /personas` | Create persona | Call from quiz |
+| `GET /personas/preview-contacts` | Preview contacts | Call from quiz |
+| `POST /campaign` | Create campaign | Call from quiz |
+| `POST /stripe/checkout-session` | Start trial | Call from quiz |
+
+#### New API (Requires CTO)
+
+| Endpoint | Purpose | CTO Work |
+|----------|---------|----------|
+| `POST /personas/parse-description` | NL → LinkedIn params | Add endpoint + AI call |
+
+**Note**: If Path B is deprioritized, entire quiz works with existing APIs only!
+
+---
+
+## Pre-Development Checklist
+
+Before starting development, validate these assumptions and resolve these open questions.
+
+---
+
+### 1. SCOPE DECISIONS (Must Answer)
+
+#### MVP vs Full Version
+
+| Question | Options | Recommendation |
+|----------|---------|----------------|
+| Include Path B (Natural Language)? | Yes / No / Phase 2 | **Phase 2** - Ship with Path A first |
+| Include interactive demo? | Yes / No | **No** - High effort, add later |
+| Include live activity feed? | Yes / No | **No** - Requires backend work |
+| Include free persona download? | Yes / No | **Yes** - Low effort, high trust |
+| All 16 sub-goals at launch? | Yes / Start with 4 | **Start with 4** most common |
+
+#### Recommended MVP Sub-Goals (Phase 1)
+```
+1. b2b_sales        - Most common use case
+2. hire_fulltime    - Second most common
+3. influencer_marketing - Unique differentiator
+4. guest_posts_seo  - Specific niche, easy to message
+```
+
+**Defer to Phase 2:**
+- invest_in_startups, strategic_partners, all networking goals
+- Natural Language persona creation (Path B)
+- Interactive demo
+
+---
+
+### 2. CONTENT & COPY (Must Create Before Dev)
+
+#### Testimonials & Social Proof
+
+| Item | Status | Action Needed |
+|------|--------|---------------|
+| B2B Sales testimonial | ❓ | Need real quote or realistic placeholder |
+| Influencer testimonial | ❓ | Need real quote or realistic placeholder |
+| Recruiting testimonial | ❓ | Need real quote or realistic placeholder |
+| SEO/Guest Post testimonial | ❓ | Need real quote or realistic placeholder |
+| Company logos for "Trusted by" | ❓ | Need permission or remove section |
+| User count ("2,437 users") | ❓ | What's the real number? |
+| Messages sent ("2.1M messages") | ❓ | What's the real number? |
+
+**Decision needed**: Use real data (even if small) or realistic placeholders?
+
+#### FAQ Answers
+| Item | Status | Action Needed |
+|------|--------|---------------|
+| All 20 FAQ answers reviewed | ❓ | Legal/founder review for accuracy |
+| Guarantee terms approved | ❓ | Legal review of refund policy |
+| Safety claims verified | ❓ | Can we claim "0 account bans"? |
+
+#### Goal-Specific Copy
+| Item | Status | Action Needed |
+|------|--------|---------------|
+| Campaign name defaults per goal | ❓ | Write copy for each goal |
+| Goal descriptions | ❓ | Review/refine for each sub-goal |
+| AI messaging tone per goal | ❓ | Define tone guidelines |
+
+---
+
+### 3. VISUAL ASSETS (Must Create/Source)
+
+| Asset | Status | Action Needed |
+|-------|--------|---------------|
+| Forest/park video for welcome | ❓ | Film, buy stock, or cut from scope |
+| Floating notification animations | ❓ | Design specs needed |
+| Progress indicator design | ❓ | Design specs needed |
+| Forest-themed illustrations | ❓ | Source or design |
+| Color palette finalized | ✅ | In plan (greens, golds, blues) |
+| Mobile responsive designs | ❓ | Design needed |
+
+**Key Decision**: Is the forest video essential or can we launch with static/simpler design?
+
+**Recommendation**: Launch with subtle animated gradient background, add video in Phase 2.
+
+---
+
+### 4. BACKEND API VERIFICATION
+
+#### Existing Endpoints - Verify They Work As Expected
+
+| Endpoint | Verified? | Notes |
+|----------|-----------|-------|
+| `POST /linked-account/connect` | ❓ | Test Unipile OAuth flow |
+| `POST /personas/sources` (website) | ❓ | Test website scraping |
+| `POST /personas/generate` | ❓ | Test with real website |
+| `GET /personas/preview-contacts` | ❓ | Does this endpoint exist? |
+| `POST /campaign` | ❓ | Test all required fields |
+| `POST /stripe/checkout-session` | ❓ | Test with $200 and $49 prices |
+
+#### Questions for CTO
+
+1. **Does `GET /personas/preview-contacts` exist?** Or do we need a new endpoint?
+2. **Can we get audience size estimate** before creating persona?
+3. **Is there a webhook for LinkedIn connection status?** Or do we poll?
+4. **How do we detect Sales Navigator access** on connected account?
+5. **What's the current Stripe product/price setup?** Need `price_full_monthly` and `price_trial_2week`
+
+---
+
+### 5. STRIPE CONFIGURATION (Must Setup)
+
+| Item | Status | Action Needed |
+|------|--------|---------------|
+| Product created in Stripe | ❓ | Create "AI In Charge" product |
+| Price: $200/month recurring | ❓ | Create `price_full_monthly` |
+| Price: $49 trial (→ $200/mo) | ❓ | Create `price_trial_2week` with trial config |
+| Checkout success/cancel URLs | ❓ | Define callback routes |
+| Webhook endpoint configured | ❓ | `checkout.session.completed` |
+| Test mode working | ❓ | Verify test payments work |
+
+---
+
+### 6. LEGAL & COMPLIANCE
+
+| Item | Status | Action Needed |
+|------|--------|---------------|
+| Money-back guarantee terms | ❓ | Written T&C for 30-day refund |
+| Account protection guarantee | ❓ | Can we legally promise this? |
+| Privacy policy for LinkedIn data | ❓ | Review with Unipile requirements |
+| Cookie consent for quiz | ❓ | GDPR compliance |
+| Terms of service | ❓ | Review for new pricing |
+
+**Key Question**: The "triple guarantee" includes paying for LinkedIn Premium if we cause a ban. Is this legally binding and operationally feasible?
+
+---
+
+### 7. TECHNICAL QUESTIONS
+
+#### Frontend
+
+| Question | Answer Needed |
+|----------|---------------|
+| State management approach? | Jotai (existing) or new context? |
+| Form validation library? | react-hook-form + zod (existing)? |
+| Animation library? | Framer Motion? CSS? |
+| How to persist quiz progress? | localStorage + API sync? |
+| How to handle Unipile OAuth popup? | New window or redirect? |
+
+#### Infrastructure
+
+| Question | Answer Needed |
+|----------|---------------|
+| Can quiz run on separate subdomain? | `onboarding.aiincharge.com`? |
+| Analytics tracking? | What events to track? |
+| Error monitoring? | Sentry integration? |
+| A/B testing capability? | Need for launch? |
+
+---
+
+### 8. ASSUMPTIONS TO VALIDATE
+
+These assumptions are in the plan but not verified:
+
+| Assumption | Risk if Wrong | How to Validate |
+|------------|---------------|-----------------|
+| Website scraping takes 30-60s | UX timing wrong | Test with real URLs |
+| Persona generation returns preview contacts | Missing feature | Check API response |
+| LinkedIn OAuth completes in 60s | Loading state too short | Test real flow |
+| Users have Calendly/booking URL | Blocker for some users | Allow "I'll add later"? |
+| $200/month is acceptable price | No conversions | Market research/test |
+| Forest metaphor resonates | Confused users | User testing |
+| 4 primary goals cover 80% of users | Missing segments | Analyze existing users |
+
+---
+
+### 9. OPEN DESIGN DECISIONS
+
+| Decision | Options | Recommendation |
+|----------|---------|----------------|
+| Skip steps allowed? | Yes / No / Some | Allow skipping website URL only |
+| Save & continue later? | Yes / No | Yes - email link to resume |
+| Show persona form fields? | Simplified / Full | Simplified - full is overwhelming |
+| Auto-start campaign after payment? | Yes / Confirm | Confirm - user should feel control |
+| Mobile support at launch? | Yes / Desktop only | Responsive but desktop-optimized |
+
+---
+
+### 10. RISKS & MITIGATIONS
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Unipile OAuth fails frequently | Users can't complete | Retry flow + manual support |
+| Website scraping fails | No persona generated | Fallback to manual entry |
+| Stripe payment fails | Lost conversions | Clear error + support chat |
+| User abandons mid-quiz | Lost lead | Email capture early + reminders |
+| Forest theme feels weird | Brand confusion | Test with users first |
+| $200 too expensive | Low conversion | A/B test $149 or $99 |
+| Testimonials feel fake | Trust damaged | Use real quotes even if small |
+
+---
+
+### 11. MINIMUM LAUNCH REQUIREMENTS
+
+**Must Have for Launch:**
+- [ ] Auth flow (Clerk)
+- [ ] Goal selection (4 primary sub-goals)
+- [ ] Company website input (optional)
+- [ ] LinkedIn connection (Unipile)
+- [ ] Booking URL input
+- [ ] Persona creation (Path A only - from URL)
+- [ ] Campaign configuration (smart defaults)
+- [ ] Payment ($200/month + $49 trial)
+- [ ] Success screen
+
+**Can Ship Without:**
+- [ ] Path B (Natural Language persona)
+- [ ] Interactive demo
+- [ ] Live activity feed
+- [ ] Forest video background
+- [ ] All 16 sub-goals
+- [ ] Free persona download
+
+---
+
+### 12. RECOMMENDED NEXT STEPS
+
+#### Before Any Code:
+
+1. **Get CTO alignment** on:
+   - API endpoints needed
+   - Stripe configuration
+   - Timeline for any backend work
+
+2. **Finalize content**:
+   - Write 4 testimonials (or decide on placeholder approach)
+   - Review FAQ answers for accuracy
+   - Define real metrics to show
+
+3. **Scope confirmation**:
+   - Agree on MVP feature set
+   - Agree on 4 launch sub-goals
+   - Decide: forest video or simpler design?
+
+4. **Design basics**:
+   - Wireframes for each step
+   - Mobile responsive requirements
+   - Animation expectations
+
+#### Week 1 Development:
+
+1. Set up `/onboarding` route structure
+2. Implement quiz state machine
+3. Build step skeleton components
+4. Auth integration
+5. Goal selection UI
+
+---
+
+### Summary: Top 5 Blockers to Resolve
+
+| # | Blocker | Owner | Priority |
+|---|---------|-------|----------|
+| 1 | Verify existing APIs work as expected | You + CTO | P0 |
+| 2 | Stripe products/prices setup | You / CTO | P0 |
+| 3 | Testimonial content (real or placeholder?) | You + Founder | P0 |
+| 4 | Forest video: do it or cut it? | You + Founder | P1 |
+| 5 | MVP scope agreement | You + CTO + Founder | P0 |
