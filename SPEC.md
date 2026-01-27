@@ -1,6 +1,6 @@
 # HyperLabel Product Specification
 
-**Version:** 1.6  
+**Version:** 1.7  
 **Last Updated:** January 26, 2026  
 **Status:** MVP Definition  
 **Document Owner:** Denys Chumak (Product Manager)
@@ -279,10 +279,21 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 
 | Attribute | Specification |
 |-----------|---------------|
-| **Battery Life** | Up to ~60 days |
+| **Battery Capacity** | 2000 mAh |
+| **Communication consumption** | 2 mAh per transmission |
+| **Sleep consumption** | 0.05 mAh |
+| **Battery Life** | ~60 days (at 120 min interval) |
 | **Lifecycle** | Single-use / Disposable |
-| **Reactivation** | Not supported |
+| **Reactivation** | Not supported — once activated, always on until battery dies |
 | **End of Life** | Discard after delivery or battery depletion |
+| **GPS Cold Start** | 1-2 minutes after activation |
+
+**Battery Life vs Transmission Interval:**
+| Interval | Battery Life | Use Case |
+|----------|--------------|----------|
+| 120 min | ~60 days | Standard (MVP default) |
+| 60 min | ~40 days | Faster updates |
+| 30 min | ~20 days | High-frequency tracking |
 
 ### 4.5 Data Transmission
 
@@ -290,7 +301,8 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 |----------|----------|
 | **In Coverage** | Transmit every 120 minutes (configurable) |
 | **Out of Coverage** | Store locally, transmit when connectivity returns |
-| **Low Battery** | Alert at 20% and 10% |
+| **Low Battery** | Alert at 20%, 10%, then final "depleted" alert |
+| **Battery Depleted** | Last known location shown, status = "Battery Depleted" |
 | **On-Demand** | Future: User-triggered ping |
 
 **Key Feature:** Offline data storage eliminates "black holes" during flights and ocean transit.
@@ -970,7 +982,7 @@ orders (
 | Attribute | Location |
 |-----------|----------|
 | **Manufacturing** | China |
-| **Inventory warehouse** | China |
+| **Inventory warehouse** | China (primary), UK (future for EU), US (future for Americas) |
 | **Typical cargo origin** | China (initial focus) |
 
 ### 9.2 Label Fulfillment
@@ -978,12 +990,17 @@ orders (
 | Stage | Responsibility |
 |-------|---------------|
 | Manufacturing | Andrii / Hardware team (China) |
-| Inventory | China warehouse |
+| Inventory | China warehouse (MVP) |
 | Order processing | Platform (Stripe integration) |
 | **Label-to-Order Linking** | Fulfillment scans label barcode → Label ID linked to Order |
-| Shipping | 3PL partner (TBD) — UK/China warehouse |
+| Shipping | **UTEC** (MVP), 3PL partner when scaling |
 | Customer delivery | DHL/FedEx international |
 | **Shipping SLA** | 3-5 business days (UK/EU), 5-7 days (US) |
+
+**Label Tracking Before Activation:**
+- Label is OFF until tab pulled (battery disconnected)
+- Tracking to shipper uses carrier tracking number (DHL/FedEx)
+- Platform shows: "Label in transit to shipper" with carrier link
 
 **Label Linking Process (Two-Stage):**
 
@@ -6694,15 +6711,24 @@ export const ErrorCodes = {
 | Question | Owner | Status | Answer/Notes |
 |----------|-------|--------|--------------|
 | Label reuse scenario? | Andrii T. | ✅ Resolved | **MVP: Single-use only.** Post-MVP: Reusable via battery charging or battery replacement |
-| Hardware activation mechanism? | Andrii T. | ✅ Resolved | **Pull-out tab mechanic** — user pulls tab to activate the label |
+| Hardware activation mechanism? | Andrii T. | 🔶 TBD | Pull-out tab — exact mechanism (battery connect?) needs clarification |
 | Offline storage capacity? | Andrii T. | 🔶 TBD | **Yes, offline storage supported.** Exact capacity (number of data points) TBD. |
-| 3PL fulfillment partner? | Andrii T. | 🔶 TBD | Using UTEC logistics or external partner (DHL Supply Chain)? |
+| Shelf life (battery in storage)? | Andrii T. | 🔶 TBD | Assumed: battery disconnected until tab pulled = unlimited shelf life. Needs confirmation. |
+| 3PL fulfillment partner? | Andrii T. | ✅ Resolved | **UTEC** handles fulfillment for MVP. 3PL partner when scaling. |
+| Inventory locations? | Andrii T. | ✅ Resolved | **China (primary MVP)**, UK warehouse (future for EU), US warehouse (future for Americas) |
+| GPS cold start time? | Andrii T. | ✅ Resolved | **1-2 minutes** after activation |
+| Transmission interval formula? | Andrii T. | ✅ Resolved | 2mAh per transmission, 0.05mAh sleep, 2000mAh battery. **30 min = ~20 days, 120 min = ~60 days** |
+| Label tracked before activation? | Andrii T. | ✅ Resolved | **No** — label is OFF until tab pulled. Use carrier tracking (DHL/FedEx) |
+| Battery dies mid-transit? | Andrii T. | ✅ Resolved | Alert at 20%, 10%, then "depleted". **Last known location shown.** |
+| Can label sleep after activation? | Andrii T. | ✅ Resolved | **No** — once activated, always on until battery dies |
+| Lost label detection? | Denys | 🔶 Needs thought | 48h no signal → "Lost"? But cargo could be on ocean ship or in warehouse with no signal. **Needs smarter logic.** |
+| When stop transmitting after delivery? | Denys | 🔶 Needs thought | Auto-stop? Manual? Keep transmitting? **Needs decision.** |
+| E-waste disposal? | Denys | ✅ Resolved | Include e-waste note in quick-start guide. Consider frontend deactivation button. Battery = hazardous, needs disposal guidance. |
 | TAM/SAM/SOM calculation | Denys | 🔶 Pending | Sprint 1 task (P2-T1) |
 | Pilot customer identification | Denys | 🔶 Pending | To be identified through user interviews |
 | Delivery detection logic | Denys | ✅ Resolved | **Geofence-based**: Location within 100m of destination for 30+ min triggers "Delivered" |
 | Destination entry - mandatory? | Denys | ✅ Resolved | **Optional for Consignee, Mandatory for Shipper** at activation |
 | "Stuck" detection algorithm | Denys | ✅ Resolved | **No location change >500m for 24+ hours** (configurable). Excludes expected stops. |
-| API integration by SKU with fulfillment? | Andrii T. | 🔶 TBD | Do we need API integration with fulfillment warehouse by SKU? |
 | QR scan at shipper warehouse? | Denys | ✅ Resolved | **MANDATORY** — creates Shipment record, links label to specific cargo. Required for bulk orders (10 labels = 10 scans). |
 | Label-to-Order linking? | Denys | ✅ Resolved | **At HyperLabel fulfillment** — warehouse scans label barcode when shipping to shipper, links Label ID to Order. |
 
@@ -6717,6 +6743,7 @@ export const ErrorCodes = {
 | 1.4 | 2026-01-26 | Denys Chumak | **Clarified flows**: Delivery detection (geofence 100m/30min), Stuck detection (500m/24h), Destination mandatory for shipper, QR scan mandatory, Shipping SLA added, Currency USD+GBP, Data retention fixed (30 days free) |
 | 1.5 | 2026-01-26 | Denys Chumak | **Label-to-Order linking**: Clarified that Label ID is linked to Order at HyperLabel fulfillment (when shipping to shipper). Updated user journey to 9 steps. |
 | 1.6 | 2026-01-26 | Denys Chumak | **Two-stage linking**: Fulfillment links Label→Order, QR Scan creates Shipment (Label→Shipment). QR scan now MANDATORY to support bulk orders (10 labels = 10 shipments). |
+| 1.7 | 2026-01-27 | Denys Chumak | **Andrii meeting answers**: Battery formula (2mAh/transmission, 30min=20days), GPS cold start (1-2min), UTEC fulfillment, inventory locations (CN/UK/US), no sleep mode after activation, carrier tracking before activation. Open: lost detection logic, post-delivery transmission. |
 
 ---
 
