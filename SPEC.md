@@ -285,7 +285,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | **Battery Life** | ~60 days (at 120 min interval) |
 | **Lifecycle** | Single-use / Disposable |
 | **Reactivation** | Not supported — once activated, always on until battery dies |
-| **End of Life** | Discard after delivery or battery depletion |
+| **End of Life** | Continues transmitting after delivery until battery dies; then discard (e-waste) |
 | **GPS Cold Start** | 1-2 minutes after activation |
 
 **Battery Life vs Transmission Interval:**
@@ -6722,7 +6722,7 @@ export const ErrorCodes = {
 | Battery dies mid-transit? | Andrii T. | ✅ Resolved | Alert at 20%, 10%, then "depleted". **Last known location shown.** |
 | Can label sleep after activation? | Andrii T. | ✅ Resolved | **No** — once activated, always on until battery dies |
 | Lost label detection? | Denys | ⏭️ Post-MVP | Skip for MVP. Complex edge cases (ocean transit, no-signal warehouses). Revisit post-launch. |
-| When stop transmitting after delivery? | Denys | 🔶 Needs thought | Auto-stop? Manual? Keep transmitting? **Needs decision.** |
+| When stop transmitting after delivery? | Denys | ✅ Resolved | **Continues until battery dies** — no automatic deactivation after delivery. Label keeps transmitting until battery depletes. |
 | E-waste disposal? | Denys | ✅ Resolved | Include e-waste note in quick-start guide. Consider frontend deactivation button. Battery = hazardous, needs disposal guidance. |
 | TAM/SAM/SOM calculation | Denys | 🔶 Pending | Sprint 1 task (P2-T1) |
 | Pilot customer identification | Denys | 🔶 Pending | To be identified through user interviews |
@@ -6744,6 +6744,7 @@ export const ErrorCodes = {
 | 1.5 | 2026-01-26 | Denys Chumak | **Label-to-Order linking**: Clarified that Label ID is linked to Order at HyperLabel fulfillment (when shipping to shipper). Updated user journey to 9 steps. |
 | 1.6 | 2026-01-26 | Denys Chumak | **Two-stage linking**: Fulfillment links Label→Order, QR Scan creates Shipment (Label→Shipment). QR scan now MANDATORY to support bulk orders (10 labels = 10 shipments). |
 | 1.7 | 2026-01-27 | Denys Chumak | **Andrii meeting answers**: Battery formula (2mAh/transmission, 30min=20days), GPS cold start (1-2min), UTEC fulfillment, inventory locations (CN/UK/US), no sleep mode after activation, carrier tracking before activation. Open: lost detection logic, post-delivery transmission. |
+| 1.8 | 2026-01-27 | Denys Chumak | **Post-delivery transmission**: Label continues transmitting until battery dies — no automatic deactivation. |
 
 ---
 
