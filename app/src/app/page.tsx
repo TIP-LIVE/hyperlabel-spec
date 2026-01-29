@@ -17,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { LandingFAQ } from '@/components/landing/landing-faq'
+import { MobileNav } from '@/components/landing/mobile-nav'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import type { Metadata } from 'next'
 
@@ -76,12 +77,13 @@ export default async function HomePage() {
             </Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <Link href="/sign-in">Sign In</Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="hidden sm:inline-flex">
               <Link href="/sign-up">Get Started</Link>
             </Button>
+            <MobileNav />
           </div>
         </div>
       </header>
