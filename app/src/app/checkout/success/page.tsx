@@ -1,0 +1,112 @@
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { stripe } from '@/lib/stripe'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { CheckCircle, Package, ArrowRight } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Order Confirmed',
+  description: 'Your HyperLabel order has been placed successfully',
+}
+
+interface PageProps {
+  searchParams: Promise<{ session_id?: string }>
+}
+
+export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
+  const { session_id } = await searchParams
+
+  if (!session_id) {
+    redirect('/dashboard')
+  }
+
+  // Retrieve session details from Stripe
+  let session = null
+  let quantity = 1
+
+  try {
+    session = await stripe.checkout.sessions.retrieve(session_id)
+    quantity = parseInt(session.metadata?.quantity || '1', 10)
+  } catch (error) {
+    console.error('Error retrieving session:', error)
+    // Continue to show generic success page
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
+      <Card className="max-w-md text-center">
+        <CardHeader>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+            <CheckCircle className="h-10 w-10 text-green-600" />
+          </div>
+          <CardTitle className="text-2xl">Order Confirmed!</CardTitle>
+          <CardDescription>
+            Thank you for your purchase. Your tracking labels are on their way.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Order Summary */}
+          <div className="rounded-lg bg-muted p-4">
+            <div className="flex items-center justify-center gap-3">
+              <Package className="h-8 w-8 text-primary" />
+              <div className="text-left">
+                <p className="font-semibold">
+                  {quantity} GPS Tracking Label{quantity > 1 ? 's' : ''}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Will be shipped within 1-2 business days
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* What's Next */}
+          <div className="space-y-3 text-left">
+            <h3 className="font-semibold">What&apos;s next?</h3>
+            <ol className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  1
+                </span>
+                <span>We&apos;ll ship your labels to the provided address</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  2
+                </span>
+                <span>You&apos;ll receive a shipping confirmation email</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  3
+                </span>
+                <span>Scan the QR code to activate and start tracking</span>
+              </li>
+            </ol>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <Button asChild>
+              <Link href="/dashboard">
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/orders">View Orders</Link>
+            </Button>
+          </div>
+
+          {session && (
+            <p className="text-xs text-muted-foreground">
+              Order ID: {session.id.slice(-8).toUpperCase()}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

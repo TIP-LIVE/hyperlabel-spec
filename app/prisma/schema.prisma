@@ -1,0 +1,187 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum LabelStatus {
+  INVENTORY   // In warehouse, not sold
+  SOLD        // Sold but not activated
+  ACTIVE      // Activated and tracking
+  DEPLETED    // Battery dead
+}
+
+enum ShipmentStatus {
+  PENDING     // Created but not yet in transit
+  IN_TRANSIT  // Label activated, cargo moving
+  DELIVERED   // Arrived at destination
+  CANCELLED   // Shipment cancelled
+}
+
+enum OrderStatus {
+  PENDING     // Awaiting payment
+  PAID        // Payment received
+  SHIPPED     // Labels shipped to customer
+  DELIVERED   // Labels delivered to customer
+  CANCELLED   // Order cancelled
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+/// Users - synced from Clerk via webhooks
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique @map("clerk_id")
+  email     String   @unique
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  imageUrl  String?  @map("image_url")
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Notification preferences
+  notifyLabelActivated Boolean @default(true) @map("notify_label_activated")
+  notifyLowBattery     Boolean @default(true) @map("notify_low_battery")
+  notifyNoSignal       Boolean @default(true) @map("notify_no_signal")
+  notifyDelivered      Boolean @default(true) @map("notify_delivered")
+  notifyOrderShipped   Boolean @default(true) @map("notify_order_shipped")
+
+  // Relations
+  orders        Order[]
+  shipments     Shipment[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+/// Labels - physical GPS tracking devices
+model Label {
+  id              String      @id @default(cuid())
+  deviceId        String      @unique @map("device_id") // HL-001234
+  imei            String?     @unique // Device IMEI
+  iccid           String?     @unique // SIM card ID
+  status          LabelStatus @default(INVENTORY)
+  batteryPct      Int?        @map("battery_pct")
+  firmwareVersion String?     @map("firmware_version")
+  activatedAt     DateTime?   @map("activated_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  orderId   String?   @map("order_id")
+  order     Order?    @relation(fields: [orderId], references: [id])
+  shipments Shipment[]
+  locations LocationEvent[]
+
+  @@map("labels")
+}
+
+/// Shipments - cargo being tracked
+model Shipment {
+  id                 String         @id @default(cuid())
+  name               String?        // Cargo description
+  originAddress      String?        @map("origin_address")
+  originLat          Float?         @map("origin_lat")
+  originLng          Float?         @map("origin_lng")
+  destinationAddress String?        @map("destination_address")
+  destinationLat     Float?         @map("destination_lat")
+  destinationLng     Float?         @map("destination_lng")
+  status             ShipmentStatus @default(PENDING)
+  shareCode          String         @unique @map("share_code") // Public tracking URL code
+  shareEnabled       Boolean        @default(true) @map("share_enabled")
+  photoUrls          String[]       @map("photo_urls") // Cargo photos
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  deliveredAt        DateTime?      @map("delivered_at")
+
+  // Relations
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id])
+  labelId   String @map("label_id")
+  label     Label  @relation(fields: [labelId], references: [id])
+  locations LocationEvent[]
+
+  @@map("shipments")
+}
+
+/// LocationEvent - GPS data points from devices
+model LocationEvent {
+  id            String   @id @default(cuid())
+  latitude      Float
+  longitude     Float
+  accuracyM     Int?     @map("accuracy_m")
+  batteryPct    Int?     @map("battery_pct")
+  altitude      Float?
+  speed         Float?
+  recordedAt    DateTime @map("recorded_at") // When device recorded
+  receivedAt    DateTime @default(now()) @map("received_at") // When server received
+  isOfflineSync Boolean  @default(false) @map("is_offline_sync")
+  
+  // Cell tower backup location (from Onomondo)
+  cellLatitude  Float?   @map("cell_latitude")
+  cellLongitude Float?   @map("cell_longitude")
+
+  // Relations
+  labelId    String    @map("label_id")
+  label      Label     @relation(fields: [labelId], references: [id])
+  shipmentId String?   @map("shipment_id")
+  shipment   Shipment? @relation(fields: [shipmentId], references: [id])
+
+  @@index([labelId, recordedAt])
+  @@index([shipmentId, recordedAt])
+  @@map("location_events")
+}
+
+/// Orders - purchase records
+model Order {
+  id               String      @id @default(cuid())
+  stripePaymentId  String?     @unique @map("stripe_payment_id")
+  stripeSessionId  String?     @unique @map("stripe_session_id")
+  status           OrderStatus @default(PENDING)
+  totalAmount      Int         @map("total_amount") // In cents
+  currency         String      @default("GBP")
+  quantity         Int         // Number of labels
+  
+  // Shipping info
+  shippingAddress  Json?       @map("shipping_address")
+  trackingNumber   String?     @map("tracking_number") // DHL/FedEx tracking
+  shippedAt        DateTime?   @map("shipped_at")
+  
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  labels Label[]
+
+  @@map("orders")
+}
+
+/// Notification - email/push notifications sent
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // label_activated, low_battery, no_signal, shipment_delivered, order_shipped
+  message   String?  // Summary or JSON metadata
+  read      Boolean  @default(false)
+  sentAt    DateTime @default(now()) @map("sent_at")
+
+  // Relations
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId, sentAt])
+  @@map("notifications")
+}
