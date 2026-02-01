@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { stripe } from '@/lib/stripe'
+import { stripe, isStripeConfigured } from '@/lib/stripe'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Package, ArrowRight } from 'lucide-react'
+import { CheckCircle, Package, ArrowRight, AlertTriangle } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -25,13 +25,22 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   // Retrieve session details from Stripe
   let session = null
   let quantity = 1
+  let sessionError = false
 
-  try {
-    session = await stripe.checkout.sessions.retrieve(session_id)
-    quantity = parseInt(session.metadata?.quantity || '1', 10)
-  } catch (error) {
-    console.error('Error retrieving session:', error)
-    // Continue to show generic success page
+  if (isStripeConfigured()) {
+    try {
+      session = await stripe.checkout.sessions.retrieve(session_id)
+      quantity = parseInt(session.metadata?.quantity || '1', 10)
+      
+      // Validate the quantity is reasonable
+      if (isNaN(quantity) || quantity < 1 || quantity > 100) {
+        quantity = 1
+      }
+    } catch (error) {
+      console.error('Error retrieving session:', error)
+      sessionError = true
+      // Continue to show generic success page
+    }
   }
 
   return (
@@ -53,7 +62,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               <Package className="h-8 w-8 text-primary" />
               <div className="text-left">
                 <p className="font-semibold">
-                  {quantity} GPS Tracking Label{quantity > 1 ? 's' : ''}
+                  {sessionError ? 'Your GPS Tracking Labels' : `${quantity} GPS Tracking Label${quantity > 1 ? 's' : ''}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Will be shipped within 1-2 business days
@@ -61,6 +70,16 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               </div>
             </div>
           </div>
+
+          {sessionError && (
+            <div className="flex items-start gap-2 rounded-lg bg-yellow-50 p-3 text-left text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
+              <p className="text-yellow-800">
+                We couldn&apos;t load your order details, but don&apos;t worry—your payment was successful. 
+                Check your email for confirmation.
+              </p>
+            </div>
+          )}
 
           {/* What's Next */}
           <div className="space-y-3 text-left">

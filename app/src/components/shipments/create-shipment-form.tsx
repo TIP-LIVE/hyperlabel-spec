@@ -103,12 +103,20 @@ export function CreateShipmentForm() {
         toast.success('Shipment created successfully!')
         router.push(`/shipments/${shipment.id}`)
       } else {
-        const error = await res.json()
-        toast.error(error.error || 'Failed to create shipment')
+        // Safely parse error response
+        let errorMessage = 'Failed to create shipment'
+        try {
+          const errorData = await res.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // Response wasn't JSON
+          errorMessage = res.statusText || errorMessage
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error creating shipment:', error)
-      toast.error('Something went wrong. Please try again.')
+      toast.error('Network error. Please check your connection and try again.')
     } finally {
       setLoading(false)
     }

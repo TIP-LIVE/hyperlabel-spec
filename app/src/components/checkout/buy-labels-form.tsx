@@ -98,12 +98,20 @@ export function BuyLabelsForm() {
           toast.error('Failed to create checkout session')
         }
       } else {
-        const error = await res.json()
-        toast.error(error.error || 'Failed to start checkout')
+        // Safely parse error response
+        let errorMessage = 'Failed to start checkout'
+        try {
+          const errorData = await res.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // Response wasn't JSON, use status text
+          errorMessage = res.statusText || errorMessage
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Checkout error:', error)
-      toast.error('Something went wrong. Please try again.')
+      toast.error('Network error. Please check your connection and try again.')
     } finally {
       setLoading(false)
     }

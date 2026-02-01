@@ -1,12 +1,21 @@
 import Stripe from 'stripe'
 
-if (!process.env.STRIPE_SECRET_KEY) {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || ''
+
+if (!stripeSecretKey) {
   console.warn('STRIPE_SECRET_KEY is not set')
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+export const stripe = new Stripe(stripeSecretKey, {
   typescript: true,
 })
+
+/**
+ * Check if Stripe is properly configured
+ */
+export function isStripeConfigured(): boolean {
+  return Boolean(stripeSecretKey && !stripeSecretKey.includes('REPLACE_ME'))
+}
 
 /**
  * Product configuration for label packs.
