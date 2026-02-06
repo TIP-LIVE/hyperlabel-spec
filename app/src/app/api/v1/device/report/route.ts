@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { deviceReportSchema, validateLocation } from '@/lib/validations/device'
+import { sendShipmentDeliveredNotification } from '@/lib/notifications'
 
 /**
  * POST /api/v1/device/report
@@ -97,21 +98,60 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for delivery (if within geofence of destination)
-    if (activeShipment && activeShipment.destinationLat && activeShipment.destinationLng) {
+    if (
+      activeShipment &&
+      activeShipment.status === 'IN_TRANSIT' &&
+      activeShipment.destinationLat &&
+      activeShipment.destinationLng
+    ) {
       const distance = calculateDistance(
         data.latitude,
         data.longitude,
         activeShipment.destinationLat,
         activeShipment.destinationLng
       )
-      
+
       // Delivery threshold: 500 meters from destination
       const DELIVERY_THRESHOLD_M = 500
-      
+
       if (distance <= DELIVERY_THRESHOLD_M) {
-        // TODO: Implement dwell time check (must be within radius for X minutes)
-        // For now, just log that we're near destination
-        console.log(`Shipment ${activeShipment.id} is within ${distance}m of destination`)
+        // Check dwell time: look at recent locations to see if we've been near destination for 30+ min
+        const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000)
+        const recentLocations = await db.locationEvent.findMany({
+          where: {
+            shipmentId: activeShipment.id,
+            recordedAt: { gte: thirtyMinAgo },
+          },
+          orderBy: { recordedAt: 'desc' },
+        })
+
+        // If we have at least 2 readings in the last 30 min, all within geofence → delivered
+        const allNearDestination = recentLocations.length >= 2 &&
+          recentLocations.every((loc) => {
+            const d = calculateDistance(
+              loc.latitude,
+              loc.longitude,
+              activeShipment.destinationLat!,
+              activeShipment.destinationLng!
+            )
+            return d <= DELIVERY_THRESHOLD_M
+          })
+
+        if (allNearDestination) {
+          await db.shipment.update({
+            where: { id: activeShipment.id },
+            data: { status: 'DELIVERED', deliveredAt: new Date() },
+          })
+
+          // Send delivery notification (fire and forget)
+          sendShipmentDeliveredNotification({
+            userId: activeShipment.userId,
+            shipmentName: activeShipment.name || 'Unnamed Shipment',
+            deviceId: label.deviceId,
+            shareCode: activeShipment.shareCode,
+            destination: activeShipment.destinationAddress || 'Destination',
+          }).catch((err) => console.error('Failed to send delivery notification:', err))
+        }
       }
     }
 

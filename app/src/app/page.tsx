@@ -22,11 +22,11 @@ import { isClerkConfigured } from '@/lib/clerk-config'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'HyperLabel — Track Any Cargo, Anywhere',
+  title: 'TIP — Track Any Cargo, Anywhere',
   description:
     'GPS tracking labels for valuable shipments. Real-time location, delivery notifications, 60+ days battery, 180+ countries. Order, peel, stick, track.',
   openGraph: {
-    title: 'HyperLabel — Track Any Cargo, Anywhere',
+    title: 'TIP — Track Any Cargo, Anywhere',
     description:
       'GPS tracking labels for valuable shipments. Real-time location, delivery notifications, 60+ days battery.',
   },
@@ -48,7 +48,7 @@ export default async function HomePage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
             <Package className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">HyperLabel</span>
+            <span className="text-xl font-bold">TIP</span>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
             <Link
@@ -168,7 +168,7 @@ export default async function HomePage() {
       {/* Features — 6 cards */}
       <section id="features" className="scroll-mt-20 bg-gray-50 py-20 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-center text-3xl font-bold md:text-4xl">Why HyperLabel?</h2>
+          <h2 className="text-center text-3xl font-bold md:text-4xl">Why TIP?</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
             Built for reliability and ease of use.
           </p>
@@ -287,7 +287,7 @@ export default async function HomePage() {
         <div className="container mx-auto px-4">
           <h2 className="text-center text-3xl font-bold md:text-4xl">Frequently Asked Questions</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-            Common questions about HyperLabel tracking labels.
+            Common questions about TIP tracking labels.
           </p>
           <div className="mx-auto mt-12 max-w-2xl">
             <LandingFAQ />
@@ -304,11 +304,11 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
             <a
-              href="mailto:support@hyperlabel.com"
+              href="mailto:support@tip.live"
               className="inline-flex items-center gap-2 rounded-lg border bg-white px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50"
             >
               <Mail className="h-4 w-4" />
-              support@hyperlabel.com
+              support@tip.live
             </a>
           </div>
         </div>
@@ -333,7 +333,7 @@ export default async function HomePage() {
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2">
               <Package className="h-6 w-6 text-primary" />
-              <span className="font-semibold">HyperLabel</span>
+              <span className="font-semibold">TIP</span>
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <Link href="#features" className="hover:text-foreground">
@@ -348,16 +348,16 @@ export default async function HomePage() {
               <Link href="#contact" className="hover:text-foreground">
                 Contact
               </Link>
-              <Link href="#" className="hover:text-foreground">
+              <Link href="/privacy" className="hover:text-foreground">
                 Privacy
               </Link>
-              <Link href="#" className="hover:text-foreground">
+              <Link href="/terms" className="hover:text-foreground">
                 Terms
               </Link>
             </nav>
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} HyperLabel. All rights reserved.
+            &copy; {new Date().getFullYear()} TIP. All rights reserved.
           </p>
         </div>
       </footer>

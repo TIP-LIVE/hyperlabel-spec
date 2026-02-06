@@ -10,6 +10,9 @@ jobs:
   lint-and-type-check:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
 
     steps:
       - name: Checkout
@@ -57,7 +60,14 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Dummy values for build
-          DATABASE_URL: 'postgresql://localhost:5432/hyperlabel'
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_dummy'
-          CLERK_SECRET_KEY: 'sk_test_dummy'
+          # Build-time env vars (dummy values for CI build validation)
+          DATABASE_URL: 'postgresql://localhost:5432/tip'
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy' }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'dummy' }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://tip.live' }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in'
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up'
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/dashboard'
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/dashboard'

@@ -7,6 +7,8 @@ import { UserProfile } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { NotificationPreferences } from '@/components/settings/notification-preferences'
+import { DataExportButton } from '@/components/settings/data-export-button'
+import { DeleteAccountButton } from '@/components/settings/delete-account-button'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -103,6 +105,25 @@ export default async function SettingsPage() {
       {/* Notification Preferences */}
       <NotificationPreferences />
 
+      {/* Data & Privacy (GDPR) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data & Privacy</CardTitle>
+          <CardDescription>Export your data or manage your privacy settings</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Export Your Data</Label>
+              <p className="text-sm text-muted-foreground">
+                Download a copy of all your data (shipments, orders, location history) as JSON
+              </p>
+            </div>
+            <DataExportButton />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Danger Zone */}
       <Card className="border-destructive/50">
         <CardHeader>
@@ -114,10 +135,10 @@ export default async function SettingsPage() {
             <div>
               <Label>Delete Account</Label>
               <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all associated data
+                Permanently delete your account and all associated data. This action cannot be undone.
               </p>
             </div>
-            {/* Delete handled via Clerk UserProfile */}
+            <DeleteAccountButton />
           </div>
         </CardContent>
       </Card>

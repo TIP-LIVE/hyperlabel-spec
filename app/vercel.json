@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/check-battery",
       "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/check-delivery",
+      "schedule": "0 */2 * * *"
     }
   ]
 }

@@ -63,6 +63,15 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Tracking disabled' }, { status: 403 })
     }
 
+    // Check share link expiry: 90 days after delivery
+    if (shipment.deliveredAt) {
+      const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000
+      const expiryDate = new Date(shipment.deliveredAt.getTime() + ninetyDaysMs)
+      if (new Date() > expiryDate) {
+        return NextResponse.json({ error: 'Tracking link has expired' }, { status: 410 })
+      }
+    }
+
     return NextResponse.json({
       shipment: {
         id: shipment.id,

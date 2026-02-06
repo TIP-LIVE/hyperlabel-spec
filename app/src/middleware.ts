@@ -7,8 +7,12 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/track/(.*)', // Public tracking pages
+  '/privacy', // Privacy policy
+  '/terms', // Terms of service
   '/api/webhooks/(.*)', // Webhooks
   '/api/v1/device/(.*)', // Device API
+  '/api/cron/(.*)', // Cron jobs (auth via CRON_SECRET)
+  '/api/health(.*)', // Health checks
 ])
 
 // Check if Clerk is configured
