@@ -114,7 +114,7 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="mt-16 flex justify-center">
-            <div className="flex h-24 w-72 items-center justify-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5">
+            <div className="flex h-24 w-full max-w-72 items-center justify-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5">
               <Package className="h-12 w-12 text-primary/60" />
               <div className="text-left">
                 <p className="text-sm font-semibold text-primary">Tracking Label</p>

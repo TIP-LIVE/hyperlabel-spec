@@ -297,9 +297,9 @@ export function CreateShipmentForm() {
                   type="button"
                   onClick={() => removePhoto(index)}
                   aria-label={`Remove photo ${index + 1}`}
-                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                  className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white opacity-100 shadow-sm transition-opacity sm:right-1 sm:top-1 sm:h-5 sm:w-5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                 </button>
               </div>
             ))}
@@ -337,11 +337,11 @@ export function CreateShipmentForm() {
       </div>
 
       {/* Submit */}
-      <div className="flex gap-3">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+        <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => router.back()}>
           Cancel
         </Button>
-        <Button type="submit" disabled={loading || labels.length === 0}>
+        <Button type="submit" className="w-full sm:w-auto" disabled={loading || labels.length === 0}>
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Shipment
         </Button>

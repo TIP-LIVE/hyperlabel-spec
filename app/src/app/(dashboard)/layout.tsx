@@ -1,10 +1,11 @@
 import { UserButton } from '@clerk/nextjs'
 import { currentUser } from '@clerk/nextjs/server'
 import Link from 'next/link'
-import { Package, MapPin, ShoppingCart, Settings, LayoutDashboard, Menu } from 'lucide-react'
+import { Package, MapPin, ShoppingCart, Settings, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { redirect } from 'next/navigation'
 import { isClerkConfigured } from '@/lib/clerk-config'
+import { MobileSidebar } from '@/components/dashboard/mobile-sidebar'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -66,10 +67,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
           {/* Mobile menu button */}
-          <Button variant="ghost" size="icon" className="lg:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Open menu</span>
-          </Button>
+          <MobileSidebar />
 
           {/* Mobile logo */}
           <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">

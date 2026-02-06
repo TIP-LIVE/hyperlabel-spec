@@ -546,7 +546,7 @@ export default function ApiDocsPage() {
                         <Badge className={methodColors[endpoint.method]}>
                           {endpoint.method}
                         </Badge>
-                        <code className="font-mono text-sm">{endpoint.path}</code>
+                        <code className="break-all font-mono text-sm">{endpoint.path}</code>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>{endpoint.description}</span>
