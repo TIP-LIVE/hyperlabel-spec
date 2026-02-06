@@ -8,11 +8,11 @@ export const deviceReportSchema = z.object({
   // Device identifier
   deviceId: z.string().min(1, 'Device ID is required'),
   
-  // GPS coordinates
+  // Location coordinates (from cell tower triangulation)
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   
-  // Optional GPS metadata
+  // Optional location metadata
   accuracy: z.number().positive().optional(), // meters
   altitude: z.number().optional(),
   speed: z.number().min(0).optional(), // m/s

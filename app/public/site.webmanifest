@@ -1,6 +1,6 @@
 {
-  "name": "HyperLabel",
-  "short_name": "HyperLabel",
+  "name": "TIP",
+  "short_name": "TIP",
   "description": "Track your cargo anywhere with GPS tracking labels",
   "start_url": "/",
   "display": "standalone",

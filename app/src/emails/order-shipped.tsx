@@ -18,11 +18,11 @@ export function OrderShippedEmail({
   dashboardUrl,
 }: OrderShippedEmailProps) {
   return (
-    <BaseLayout preview={`Your HyperLabel order #${orderNumber} has shipped!`}>
+    <BaseLayout preview={`Your TIP order #${orderNumber} has shipped!`}>
       <Heading style={heading}>📦 Your Order Has Shipped!</Heading>
 
       <Text style={paragraph}>
-        Great news! Your HyperLabel order is on its way. You&apos;ll receive your GPS tracking
+        Great news! Your TIP order is on its way. You&apos;ll receive your tracking
         labels soon.
       </Text>
 
@@ -55,7 +55,7 @@ export function OrderShippedEmail({
 
       <Section style={stepsList}>
         <Text style={stepItem}>1. Wait for your labels to arrive (typically 3-5 business days)</Text>
-        <Text style={stepItem}>2. Create a shipment in your HyperLabel dashboard</Text>
+        <Text style={stepItem}>2. Create a shipment in your TIP dashboard</Text>
         <Text style={stepItem}>3. Scan the QR code on the label to activate tracking</Text>
         <Text style={stepItem}>4. Attach the label to your cargo and ship!</Text>
       </Section>

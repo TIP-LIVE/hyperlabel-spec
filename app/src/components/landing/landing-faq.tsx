@@ -9,14 +9,14 @@ import {
 
 const faqs = [
   {
-    question: 'What is HyperLabel?',
+    question: 'What is TIP?',
     answer:
-      'HyperLabel is a GPS tracking label you stick on your cargo. It sends real-time location data so you and your consignee can see where the shipment is on a map, get delivery notifications, and share a tracking link—no carrier API needed.',
+      'TIP is a disposable tracking label you stick on your cargo for door-to-door visibility. It sends real-time location data so you and your consignee can see where the shipment is on a map, get delivery notifications, and share a tracking link — no carrier API needed.',
   },
   {
     question: 'How does tracking work?',
     answer:
-      'Each label has a GPS module and cellular connectivity. After you activate it (scan QR, attach to cargo, enter destination), it reports location at a configurable interval. You view the position and route history in the HyperLabel dashboard or via a shareable link.',
+      'Each label has built-in cellular connectivity (eSIM). After you activate it (scan QR, attach to cargo, enter destination), it determines its position via cell tower triangulation and reports location at a configurable interval. You view the position and route history in the TIP dashboard or via a shareable link.',
   },
   {
     question: 'Which countries are supported?',

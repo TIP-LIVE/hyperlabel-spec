@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
-    // Validate GPS coordinates
+    // Validate location coordinates
     if (!validateLocation(data.latitude, data.longitude)) {
       return NextResponse.json(
         { error: 'Invalid coordinates', details: 'Location appears to be null island or invalid' },

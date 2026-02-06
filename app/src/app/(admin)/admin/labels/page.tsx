@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Label Inventory',
-  description: 'Manage HyperLabel inventory',
+  description: 'Manage TIP inventory',
 }
 
 const statusStyles = {
@@ -48,7 +48,7 @@ export default async function AdminLabelsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Label Inventory</h1>
-          <p className="text-gray-400">Track and manage all GPS labels</p>
+          <p className="text-gray-400">Track and manage all labels</p>
         </div>
         <Button asChild>
           <Link href="/admin/labels/add">

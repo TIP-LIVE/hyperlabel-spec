@@ -12,7 +12,7 @@ export default function AddLabelsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Add Labels to Inventory</h1>
-        <p className="text-gray-400">Register new GPS tracking labels</p>
+        <p className="text-gray-400">Register new tracking labels</p>
       </div>
 
       <Card className="border-gray-800 bg-gray-800/50">

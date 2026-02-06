@@ -60,7 +60,7 @@ export function ShareLinkButton({ shareCode, trackingUrl, className }: ShareLink
             <Label>Tracking Link</Label>
             <div className="flex gap-2">
               <Input value={trackingUrl} readOnly className="font-mono text-sm" />
-              <Button variant="outline" size="icon" onClick={copyToClipboard}>
+              <Button variant="outline" size="icon" onClick={copyToClipboard} aria-label="Copy tracking link">
                 {copied ? (
                   <Check className="h-4 w-4 text-green-600" />
                 ) : (

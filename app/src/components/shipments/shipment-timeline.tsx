@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns'
 import { MapPin, Radio } from 'lucide-react'
+import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
 
 interface LocationEvent {
   id: string
@@ -18,6 +19,8 @@ interface ShipmentTimelineProps {
 }
 
 export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
+  const locationNames = useReverseGeocode(locations)
+
   if (locations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -53,7 +56,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
               <div className="flex items-center gap-2">
                 <MapPin className="h-3 w-3 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+                  {locationNames[location.id] || `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
                 </span>
                 {location.isOfflineSync && (
                   <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-xs text-yellow-800">

@@ -45,7 +45,7 @@ export default function CheckoutCancelPage() {
 
           <p className="text-xs text-muted-foreground">
             Need help?{' '}
-            <a href="mailto:support@hyperlabel.com" className="underline hover:no-underline">
+            <a href="mailto:support@tip.live" className="underline hover:no-underline">
               Contact support
             </a>
           </p>

@@ -36,10 +36,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold">2. Description of Service</h2>
             <p className="mt-2 text-muted-foreground">
-              TIP provides disposable GPS tracking labels for cargo shipments. Our service includes:
+              TIP provides disposable tracking labels for cargo shipments. Our service includes:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6 text-muted-foreground">
-              <li>Physical GPS tracking label devices</li>
+              <li>Physical tracking label devices with cellular connectivity</li>
               <li>Real-time cargo tracking via our web platform</li>
               <li>Email notifications for shipment events</li>
               <li>Shareable public tracking links</li>
@@ -73,7 +73,7 @@ export default function TermsPage() {
             <h3 className="mt-3 text-lg font-medium">4.3 What&apos;s Included</h3>
             <p className="mt-1 text-muted-foreground">
               Each label purchase includes: the physical tracking device, free shipping, 60 days of
-              GPS tracking, global eSIM connectivity, platform access, email notifications, and
+              location tracking, global eSIM connectivity, platform access, email notifications, and
               shareable tracking links.
             </p>
           </section>
@@ -105,7 +105,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold">7. Service Limitations</h2>
             <ul className="mt-2 list-disc space-y-1 pl-6 text-muted-foreground">
               <li>
-                Tracking accuracy depends on GPS signal availability and cellular coverage
+                Tracking accuracy depends on cellular signal availability and network coverage
               </li>
               <li>
                 Labels are single-use, disposable devices with approximately 60 days of battery life
@@ -140,7 +140,7 @@ export default function TermsPage() {
               <li>Loss, damage, or delay of cargo</li>
               <li>Decisions made based on tracking data</li>
               <li>Temporary service interruptions</li>
-              <li>Inaccurate location data due to GPS/cellular limitations</li>
+              <li>Inaccurate location data due to cellular network limitations</li>
             </ul>
             <p className="mt-2 text-muted-foreground">
               To the maximum extent permitted by law, our total liability shall not exceed the amount

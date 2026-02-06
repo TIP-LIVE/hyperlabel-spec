@@ -6,7 +6,7 @@ const resendApiKey = process.env.RESEND_API_KEY
 export const resend = resendApiKey ? new Resend(resendApiKey) : null
 
 // Default from address
-export const FROM_EMAIL = process.env.FROM_EMAIL || 'HyperLabel <notifications@hyperlabel.io>'
+export const FROM_EMAIL = process.env.FROM_EMAIL || 'TIP <notifications@tip.live>'
 
 // Check if email service is configured
 export function isEmailConfigured(): boolean {

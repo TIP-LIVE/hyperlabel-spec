@@ -27,13 +27,13 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
           {/* Header */}
           <Section style={header}>
             <Img
-              src="https://hyperlabel.io/logo.png"
+              src="https://tip.live/logo.png"
               width="40"
               height="40"
-              alt="HyperLabel"
+              alt="TIP"
               style={logo}
             />
-            <Text style={logoText}>HyperLabel</Text>
+            <Text style={logoText}>TIP</Text>
           </Section>
 
           {/* Content */}
@@ -43,18 +43,18 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
           <Hr style={hr} />
           <Section style={footer}>
             <Text style={footerText}>
-              You received this email because you have an active shipment with HyperLabel.
+              You received this email because you have an active shipment with TIP.
             </Text>
             <Text style={footerText}>
-              <Link href="https://hyperlabel.io/settings" style={link}>
+              <Link href="https://tip.live/settings" style={link}>
                 Manage notification preferences
               </Link>
               {' • '}
-              <Link href="https://hyperlabel.io" style={link}>
-                Visit HyperLabel
+              <Link href="https://tip.live" style={link}>
+                Visit TIP
               </Link>
             </Text>
-            <Text style={footerText}>© 2026 HyperLabel. All rights reserved.</Text>
+            <Text style={footerText}>© 2026 TIP. All rights reserved.</Text>
           </Section>
         </Container>
       </Body>

@@ -23,21 +23,21 @@ export function isStripeConfigured(): boolean {
  */
 export const LABEL_PRODUCTS = {
   starter: {
-    name: 'Starter Pack',
-    description: '1 GPS Tracking Label',
+    name: '1 Tracking Label',
+    description: 'Single disposable tracking label with 60+ day battery',
     quantity: 1,
     // Price ID would come from Stripe Dashboard
     priceId: process.env.STRIPE_PRICE_STARTER,
   },
   team: {
-    name: 'Team Pack',
-    description: '5 GPS Tracking Labels',
+    name: '5 Tracking Labels',
+    description: 'Pack of 5 disposable tracking labels with 60+ day battery each',
     quantity: 5,
     priceId: process.env.STRIPE_PRICE_TEAM,
   },
   volume: {
-    name: 'Volume Pack',
-    description: '10 GPS Tracking Labels',
+    name: '10 Tracking Labels',
+    description: 'Pack of 10 disposable tracking labels with 60+ day battery each',
     quantity: 10,
     priceId: process.env.STRIPE_PRICE_VOLUME,
   },

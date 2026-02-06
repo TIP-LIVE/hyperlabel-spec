@@ -36,7 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-6">
           <Package className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold">HyperLabel</span>
+          <span className="text-xl font-bold">TIP</span>
         </div>
 
         {/* Navigation */}
@@ -74,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {/* Mobile logo */}
           <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
             <Package className="h-6 w-6 text-primary" />
-            <span className="font-bold">HyperLabel</span>
+            <span className="font-bold">TIP</span>
           </Link>
 
           {/* Greeting - Desktop */}

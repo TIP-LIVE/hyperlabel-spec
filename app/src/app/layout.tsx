@@ -11,34 +11,34 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'HyperLabel - GPS Cargo Tracking',
-    template: '%s | HyperLabel',
+    default: 'TIP — Door-to-Door Cargo Tracking',
+    template: '%s | TIP',
   },
   description:
-    'Track your cargo anywhere in the world with real-time GPS tracking labels. Simple, affordable, and reliable.',
-  keywords: ['cargo tracking', 'GPS tracking', 'shipment tracking', 'logistics', 'supply chain'],
-  authors: [{ name: 'HyperLabel' }],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://hyperlabel.io'),
+    'Door-to-door cargo tracking labels. Stick a label on your shipment and track it from pickup to delivery — in 180+ countries.',
+  keywords: ['cargo tracking', 'door-to-door tracking', 'shipment tracking', 'tracking labels', 'logistics'],
+  authors: [{ name: 'TIP' }],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'),
   openGraph: {
     type: 'website',
     locale: 'en_GB',
-    url: 'https://hyperlabel.io',
-    siteName: 'HyperLabel',
-    title: 'HyperLabel - GPS Cargo Tracking',
-    description: 'Track your cargo anywhere in the world with real-time GPS tracking labels.',
+    url: 'https://tip.live',
+    siteName: 'TIP',
+    title: 'TIP — Door-to-Door Cargo Tracking',
+    description: 'Door-to-door cargo tracking labels. Stick a label on your shipment and track it from pickup to delivery.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'HyperLabel - GPS Cargo Tracking',
+        alt: 'TIP — Door-to-Door Cargo Tracking',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HyperLabel - GPS Cargo Tracking',
-    description: 'Track your cargo anywhere in the world with real-time GPS tracking labels.',
+    title: 'TIP — Door-to-Door Cargo Tracking',
+    description: 'Door-to-door cargo tracking labels. Stick a label on your shipment and track it from pickup to delivery.',
     images: ['/og-image.png'],
   },
   robots: {

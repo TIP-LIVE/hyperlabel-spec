@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Admin Overview',
-  description: 'HyperLabel admin dashboard overview',
+  description: 'TIP admin dashboard overview',
 }
 
 export default async function AdminOverviewPage() {

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'User Management',
-  description: 'Manage HyperLabel users',
+  description: 'Manage TIP users',
 }
 
 export default async function AdminUsersPage() {

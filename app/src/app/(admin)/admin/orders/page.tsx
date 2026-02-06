@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Order Management',
-  description: 'Manage HyperLabel orders',
+  description: 'Manage TIP orders',
 }
 
 const statusStyles = {

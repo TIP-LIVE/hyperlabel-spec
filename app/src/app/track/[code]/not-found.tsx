@@ -22,7 +22,7 @@ export default function TrackingNotFound() {
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
             <Button asChild variant="outline">
-              <Link href="/">Go to HyperLabel</Link>
+              <Link href="/">Go to TIP</Link>
             </Button>
             <Button asChild>
               <Link href="/sign-up">Track Your Own Cargo</Link>

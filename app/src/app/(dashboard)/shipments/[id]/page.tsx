@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Battery,
   Calendar,
+  Clock,
   MapPin,
   Package,
   Share2,
@@ -108,6 +109,12 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {latestLocation && (
+            <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              Updated {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+            </div>
+          )}
           <Badge variant={statusInfo.variant} className="gap-1">
             <StatusIcon className="h-3 w-3" />
             {statusInfo.label}

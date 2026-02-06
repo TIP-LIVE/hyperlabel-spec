@@ -26,9 +26,9 @@ export default async function SettingsPage() {
 
   // Fallback user data for when Clerk is not configured
   const displayUser = user ?? {
-    email: 'demo@example.com',
-    firstName: 'Demo',
-    lastName: 'User',
+    email: 'Not available',
+    firstName: '',
+    lastName: '',
     role: 'user',
     createdAt: new Date(),
   }

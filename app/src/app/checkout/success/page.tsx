@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Order Confirmed',
-  description: 'Your HyperLabel order has been placed successfully',
+  description: 'Your TIP order has been placed successfully',
 }
 
 interface PageProps {
@@ -62,7 +62,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               <Package className="h-8 w-8 text-primary" />
               <div className="text-left">
                 <p className="font-semibold">
-                  {sessionError ? 'Your GPS Tracking Labels' : `${quantity} GPS Tracking Label${quantity > 1 ? 's' : ''}`}
+                  {sessionError ? 'Your Tracking Labels' : `${quantity} Tracking Label${quantity > 1 ? 's' : ''}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Will be shipped within 1-2 business days

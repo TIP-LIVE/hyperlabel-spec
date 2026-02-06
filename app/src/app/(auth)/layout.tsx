@@ -8,15 +8,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="hidden lg:flex flex-col justify-between bg-primary p-10 text-primary-foreground">
         <Link href="/" className="flex items-center gap-2">
           <Package className="h-8 w-8" />
-          <span className="text-xl font-bold">HyperLabel</span>
+          <span className="text-xl font-bold">TIP</span>
         </Link>
 
         <div className="space-y-4">
-          <blockquote className="text-lg">
-            &ldquo;HyperLabel has transformed how we track our international shipments. Real-time
-            visibility has reduced our lost cargo incidents by 90%.&rdquo;
-          </blockquote>
-          <p className="text-sm opacity-80">— Logistics Manager, Global Freight Co.</p>
+          <h2 className="text-2xl font-bold">Door-to-Door Cargo Tracking</h2>
+          <p className="text-lg opacity-90">
+            Stick a tracking label on your shipment and follow it from pickup to delivery.
+            Real-time visibility across land, sea, and air — in 180+ countries.
+          </p>
+          <ul className="space-y-2 text-sm opacity-80">
+            <li>&#10003; No black holes — offline storage syncs automatically</li>
+            <li>&#10003; Works with any carrier, any route</li>
+            <li>&#10003; Share tracking links — no account needed to view</li>
+          </ul>
         </div>
 
         <div className="flex items-center gap-8 text-sm opacity-80">
@@ -41,7 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="lg:hidden flex items-center justify-between p-4 border-b">
           <Link href="/" className="flex items-center gap-2">
             <Package className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold">HyperLabel</span>
+            <span className="text-lg font-bold">TIP</span>
           </Link>
         </div>
 
@@ -50,7 +55,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Footer */}
         <div className="p-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} HyperLabel. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} TIP. All rights reserved.</p>
         </div>
       </div>
     </div>

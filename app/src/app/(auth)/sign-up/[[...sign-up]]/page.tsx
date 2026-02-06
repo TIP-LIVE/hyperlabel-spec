@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Sign Up',
-  description: 'Create your HyperLabel account to start tracking cargo',
+  description: 'Create your TIP account to start tracking cargo',
 }
 
 export default function SignUpPage() {

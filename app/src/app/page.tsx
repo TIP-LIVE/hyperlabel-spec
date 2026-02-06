@@ -24,11 +24,11 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'TIP — Track Any Cargo, Anywhere',
   description:
-    'GPS tracking labels for valuable shipments. Real-time location, delivery notifications, 60+ days battery, 180+ countries. Order, peel, stick, track.',
+    'Door-to-door cargo tracking labels. Stick on your shipment, track from pickup to delivery. 60+ days battery, 180+ countries. No carrier API needed.',
   openGraph: {
-    title: 'TIP — Track Any Cargo, Anywhere',
+    title: 'TIP — Door-to-Door Cargo Tracking',
     description:
-      'GPS tracking labels for valuable shipments. Real-time location, delivery notifications, 60+ days battery.',
+      'Stick a tracking label on your cargo and follow it from origin to destination. Real-time location, delivery alerts, 180+ countries.',
   },
 }
 
@@ -92,11 +92,11 @@ export default async function HomePage() {
       <section className="relative overflow-hidden border-b bg-gradient-to-b from-gray-50 to-white py-20 md:py-28">
         <div className="container mx-auto px-4 text-center">
           <h1 className="mx-auto max-w-4xl text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-            Track Any Cargo, Anywhere
+            Door-to-Door Cargo Tracking
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            GPS tracking labels for your valuable shipments. Real-time location updates, delivery
-            notifications, and peace of mind—by land, sea, or air.
+            Stick a tracking label on your shipment and follow it from pickup to delivery.
+            Real-time location, delivery alerts, shareable links — in 180+ countries.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button size="lg" className="gap-2" asChild>
@@ -110,9 +110,12 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="mt-16 flex justify-center">
-            <div className="flex h-24 w-72 items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-primary/5">
+            <div className="flex h-24 w-72 items-center justify-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5">
               <Package className="h-12 w-12 text-primary/60" />
-              <span className="ml-3 text-sm text-muted-foreground">Product visual</span>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-primary">Tracking Label</p>
+                <p className="text-xs text-muted-foreground">Peel. Stick. Track door to door.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -123,42 +126,52 @@ export default async function HomePage() {
         <div className="container mx-auto px-4">
           <h2 className="text-center text-3xl font-bold md:text-4xl">How It Works</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-            Three simple steps from order to real-time tracking.
+            Four simple steps from order to delivery.
           </p>
-          <div className="mt-16 grid gap-12 md:grid-cols-3">
+          <div className="mt-16 grid gap-10 md:grid-cols-4">
             <div className="relative flex flex-col items-center text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 <ShoppingCart className="h-7 w-7 text-primary" />
               </div>
               <h3 className="mt-4 text-xl font-semibold">1. Order Labels</h3>
-              <p className="mt-2 text-muted-foreground">
-                Choose your pack size, create an account, and we ship the labels to you.
+              <p className="mt-2 text-sm text-muted-foreground">
+                Choose how many labels you need and we ship them to your door within 1-2 business days.
               </p>
-              <div className="absolute -right-6 top-8 hidden h-8 w-12 md:block">
-                <ChevronRight className="h-8 w-8 text-muted-foreground/50" />
+              <div className="absolute -right-4 top-8 hidden h-8 w-8 md:block">
+                <ChevronRight className="h-6 w-6 text-muted-foreground/50" />
               </div>
             </div>
             <div className="relative flex flex-col items-center text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 <StickyNote className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="mt-4 text-xl font-semibold">2. Peel & Stick</h3>
-              <p className="mt-2 text-muted-foreground">
-                Activate your label with a quick scan, attach it to your cargo, and enter the
-                destination.
+              <h3 className="mt-4 text-xl font-semibold">2. Activate &amp; Attach</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Scan the QR code to activate, attach the label to your cargo, and enter origin &amp; destination.
               </p>
-              <div className="absolute -right-6 top-8 hidden h-8 w-12 md:block">
-                <ChevronRight className="h-8 w-8 text-muted-foreground/50" />
+              <div className="absolute -right-4 top-8 hidden h-8 w-8 md:block">
+                <ChevronRight className="h-6 w-6 text-muted-foreground/50" />
               </div>
             </div>
-            <div className="flex flex-col items-center text-center">
+            <div className="relative flex flex-col items-center text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 <Radio className="h-7 w-7 text-primary" />
               </div>
               <h3 className="mt-4 text-xl font-semibold">3. Track Anywhere</h3>
-              <p className="mt-2 text-muted-foreground">
-                Follow your shipment on the map, get delivery alerts, and share a link with your
-                consignee.
+              <p className="mt-2 text-sm text-muted-foreground">
+                Follow your shipment on a live map. Share a tracking link with anyone — no account needed.
+              </p>
+              <div className="absolute -right-4 top-8 hidden h-8 w-8 md:block">
+                <ChevronRight className="h-6 w-6 text-muted-foreground/50" />
+              </div>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <MapPin className="h-7 w-7 text-primary" />
+              </div>
+              <h3 className="mt-4 text-xl font-semibold">4. Delivery Alert</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Get notified when your cargo arrives. The receiver confirms delivery and tracking stops automatically.
               </p>
             </div>
           </div>
@@ -231,51 +244,60 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Pricing — 3 tiers, no monetary figures */}
+      {/* Pricing — one-time purchase packs */}
       <section id="pricing" className="scroll-mt-20 py-20 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-center text-3xl font-bold md:text-4xl">Choose Your Pack</h2>
+          <h2 className="text-center text-3xl font-bold md:text-4xl">Buy Labels</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-            Same features in every pack. Buy more, save more.
+            One-time purchase — no subscription, no hidden fees. Every label includes the same features.
           </p>
           <div className="mx-auto mt-16 grid max-w-4xl gap-8 md:grid-cols-3">
             <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">Starter</h3>
-              <p className="mt-1 text-sm text-muted-foreground">1 label</p>
+              <h3 className="text-lg font-semibold">1 Label</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Single label</p>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">$25</span>
+              </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>• Full tracking & map</li>
+                <li>• Full tracking &amp; map</li>
                 <li>• Shareable link</li>
                 <li>• Delivery notifications</li>
+                <li>• 60+ day battery</li>
               </ul>
               <Button className="mt-6 w-full" variant="outline" asChild>
-                <Link href="/sign-up">Get started</Link>
+                <Link href="/sign-up">Buy 1 Label</Link>
               </Button>
             </div>
             <div className="rounded-xl border-2 border-primary bg-white p-6 shadow-sm">
               <div className="mb-2 text-xs font-medium uppercase tracking-wide text-primary">
-                Popular
+                Best Value
               </div>
-              <h3 className="text-lg font-semibold">Team</h3>
-              <p className="mt-1 text-sm text-muted-foreground">5 labels</p>
+              <h3 className="text-lg font-semibold">5 Labels</h3>
+              <p className="mt-1 text-sm text-muted-foreground">$22 per label</p>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">$110</span>
+              </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>• Everything in Starter</li>
-                <li>• Best value</li>
-                <li>• Same features</li>
+                <li>• Same features as single</li>
+                <li>• Save $15 vs buying one by one</li>
               </ul>
               <Button className="mt-6 w-full" asChild>
-                <Link href="/sign-up">Buy labels</Link>
+                <Link href="/sign-up">Buy 5 Labels</Link>
               </Button>
             </div>
             <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">Volume</h3>
-              <p className="mt-1 text-sm text-muted-foreground">10 labels</p>
+              <h3 className="text-lg font-semibold">10 Labels</h3>
+              <p className="mt-1 text-sm text-muted-foreground">$20 per label</p>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">$200</span>
+              </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>• Everything in Team</li>
-                <li>• For frequent shippers</li>
-                <li>• Maximum savings</li>
+                <li>• Same features as single</li>
+                <li>• Lowest price per label</li>
+                <li>• Save $50 vs buying one by one</li>
               </ul>
               <Button className="mt-6 w-full" variant="outline" asChild>
-                <Link href="/sign-up">Get started</Link>
+                <Link href="/sign-up">Buy 10 Labels</Link>
               </Button>
             </div>
           </div>
@@ -317,12 +339,12 @@ export default async function HomePage() {
       {/* CTA */}
       <section className="border-t bg-primary py-16 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold md:text-3xl">Ready to Start?</h2>
+          <h2 className="text-2xl font-bold md:text-3xl">Ready to Track Door to Door?</h2>
           <p className="mx-auto mt-3 max-w-lg opacity-90">
-            Get your first tracking label and never lose sight of your cargo again.
+            Get your first tracking label and follow your cargo from pickup to delivery.
           </p>
           <Button size="lg" variant="secondary" className="mt-6" asChild>
-            <Link href="/sign-up">Get Started Free</Link>
+            <Link href="/sign-up">Get Your First Label</Link>
           </Button>
         </div>
       </section>

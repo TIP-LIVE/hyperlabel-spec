@@ -4,10 +4,26 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'API Documentation',
-  description: 'HyperLabel API documentation for developers',
+  description: 'TIP API documentation for developers',
 }
 
-const endpoints = [
+interface Endpoint {
+  method: string
+  path: string
+  description: string
+  auth: boolean
+  note?: string
+  request?: string
+  response?: string
+}
+
+interface EndpointCategory {
+  category: string
+  description: string
+  endpoints: Endpoint[]
+}
+
+const endpoints: EndpointCategory[] = [
   {
     category: 'Authentication',
     description: 'All authenticated endpoints require a valid session from Clerk.',
@@ -17,18 +33,46 @@ const endpoints = [
         path: '/api/v1/user',
         description: 'Get current authenticated user',
         auth: true,
+        response: `{
+  "user": {
+    "id": "usr_abc123",
+    "email": "user@example.com",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "role": "user",
+    "createdAt": "2025-01-15T10:00:00.000Z"
+  }
+}`,
       },
       {
         method: 'GET',
         path: '/api/v1/user/preferences',
         description: 'Get notification preferences',
         auth: true,
+        response: `{
+  "preferences": {
+    "emailNotifications": true,
+    "deliveryAlerts": true,
+    "lowBatteryAlerts": true
+  }
+}`,
       },
       {
         method: 'PATCH',
         path: '/api/v1/user/preferences',
         description: 'Update notification preferences',
         auth: true,
+        request: `{
+  "emailNotifications": false,
+  "deliveryAlerts": true
+}`,
+        response: `{
+  "preferences": {
+    "emailNotifications": false,
+    "deliveryAlerts": true,
+    "lowBatteryAlerts": true
+  }
+}`,
       },
     ],
   },
@@ -41,42 +85,132 @@ const endpoints = [
         path: '/api/v1/shipments',
         description: 'List user shipments (supports ?status filter)',
         auth: true,
+        response: `{
+  "shipments": [
+    {
+      "id": "clxyz123",
+      "name": "Electronics to Berlin",
+      "status": "IN_TRANSIT",
+      "shareCode": "RYbEAxJF",
+      "originAddress": "45 Warehouse Rd, London, UK",
+      "destinationAddress": "123 Main St, Berlin, Germany",
+      "createdAt": "2025-01-20T14:00:00.000Z",
+      "label": {
+        "id": "lbl_001",
+        "deviceId": "HL-001001",
+        "batteryPct": 85,
+        "status": "ACTIVE"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": false
+  }
+}`,
       },
       {
         method: 'POST',
         path: '/api/v1/shipments',
         description: 'Create a new shipment',
         auth: true,
+        request: `{
+  "name": "Electronics to Berlin",
+  "labelId": "clxyz_label_id",
+  "originAddress": "45 Warehouse Rd, London, UK",
+  "originLat": 51.5074,
+  "originLng": -0.1278,
+  "destinationAddress": "123 Main St, Berlin, Germany",
+  "destinationLat": 52.5200,
+  "destinationLng": 13.4050,
+  "photoUrls": []
+}`,
+        response: `{
+  "shipment": {
+    "id": "clxyz123",
+    "name": "Electronics to Berlin",
+    "status": "PENDING",
+    "shareCode": "RYbEAxJF",
+    "originAddress": "45 Warehouse Rd, London, UK",
+    "destinationAddress": "123 Main St, Berlin, Germany",
+    "createdAt": "2025-01-20T14:00:00.000Z"
+  }
+}`,
       },
       {
         method: 'GET',
         path: '/api/v1/shipments/[id]',
         description: 'Get shipment details with locations',
         auth: true,
+        response: `{
+  "shipment": {
+    "id": "clxyz123",
+    "name": "Electronics to Berlin",
+    "status": "IN_TRANSIT",
+    "shareCode": "RYbEAxJF",
+    "locations": [
+      {
+        "id": "loc_001",
+        "latitude": 51.5074,
+        "longitude": -0.1278,
+        "batteryPct": 92,
+        "accuracyM": 15,
+        "recordedAt": "2025-01-20T15:00:00.000Z"
+      }
+    ],
+    "label": {
+      "deviceId": "HL-001001",
+      "batteryPct": 85
+    }
+  }
+}`,
       },
       {
         method: 'PATCH',
         path: '/api/v1/shipments/[id]',
         description: 'Update shipment details',
         auth: true,
+        request: `{
+  "name": "Updated name",
+  "shareEnabled": false
+}`,
+        response: `{
+  "shipment": { ... }
+}`,
       },
       {
         method: 'DELETE',
         path: '/api/v1/shipments/[id]',
         description: 'Cancel shipment (soft delete)',
         auth: true,
+        response: `{
+  "success": true
+}`,
       },
     ],
   },
   {
     category: 'Labels',
-    description: 'Manage GPS tracking labels.',
+    description: 'Manage tracking labels.',
     endpoints: [
       {
         method: 'GET',
         path: '/api/v1/labels',
         description: 'List available labels for shipment creation',
         auth: true,
+        response: `{
+  "labels": [
+    {
+      "id": "lbl_001",
+      "deviceId": "HL-001001",
+      "status": "SOLD",
+      "batteryPct": 100,
+      "activatedAt": null
+    }
+  ]
+}`,
       },
     ],
   },
@@ -89,6 +223,19 @@ const endpoints = [
         path: '/api/v1/orders',
         description: 'List user orders',
         auth: true,
+        response: `{
+  "orders": [
+    {
+      "id": "ord_abc123",
+      "status": "PAID",
+      "quantity": 5,
+      "totalAmount": 11000,
+      "currency": "USD",
+      "trackingNumber": null,
+      "createdAt": "2025-01-15T10:00:00.000Z"
+    }
+  ]
+}`,
       },
       {
         method: 'GET',
@@ -101,37 +248,113 @@ const endpoints = [
         path: '/api/v1/checkout',
         description: 'Create Stripe checkout session',
         auth: true,
+        request: `{
+  "packType": "team",
+  "shippingAddress": {
+    "name": "Jane Doe",
+    "line1": "123 Main St",
+    "city": "London",
+    "state": "",
+    "postalCode": "SW1A 1AA",
+    "country": "GB"
+  }
+}`,
+        response: `{
+  "url": "https://checkout.stripe.com/c/pay/cs_...",
+  "sessionId": "cs_live_..."
+}`,
       },
     ],
   },
   {
     category: 'Public Tracking',
-    description: 'Public endpoints for shipment tracking.',
+    description: 'Public endpoints for shipment tracking. No authentication required.',
     endpoints: [
       {
         method: 'GET',
         path: '/api/v1/track/[code]',
         description: 'Get public tracking data by share code',
         auth: false,
+        response: `{
+  "shipment": {
+    "name": "Electronics to Berlin",
+    "status": "IN_TRANSIT",
+    "destinationAddress": "Berlin, Germany",
+    "locations": [
+      {
+        "latitude": 52.3676,
+        "longitude": 9.7389,
+        "batteryPct": 78,
+        "recordedAt": "2025-01-21T08:30:00.000Z"
+      }
+    ],
+    "label": {
+      "deviceId": "HL-001001",
+      "batteryPct": 78
+    }
+  }
+}`,
+      },
+    ],
+  },
+  {
+    category: 'Delivery Confirmation',
+    description: 'Public endpoint for consignee delivery confirmation.',
+    endpoints: [
+      {
+        method: 'POST',
+        path: '/api/v1/track/[code]/confirm',
+        description: 'Confirm delivery (by recipient)',
+        auth: false,
+        request: `{
+  "receiverName": "John Smith",
+  "notes": "Received in good condition"
+}`,
+        response: `{
+  "success": true,
+  "message": "Delivery confirmed"
+}`,
       },
     ],
   },
   {
     category: 'Device Integration',
-    description: 'Endpoints for GPS device communication.',
+    description: 'Endpoints for device communication.',
     endpoints: [
       {
         method: 'POST',
         path: '/api/v1/device/report',
         description: 'Receive location reports from devices',
         auth: false,
-        note: 'Requires device API key',
+        note: 'Requires device API key in X-API-Key header',
+        request: `{
+  "deviceId": "HL-001001",
+  "latitude": 51.5074,
+  "longitude": -0.1278,
+  "batteryPct": 85,
+  "accuracyM": 10,
+  "recordedAt": "2025-01-20T15:00:00.000Z"
+}`,
+        response: `{
+  "success": true,
+  "eventId": "evt_abc123"
+}`,
       },
       {
         method: 'POST',
         path: '/api/v1/device/activate',
         description: 'Activate a label after QR scan',
         auth: true,
+        request: `{
+  "labelId": "lbl_001"
+}`,
+        response: `{
+  "label": {
+    "id": "lbl_001",
+    "status": "ACTIVE",
+    "activatedAt": "2025-01-20T14:30:00.000Z"
+  }
+}`,
       },
     ],
   },
@@ -144,6 +367,43 @@ const endpoints = [
         path: '/api/v1/stats',
         description: 'Get dashboard statistics',
         auth: true,
+        response: `{
+  "activeShipments": 3,
+  "totalLabels": 10,
+  "deliveredThisMonth": 5,
+  "lowBatteryLabels": 1
+}`,
+      },
+    ],
+  },
+  {
+    category: 'Account',
+    description: 'Account management and GDPR compliance.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/v1/user/export',
+        description: 'Export all user data (GDPR)',
+        auth: true,
+        response: `{
+  "user": { ... },
+  "orders": [ ... ],
+  "shipments": [ ... ],
+  "exportedAt": "2025-01-20T10:00:00.000Z"
+}`,
+      },
+      {
+        method: 'DELETE',
+        path: '/api/v1/user/delete',
+        description: 'Delete account and all data (GDPR)',
+        auth: true,
+        request: `{
+  "confirm": "DELETE"
+}`,
+        response: `{
+  "success": true,
+  "message": "Account and all associated data have been permanently deleted."
+}`,
       },
     ],
   },
@@ -156,12 +416,24 @@ const endpoints = [
         path: '/api/health',
         description: 'Health check with dependency status',
         auth: false,
+        response: `{
+  "status": "healthy",
+  "timestamp": "2025-01-20T10:00:00.000Z",
+  "dependencies": {
+    "database": "connected",
+    "stripe": "configured",
+    "clerk": "configured"
+  }
+}`,
       },
       {
         method: 'GET',
         path: '/api/health/ready',
         description: 'Readiness check for deployments',
         auth: false,
+        response: `{
+  "ready": true
+}`,
       },
     ],
   },
@@ -174,14 +446,14 @@ const endpoints = [
         path: '/api/webhooks/clerk',
         description: 'Clerk user sync webhook',
         auth: false,
-        note: 'Requires Clerk signature',
+        note: 'Requires Clerk signature verification',
       },
       {
         method: 'POST',
         path: '/api/webhooks/stripe',
         description: 'Stripe payment webhook',
         auth: false,
-        note: 'Requires Stripe signature',
+        note: 'Requires Stripe signature verification',
       },
     ],
   },
@@ -200,7 +472,7 @@ export default function ApiDocsPage() {
       <div className="mb-12">
         <h1 className="text-4xl font-bold tracking-tight">API Documentation</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          HyperLabel API reference for integrating GPS tracking into your logistics workflow.
+          TIP API reference for integrating cargo tracking into your logistics workflow.
         </p>
       </div>
 
@@ -210,7 +482,7 @@ export default function ApiDocsPage() {
         </CardHeader>
         <CardContent>
           <code className="rounded bg-muted px-3 py-2 font-mono text-sm">
-            https://hyperlabel.io
+            https://tip.live
           </code>
         </CardContent>
       </Card>
@@ -241,26 +513,62 @@ export default function ApiDocsPage() {
               <CardDescription>{category.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {category.endpoints.map((endpoint, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge className={methodColors[endpoint.method]}>
-                        {endpoint.method}
-                      </Badge>
-                      <code className="font-mono text-sm">{endpoint.path}</code>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{endpoint.description}</span>
-                      {endpoint.auth && (
-                        <Badge variant="outline" className="text-xs">
-                          Auth
+                  <div key={idx} className="space-y-3">
+                    {/* Endpoint header */}
+                    <div className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3">
+                        <Badge className={methodColors[endpoint.method]}>
+                          {endpoint.method}
                         </Badge>
-                      )}
+                        <code className="font-mono text-sm">{endpoint.path}</code>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{endpoint.description}</span>
+                        {endpoint.auth && (
+                          <Badge variant="outline" className="text-xs">
+                            Auth
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Note */}
+                    {endpoint.note && (
+                      <p className="ml-4 text-xs text-muted-foreground italic">
+                        {endpoint.note}
+                      </p>
+                    )}
+
+                    {/* Request example */}
+                    {endpoint.request && (
+                      <div className="ml-4">
+                        <p className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Request Body
+                        </p>
+                        <pre className="overflow-x-auto rounded-md bg-zinc-950 p-3 font-mono text-xs text-green-400">
+                          {endpoint.request}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Response example */}
+                    {endpoint.response && (
+                      <div className="ml-4">
+                        <p className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Response
+                        </p>
+                        <pre className="overflow-x-auto rounded-md bg-zinc-950 p-3 font-mono text-xs text-green-400">
+                          {endpoint.response}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Divider between endpoints (except last) */}
+                    {idx < category.endpoints.length - 1 && (
+                      <div className="border-b" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -277,21 +585,26 @@ export default function ApiDocsPage() {
           <p className="text-sm text-muted-foreground">
             All error responses follow a consistent JSON format:
           </p>
-          <pre className="overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm">
+          <pre className="overflow-x-auto rounded-md bg-zinc-950 p-3 font-mono text-xs text-red-400">
 {`{
-  "error": "Error message",
-  "details": { ... }  // Optional validation details
+  "error": "Error message describing what went wrong",
+  "details": {           // Optional — present on validation errors
+    "fieldErrors": {
+      "name": ["Shipment name is required"]
+    }
+  }
 }`}
           </pre>
           <div className="space-y-2">
             <p className="text-sm font-medium">Common HTTP Status Codes:</p>
             <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-              <li><strong>200</strong> - Success</li>
-              <li><strong>400</strong> - Bad Request (validation error)</li>
-              <li><strong>401</strong> - Unauthorized (missing/invalid auth)</li>
-              <li><strong>403</strong> - Forbidden (insufficient permissions)</li>
-              <li><strong>404</strong> - Not Found</li>
-              <li><strong>500</strong> - Internal Server Error</li>
+              <li><strong>200</strong> — Success</li>
+              <li><strong>201</strong> — Created (new resource)</li>
+              <li><strong>400</strong> — Bad Request (validation error or missing confirmation)</li>
+              <li><strong>401</strong> — Unauthorized (missing or invalid auth)</li>
+              <li><strong>403</strong> — Forbidden (insufficient permissions)</li>
+              <li><strong>404</strong> — Not Found</li>
+              <li><strong>500</strong> — Internal Server Error</li>
             </ul>
           </div>
         </CardContent>

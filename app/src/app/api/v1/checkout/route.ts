@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
 
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create({

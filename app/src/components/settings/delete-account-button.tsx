@@ -26,7 +26,11 @@ export function DeleteAccountButton() {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/v1/user/delete', { method: 'DELETE' })
+      const res = await fetch('/api/v1/user/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE' }),
+      })
       if (!res.ok) {
         throw new Error('Failed to delete account')
       }

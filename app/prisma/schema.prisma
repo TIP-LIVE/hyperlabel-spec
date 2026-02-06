@@ -66,7 +66,7 @@ model User {
   @@map("users")
 }
 
-/// Labels - physical GPS tracking devices
+/// Labels - physical tracking devices with cellular connectivity
 model Label {
   id              String      @id @default(cuid())
   deviceId        String      @unique @map("device_id") // HL-001234
@@ -116,7 +116,7 @@ model Shipment {
   @@map("shipments")
 }
 
-/// LocationEvent - GPS data points from devices
+/// LocationEvent - location data points from devices (cell tower triangulation)
 model LocationEvent {
   id            String   @id @default(cuid())
   latitude      Float

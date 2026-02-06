@@ -1,5 +1,5 @@
 /**
- * Simple logging utility for HyperLabel
+ * Simple logging utility for TIP
  * In production, this could be extended to use services like:
  * - Sentry for error tracking
  * - LogDNA/Datadog for log aggregation

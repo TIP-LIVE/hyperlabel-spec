@@ -74,7 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="pl-64">
         {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-gray-800 bg-gray-900 px-6">
-          <h1 className="text-lg font-medium text-white">HyperLabel Admin</h1>
+          <h1 className="text-lg font-medium text-white">TIP Admin</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-400">{user?.email}</span>
             <div className="h-8 w-8 rounded-full bg-primary/20" />

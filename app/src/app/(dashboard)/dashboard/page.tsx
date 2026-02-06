@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Package, MapPin, Truck, Battery, ArrowRight } from 'lucide-react'
+import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { formatDistanceToNow } from 'date-fns'
@@ -169,15 +169,70 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           {recentShipments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
-              <h3 className="text-lg font-semibold">No shipments yet</h3>
-              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Purchase your first tracking label to start monitoring your cargo in real-time.
-              </p>
-              <Button className="mt-4" asChild>
-                <Link href="/buy">Buy Labels</Link>
-              </Button>
+            <div className="py-8">
+              <div className="mb-6 text-center">
+                <h3 className="text-lg font-semibold">Welcome! Here&apos;s how to get started</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Follow these steps to start tracking your cargo in real-time
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* Step 1: Buy */}
+                <div className="flex items-start gap-4 rounded-lg border p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <ShoppingCart className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">1. Buy tracking labels</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Order tracking labels — they&apos;ll arrive at your door within 1-2 business days.
+                    </p>
+                  </div>
+                  <Button size="sm" asChild>
+                    <Link href="/buy">Buy Labels</Link>
+                  </Button>
+                </div>
+
+                {/* Step 2: Create Shipment */}
+                <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">2. Create a shipment</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Scan the QR code or select a label, enter origin & destination, and attach the label to your cargo.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 3: Track */}
+                <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <Radio className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">3. Track in real-time</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Watch your cargo on a live map. Share the tracking link with anyone — no account needed.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 4: Delivery */}
+                <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">4. Confirm delivery</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      The receiver confirms delivery on arrival. You get notified instantly.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

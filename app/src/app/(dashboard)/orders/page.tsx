@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Package, ShoppingCart } from 'lucide-react'
+import { Package, ShoppingCart, Truck } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { format } from 'date-fns'
@@ -81,12 +81,12 @@ export default async function OrdersPage() {
             <Package className="mb-4 h-16 w-16 text-muted-foreground/50" />
             <h3 className="text-xl font-semibold">No orders yet</h3>
             <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Purchase tracking labels to start monitoring your cargo shipments in real-time.
+              Tracking labels start at $25 each. Order a pack and we&apos;ll ship them to your address within 1-2 business days.
             </p>
             <Button className="mt-6" asChild>
               <Link href="/buy">
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                Buy Labels
+                Buy Your First Labels
               </Link>
             </Button>
           </CardContent>
@@ -119,13 +119,19 @@ export default async function OrdersPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {order.trackingNumber && (
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {order.trackingNumber}
-                        </span>
-                      )}
+                    <div className="flex flex-col items-end gap-2">
                       <Badge variant={status.variant}>{status.label}</Badge>
+                      {order.trackingNumber && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Truck className="h-3 w-3" />
+                          <span className="font-mono">{order.trackingNumber}</span>
+                        </div>
+                      )}
+                      {order.shippedAt && !order.trackingNumber && (
+                        <p className="text-xs text-muted-foreground">
+                          Shipped {format(new Date(order.shippedAt), 'PP')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )

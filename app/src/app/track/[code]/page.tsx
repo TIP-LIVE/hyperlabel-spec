@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Package, MapPin, Battery, Truck, CheckCircle } from 'lucide-react'
+import { Package, MapPin, Battery, Truck, CheckCircle, Clock } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { PublicTrackingMap } from '@/components/maps/public-tracking-map'
 import { PublicTimeline } from '@/components/tracking/public-timeline'
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: shipment?.name ? `Track: ${shipment.name}` : 'Track Shipment',
-    description: 'Track your shipment in real-time with HyperLabel GPS tracking',
+    description: 'Track your shipment door-to-door in real-time with TIP',
   }
 }
 
@@ -75,7 +75,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
           </CardHeader>
           <CardContent className="text-center">
             <Button asChild>
-              <Link href="/">Go to HyperLabel</Link>
+              <Link href="/">Go to TIP</Link>
             </Button>
           </CardContent>
         </Card>
@@ -94,7 +94,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
             <Package className="h-6 w-6 text-primary" />
-            <span className="font-bold">HyperLabel</span>
+            <span className="font-bold">TIP</span>
           </Link>
           <Badge variant={statusInfo.variant} className="gap-1">
             <StatusIcon className="h-3 w-3" />
@@ -105,11 +105,21 @@ export default async function PublicTrackingPage({ params }: PageProps) {
 
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{shipment.name || 'Shipment Tracking'}</h1>
-          <p className="text-sm text-muted-foreground">
-            Tracking code: <span className="font-mono">{code}</span>
-          </p>
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{shipment.name || 'Shipment Tracking'}</h1>
+            <p className="text-sm text-muted-foreground">
+              Tracking code: <span className="font-mono">{code}</span>
+            </p>
+          </div>
+          {latestLocation && (
+            <div className="flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
+              <Clock className="h-3.5 w-3.5" />
+              <span>
+                Updated {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -282,7 +292,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
               <CardContent className="pt-6">
                 <p className="font-medium">Need to track your own cargo?</p>
                 <p className="mt-1 text-sm opacity-90">
-                  Get GPS tracking labels for your valuable shipments.
+                  Door-to-door tracking labels for your valuable shipments.
                 </p>
                 <Button variant="secondary" className="mt-4 w-full" asChild>
                   <Link href="/sign-up">Get Started</Link>
@@ -296,10 +306,10 @@ export default async function PublicTrackingPage({ params }: PageProps) {
       {/* Footer */}
       <footer className="mt-12 border-t bg-white py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Powered by HyperLabel GPS Tracking</p>
+          <p>Powered by TIP Cargo Tracking</p>
           <p className="mt-1">
             <Link href="/" className="hover:underline">
-              hyperlabel.io
+              tip.live
             </Link>
           </p>
         </div>

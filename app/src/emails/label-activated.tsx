@@ -19,7 +19,7 @@ export function LabelActivatedEmail({
     <BaseLayout preview={`Your label for "${shipmentName}" is now active`}>
       <Heading style={heading}>Label Activated</Heading>
       <Text style={paragraph}>
-        Great news! Your GPS tracking label has been activated and is now transmitting location
+        Great news! Your tracking label has been activated and is now transmitting location
         data.
       </Text>
 

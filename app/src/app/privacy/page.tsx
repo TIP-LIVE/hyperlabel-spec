@@ -29,7 +29,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">1. Introduction</h2>
             <p className="mt-2 text-muted-foreground">
               TIP (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) operates the tip.live
-              website and GPS cargo tracking service. This Privacy Policy explains how we collect,
+              website and cargo tracking service. This Privacy Policy explains how we collect,
               use, disclose, and safeguard your information when you use our service.
             </p>
           </section>
@@ -43,10 +43,10 @@ export default function PrivacyPage() {
             </p>
             <h3 className="mt-3 text-lg font-medium">2.2 Location Data</h3>
             <p className="mt-1 text-muted-foreground">
-              Our GPS tracking labels collect location data (latitude, longitude, altitude, speed)
-              of the cargo they are attached to. This data is transmitted to our servers at
-              configurable intervals (default: every 120 minutes). Location data includes GPS
-              coordinates and cell tower backup coordinates.
+              Our tracking labels collect location data (latitude, longitude) of the cargo
+              they are attached to. Location is determined via cell tower triangulation
+              through our eSIM connectivity partner. This data is transmitted to our servers at
+              configurable intervals (default: every 120 minutes).
             </p>
             <h3 className="mt-3 text-lg font-medium">2.3 Payment Information</h3>
             <p className="mt-1 text-muted-foreground">
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold">5. Data Retention</h2>
             <ul className="mt-2 list-disc space-y-1 pl-6 text-muted-foreground">
-              <li>Location history: 30 days after shipment delivery (free tier), 90+ days (premium)</li>
+              <li>Location history: retained for 90 days after shipment delivery</li>
               <li>Account data: retained until account deletion</li>
               <li>Shared tracking links: expire 90 days after delivery</li>
               <li>Order records: retained for legal/accounting requirements</li>

@@ -8,7 +8,7 @@ import ShipmentDeliveredEmail from '@/emails/shipment-delivered'
 import OrderShippedEmail from '@/emails/order-shipped'
 import { format } from 'date-fns'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://hyperlabel.io'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
 
 // Check if user has enabled a specific notification type
 async function shouldSendNotification(

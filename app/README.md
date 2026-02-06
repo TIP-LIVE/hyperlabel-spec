@@ -1,4 +1,4 @@
-# HyperLabel Application
+# TIP Application
 
 GPS cargo tracking platform built with Next.js 14.
 
@@ -31,7 +31,7 @@ Edit `.env` with your credentials:
 
 ```env
 # Database (required)
-DATABASE_URL="postgresql://user:password@localhost:5432/hyperlabel"
+DATABASE_URL="postgresql://user:password@localhost:5432/tip"
 
 # Clerk Auth (required)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxx
@@ -81,8 +81,8 @@ After running `npm run db:seed`, you'll have:
 
 | Account | Email | Role |
 |---------|-------|------|
-| Demo User | demo@hyperlabel.io | user |
-| Admin | admin@hyperlabel.io | admin |
+| Demo User | demo@tip.live | user |
+| Admin | admin@tip.live | admin |
 
 **Demo Shipments:**
 - `/track/DEMO001` - Electronics from Shenzhen (in transit)
@@ -249,4 +249,4 @@ npm run build
 
 ## License
 
-Proprietary - HyperLabel
+Proprietary - TIP
