@@ -15,6 +15,10 @@ import {
   Bell,
   Mail,
   ChevronRight,
+  Cpu,
+  Pill,
+  Palette,
+  Plane,
 } from 'lucide-react'
 import { LandingFAQ } from '@/components/landing/landing-faq'
 import { MobileNav } from '@/components/landing/mobile-nav'
@@ -239,6 +243,62 @@ export default async function HomePage() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Alerts for delivery, low battery, and optional stuck-in-transit detection.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use Cases */}
+      <section className="scroll-mt-20 py-20 md:py-24">
+        <div className="container mx-auto px-4">
+          <h2 className="text-center text-3xl font-bold md:text-4xl">Who Uses TIP?</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
+            Any business that ships valuable cargo and needs visibility from origin to destination.
+          </p>
+          <div className="mx-auto mt-16 grid max-w-4xl gap-8 md:grid-cols-2">
+            <div className="flex gap-4 rounded-xl border bg-white p-6 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Cpu className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Electronics &amp; Components</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Phones, laptops, server parts — high-value cargo that needs tracking from factory to warehouse.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 rounded-xl border bg-white p-6 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Pill className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Pharma &amp; Healthcare</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Medical equipment and pharmaceutical shipments where delivery accountability is critical.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 rounded-xl border bg-white p-6 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Palette className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Art &amp; Collectibles</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  One-of-a-kind items moving between galleries, auctions, and private buyers worldwide.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 rounded-xl border bg-white p-6 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Plane className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Air Cargo &amp; Freight</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Time-critical shipments over 500 kg where carrier tracking alone isn&apos;t enough.
+                </p>
+              </div>
             </div>
           </div>
         </div>

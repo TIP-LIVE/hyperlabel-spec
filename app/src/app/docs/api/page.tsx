@@ -505,6 +505,30 @@ export default function ApiDocsPage() {
         </CardContent>
       </Card>
 
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Rate Limiting</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            API requests are rate-limited to protect service stability. Limits are applied per IP address for public endpoints
+            and per authenticated user for private endpoints.
+          </p>
+          <div className="space-y-2">
+            <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+              <li><strong>Authenticated endpoints</strong> — 100 requests per minute</li>
+              <li><strong>Public tracking endpoints</strong> — 30 requests per minute per IP</li>
+              <li><strong>Device report endpoint</strong> — 10 requests per minute per device</li>
+              <li><strong>Checkout / payment</strong> — 5 requests per minute</li>
+            </ul>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            When you exceed the limit, the API returns <code className="rounded bg-muted px-1">429 Too Many Requests</code>.
+            Wait for the window to reset before retrying.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="space-y-8">
         {endpoints.map((category) => (
           <Card key={category.category}>
@@ -604,6 +628,7 @@ export default function ApiDocsPage() {
               <li><strong>401</strong> — Unauthorized (missing or invalid auth)</li>
               <li><strong>403</strong> — Forbidden (insufficient permissions)</li>
               <li><strong>404</strong> — Not Found</li>
+              <li><strong>429</strong> — Too Many Requests (rate limited)</li>
               <li><strong>500</strong> — Internal Server Error</li>
             </ul>
           </div>

@@ -38,6 +38,21 @@ const faqs = [
     answer:
       'Yes. You can generate a public tracking link from the dashboard and send it to your consignee. They can view the map and status without creating an account.',
   },
+  {
+    question: 'What if the label is defective?',
+    answer:
+      'We replace or refund any defective label — no questions asked. Unused (sealed) labels can be returned within 30 days for a full refund. Once a label is activated it is single-use, so activated labels are not refundable.',
+  },
+  {
+    question: 'Can I track multiple shipments at once?',
+    answer:
+      'Yes. Each label tracks one shipment, but your dashboard shows all active shipments on a single map. You can buy as many labels as you need and manage them all from one account.',
+  },
+  {
+    question: 'Do you offer bulk or enterprise pricing?',
+    answer:
+      'Yes. For logistics companies or regular shippers who need more than 10 labels at a time, contact us at support@tip.live for custom pricing. We also offer an API for integrating TIP into your existing workflow.',
+  },
 ]
 
 export function LandingFAQ() {
