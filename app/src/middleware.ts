@@ -9,8 +9,11 @@ const isPublicRoute = createRouteMatcher([
   '/track/(.*)', // Public tracking pages
   '/privacy', // Privacy policy
   '/terms', // Terms of service
+  '/docs/(.*)', // Documentation pages
+  '/checkout/(.*)', // Checkout result pages
   '/api/webhooks/(.*)', // Webhooks
   '/api/v1/device/(.*)', // Device API
+  '/api/v1/track/(.*)', // Public tracking API
   '/api/cron/(.*)', // Cron jobs (auth via CRON_SECRET)
   '/api/health(.*)', // Health checks
 ])
