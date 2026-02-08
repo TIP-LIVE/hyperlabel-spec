@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { DataTable } from '@/components/data-table/data-table'
 import { shipmentColumns, ShipmentRow } from './shipment-columns'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -14,30 +14,33 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-export function ShipmentsList() {
-  const [shipments, setShipments] = useState<ShipmentRow[]>([])
+interface ShipmentsListProps {
+  initialStatus?: string
+}
+
+export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
+  const [allShipments, setAllShipments] = useState<ShipmentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>(
+    initialStatus && ['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(initialStatus)
+      ? initialStatus
+      : 'all'
+  )
 
   const fetchShipments = async () => {
     setLoading(true)
     setError(null)
-    
-    try {
-      const params = new URLSearchParams()
-      if (statusFilter !== 'all') {
-        params.set('status', statusFilter)
-      }
 
-      const res = await fetch(`/api/v1/shipments?${params.toString()}`)
-      
+    try {
+      const res = await fetch('/api/v1/shipments')
+
       if (!res.ok) {
         throw new Error(`Failed to load shipments (${res.status})`)
       }
-      
+
       const data = await res.json()
-      setShipments(data.shipments || [])
+      setAllShipments(data.shipments || [])
     } catch (err) {
       console.error('Failed to fetch shipments:', err)
       setError(err instanceof Error ? err.message : 'Failed to load shipments')
@@ -48,12 +51,29 @@ export function ShipmentsList() {
 
   useEffect(() => {
     fetchShipments()
-  }, [statusFilter])
+  }, [])
+
+  // Status counts from full dataset
+  const statusCounts = useMemo(() => {
+    return allShipments.reduce<Record<string, number>>(
+      (acc, s) => {
+        acc[s.status] = (acc[s.status] || 0) + 1
+        return acc
+      },
+      {}
+    )
+  }, [allShipments])
+
+  // Client-side filter
+  const filteredShipments = useMemo(() => {
+    if (statusFilter === 'all') return allShipments
+    return allShipments.filter((s) => s.status === statusFilter)
+  }, [allShipments, statusFilter])
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-[200px]" />
+        <Skeleton className="h-10 w-[220px]" />
         <Skeleton className="h-[400px] w-full" />
       </div>
     )
@@ -77,21 +97,29 @@ export function ShipmentsList() {
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[220px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-            <SelectItem value="DELIVERED">Delivered</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="all">All Statuses ({allShipments.length})</SelectItem>
+            <SelectItem value="PENDING">
+              Pending{statusCounts.PENDING ? ` (${statusCounts.PENDING})` : ''}
+            </SelectItem>
+            <SelectItem value="IN_TRANSIT">
+              In Transit{statusCounts.IN_TRANSIT ? ` (${statusCounts.IN_TRANSIT})` : ''}
+            </SelectItem>
+            <SelectItem value="DELIVERED">
+              Delivered{statusCounts.DELIVERED ? ` (${statusCounts.DELIVERED})` : ''}
+            </SelectItem>
+            <SelectItem value="CANCELLED">
+              Cancelled{statusCounts.CANCELLED ? ` (${statusCounts.CANCELLED})` : ''}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
       <DataTable
         columns={shipmentColumns}
-        data={shipments}
+        data={filteredShipments}
         searchKey="name"
         searchPlaceholder="Search shipments..."
       />

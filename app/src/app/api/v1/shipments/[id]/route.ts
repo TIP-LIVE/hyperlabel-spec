@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
-import { isClerkConfigured } from '@/lib/clerk-config'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -14,7 +14,7 @@ interface RouteParams {
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
-    const user = await getCurrentUser()
+    const context = await requireOrgAuth()
 
     const shipment = await db.shipment.findUnique({
       where: { id },
@@ -40,20 +40,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Shipment not found' }, { status: 404 })
     }
 
-    // Check ownership (only if user is authenticated)
-    if (user && shipment.userId !== user.id) {
-      // Allow if user is admin
-      if (user.role !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-    } else if (!user && isClerkConfigured()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!canAccessRecord(context, shipment)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     return NextResponse.json({ shipment })
   } catch (error) {
-    console.error('Error fetching shipment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'fetching shipment')
   }
 }
 
@@ -63,11 +56,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
-    const user = await getCurrentUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
 
     const body = await req.json()
     const validated = updateShipmentSchema.safeParse(body)
@@ -79,7 +68,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Verify shipment exists and belongs to user
+    // Verify shipment exists and belongs to user/org
     const existing = await db.shipment.findUnique({
       where: { id },
     })
@@ -88,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Shipment not found' }, { status: 404 })
     }
 
-    if (existing.userId !== user.id && user.role !== 'admin') {
+    if (!canAccessRecord(context, existing)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -113,8 +102,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ shipment })
   } catch (error) {
-    console.error('Error updating shipment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'updating shipment')
   }
 }
 
@@ -124,13 +112,9 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
-    const user = await getCurrentUser()
+    const context = await requireOrgAuth()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify shipment exists and belongs to user
+    // Verify shipment exists and belongs to user/org
     const existing = await db.shipment.findUnique({
       where: { id },
     })
@@ -139,7 +123,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Shipment not found' }, { status: 404 })
     }
 
-    if (existing.userId !== user.id && user.role !== 'admin') {
+    if (!canAccessRecord(context, existing)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -151,7 +135,6 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting shipment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'deleting shipment')
   }
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
+import { sendOrderShippedNotification } from '@/lib/notifications'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -54,17 +56,16 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // TODO: Send shipping confirmation email to customer
+    // Send shipping confirmation email to customer (fire and forget)
+    sendOrderShippedNotification({
+      userId: order.userId,
+      orderNumber: order.id.slice(-8).toUpperCase(),
+      quantity: order.quantity,
+      trackingNumber: validated.data.trackingNumber,
+    }).catch((err) => console.error('Failed to send order shipped notification:', err))
 
     return NextResponse.json({ order: updated })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (error instanceof Error && error.message.includes('Admin')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-    console.error('Error marking order shipped:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'marking order shipped')
   }
 }

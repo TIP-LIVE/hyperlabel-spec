@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function AddLabelsPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Add Labels to Inventory</h1>
         <p className="text-gray-400">Register new tracking labels</p>

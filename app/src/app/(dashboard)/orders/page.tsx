@@ -2,9 +2,13 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { EmptyState } from '@/components/ui/empty-state'
+import { orderStatusConfig } from '@/lib/status-config'
 import { Package, ShoppingCart, Truck } from 'lucide-react'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { format } from 'date-fns'
 import type { Metadata } from 'next'
 
@@ -15,16 +19,11 @@ export const metadata: Metadata = {
   description: 'View your label orders and purchase history',
 }
 
-const statusConfig = {
-  PENDING: { label: 'Pending', variant: 'secondary' as const },
-  PAID: { label: 'Paid', variant: 'default' as const },
-  SHIPPED: { label: 'Shipped', variant: 'default' as const },
-  DELIVERED: { label: 'Delivered', variant: 'outline' as const },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' as const },
-}
+const statusConfig = orderStatusConfig
 
 export default async function OrdersPage() {
   const user = await getCurrentUser()
+  const { orgId, orgRole } = await auth()
 
   let orders: Array<{
     id: string
@@ -39,8 +38,19 @@ export default async function OrdersPage() {
   }> = []
 
   if (user) {
+    // Build org-scoped query
+    const where: Record<string, unknown> = {}
+    if (orgId) {
+      where.orgId = orgId
+      if (!canViewAllOrgData(orgRole || 'org:member')) {
+        where.userId = user.id
+      }
+    } else {
+      where.userId = user.id
+    }
+
     orders = await db.order.findMany({
-      where: { userId: user.id },
+      where,
       select: {
         id: true,
         status: true,
@@ -60,37 +70,34 @@ export default async function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-          <p className="text-muted-foreground">View your label orders and purchase history</p>
-        </div>
-        <Button asChild>
-          <Link href="/buy">
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Buy Labels
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Orders"
+        description="View your label orders and purchase history"
+        action={
+          <Button asChild>
+            <Link href="/buy">
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Buy Labels
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Orders List or Empty State */}
       {orders.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Package className="mb-4 h-16 w-16 text-muted-foreground/50" />
-            <h3 className="text-xl font-semibold">No orders yet</h3>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Tracking labels start at $25 each. Order a pack and we&apos;ll ship them to your address within 1-2 business days.
-            </p>
-            <Button className="mt-6" asChild>
+        <EmptyState
+          icon={Package}
+          title="No orders yet"
+          description="Tracking labels start at $25 each. Order a pack and we'll ship them to your address within 3-5 business days."
+          action={
+            <Button asChild>
               <Link href="/buy">
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 Buy Your First Labels
               </Link>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <Card>
           <CardHeader>
@@ -102,9 +109,10 @@ export default async function OrdersPage() {
               {orders.map((order) => {
                 const status = statusConfig[order.status]
                 return (
-                  <div
+                  <Link
                     key={order.id}
-                    className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    href={`/orders/${order.id}`}
+                    className="flex flex-col gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -122,10 +130,15 @@ export default async function OrdersPage() {
                     <div className="flex flex-col items-end gap-2">
                       <Badge variant={status.variant}>{status.label}</Badge>
                       {order.trackingNumber && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <a
+                          href={`https://track.aftership.com/${order.trackingNumber}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        >
                           <Truck className="h-3 w-3" />
                           <span className="font-mono">{order.trackingNumber}</span>
-                        </div>
+                        </a>
                       )}
                       {order.shippedAt && !order.trackingNumber && (
                         <p className="text-xs text-muted-foreground">
@@ -133,7 +146,7 @@ export default async function OrdersPage() {
                         </p>
                       )}
                     </div>
-                  </div>
+                  </Link>
                 )
               })}
             </div>

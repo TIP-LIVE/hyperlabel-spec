@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 import { createShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
-import { isClerkConfigured } from '@/lib/clerk-config'
+import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
 
 /**
  * GET /api/v1/shipments - List user's shipments
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-
-    if (!user && isClerkConfigured()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
 
     // Get query params for filtering
     const { searchParams } = new URL(req.url)
@@ -22,14 +19,8 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    // Build where clause
-    const where: Record<string, unknown> = {}
-    if (user) {
-      where.userId = user.id
-    }
-    if (status) {
-      where.status = status
-    }
+    // Build where clause scoped to organization
+    const where = orgScopedWhere(context, status ? { status } : undefined)
 
     const [shipments, total] = await Promise.all([
       db.shipment.findMany({
@@ -61,8 +52,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching shipments:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'fetching shipments')
   }
 }
 
@@ -71,11 +61,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
 
     const body = await req.json()
     const validated = createShipmentSchema.safeParse(body)
@@ -87,7 +73,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { labelId, ...data } = validated.data
+    const { labelId, consigneeEmail, ...data } = validated.data
 
     // Verify label exists and belongs to user (via order)
     const label = await db.label.findUnique({
@@ -139,9 +125,11 @@ export async function POST(req: NextRequest) {
       data: {
         ...data,
         shareCode,
-        userId: user.id,
+        userId: context.user.id,
+        orgId: context.orgId,
         labelId: label.id,
         status: 'PENDING',
+        consigneeEmail: consigneeEmail || null,
       },
       include: {
         label: {
@@ -166,9 +154,32 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Send label activated notification to shipper (fire and forget)
+    sendLabelActivatedNotification({
+      userId: context.user.id,
+      shipmentName: shipment.name || 'Unnamed Shipment',
+      deviceId: label.deviceId,
+      shareCode: shipment.shareCode,
+    }).catch((err) => console.error('Failed to send activation notification:', err))
+
+    // Send tracking link to consignee if email was provided
+    if (consigneeEmail) {
+      const senderName = context.user.firstName
+        ? `${context.user.firstName}${context.user.lastName ? ' ' + context.user.lastName : ''}`
+        : 'Someone'
+
+      sendConsigneeTrackingNotification({
+        consigneeEmail,
+        shipmentName: shipment.name || 'Shipment',
+        senderName,
+        shareCode: shipment.shareCode,
+        originAddress: data.originAddress,
+        destinationAddress: data.destinationAddress,
+      }).catch((err) => console.error('Failed to send consignee notification:', err))
+    }
+
     return NextResponse.json({ shipment }, { status: 201 })
   } catch (error) {
-    console.error('Error creating shipment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'creating shipment')
   }
 }

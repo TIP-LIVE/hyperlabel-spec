@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Package } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
+import { Footer } from '@/components/ui/footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -13,9 +14,8 @@ export default function TermsPage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Package className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">TIP</span>
+          <Link href="/">
+            <Logo size="lg" />
           </Link>
         </div>
       </header>
@@ -72,7 +72,7 @@ export default function TermsPage() {
             </p>
             <h3 className="mt-3 text-lg font-medium">4.3 What&apos;s Included</h3>
             <p className="mt-1 text-muted-foreground">
-              Each label purchase includes: the physical tracking device, free shipping, 60 days of
+              Each label purchase includes: the physical tracking label, free shipping, 60 days of
               location tracking, global eSIM connectivity, platform access, email notifications, and
               shareable tracking links.
             </p>
@@ -198,11 +198,7 @@ export default function TermsPage() {
         </div>
       </main>
 
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} TIP. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

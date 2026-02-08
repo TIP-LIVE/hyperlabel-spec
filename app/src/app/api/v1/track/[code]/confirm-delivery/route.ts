@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { sendShipmentDeliveredNotification } from '@/lib/notifications'
+import { sendShipmentDeliveredNotification, sendConsigneeDeliveredNotification } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
+import { format } from 'date-fns'
 
 interface RouteParams {
   params: Promise<{ code: string }>
@@ -105,6 +106,22 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           error: emailError 
         })
       }
+    }
+
+    // Send delivery confirmation email to consignee (receipt)
+    if (shipment.consigneeEmail) {
+      sendConsigneeDeliveredNotification({
+        consigneeEmail: shipment.consigneeEmail,
+        shipmentName: shipment.name || 'Shipment',
+        shareCode: code,
+        destinationAddress: shipment.destinationAddress,
+        deliveredAt: format(now, 'PPpp'),
+      }).catch((emailError) => {
+        logger.error('Failed to send consignee delivery notification', {
+          shipmentId: shipment.id,
+          error: emailError,
+        })
+      })
     }
 
     logger.info('Shipment marked as delivered by consignee', {

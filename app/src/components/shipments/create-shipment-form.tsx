@@ -16,8 +16,20 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Loader2, Package, Navigation, Camera, X } from 'lucide-react'
+import {
+  Loader2,
+  Package,
+  Navigation,
+  Camera,
+  X,
+  Mail,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  Eye,
+} from 'lucide-react'
 import { AddressInput } from '@/components/ui/address-input'
+import { QrScanner } from '@/components/shipments/qr-scanner'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Shipment name is required').max(200),
@@ -28,6 +40,7 @@ const formSchema = z.object({
   destinationAddress: z.string().min(1, 'Destination address is required'),
   destinationLat: z.number().min(-90).max(90),
   destinationLng: z.number().min(-180).max(180),
+  consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -38,12 +51,33 @@ type AvailableLabel = {
   batteryPct: number | null
 }
 
+type PhotoState = {
+  file: File
+  preview: string
+  uploadedUrl?: string
+  uploading?: boolean
+  analysis?: CargoAnalysis | null
+  analyzing?: boolean
+}
+
+type CargoAnalysis = {
+  labelVisible: boolean
+  labelAttachmentQuality: 'good' | 'poor' | 'not_visible'
+  cargoType: string | null
+  packageCount: number | null
+  existingLabels: string[]
+  hazardWarnings: string[]
+  cargoCondition: 'good' | 'damaged' | 'unknown'
+  confidence: number
+  summary: string
+}
+
 export function CreateShipmentForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [labels, setLabels] = useState<AvailableLabel[]>([])
   const [labelsLoading, setLabelsLoading] = useState(true)
-  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
+  const [photos, setPhotos] = useState<PhotoState[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
@@ -63,10 +97,28 @@ export function CreateShipmentForm() {
       destinationAddress: '',
       destinationLat: 0,
       destinationLng: 0,
+      consigneeEmail: '',
     },
   })
 
   const selectedLabelId = watch('labelId')
+
+  // Handle QR scanner result — find matching label and select it
+  const handleQrScanned = useCallback(
+    (deviceId: string) => {
+      const matchingLabel = labels.find(
+        (l) => l.deviceId.toUpperCase() === deviceId.toUpperCase()
+      )
+      if (matchingLabel) {
+        setValue('labelId', matchingLabel.id)
+      } else {
+        toast.error(
+          `Label ${deviceId} not found in your available labels. Make sure the label has been purchased and delivered.`
+        )
+      }
+    },
+    [labels, setValue]
+  )
 
   // Fetch available labels
   useEffect(() => {
@@ -88,36 +140,129 @@ export function CreateShipmentForm() {
   }, [])
 
   // Address selection handlers
-  const handleOriginSelect = useCallback((address: string, lat: number, lng: number) => {
-    setValue('originAddress', address)
-    if (lat !== 0 && lng !== 0) {
-      setValue('originLat', lat)
-      setValue('originLng', lng)
+  const handleOriginSelect = useCallback(
+    (address: string, lat: number, lng: number) => {
+      setValue('originAddress', address)
+      if (lat !== 0 && lng !== 0) {
+        setValue('originLat', lat)
+        setValue('originLng', lng)
+      }
+    },
+    [setValue]
+  )
+
+  const handleDestinationSelect = useCallback(
+    (address: string, lat: number, lng: number) => {
+      setValue('destinationAddress', address)
+      if (lat !== 0 && lng !== 0) {
+        setValue('destinationLat', lat)
+        setValue('destinationLng', lng)
+      }
+    },
+    [setValue]
+  )
+
+  // Upload a photo to Vercel Blob storage
+  const uploadPhoto = useCallback(async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/v1/upload', { method: 'POST', body: formData })
+      if (res.ok) {
+        const data = await res.json()
+        return data.url
+      }
+      // If upload service not available, fall back to base64
+      return null
+    } catch {
+      return null
     }
-  }, [setValue])
+  }, [])
 
-  const handleDestinationSelect = useCallback((address: string, lat: number, lng: number) => {
-    setValue('destinationAddress', address)
-    if (lat !== 0 && lng !== 0) {
-      setValue('destinationLat', lat)
-      setValue('destinationLng', lng)
+  // Analyze a photo with AI
+  const analyzePhoto = useCallback(async (file: File): Promise<CargoAnalysis | null> => {
+    try {
+      const reader = new FileReader()
+      const dataUrl = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(file)
+      })
+
+      const res = await fetch('/api/v1/ai/analyze-photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl, mimeType: file.type }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.analysis
+      }
+      return null
+    } catch {
+      return null
     }
-  }, [setValue])
+  }, [])
 
-  // Photo upload handlers
-  const handlePhotoSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
+  // Photo upload handlers — upload + analyze in parallel
+  const handlePhotoSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files
+      if (!files) return
 
-    const newPhotos = Array.from(files).slice(0, 5 - photos.length).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }))
+      const newPhotos: PhotoState[] = Array.from(files)
+        .slice(0, 5 - photos.length)
+        .map((file) => ({
+          file,
+          preview: URL.createObjectURL(file),
+          uploading: true,
+          analyzing: true,
+        }))
 
-    setPhotos((prev) => [...prev, ...newPhotos].slice(0, 5))
-    // Reset input so same file can be re-selected
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }, [photos.length])
+      const startIndex = photos.length
+      setPhotos((prev) => [...prev, ...newPhotos].slice(0, 5))
+
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = ''
+
+      // Process each photo: upload + AI analysis in parallel
+      for (let i = 0; i < newPhotos.length; i++) {
+        const photoIndex = startIndex + i
+        const file = newPhotos[i].file
+
+        // Run upload and analysis concurrently
+        const [uploadedUrl, analysis] = await Promise.all([
+          uploadPhoto(file),
+          analyzePhoto(file),
+        ])
+
+        setPhotos((prev) => {
+          const updated = [...prev]
+          if (updated[photoIndex]) {
+            updated[photoIndex] = {
+              ...updated[photoIndex],
+              uploadedUrl: uploadedUrl || undefined,
+              uploading: false,
+              analysis,
+              analyzing: false,
+            }
+          }
+          return updated
+        })
+
+        // Show AI analysis toast
+        if (analysis) {
+          if (analysis.hazardWarnings.length > 0) {
+            toast.warning(`Hazard detected: ${analysis.hazardWarnings.join(', ')}`)
+          }
+          if (analysis.cargoCondition === 'damaged') {
+            toast.warning('AI detected possible cargo damage. Consider documenting this.')
+          }
+        }
+      }
+    },
+    [photos.length, uploadPhoto, analyzePhoto]
+  )
 
   const removePhoto = useCallback((index: number) => {
     setPhotos((prev) => {
@@ -132,15 +277,20 @@ export function CreateShipmentForm() {
     setLoading(true)
 
     try {
-      // Convert photos to base64 data URLs if any
+      // Collect photo URLs — use uploaded URLs or fall back to base64
       const photoUrls: string[] = []
       for (const photo of photos) {
-        const reader = new FileReader()
-        const dataUrl = await new Promise<string>((resolve) => {
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(photo.file)
-        })
-        photoUrls.push(dataUrl)
+        if (photo.uploadedUrl) {
+          photoUrls.push(photo.uploadedUrl)
+        } else {
+          // Fallback: convert to base64 if upload failed/not available
+          const reader = new FileReader()
+          const dataUrl = await new Promise<string>((resolve) => {
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(photo.file)
+          })
+          photoUrls.push(dataUrl)
+        }
       }
 
       const res = await fetch('/api/v1/shipments', {
@@ -154,13 +304,11 @@ export function CreateShipmentForm() {
         toast.success('Shipment created successfully!')
         router.push(`/shipments/${shipment.id}`)
       } else {
-        // Safely parse error response
         let errorMessage = 'Failed to create shipment'
         try {
           const errorData = await res.json()
           errorMessage = errorData.error || errorMessage
         } catch {
-          // Response wasn't JSON
           errorMessage = res.statusText || errorMessage
         }
         toast.error(errorMessage)
@@ -173,24 +321,26 @@ export function CreateShipmentForm() {
     }
   }
 
+  // Get AI analysis summary for display
+  const firstAnalysis = photos.find((p) => p.analysis)?.analysis
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Shipment Name */}
       <div className="space-y-2">
         <Label htmlFor="name">Shipment Name</Label>
-        <Input
-          id="name"
-          placeholder="e.g., Electronics to Berlin"
-          {...register('name')}
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
-        )}
+        <Input id="name" placeholder="e.g., Electronics to Berlin" {...register('name')} />
+        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
 
       {/* Label Selection */}
       <div className="space-y-2">
-        <Label htmlFor="labelId">Tracking Label</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="labelId">Tracking Label</Label>
+          {!labelsLoading && labels.length > 0 && (
+            <QrScanner onDeviceIdScanned={handleQrScanned} />
+          )}
+        </div>
         {labelsLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -275,8 +425,32 @@ export function CreateShipmentForm() {
       <input type="hidden" {...register('destinationLat', { valueAsNumber: true })} />
       <input type="hidden" {...register('destinationLng', { valueAsNumber: true })} />
 
-      {/* Cargo Photos */}
+      {/* Consignee Email */}
       <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Mail className="h-4 w-4" />
+          Notify Consignee
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="consigneeEmail">Consignee Email</Label>
+          <Input
+            id="consigneeEmail"
+            type="email"
+            placeholder="receiver@example.com"
+            {...register('consigneeEmail')}
+          />
+          {errors.consigneeEmail && (
+            <p className="text-sm text-destructive">{errors.consigneeEmail.message}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Optional — we&apos;ll send them a real-time tracking link so they can follow the
+            delivery.
+          </p>
+        </div>
+      </div>
+
+      {/* Cargo Photos */}
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Label>Cargo Photos</Label>
           <span className="text-xs text-muted-foreground">(optional, max 5)</span>
@@ -286,13 +460,40 @@ export function CreateShipmentForm() {
         {photos.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {photos.map((photo, index) => (
-              <div key={index} className="group relative h-20 w-20 overflow-hidden rounded-lg border">
+              <div
+                key={index}
+                className="group relative h-20 w-20 overflow-hidden rounded-lg border"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.preview}
                   alt={`Cargo photo ${index + 1}`}
                   className="h-full w-full object-cover"
                 />
+                {/* Uploading/analyzing overlay */}
+                {(photo.uploading || photo.analyzing) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <Loader2 className="h-5 w-5 animate-spin text-white" />
+                  </div>
+                )}
+                {/* Analysis status indicator */}
+                {!photo.analyzing && photo.analysis && (
+                  <div className="absolute bottom-0.5 left-0.5">
+                    {photo.analysis.labelVisible ? (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/90">
+                        <Eye className="h-3 w-3 text-white" />
+                      </div>
+                    ) : photo.analysis.hazardWarnings.length > 0 ? (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500/90">
+                        <AlertTriangle className="h-3 w-3 text-white" />
+                      </div>
+                    ) : (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/90">
+                        <Sparkles className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => removePhoto(index)}
@@ -303,6 +504,50 @@ export function CreateShipmentForm() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* AI Analysis Summary Card */}
+        {firstAnalysis && (
+          <div className="rounded-lg border bg-muted/50 p-3 text-sm">
+            <div className="flex items-center gap-1.5 font-medium">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              AI Analysis
+            </div>
+            <p className="mt-1 text-muted-foreground">{firstAnalysis.summary}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {firstAnalysis.cargoType && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {firstAnalysis.cargoType}
+                </span>
+              )}
+              {firstAnalysis.packageCount && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {firstAnalysis.packageCount} package{firstAnalysis.packageCount > 1 ? 's' : ''}
+                </span>
+              )}
+              {firstAnalysis.labelVisible && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Label visible
+                </span>
+              )}
+              {firstAnalysis.hazardWarnings.map((warning, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-400"
+                >
+                  <AlertTriangle className="h-3 w-3" />
+                  {warning}
+                </span>
+              ))}
+              {firstAnalysis.cargoCondition === 'damaged' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                  <AlertTriangle className="h-3 w-3" />
+                  Possible damage
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -326,22 +571,33 @@ export function CreateShipmentForm() {
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           multiple
           onChange={handlePhotoSelect}
           className="hidden"
         />
 
         <p className="text-xs text-muted-foreground">
-          Document your cargo before shipping. Helps with claims if needed.
+          Document your cargo before shipping. AI will automatically analyze the photo for cargo
+          type, label visibility, and hazards.
         </p>
       </div>
 
       {/* Submit */}
       <div className="flex flex-col-reverse gap-3 sm:flex-row">
-        <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => router.back()}>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={() => router.back()}
+        >
           Cancel
         </Button>
-        <Button type="submit" className="w-full sm:w-auto" disabled={loading || labels.length === 0}>
+        <Button
+          type="submit"
+          className="w-full sm:w-auto"
+          disabled={loading || labels.length === 0}
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Shipment
         </Button>

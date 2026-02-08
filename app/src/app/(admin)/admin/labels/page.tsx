@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { db } from '@/lib/db'
 import { format } from 'date-fns'
 import { Plus } from 'lucide-react'
+import { AdminSearch } from '@/components/admin/admin-search'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -14,34 +15,70 @@ export const metadata: Metadata = {
   description: 'Manage TIP inventory',
 }
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   INVENTORY: 'bg-gray-500/20 text-gray-400',
   SOLD: 'bg-blue-500/20 text-blue-400',
   ACTIVE: 'bg-green-500/20 text-green-400',
   DEPLETED: 'bg-red-500/20 text-red-400',
 }
 
-export default async function AdminLabelsPage() {
-  const labels = await db.label.findMany({
-    include: {
-      order: {
-        select: {
-          id: true,
-          user: { select: { email: true } },
+interface PageProps {
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>
+}
+
+export default async function AdminLabelsPage({ searchParams }: PageProps) {
+  const { q, status: statusFilter, page: pageStr } = await searchParams
+  const page = Math.max(1, parseInt(pageStr || '1', 10) || 1)
+  const perPage = 25
+
+  const where: Record<string, unknown> = {}
+
+  if (statusFilter && statusFilter !== 'ALL') {
+    where.status = statusFilter
+  }
+
+  if (q) {
+    where.OR = [
+      { deviceId: { contains: q, mode: 'insensitive' } },
+      { imei: { contains: q, mode: 'insensitive' } },
+      { order: { user: { email: { contains: q, mode: 'insensitive' } } } },
+    ]
+  }
+
+  const [labels, totalCount, statusCounts] = await Promise.all([
+    db.label.findMany({
+      where,
+      include: {
+        order: {
+          select: { id: true, user: { select: { email: true } } },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * perPage,
+      take: perPage,
+    }),
+    db.label.count({ where }),
+    Promise.all([
+      db.label.count(),
+      db.label.count({ where: { status: 'INVENTORY' } }),
+      db.label.count({ where: { status: 'SOLD' } }),
+      db.label.count({ where: { status: 'ACTIVE' } }),
+      db.label.count({ where: { status: 'DEPLETED' } }),
+    ]),
+  ])
 
-  // Group counts
-  const counts = {
-    total: labels.length,
-    inventory: labels.filter((l) => l.status === 'INVENTORY').length,
-    sold: labels.filter((l) => l.status === 'SOLD').length,
-    active: labels.filter((l) => l.status === 'ACTIVE').length,
-    depleted: labels.filter((l) => l.status === 'DEPLETED').length,
-  }
+  const totalPages = Math.ceil(totalCount / perPage)
+  const [allCount, inventoryCount, soldCount, activeCount, depletedCount] = statusCounts
+
+  const statusTabs = [
+    { label: 'All', value: 'ALL', count: allCount },
+    { label: 'Inventory', value: 'INVENTORY', count: inventoryCount },
+    { label: 'Sold', value: 'SOLD', count: soldCount },
+    { label: 'Active', value: 'ACTIVE', count: activeCount },
+    { label: 'Depleted', value: 'DEPLETED', count: depletedCount },
+  ]
+
+  const currentStatus = statusFilter || 'ALL'
 
   return (
     <div className="space-y-6">
@@ -60,43 +97,38 @@ export default async function AdminLabelsPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-5">
-        <Card className="border-gray-800 bg-gray-800/50">
-          <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-white">{counts.total}</p>
-            <p className="text-xs text-gray-500">Total Labels</p>
-          </CardContent>
-        </Card>
-        <Card className="border-gray-800 bg-gray-800/50">
-          <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-gray-400">{counts.inventory}</p>
-            <p className="text-xs text-gray-500">In Inventory</p>
-          </CardContent>
-        </Card>
-        <Card className="border-gray-800 bg-gray-800/50">
-          <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-blue-400">{counts.sold}</p>
-            <p className="text-xs text-gray-500">Sold</p>
-          </CardContent>
-        </Card>
-        <Card className="border-gray-800 bg-gray-800/50">
-          <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-green-400">{counts.active}</p>
-            <p className="text-xs text-gray-500">Active</p>
-          </CardContent>
-        </Card>
-        <Card className="border-gray-800 bg-gray-800/50">
-          <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-red-400">{counts.depleted}</p>
-            <p className="text-xs text-gray-500">Depleted</p>
-          </CardContent>
-        </Card>
+        {statusTabs.map((tab) => (
+          <Link
+            key={tab.value}
+            href={tab.value === 'ALL' ? '/admin/labels' : `/admin/labels?status=${tab.value}`}
+          >
+            <Card className={`border-gray-800 bg-gray-800/50 transition-colors hover:border-gray-600 ${currentStatus === tab.value ? 'border-primary' : ''}`}>
+              <CardContent className="pt-6">
+                <p className={`text-2xl font-bold ${
+                  tab.value === 'ALL' ? 'text-white' :
+                  tab.value === 'INVENTORY' ? 'text-gray-400' :
+                  tab.value === 'SOLD' ? 'text-blue-400' :
+                  tab.value === 'ACTIVE' ? 'text-green-400' :
+                  'text-red-400'
+                }`}>
+                  {tab.count}
+                </p>
+                <p className="text-xs text-gray-500">{tab.label}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
+
+      <AdminSearch placeholder="Search by device ID, IMEI, or owner email..." />
 
       {/* Labels Table */}
       <Card className="border-gray-800 bg-gray-800/50">
         <CardHeader>
-          <CardTitle className="text-white">All Labels</CardTitle>
-          <CardDescription>Complete inventory list</CardDescription>
+          <CardTitle className="text-white">Labels ({totalCount})</CardTitle>
+          <CardDescription>
+            {q ? `Showing results for "${q}"` : 'Complete inventory list'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -121,11 +153,7 @@ export default async function AdminLabelsPage() {
                     </td>
                     <td className="py-3">
                       {label.batteryPct !== null ? (
-                        <span
-                          className={
-                            label.batteryPct < 20 ? 'text-red-400' : 'text-gray-300'
-                          }
-                        >
+                        <span className={label.batteryPct < 20 ? 'text-red-400' : 'text-gray-300'}>
                           {label.batteryPct}%
                         </span>
                       ) : (
@@ -134,15 +162,44 @@ export default async function AdminLabelsPage() {
                     </td>
                     <td className="py-3 text-gray-300">{label.order?.user?.email || '—'}</td>
                     <td className="py-3 text-gray-400">
-                      {label.activatedAt
-                        ? format(new Date(label.activatedAt), 'PP')
-                        : '—'}
+                      {label.activatedAt ? format(new Date(label.activatedAt), 'PP') : '—'}
                     </td>
                   </tr>
                 ))}
+                {labels.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      {q ? 'No labels match your search' : 'No labels in inventory'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
+              <p className="text-sm text-gray-400">Page {page} of {totalPages} ({totalCount} total)</p>
+              <div className="flex gap-2">
+                {page > 1 && (
+                  <Link
+                    href={`/admin/labels?${new URLSearchParams({ ...(q ? { q } : {}), ...(statusFilter ? { status: statusFilter } : {}), page: String(page - 1) }).toString()}`}
+                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                  >
+                    Previous
+                  </Link>
+                )}
+                {page < totalPages && (
+                  <Link
+                    href={`/admin/labels?${new URLSearchParams({ ...(q ? { q } : {}), ...(statusFilter ? { status: statusFilter } : {}), page: String(page + 1) }).toString()}`}
+                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                  >
+                    Next
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -20,6 +20,7 @@ import {
   Palette,
   Plane,
 } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
 import { LandingFAQ } from '@/components/landing/landing-faq'
 import { MobileNav } from '@/components/landing/mobile-nav'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -52,8 +53,7 @@ export default async function HomePage() {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
-            <Package className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">TIP</span>
+            <Logo size="lg" />
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
             <Link
@@ -141,7 +141,7 @@ export default async function HomePage() {
               </div>
               <h3 className="mt-4 text-xl font-semibold">1. Order Labels</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Choose how many labels you need and we ship them to your door within 1-2 business days.
+                Choose how many labels you need and we ship them to your door within 3-5 business days.
               </p>
               <div className="absolute -right-4 top-8 hidden h-8 w-8 md:block">
                 <ChevronRight className="h-6 w-6 text-muted-foreground/50" />
@@ -323,7 +323,8 @@ export default async function HomePage() {
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li>• Full tracking &amp; map</li>
                 <li>• Shareable link</li>
-                <li>• Delivery notifications</li>
+                <li>• Email notifications</li>
+                <li>• Free shipping</li>
                 <li>• 60+ day battery</li>
               </ul>
               <Button className="mt-6 w-full" variant="outline" asChild>
@@ -341,6 +342,7 @@ export default async function HomePage() {
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li>• Same features as single</li>
+                <li>• Free shipping</li>
                 <li>• Save $15 vs buying one by one</li>
               </ul>
               <Button className="mt-6 w-full" asChild>
@@ -355,6 +357,7 @@ export default async function HomePage() {
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li>• Same features as single</li>
+                <li>• Free shipping</li>
                 <li>• Lowest price per label</li>
                 <li>• Save $50 vs buying one by one</li>
               </ul>
@@ -399,7 +402,7 @@ export default async function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="border-t bg-primary py-16 text-primary-foreground">
+      <section className="border-t bg-primary py-16 md:py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold md:text-3xl">Ready to Track Door to Door?</h2>
           <p className="mx-auto mt-3 max-w-lg opacity-90">
@@ -412,13 +415,10 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12">
+      <footer className="border-t py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <div className="flex items-center gap-2">
-              <Package className="h-6 w-6 text-primary" />
-              <span className="font-semibold">TIP</span>
-            </div>
+            <Logo size="md" />
             <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <Link href="#features" className="hover:text-foreground">
                 Features

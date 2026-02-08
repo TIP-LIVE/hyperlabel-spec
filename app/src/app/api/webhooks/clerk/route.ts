@@ -2,6 +2,7 @@ import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
+import { isAdminEmail } from '@/lib/admin-whitelist'
 
 export async function POST(req: Request) {
   // Get the headers
@@ -47,36 +48,46 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data
 
     const primaryEmail = email_addresses.find((email) => email.id === evt.data.primary_email_address_id)
+    const emailAddress = primaryEmail?.email_address || ''
 
     await db.user.create({
       data: {
         clerkId: id,
-        email: primaryEmail?.email_address || '',
+        email: emailAddress,
         firstName: first_name || null,
         lastName: last_name || null,
         imageUrl: image_url || null,
+        role: isAdminEmail(emailAddress) ? 'admin' : 'user',
       },
     })
 
-    console.log(`User created: ${id}`)
+    console.log(`User created: ${id} (${emailAddress})${isAdminEmail(emailAddress) ? ' [auto-admin]' : ''}`)
   }
 
   if (eventType === 'user.updated') {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data
 
     const primaryEmail = email_addresses.find((email) => email.id === evt.data.primary_email_address_id)
+    const emailAddress = primaryEmail?.email_address || ''
+
+    // Build update data — promote to admin if whitelisted, but never demote
+    const updateData: Record<string, unknown> = {
+      email: emailAddress,
+      firstName: first_name || null,
+      lastName: last_name || null,
+      imageUrl: image_url || null,
+    }
+
+    if (isAdminEmail(emailAddress)) {
+      updateData.role = 'admin'
+    }
 
     await db.user.update({
       where: { clerkId: id },
-      data: {
-        email: primaryEmail?.email_address || '',
-        firstName: first_name || null,
-        lastName: last_name || null,
-        imageUrl: image_url || null,
-      },
+      data: updateData,
     })
 
-    console.log(`User updated: ${id}`)
+    console.log(`User updated: ${id} (${emailAddress})${isAdminEmail(emailAddress) ? ' [auto-admin]' : ''}`)
   }
 
   if (eventType === 'user.deleted') {
@@ -89,6 +100,67 @@ export async function POST(req: Request) {
 
       console.log(`User deleted: ${id}`)
     }
+  }
+
+  // ============================================
+  // Organization Events
+  // ============================================
+
+  if (eventType === 'organization.created') {
+    const { id, name, slug, created_by } = evt.data as {
+      id: string
+      name: string
+      slug: string
+      created_by: string
+    }
+    console.log(`Organization created: ${name} (${id}) by user ${created_by}, slug: ${slug}`)
+  }
+
+  if (eventType === 'organization.updated') {
+    const { id, name, slug } = evt.data as { id: string; name: string; slug: string }
+    console.log(`Organization updated: ${name} (${id}), slug: ${slug}`)
+  }
+
+  if (eventType === 'organization.deleted') {
+    const { id } = evt.data as { id: string }
+    if (id) {
+      // Data remains in place — associated records keep their orgId for historical reference
+      console.warn(`Organization deleted: ${id}. Associated data left in place for historical reference.`)
+    }
+  }
+
+  if (eventType === 'organizationMembership.created') {
+    const data = evt.data as {
+      organization: { id: string; name: string }
+      public_user_data: { user_id: string }
+      role: string
+    }
+    console.log(
+      `User ${data.public_user_data.user_id} joined org ${data.organization.name} (${data.organization.id}) as ${data.role}`
+    )
+  }
+
+  if (eventType === 'organizationMembership.updated') {
+    const data = evt.data as {
+      organization: { id: string; name: string }
+      public_user_data: { user_id: string }
+      role: string
+    }
+    console.log(
+      `User ${data.public_user_data.user_id} role updated to ${data.role} in org ${data.organization.name} (${data.organization.id})`
+    )
+  }
+
+  if (eventType === 'organizationMembership.deleted') {
+    const data = evt.data as {
+      organization: { id: string; name: string }
+      public_user_data: { user_id: string }
+    }
+    console.log(
+      `User ${data.public_user_data.user_id} removed from org ${data.organization.name} (${data.organization.id})`
+    )
+    // Note: Their existing data remains in the org (they created it while a member).
+    // This is standard B2B SaaS behavior.
   }
 
   return new Response('', { status: 200 })

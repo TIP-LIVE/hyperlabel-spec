@@ -10,7 +10,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Menu, Package } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
 
 const navLinks = [
   { href: '#how-it-works', label: 'How it works' },
@@ -32,9 +33,8 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent side="right" className="w-[85vw] max-w-[400px]">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" />
-            TIP
+          <SheetTitle>
+            <Logo size="md" />
           </SheetTitle>
         </SheetHeader>
         <nav className="mt-8 flex flex-col gap-4">

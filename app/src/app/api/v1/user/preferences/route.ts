@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 import { z } from 'zod'
 
 const preferencesSchema = z.object({
@@ -32,11 +33,7 @@ export async function GET() {
 
     return NextResponse.json({ preferences: prefs })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Error fetching preferences:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'fetching preferences')
   }
 }
 
@@ -72,10 +69,6 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ preferences: updated })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Error updating preferences:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'updating preferences')
   }
 }

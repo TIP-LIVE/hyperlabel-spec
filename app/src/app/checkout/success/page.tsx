@@ -65,7 +65,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                   {sessionError ? 'Your Tracking Labels' : `${quantity} Tracking Label${quantity > 1 ? 's' : ''}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Will be shipped within 1-2 business days
+                  Will be shipped within 3-5 business days
                 </p>
               </div>
             </div>

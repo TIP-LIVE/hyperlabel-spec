@@ -45,6 +45,7 @@ const countries = [
   { code: 'CH', name: 'Switzerland' },
   { code: 'PL', name: 'Poland' },
   { code: 'UA', name: 'Ukraine' },
+  { code: 'CN', name: 'China' },
 ]
 
 const packs = [
@@ -205,7 +206,7 @@ export function BuyLabelsForm() {
           <p className="text-sm text-muted-foreground">
             Where should we ship the label{currentPack.labels > 1 ? 's' : ''}? We&apos;ll send
             {currentPack.labels > 1 ? ` ${currentPack.labels} labels` : ' the label'} to this
-            address within 1-2 business days.
+            address within 3-5 business days.
           </p>
         </div>
 

@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
-import { isClerkConfigured } from '@/lib/clerk-config'
+import { requireOrgAuth, canViewAllOrgData } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 
 /**
  * GET /api/v1/labels - List user's labels
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-
-    if (!user && isClerkConfigured()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
 
-    // Build where clause - labels owned by user through orders
+    // Build where clause - labels owned by org through orders
+    const orderFilter: Record<string, unknown> = {
+      orgId: context.orgId,
+      status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+    }
+    if (!canViewAllOrgData(context.orgRole)) {
+      orderFilter.userId = context.user.id
+    }
+
     const where: Record<string, unknown> = {
-      order: {
-        ...(user && { userId: user.id }),
-        status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-      },
+      order: orderFilter,
     }
 
     if (status) {
@@ -44,7 +45,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ labels })
   } catch (error) {
-    console.error('Error fetching labels:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'fetching labels')
   }
 }

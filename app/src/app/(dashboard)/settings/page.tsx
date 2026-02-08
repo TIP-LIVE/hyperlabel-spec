@@ -4,7 +4,11 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { getCurrentUser } from '@/lib/auth'
 import { UserProfile } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { Building2 } from 'lucide-react'
+import { PageHeader } from '@/components/ui/page-header'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { NotificationPreferences } from '@/components/settings/notification-preferences'
 import { DataExportButton } from '@/components/settings/data-export-button'
@@ -24,6 +28,24 @@ export default async function SettingsPage() {
     redirect('/sign-in')
   }
 
+  // Get organization info if Clerk is enabled
+  let orgName: string | null = null
+  let orgRole: string | null = null
+  let orgSlug: string | null = null
+  if (clerkEnabled) {
+    const authData = await auth()
+    orgRole = authData.orgRole || null
+    orgSlug = authData.orgSlug || null
+
+    // Get org name from the session claims
+    if (authData.orgId) {
+      // Use the slug as a display-friendly fallback
+      orgName = orgSlug
+        ? orgSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        : 'Your Organization'
+    }
+  }
+
   // Fallback user data for when Clerk is not configured
   const displayUser = user ?? {
     email: 'Not available',
@@ -35,11 +57,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
-      </div>
+      <PageHeader title="Settings" description="Manage your account and preferences" />
 
       {/* Account Overview */}
       <Card>
@@ -77,6 +95,49 @@ export default async function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Organization - only show if Clerk is configured and user is in an org */}
+      {clerkEnabled && orgName && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Organization
+            </CardTitle>
+            <CardDescription>Your current organization membership</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-muted-foreground">Organization</Label>
+                <p className="font-medium">{orgName}</p>
+              </div>
+              <Badge variant="outline">
+                {orgRole === 'org:admin' ? 'Admin' : 'Member'}
+              </Badge>
+            </div>
+            {orgRole === 'org:admin' && (
+              <>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Team Settings</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Manage members, roles, and organization settings
+                    </p>
+                  </div>
+                  <Link
+                    href="/settings/organization"
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors"
+                  >
+                    Manage Team
+                  </Link>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile Management via Clerk - only show if Clerk is configured */}
       {clerkEnabled && (

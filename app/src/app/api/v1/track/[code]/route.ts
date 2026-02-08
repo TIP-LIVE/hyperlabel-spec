@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { rateLimit, RATE_LIMIT_PUBLIC, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 interface RouteParams {
   params: Promise<{ code: string }>
@@ -7,12 +8,17 @@ interface RouteParams {
 
 /**
  * GET /api/v1/track/[code]
- * 
+ *
  * Public API to fetch shipment tracking data.
  * Used for real-time polling on the tracking page.
+ * Rate limit: 60 req/min per IP
  */
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
+    // Rate limit by IP
+    const rl = rateLimit(`track:${getClientIp(req)}`, RATE_LIMIT_PUBLIC)
+    if (!rl.success) return rateLimitResponse(rl)
+
     const { code } = await params
 
     // Get optional since param for incremental updates
@@ -26,10 +32,14 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         name: true,
         status: true,
         shareEnabled: true,
+        originAddress: true,
+        originLat: true,
+        originLng: true,
         destinationAddress: true,
         destinationLat: true,
         destinationLng: true,
         deliveredAt: true,
+        createdAt: true,
         label: {
           select: {
             deviceId: true,
@@ -77,10 +87,14 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         id: shipment.id,
         name: shipment.name,
         status: shipment.status,
+        originAddress: shipment.originAddress,
+        originLat: shipment.originLat,
+        originLng: shipment.originLng,
         destinationAddress: shipment.destinationAddress,
         destinationLat: shipment.destinationLat,
         destinationLng: shipment.destinationLng,
         deliveredAt: shipment.deliveredAt,
+        createdAt: shipment.createdAt,
         label: shipment.label,
         locations: shipment.locations,
       },

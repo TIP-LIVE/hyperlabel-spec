@@ -14,12 +14,13 @@ const features = [
   'Real-time location tracking',
   'Offline data storage',
   'Shareable tracking links',
-  'Delivery notifications',
+  'Email notifications',
+  'Free shipping included',
 ]
 
 export default function BuyLabelsPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">Buy Tracking Labels</h1>

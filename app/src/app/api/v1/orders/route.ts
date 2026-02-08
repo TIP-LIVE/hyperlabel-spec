@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
-import { isClerkConfigured } from '@/lib/clerk-config'
+import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 
 /**
  * GET /api/v1/orders - List user's orders
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-
-    if (!user && isClerkConfigured()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
 
     const { searchParams } = new URL(req.url)
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    const where = user ? { userId: user.id } : {}
+    const where = orgScopedWhere(context)
 
     const [orders, total] = await Promise.all([
       db.order.findMany({
@@ -53,7 +49,6 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching orders:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'fetching orders')
   }
 }

@@ -26,19 +26,10 @@ async function main() {
   })
   console.log('✅ Created demo user:', demoUser.email)
 
-  // Create admin user
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@tip.live' },
-    update: {},
-    create: {
-      clerkId: 'admin_user_001',
-      email: 'admin@tip.live',
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'admin',
-    },
-  })
-  console.log('✅ Created admin user:', adminUser.email)
+  // NOTE: Admin users are auto-assigned via the ADMIN_EMAILS env var.
+  // Add your email to ADMIN_EMAILS in .env and sign up via Clerk.
+  // The webhook (or getCurrentUser fallback) assigns role: 'admin' automatically.
+  // See: src/lib/admin-whitelist.ts
 
   // Create labels in inventory
   const labelIds = ['HL-001001', 'HL-001002', 'HL-001003', 'HL-001004', 'HL-001005']
@@ -216,9 +207,8 @@ async function main() {
   console.log('')
   console.log('🎉 Seed completed!')
   console.log('')
-  console.log('Demo accounts:')
-  console.log('  - User: demo@tip.live')
-  console.log('  - Admin: admin@tip.live')
+  console.log('Demo account: demo@tip.live (for data seeding only)')
+  console.log('Admin access: add your email to ADMIN_EMAILS in .env, then sign up via Clerk')
   console.log('')
   console.log('Public tracking URLs:')
   console.log('  - /track/DEMO001 (in transit)')

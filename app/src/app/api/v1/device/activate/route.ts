@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { activateLabelSchema } from '@/lib/validations/device'
-import { getCurrentUser } from '@/lib/auth'
+import { requireOrgAuth } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 
 /**
  * POST /api/v1/device/activate
@@ -11,12 +12,7 @@ import { getCurrentUser } from '@/lib/auth'
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-
-    // User must be authenticated to activate a label
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
 
     const body = await req.json()
     const validated = activateLabelSchema.safeParse(body)
@@ -64,12 +60,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify ownership through order
-    if (label.order && label.order.userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden', details: 'You do not own this label' },
-        { status: 403 }
-      )
+    // Verify ownership through order - org-aware check
+    if (label.order) {
+      const sameOrg = label.order.orgId && label.order.orgId === context.orgId
+      const sameUser = label.order.userId === context.user.id
+      if (!sameOrg && !sameUser) {
+        return NextResponse.json(
+          { error: 'Forbidden', details: 'You do not own this label' },
+          { status: 403 }
+        )
+      }
     }
 
     // Activate the label
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         where: { id: shipmentId },
       })
 
-      if (shipment && shipment.userId === user.id) {
+      if (shipment && (shipment.userId === context.user.id || (shipment.orgId && shipment.orgId === context.orgId))) {
         linkedShipment = await db.shipment.update({
           where: { id: shipmentId },
           data: { labelId: label.id },
@@ -112,7 +112,6 @@ export async function POST(req: NextRequest) {
         : null,
     })
   } catch (error) {
-    console.error('Error activating label:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'activating label')
   }
 }

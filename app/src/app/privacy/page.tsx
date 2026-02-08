@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Package } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
+import { Footer } from '@/components/ui/footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -13,9 +14,8 @@ export default function PrivacyPage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Package className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">TIP</span>
+          <Link href="/">
+            <Logo size="lg" />
           </Link>
         </div>
       </header>
@@ -179,11 +179,7 @@ export default function PrivacyPage() {
         </div>
       </main>
 
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} TIP. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

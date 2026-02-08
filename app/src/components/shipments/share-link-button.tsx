@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Check, Copy, ExternalLink, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { QRCodeSVG } from 'qrcode.react'
 
 interface ShareLinkButtonProps {
   shareCode: string
@@ -55,6 +56,19 @@ export function ShareLinkButton({ shareCode, trackingUrl, className }: ShareLink
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* QR Code */}
+          <div className="flex flex-col items-center gap-2 rounded-lg border bg-white p-4">
+            <QRCodeSVG
+              value={trackingUrl}
+              size={160}
+              level="M"
+              includeMargin={false}
+            />
+            <p className="text-xs text-gray-500">
+              Scan to track shipment
+            </p>
+          </div>
+
           {/* Tracking Link */}
           <div className="space-y-2">
             <Label>Tracking Link</Label>

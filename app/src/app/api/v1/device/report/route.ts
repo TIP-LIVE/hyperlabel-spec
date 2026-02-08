@@ -1,22 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { deviceReportSchema, validateLocation } from '@/lib/validations/device'
-import { sendShipmentDeliveredNotification } from '@/lib/notifications'
+import { sendShipmentDeliveredNotification, sendConsigneeInTransitNotification, sendConsigneeDeliveredNotification } from '@/lib/notifications'
+import { format } from 'date-fns'
+import { rateLimit, RATE_LIMIT_DEVICE, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 /**
  * POST /api/v1/device/report
- * 
+ *
  * Receives location reports from tracking labels.
  * This endpoint is called by the device firmware or via label.utec.ua webhook.
- * 
+ *
  * Authentication: API key in header (X-API-Key) or query param (?key=)
+ * Rate limit: 120 req/min per API key
  */
 export async function POST(req: NextRequest) {
   try {
-    // Verify API key (simple auth for device endpoints)
+    // Rate limit by API key or IP
     const apiKey = req.headers.get('x-api-key') || req.nextUrl.searchParams.get('key')
+    const rl = rateLimit(`device:${apiKey || getClientIp(req)}`, RATE_LIMIT_DEVICE)
+    if (!rl.success) return rateLimitResponse(rl)
+
+    // Verify API key (simple auth for device endpoints)
     const expectedKey = process.env.DEVICE_API_KEY
-    
+
     if (expectedKey && apiKey !== expectedKey) {
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
     }
@@ -49,6 +56,18 @@ export async function POST(req: NextRequest) {
           where: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
           orderBy: { createdAt: 'desc' },
           take: 1,
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            shareCode: true,
+            userId: true,
+            originAddress: true,
+            destinationAddress: true,
+            destinationLat: true,
+            destinationLng: true,
+            consigneeEmail: true,
+          },
         },
       },
     })
@@ -95,6 +114,17 @@ export async function POST(req: NextRequest) {
         where: { id: activeShipment.id },
         data: { status: 'IN_TRANSIT' },
       })
+
+      // Notify consignee that shipment is now in transit
+      if (activeShipment.consigneeEmail) {
+        sendConsigneeInTransitNotification({
+          consigneeEmail: activeShipment.consigneeEmail,
+          shipmentName: activeShipment.name || 'Shipment',
+          shareCode: activeShipment.shareCode,
+          originAddress: activeShipment.originAddress,
+          destinationAddress: activeShipment.destinationAddress,
+        }).catch((err) => console.error('Failed to send consignee in-transit notification:', err))
+      }
     }
 
     // Check for delivery (if within geofence of destination)
@@ -111,8 +141,8 @@ export async function POST(req: NextRequest) {
         activeShipment.destinationLng
       )
 
-      // Delivery threshold: 500 meters from destination
-      const DELIVERY_THRESHOLD_M = 500
+      // Delivery threshold: 100 meters from destination (per spec §5.4)
+      const DELIVERY_THRESHOLD_M = 100
 
       if (distance <= DELIVERY_THRESHOLD_M) {
         // Check dwell time: look at recent locations to see if we've been near destination for 30+ min
@@ -143,7 +173,7 @@ export async function POST(req: NextRequest) {
             data: { status: 'DELIVERED', deliveredAt: new Date() },
           })
 
-          // Send delivery notification (fire and forget)
+          // Send delivery notification to shipper (fire and forget)
           sendShipmentDeliveredNotification({
             userId: activeShipment.userId,
             shipmentName: activeShipment.name || 'Unnamed Shipment',
@@ -151,6 +181,17 @@ export async function POST(req: NextRequest) {
             shareCode: activeShipment.shareCode,
             destination: activeShipment.destinationAddress || 'Destination',
           }).catch((err) => console.error('Failed to send delivery notification:', err))
+
+          // Send delivery notification to consignee
+          if (activeShipment.consigneeEmail) {
+            sendConsigneeDeliveredNotification({
+              consigneeEmail: activeShipment.consigneeEmail,
+              shipmentName: activeShipment.name || 'Shipment',
+              shareCode: activeShipment.shareCode,
+              destinationAddress: activeShipment.destinationAddress,
+              deliveredAt: format(new Date(), 'PPpp'),
+            }).catch((err) => console.error('Failed to send consignee delivery notification:', err))
+          }
         }
       }
     }

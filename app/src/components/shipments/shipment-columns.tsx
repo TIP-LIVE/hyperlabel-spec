@@ -14,6 +14,7 @@ import {
 import { MoreHorizontal, Eye, Share2, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
+import { shipmentStatusConfig } from '@/lib/status-config'
 
 export type ShipmentRow = {
   id: string
@@ -28,16 +29,6 @@ export type ShipmentRow = {
     batteryPct: number | null
     status: string
   }
-}
-
-const statusConfig: Record<
-  ShipmentRow['status'],
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
-> = {
-  PENDING: { label: 'Pending', variant: 'secondary' },
-  IN_TRANSIT: { label: 'In Transit', variant: 'default' },
-  DELIVERED: { label: 'Delivered', variant: 'outline' },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' },
 }
 
 export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
@@ -66,7 +57,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
       const address = row.getValue('destinationAddress') as string | null
       if (!address) return <span className="text-muted-foreground">—</span>
       return (
-        <div className="flex items-center gap-1 max-w-[200px]">
+        <div className="flex items-center gap-1 max-w-[200px]" title={address}>
           <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
           <span className="truncate text-sm">{address}</span>
         </div>
@@ -78,7 +69,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     header: 'Status',
     cell: ({ row }) => {
       const status = row.getValue('status') as ShipmentRow['status']
-      const config = statusConfig[status]
+      const config = shipmentStatusConfig[status]
       return <Badge variant={config.variant}>{config.label}</Badge>
     },
     filterFn: (row, id, value) => {

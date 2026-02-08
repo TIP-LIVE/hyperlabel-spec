@@ -11,7 +11,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Package, MapPin, ShoppingCart, Settings, LayoutDashboard, Menu } from 'lucide-react'
+import { OrganizationSwitcher } from '@clerk/nextjs'
+import { MapPin, ShoppingCart, Settings, LayoutDashboard, Menu } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
+import { isClerkConfigured } from '@/lib/clerk-config'
 import { cn } from '@/lib/utils'
 
 const navigation = [
@@ -35,11 +38,27 @@ export function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="w-[85vw] max-w-[300px] p-0">
         <SheetHeader className="border-b px-6 py-4">
-          <SheetTitle className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" />
-            TIP
+          <SheetTitle>
+            <Logo size="md" />
           </SheetTitle>
         </SheetHeader>
+        {isClerkConfigured() && (
+          <div className="border-b border-border px-4 py-3">
+            <OrganizationSwitcher
+              hidePersonal={true}
+              afterCreateOrganizationUrl="/dashboard"
+              afterSelectOrganizationUrl="/dashboard"
+              afterLeaveOrganizationUrl="/org-selection"
+              appearance={{
+                elements: {
+                  rootBox: 'w-full',
+                  organizationSwitcherTrigger:
+                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm',
+                },
+              }}
+            />
+          </div>
+        )}
         <nav className="flex flex-col gap-1 p-4">
           {navigation.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')

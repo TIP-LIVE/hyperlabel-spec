@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 import { z } from 'zod'
 
 const addLabelsSchema = z.object({
@@ -62,14 +63,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ count: created.count })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (error instanceof Error && error.message.includes('Admin')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-    console.error('Error adding labels:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'adding labels')
   }
 }
 
@@ -114,13 +108,6 @@ export async function GET(req: NextRequest) {
       pagination: { total, limit, offset },
     })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (error instanceof Error && error.message.includes('Admin')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-    console.error('Error listing labels:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'listing labels')
   }
 }

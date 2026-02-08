@@ -45,7 +45,7 @@ export function LabelActivatedEmail({
       </Section>
 
       <Text style={tipText}>
-        Tip: Share the tracking link with your consignee so they can monitor delivery progress too.
+        Hint: Share the tracking link with your consignee so they can monitor delivery progress too.
       </Text>
     </BaseLayout>
   )

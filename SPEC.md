@@ -1,4 +1,4 @@
-# HyperLabel Product Specification
+# TIP Product Specification
 
 **Version:** 1.7  
 **Last Updated:** January 26, 2026  
@@ -28,7 +28,7 @@
 
 ### 1.1 Product Overview
 
-**HyperLabel** (working name: Smart Tracking Label) is a disposable, ultra-thin LTE tracking label that provides transparent door-to-door cargo tracking across all transport modes, regardless of carrier.
+**TIP** (working name: Smart Tracking Label) is a disposable, ultra-thin LTE tracking label that provides transparent door-to-door cargo tracking across all transport modes, regardless of carrier.
 
 ### 1.2 Value Proposition
 
@@ -36,7 +36,7 @@
 
 ### 1.3 Key Differentiators
 
-| Feature | HyperLabel | Traditional Trackers |
+| Feature | TIP | Traditional Trackers |
 |---------|------------|---------------------|
 | **Price** | $20-30 (disposable) | $100-500 (reusable) |
 | **Form Factor** | 10×15cm, 3.5mm thin | Bulky devices |
@@ -64,7 +64,7 @@
 
 ### 2.2 Problem Statement
 
-| Problem | Impact | HyperLabel Solution |
+| Problem | Impact | TIP Solution |
 |---------|--------|---------------------|
 | **Black Holes** | Cargo goes dark during transit (flights, ocean, remote areas) | Offline data storage + transmission when connectivity returns |
 | **Carrier Fragmentation** | Different carriers = different tracking systems, no unified view | Single tracking interface regardless of carrier |
@@ -100,12 +100,12 @@
                         │
      SODAQ ●            │        ● G+D
                         │
-     Sensos ●           │    ★ HyperLabel
+     Sensos ●           │    ★ TIP
                         │
                     LOW PRICE
 ```
 
-**HyperLabel Position:** Low price + Consumer-grade simplicity
+**TIP Position:** Low price + Consumer-grade simplicity
 
 ### 2.4 Target Market
 
@@ -132,22 +132,25 @@
 │  LABEL(S) │   LINK    │  ORIGIN   │(LINK SKU) │  LABEL(S) │ (CREATE   │ & ATTACH  │  & TRACK  │YOUR CARGO │           │          │
 │           │           │           │ to ORDER) │           │ SHIPMENT) │           │           │           │           │          │
 ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼──────────┤
-│★Consignee │★Consignee │  Shipper  │ HyperLabel│  Shipper  │  Shipper  │  Shipper  │★Consignee │★Consignee │  Service  │          │
+│★Consignee │★Consignee │  Shipper  │ TIP│  Shipper  │  Shipper  │  Shipper  │★Consignee │★Consignee │  Service  │          │
 │  (buyer)  │  (buyer)  │ (origin)  │ Warehouse │ (origin)  │(MANDATORY)│ (origin)  │ (tracker) │ (receiver)│   Team    │          │
 └───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴──────────┘
 ```
 
-**Key Flow:** 
+**Key Flow:**
 1. Consignee buys label(s) — can buy 1 or 10+ at once
 2. Consignee shares link with Shipper/Forwarder (email reminders until activated)
 3. Shipper enters origin address
-4. **HyperLabel fulfillment scans labels → Label IDs linked to Order → Ships to shipper**
+4. **TIP fulfillment scans labels → Label IDs linked to Order → Ships to shipper**
 5. Shipper receives label(s)
 6. **Shipper scans QR → Creates Shipment → Links label to specific cargo** (mandatory)
 7. Shipper activates label (pull tab), enters destination, adds cargo photo(s), attaches to cargo
 8. Consignee tracks cargo → gets their cargo
+9. **Anyone scans physical QR at any point** → `/activate/{deviceId}` resolves to tracking page (if active) or friendly status message
 
 **Important:** For bulk orders (e.g., 10 labels), shipper must scan each label separately to create 10 shipments.
+
+**Physical QR is universal:** The QR code on the label (`tip.live/activate/HL-XXXXXX`) works for everyone — shipper during setup (via in-app scanner) and consignee/carrier/warehouse worker during transit (opens tracking page directly). See §4.8 Physical Label Design.
 
 ### 3.2 Primary Persona: Consignee (Buyer/Receiver)
 
@@ -169,7 +172,7 @@
 | **Role** | Logistics company arranging shipments |
 | **Current Tools** | Carrier portals, TMS, Excel, email |
 | **Pain Point** | "I need to answer customer questions about shipment status" |
-| **HyperLabel Use** | Receives shared tracking links, views dashboard |
+| **TIP Use** | Receives shared tracking links, views dashboard |
 
 **User Story:**
 > As a Forwarder, I want to share a tracking link with my clients, so they can self-serve status updates instead of calling me.
@@ -182,11 +185,11 @@
 | **MVP Interaction** | Physical label only - no dashboard needed |
 | **Pain Point** | N/A for MVP |
 
-### 3.5 Internal Persona: Service Team (HyperLabel)
+### 3.5 Internal Persona: Service Team (TIP)
 
 | Attribute | Description |
 |-----------|-------------|
-| **Role** | HyperLabel operations team |
+| **Role** | TIP operations team |
 | **Tools** | Admin panel |
 | **Responsibilities** | User support, label inventory, device management |
 
@@ -325,7 +328,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 │  3. ENTER ORIGIN (Shipper)                                      │
 │           │    Shipper clicks link, enters their address         │
 │           ▼                                                      │
-│  4. FULFILLMENT (HyperLabel Warehouse)                          │
+│  4. FULFILLMENT (TIP Warehouse)                          │
 │           │    • Label scanned → Label ID linked to Order        │
 │           │    • Label ships to shipper (DHL/FedEx)              │
 │           │    • Consignee notified: "Label shipped to shipper"  │
@@ -366,6 +369,69 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | Cold Chain | + Temperature sensor | Pharma, perishables |
 | Extended | + 90-day battery | Long ocean voyages |
 | Compact | Smaller form factor | Small packages |
+
+### 4.8 Physical Label Design
+
+#### Layout
+
+```
+┌─────────────────────────────────┐
+│                                 │
+│          ┌───────────┐          │
+│          │  QR CODE  │          │
+│          │           │          │
+│          └───────────┘          │
+│                                 │
+│         HL-001234               │  ← Device ID (large, readable)
+│                                 │
+│    tip.live/activate/HL-001234  │  ← URL as fallback text
+│                                 │
+│            TIP                  │
+│     Door-to-door tracking       │
+└─────────────────────────────────┘
+```
+
+#### QR Code Content
+
+The QR code on each physical label encodes the activation URL:
+
+```
+https://tip.live/activate/HL-001234
+```
+
+**Format:** `https://tip.live/activate/{deviceId}`
+
+The `/activate/{deviceId}` route handles all label states:
+
+| Label State | Behavior |
+|-------------|----------|
+| **Has active shipment** (PENDING/IN_TRANSIT/DELIVERED) | Auto-redirects to `/track/{shareCode}` (public tracking page) |
+| **SOLD** (purchased, not yet assigned to shipment) | Shows "Waiting for Shipment" message |
+| **INVENTORY** (not yet purchased) | Shows "Label Not Yet Activated" message |
+| **ACTIVE** (no shared shipment) | Shows "Label is Active" — directs user to ask shipper for tracking link |
+| **DEPLETED** (battery dead) | Shows "Label Battery Depleted" message |
+| **Cancelled shipment** | Shows "Shipment Cancelled" message |
+| **Invalid/Not found** | Shows friendly error with expected format (HL-XXXXXX) |
+
+This means **anyone** (consignee, warehouse worker, carrier) can scan the physical label at any time and get a useful response — either the live tracking page or a clear status message.
+
+#### What Must Be Printed on the Label
+
+| Element | Required | Rationale |
+|---------|----------|-----------|
+| **QR code** | Yes | Primary scan path — opens tracking or status page instantly |
+| **Device ID** (e.g., `HL-001234`) | Yes | Fallback if QR is damaged/dirty; needed for phone support, visual matching to dashboard, sorting labels in inventory |
+| **URL as text** (e.g., `tip.live/activate/HL-001234`) | Yes | Manual browser entry fallback — not everyone has a QR scanner app |
+| **Brand** (`TIP` + tagline) | Yes | Brand recognition, trust signal |
+| **Share code** (8-char tracking code) | No | Shipment-specific, only exists after shipper creates a shipment — label is generic and reusable across shipments |
+
+#### Why Print the Device ID Visibly
+
+1. **QR damage fallback** — Labels get scratched, wet, or torn during transit. The in-app QR scanner already has a manual entry mode for this case
+2. **Phone/email support** — Consignee can read `HL-001234` over a phone call; you can't read a QR code verbally
+3. **Dashboard cross-referencing** — Shipper's dashboard shows device IDs everywhere (shipment list, detail page, orders). Printed ID lets them visually match physical labels to on-screen records
+4. **Bulk inventory sorting** — When a shipper has 10+ labels, visible IDs let them find the right one without scanning each
+5. **Warehouse/manifest logging** — Workers often log label IDs on paper manifests or whiteboards
 
 ---
 
@@ -433,7 +499,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 
 #### 5.2.3 Admin Panel (Internal)
 
-**Purpose:** Internal operations tool for HyperLabel team
+**Purpose:** Internal operations tool for TIP team
 
 | Feature | Description | Priority |
 |---------|-------------|----------|
@@ -479,7 +545,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 
 #### 5.3.2 Public Tracking Page (Shared Link)
 
-**URL Format:** `https://track.hyperlabel.com/s/{tracking_code}`
+**URL Format:** `https://track.tip.live/s/{tracking_code}`
 
 **Visible Information:**
 - Current location on map
@@ -610,14 +676,14 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | System | Responsibility | Database |
 |--------|----------------|----------|
 | **label.utec.ua** (Existing) | Device tracking, GPS data, location history, Onomondo integration | Existing DB |
-| **HyperLabel Backend** (New) | Users, shipments, orders, payments, sharing, notifications | New PostgreSQL |
+| **TIP Backend** (New) | Users, shipments, orders, payments, sharing, notifications | New PostgreSQL |
 
 #### Integration Points
 
 | Data Flow | Method |
 |-----------|--------|
 | Device → label.utec.ua | Direct (existing, managed by Andrii) |
-| HyperLabel → label.utec.ua | API calls to fetch device/tracking data |
+| TIP → label.utec.ua | API calls to fetch device/tracking data |
 | User auth | Clerk (new platform) |
 | Device linking | API call to label.utec.ua `/devices/link` |
 
@@ -666,7 +732,7 @@ Device data flows through the existing system:
 │                                                 │ API calls      │
 │                                                 ▼                │
 │                                        ┌─────────────────┐       │
-│                                        │   HyperLabel    │       │
+│                                        │   TIP    │       │
 │                                        │    Backend      │       │
 │                                        │  (fetches data) │       │
 │                                        └─────────────────┘       │
@@ -676,7 +742,7 @@ Device data flows through the existing system:
 
 **Responsibility Split:**
 - **Hardware Team (Andrii):** Device firmware, label.utec.ua backend, device ingestion
-- **Platform (Denys):** HyperLabel frontend + backend, integrates with existing API
+- **Platform (Denys):** TIP frontend + backend, integrates with existing API
 
 ### 6.4 Data Quality & Cleaning
 
@@ -1039,7 +1105,7 @@ orders (
 
 | Channel | Availability |
 |---------|--------------|
-| Email | support@hyperlabel.com |
+| Email | support@tip.live |
 | Response time | 24-48 hours |
 | FAQ | Self-service documentation |
 
@@ -1240,7 +1306,7 @@ orders (
 5. Long-term Innovation Partner
 
 **Our Responsibilities:**
-- Provide technical documentation about HyperLabel
+- Provide technical documentation about TIP
 - Supply business plan & financial projections
 - Coordinate with Tatton on application narrative
 - Manage communication between UTEC and Tatton
@@ -1310,7 +1376,7 @@ orders (
 │  LABEL(S) │   LINK    │  ORIGIN   │(LINK TO   │  LABEL(S) │ (CREATE   │ & ATTACH  │  & TRACK  │YOUR CARGO │                             │
 │           │           │           │  ORDER)   │           │ SHIPMENT) │           │           │           │                             │
 ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼───────────┼─────────────────────────────┤
-│ Consignee │ Consignee │ Shipper   │ HyperLabel│ Shipper   │ Shipper   │ Shipper   │ Consignee │ Cargo     │ Data retained               │
+│ Consignee │ Consignee │ Shipper   │ TIP│ Shipper   │ Shipper   │ Shipper   │ Consignee │ Cargo     │ Data retained               │
 │ buys 1-N  │ sends     │ enters    │ warehouse │ gets      │ scans QR  │ activates │ tracks    │ arrives   │ 30 days (free)              │
 │ labels    │ link to   │ their     │ scans →   │ labels    │ → creates │ battery,  │ cargo     │ at        │ 90+ days (premium)          │
 │           │ shipper/  │ address   │ links to  │           │ SHIPMENT  │ enters    │ real-time │ consignee │                             │
@@ -1629,7 +1695,7 @@ orders (
 | E3-T9 | Mobile optimization | Responsive design testing | Chrome DevTools | 0.5 |
 
 **Deliverables:**
-- [ ] Live landing page at hyperlabel.com
+- [ ] Live landing page at tip.live
 - [ ] Responsive design (mobile + desktop)
 - [ ] CTA linking to purchase flow
 - [ ] SEO-optimized
@@ -1715,7 +1781,7 @@ orders (
 ---
 
 ##### Epic 7: Admin Panel
-**Goal:** Build internal operations panel for HyperLabel team  
+**Goal:** Build internal operations panel for TIP team  
 **Estimate:** 10 hours
 
 | ID | Task | Description | Tools | Hours |
@@ -1860,7 +1926,7 @@ orders (
 Conduct comprehensive market research to quantify the Total Addressable Market (TAM), Serviceable Addressable Market (SAM), and Serviceable Obtainable Market (SOM) for the cargo tracking label industry. This data is essential for the investor pitch and financial projections.
 
 #### User Story
-**As an** investor reviewing HyperLabel,  
+**As an** investor reviewing TIP,  
 **I want to** understand the market size and opportunity,  
 **So that** I can assess the potential return on investment and growth ceiling.
 
@@ -1960,11 +2026,11 @@ Conduct comprehensive market research to quantify the Total Addressable Market (
 **Assignee:** Denys Chumak
 
 #### Summary
-Create detailed competitive landscape analysis showing how HyperLabel differentiates from existing cargo tracking solutions. This analysis will support the investor pitch by demonstrating market understanding and competitive positioning.
+Create detailed competitive landscape analysis showing how TIP differentiates from existing cargo tracking solutions. This analysis will support the investor pitch by demonstrating market understanding and competitive positioning.
 
 #### User Story
-**As an** investor evaluating HyperLabel,  
-**I want to** understand the competitive landscape and HyperLabel's differentiation,  
+**As an** investor evaluating TIP,  
+**I want to** understand the competitive landscape and TIP's differentiation,  
 **So that** I can assess whether the company can win market share.
 
 #### Why This Matters
@@ -1998,10 +2064,10 @@ For each competitor document:
 **2. Competitive Positioning Matrix**
 - X-axis: Price (Low → High)
 - Y-axis: Complexity (Simple → Enterprise)
-- Plot all competitors + HyperLabel
+- Plot all competitors + TIP
 
 **3. Feature Comparison Table**
-| Feature | HyperLabel | Tive | Roambee | Sensos | Reelables |
+| Feature | TIP | Tive | Roambee | Sensos | Reelables |
 |---------|------------|------|---------|--------|-----------|
 | Price | $20-25 | $150+ | $200+ | €50+ | $15-25 |
 | Form Factor | 3.5mm | Bulky | Bulky | Thin | Thin |
@@ -2009,7 +2075,7 @@ For each competitor document:
 | Reusable | No | Yes | Yes | Yes | No |
 | Setup | QR scan | Complex | Complex | Medium | QR scan |
 
-**4. HyperLabel Differentiation**
+**4. TIP Differentiation**
 - Price advantage (vs reusable trackers)
 - Simplicity advantage (vs enterprise solutions)
 - Coverage advantage (180+ countries, eSIM)
@@ -2029,7 +2095,7 @@ For each competitor document:
   - Funding, pricing, features, target market
   
 - [ ] **Positioning matrix created** (visual)
-  - Clear quadrant showing HyperLabel position
+  - Clear quadrant showing TIP position
   
 - [ ] **Feature comparison table** completed
   - Minimum 8 comparison dimensions
@@ -2052,7 +2118,7 @@ For each competitor document:
 │   └── [others]
 ├── Positioning Matrix (visual)
 ├── Feature Comparison Table
-├── HyperLabel Differentiation
+├── TIP Differentiation
 │   ├── Price: "50-80% cheaper than reusable trackers"
 │   ├── Simplicity: "Consumer-grade UX, no training"
 │   └── Coverage: "Works in 180+ countries"
@@ -2079,7 +2145,7 @@ Create a compelling 1-page teaser document that serves as the initial outreach m
 
 #### User Story
 **As an** angel investor or VC receiving cold outreach,  
-**I want to** quickly understand what HyperLabel does and why it's interesting,  
+**I want to** quickly understand what TIP does and why it's interesting,  
 **So that** I can decide whether to take a meeting in under 60 seconds.
 
 #### Why This Matters
@@ -2094,7 +2160,7 @@ Create a compelling 1-page teaser document that serves as the initial outreach m
 
 ```
 ┌─────────────────────────────────────────┐
-│ [LOGO] HyperLabel                       │
+│ [LOGO] TIP                       │
 │ "Track Any Cargo, Anywhere"             │
 ├─────────────────────────────────────────┤
 │ THE PROBLEM                             │
@@ -2123,7 +2189,7 @@ Create a compelling 1-page teaser document that serves as the initial outreach m
 ├─────────────────────────────────────────┤
 │ THE ASK                                 │
 │ Raising £XXXk seed for...               │
-│ Contact: andrii@hyperlabel.com          │
+│ Contact: andrii@tip.live          │
 └─────────────────────────────────────────┘
 ```
 
@@ -2283,7 +2349,7 @@ Year 1 (MVP Launch):
 Conduct weekly alignment meeting with Andrii (founder) to review progress, make decisions, and ensure hardware/software alignment.
 
 #### User Story
-**As the** founder of HyperLabel,  
+**As the** founder of TIP,  
 **I want to** have regular updates on product and investor material progress,  
 **So that** I can provide input, remove blockers, and stay aligned.
 
@@ -2378,7 +2444,7 @@ Set up Linear project with proper structure, cycles, and labels to track all MVP
 
 **1. Project Structure**
 ```
-Workspace: HyperLabel
+Workspace: TIP
 └── Project: MVP Launch
     ├── Cycle: Sprint 1 (Jan 26-31)
     ├── Cycle: Sprint 2 (Feb 1-14)
@@ -2467,7 +2533,7 @@ Complete and polish the 1-page teaser document started in Sprint 1. Finalize des
 
 #### User Story
 **As an** angel investor receiving this teaser via email,  
-**I want to** quickly understand HyperLabel's opportunity in under 60 seconds,  
+**I want to** quickly understand TIP's opportunity in under 60 seconds,  
 **So that** I can decide whether to request a meeting or full deck.
 
 #### Remaining Work
@@ -2636,7 +2702,7 @@ Build the cost structure section of the financial model, including COGS (Cost of
 Calculate and document key unit economics metrics that investors use to evaluate business viability.
 
 #### User Story
-**As an** investor evaluating HyperLabel,  
+**As an** investor evaluating TIP,  
 **I want to** see clear unit economics (CAC, LTV, margins),  
 **So that** I can assess whether the business model is sustainable at scale.
 
@@ -2664,7 +2730,7 @@ Assumptions:
 **3. LTV:CAC Ratio**
 ```
 Target: >3:1 (healthy SaaS benchmark)
-HyperLabel: $600 / $150 = 4:1 ✓
+TIP: $600 / $150 = 4:1 ✓
 ```
 
 **4. Gross Margin per Label**
@@ -2720,7 +2786,7 @@ Write the strategy section of the business plan covering go-to-market strategy, 
 
 #### User Story
 **As an** investor reading the business plan,  
-**I want to** understand how HyperLabel will acquire customers and grow,  
+**I want to** understand how TIP will acquire customers and grow,  
 **So that** I can evaluate the execution strategy.
 
 #### What We Will Implement
@@ -2814,7 +2880,7 @@ Write the strategy section of the business plan covering go-to-market strategy, 
 Write the operations section covering team, milestones, risks, and use of funds.
 
 #### User Story
-**As an** investor deciding whether to fund HyperLabel,  
+**As an** investor deciding whether to fund TIP,  
 **I want to** understand the team, execution plan, and risks,  
 **So that** I can assess whether the team can execute on the opportunity.
 
@@ -2874,7 +2940,7 @@ Write the operations section covering team, milestones, risks, and use of funds.
 **Assignee:** Denys Chumak
 
 #### Summary
-Create a 12-15 slide investor pitch deck that tells the HyperLabel story compellingly.
+Create a 12-15 slide investor pitch deck that tells the TIP story compellingly.
 
 #### User Story
 **As an** investor in a pitch meeting,  
@@ -2885,7 +2951,7 @@ Create a 12-15 slide investor pitch deck that tells the HyperLabel story compell
 
 | Slide | Content | Key Message |
 |-------|---------|-------------|
-| 1 | Title | HyperLabel - Track Any Cargo, Anywhere |
+| 1 | Title | TIP - Track Any Cargo, Anywhere |
 | 2 | Problem | Cargo goes dark, costs billions |
 | 3 | Solution | $20 disposable tracking label |
 | 4 | Product Demo | How it works (3 steps) |
@@ -3011,7 +3077,7 @@ Create structured interview scripts for each persona (Consignee, Forwarder, Ship
 - How do your customers react to poor visibility?
 
 **5. Solution Exploration (10 min)**
-- Show HyperLabel concept
+- Show TIP concept
 - Initial reaction? Questions?
 - Would this solve your problem?
 - What's missing?
@@ -3057,7 +3123,7 @@ Define the criteria for recruiting interview participants to ensure we talk to t
 | Industry | Electronics, manufacturing, e-commerce |
 | Shipping volume | 10+ international shipments/month |
 | Geography | US or UK based |
-| Exclude | Current HyperLabel contacts |
+| Exclude | Current TIP contacts |
 
 **Forwarder - 4-6 interviews**
 | Criteria | Requirement |
@@ -3166,7 +3232,7 @@ Have initial consultation with Tatton Consulting to assess eligibility for UK In
 #### Meeting Agenda
 
 1. **Company Overview**
-   - Explain HyperLabel product
+   - Explain TIP product
    - UTEC company structure
    - Current stage and traction
 
@@ -3245,7 +3311,7 @@ Collect all required company documents for the grant application from Andrii/UTE
 Create the Next.js 14 project with TypeScript, Tailwind, and proper configuration.
 
 #### User Story
-**As a** developer starting the HyperLabel platform,  
+**As a** developer starting the TIP platform,  
 **I need** a properly configured Next.js project,  
 **So that** I can build features efficiently with modern tooling.
 
@@ -3425,14 +3491,14 @@ Weekly alignment meetings with Andrii during Sprint 2 (2 meetings).
 Conduct 8-10 interviews with Consignees (cargo receivers/buyers) to validate problem, solution, and pricing assumptions.
 
 #### User Story
-**As the** product team building HyperLabel,  
+**As the** product team building TIP,  
 **I need to** understand consignee pain points deeply,  
 **So that** we build a product that solves real problems people will pay for.
 
 #### Interview Goals
 1. **Problem Validation** — Confirm cargo visibility is painful, quantify cost
 2. **Current Solutions** — What they use today, what they pay
-3. **Solution Fit** — Reaction to HyperLabel, must-have features
+3. **Solution Fit** — Reaction to TIP, must-have features
 4. **Pricing Validation** — Willingness to pay $20-25/label
 
 #### Target Profile
@@ -3517,7 +3583,7 @@ Document and organize insights from all interviews.
 **Assignee:** Denys Chumak
 
 #### Summary
-Write the technical innovation narrative explaining HyperLabel's R&D components.
+Write the technical innovation narrative explaining TIP's R&D components.
 
 #### Sections
 1. **Technical Innovation** (2 pages) — What's new, challenges solved
@@ -4131,7 +4197,7 @@ Write the comprehensive user research report synthesizing all interview findings
 #### Report Structure
 
 ```
-📄 HyperLabel User Research Report
+📄 TIP User Research Report
 ├── Executive Summary (1 page)
 │   ├── Key findings (3-5 bullets)
 │   ├── Main recommendations
@@ -4318,7 +4384,7 @@ export default async function ShipmentDetailPage({
 Build the multi-step flow to create/link a new shipment.
 
 #### User Story
-**As a** user with a HyperLabel,  
+**As a** user with a TIP,  
 **I want to** easily create a shipment and link my label,  
 **So that** I can start tracking my cargo.
 
@@ -4756,7 +4822,7 @@ export async function sendEmail({
   react: React.ReactElement
 }) {
   return resend.emails.send({
-    from: 'HyperLabel <notifications@hyperlabel.com>',
+    from: 'TIP <notifications@tip.live>',
     to,
     subject,
     react,
@@ -4817,7 +4883,7 @@ export function ShipmentActivatedEmail({
   return (
     <Html>
       <Head />
-      <Preview>Your HyperLabel is now tracking {shipmentName}</Preview>
+      <Preview>Your TIP is now tracking {shipmentName}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Shipment Activated!</Heading>
@@ -5101,7 +5167,7 @@ Deploy to production and run smoke tests.
 - [ ] API responds
 
 #### Acceptance Criteria
-- [ ] **Production live** at hyperlabel.com
+- [ ] **Production live** at tip.live
 - [ ] **All smoke tests** pass
 - [ ] **No critical errors** in logs
 
@@ -5398,7 +5464,7 @@ Final sync before launch to align on go-live.
 
 **Hierarchy:**
 ```
-Project: HyperLabel MVP
+Project: TIP MVP
 ├── Cycle: Month 1 (Jan 2026)
 │   ├── Epic: E1 - Project Setup & Infrastructure
 │   │   ├── Task: E1-T1 - Initialize monorepo
@@ -5652,7 +5718,7 @@ Each task below is written as a prompt you can paste directly into Cursor/Claude
 ###### E1-T1: Initialize Next.js Monorepo
 
 ```
-TASK: Initialize a Next.js 14 project with TypeScript for HyperLabel
+TASK: Initialize a Next.js 14 project with TypeScript for TIP
 
 REQUIREMENTS:
 1. Create Next.js 14 app with App Router (not Pages Router)
@@ -5722,7 +5788,7 @@ OUTPUT: Complete schema.prisma file + migration commands
 ###### E1-T3: Database Schema Design
 
 ```
-TASK: Design complete Prisma schema for HyperLabel tracking platform
+TASK: Design complete Prisma schema for TIP tracking platform
 
 MODELS NEEDED:
 
@@ -5827,7 +5893,7 @@ REQUIREMENTS:
    - Idempotent (handle duplicate events)
 
 5. Set up webhook in Clerk Dashboard:
-   - URL: https://hyperlabel.com/api/webhooks/clerk
+   - URL: https://tip.live/api/webhooks/clerk
    - Events: user.created, user.updated, user.deleted
 
 OUTPUT: Complete webhook handler with signature verification
@@ -6113,8 +6179,8 @@ OUTPUT: Complete webhook handler with all event processing
 | **Registered Address** | 🔴 HIGH | Virtual office or accountant address |
 | **Business Bank Account** | 🔴 HIGH | Tide, Revolut Business, or Starling |
 | **Stripe Account** | 🔴 HIGH | Connect to UK company |
-| **Domain Registration** | 🔴 HIGH | hyperlabel.com (check availability) |
-| **Trademark Search** | 🟡 MEDIUM | UK/EU/US trademark for "HyperLabel" |
+| **Domain Registration** | 🔴 HIGH | tip.live (check availability) |
+| **Trademark Search** | 🟡 MEDIUM | UK/EU/US trademark for "TIP" |
 | **Director's Insurance** | 🟡 MEDIUM | D&O insurance |
 | **Accountant** | 🟡 MEDIUM | Xero + accountant for VAT, tax |
 
@@ -6144,7 +6210,7 @@ OUTPUT: Complete webhook handler with all event processing
 
 #### AI FEATURES
 
-HyperLabel uses AI to improve UX, reduce errors, and provide intelligent insights.
+TIP uses AI to improve UX, reduce errors, and provide intelligent insights.
 
 ##### AI Technology Stack
 
@@ -6200,7 +6266,7 @@ export async function analyzeCargoPhoto(
     
     Extract the following information and return as JSON:
     {
-      "labelVisible": boolean,        // Is a HyperLabel tracking label visible?
+      "labelVisible": boolean,        // Is a TIP tracking label visible?
       "labelAttachedProperly": boolean, // Is it flat, not peeling, readable?
       "trackingCode": string | null,  // Any tracking code visible (HL-XXXXX format)
       "cargoType": string,            // e.g., "cardboard boxes", "wooden pallet"
@@ -6256,7 +6322,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!analysis.labelVisible) {
     return Response.json({
       success: false,
-      error: 'HyperLabel not visible in photo',
+      error: 'TIP not visible in photo',
       suggestion: 'Please retake photo with tracking label clearly visible',
     }, { status: 400 })
   }
@@ -6677,7 +6743,7 @@ export const ErrorCodes = {
 | **Forwarder** | Company that arranges shipment logistics |
 | **Shipper** | Physical carrier (trucking, air, ocean) |
 | **Black hole** | Period when cargo has no tracking visibility |
-| **Label** | HyperLabel physical tracking device |
+| **Label** | TIP physical tracking device |
 | **Soft-SIM** | eSIM technology for global connectivity |
 | **Onomondo** | eSIM connectivity provider for IoT devices |
 | **Cell Tower Location** | Approximate location based on connected cell tower |
@@ -6730,7 +6796,7 @@ export const ErrorCodes = {
 | Destination entry - mandatory? | Denys | ✅ Resolved | **Optional for Consignee, Mandatory for Shipper** at activation |
 | "Stuck" detection algorithm | Denys | ✅ Resolved | **No location change >500m for 24+ hours** (configurable). Excludes expected stops. |
 | QR scan at shipper warehouse? | Denys | ✅ Resolved | **MANDATORY** — creates Shipment record, links label to specific cargo. Required for bulk orders (10 labels = 10 scans). |
-| Label-to-Order linking? | Denys | ✅ Resolved | **At HyperLabel fulfillment** — warehouse scans label barcode when shipping to shipper, links Label ID to Order. |
+| Label-to-Order linking? | Denys | ✅ Resolved | **At TIP fulfillment** — warehouse scans label barcode when shipping to shipper, links Label ID to Order. |
 
 ### 12.5 Document History
 
@@ -6741,11 +6807,12 @@ export const ErrorCodes = {
 | 1.2 | 2026-01-26 | Denys Chumak | Added Onomondo as eSIM provider; Cell tower location as backup; Free shipping included for MVP |
 | 1.3 | 2026-01-26 | Denys Chumak | **Hybrid architecture decision**: Use existing label.utec.ua for device data, new backend for business logic; Documented existing API endpoints and DeviceDataOut schema |
 | 1.4 | 2026-01-26 | Denys Chumak | **Clarified flows**: Delivery detection (geofence 100m/30min), Stuck detection (500m/24h), Destination mandatory for shipper, QR scan mandatory, Shipping SLA added, Currency USD+GBP, Data retention fixed (30 days free) |
-| 1.5 | 2026-01-26 | Denys Chumak | **Label-to-Order linking**: Clarified that Label ID is linked to Order at HyperLabel fulfillment (when shipping to shipper). Updated user journey to 9 steps. |
+| 1.5 | 2026-01-26 | Denys Chumak | **Label-to-Order linking**: Clarified that Label ID is linked to Order at TIP fulfillment (when shipping to shipper). Updated user journey to 9 steps. |
 | 1.6 | 2026-01-26 | Denys Chumak | **Two-stage linking**: Fulfillment links Label→Order, QR Scan creates Shipment (Label→Shipment). QR scan now MANDATORY to support bulk orders (10 labels = 10 shipments). |
 | 1.7 | 2026-01-27 | Denys Chumak | **Andrii meeting answers**: Battery formula (2mAh/transmission, 30min=20days), GPS cold start (1-2min), UTEC fulfillment, inventory locations (CN/UK/US), no sleep mode after activation, carrier tracking before activation. Open: lost detection logic, post-delivery transmission. |
 | 1.8 | 2026-01-27 | Denys Chumak | **Post-delivery transmission**: Label continues transmitting until battery dies — no automatic deactivation. |
+| 1.9 | 2026-02-07 | Denys Chumak | **Physical label design spec** (§4.8): Added label layout, QR code content (`tip.live/activate/{deviceId}`), `/activate` route behavior for all label states, rationale for printing device ID visibly. Updated key flow (§3.1) to reflect universal QR scanning. |
 
 ---
 
-*This document is confidential and intended for HyperLabel team use only.*
+*This document is confidential and intended for TIP team use only.*

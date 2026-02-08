@@ -1,39 +1,36 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
-import { isClerkConfigured } from '@/lib/clerk-config'
+import { requireOrgAuth, orgScopedWhere, canViewAllOrgData } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
 
 /**
  * GET /api/v1/stats - Get dashboard statistics
  */
 export async function GET() {
   try {
-    const user = await getCurrentUser()
-
-    if (!user && isClerkConfigured()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const userId = user?.id
+    const context = await requireOrgAuth()
 
     // Get current month start for "delivered this month"
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
+    // Build org-scoped order filter for label queries
+    const orderFilter: Record<string, unknown> = { orgId: context.orgId }
+    if (!canViewAllOrgData(context.orgRole)) {
+      orderFilter.userId = context.user.id
+    }
+
     const [activeShipments, totalLabels, deliveredThisMonth, lowBatteryLabels] = await Promise.all([
       // Active shipments count
       db.shipment.count({
-        where: {
-          ...(userId && { userId }),
-          status: 'IN_TRANSIT',
-        },
+        where: orgScopedWhere(context, { status: 'IN_TRANSIT' }),
       }),
 
       // Total labels owned (from orders that are paid/shipped/delivered)
       db.label.count({
         where: {
           order: {
-            ...(userId && { userId }),
+            ...orderFilter,
             status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
           },
         },
@@ -41,19 +38,16 @@ export async function GET() {
 
       // Delivered this month
       db.shipment.count({
-        where: {
-          ...(userId && { userId }),
+        where: orgScopedWhere(context, {
           status: 'DELIVERED',
           deliveredAt: { gte: monthStart },
-        },
+        }),
       }),
 
       // Low battery labels (< 20%)
       db.label.count({
         where: {
-          order: {
-            ...(userId && { userId }),
-          },
+          order: orderFilter,
           batteryPct: { lt: 20, gt: 0 },
           status: 'ACTIVE',
         },
@@ -69,7 +63,6 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('Error fetching stats:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'fetching stats')
   }
 }

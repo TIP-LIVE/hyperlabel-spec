@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/stat-card'
+import { shipmentStatusConfig } from '@/lib/status-config'
 import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -15,12 +18,7 @@ export const metadata: Metadata = {
   description: 'Overview of your shipments and tracking labels',
 }
 
-const statusConfig = {
-  PENDING: { label: 'Pending', variant: 'secondary' as const },
-  IN_TRANSIT: { label: 'In Transit', variant: 'default' as const },
-  DELIVERED: { label: 'Delivered', variant: 'outline' as const },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' as const },
-}
+const statusConfig = shipmentStatusConfig
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -95,18 +93,21 @@ export default async function DashboardPage() {
       value: activeShipments.toString(),
       icon: Truck,
       description: 'Currently in transit',
+      href: '/shipments?status=IN_TRANSIT',
     },
     {
       name: 'Total Labels',
       value: totalLabels.toString(),
       icon: Package,
       description: 'Labels owned',
+      href: '/buy',
     },
     {
       name: 'Delivered',
       value: deliveredThisMonth.toString(),
       icon: MapPin,
       description: 'This month',
+      href: '/shipments?status=DELIVERED',
     },
     {
       name: 'Low Battery',
@@ -114,42 +115,37 @@ export default async function DashboardPage() {
       icon: Battery,
       description: lowBatteryLabels > 0 ? 'Needs attention' : 'All good',
       alert: lowBatteryLabels > 0,
+      href: '/shipments',
     },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your shipments and tracking labels</p>
-        </div>
-        <Button asChild>
-          <Link href="/shipments/new">
-            <Package className="mr-2 h-4 w-4" />
-            New Shipment
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your shipments and tracking labels"
+        action={
+          <Button asChild>
+            <Link href="/shipments/new">
+              <Package className="mr-2 h-4 w-4" />
+              New Shipment
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.name}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.name}</CardTitle>
-              <stat.icon
-                className={`h-4 w-4 ${stat.alert ? 'text-destructive' : 'text-muted-foreground'}`}
-              />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${stat.alert ? 'text-destructive' : ''}`}>
-                {stat.value}
-              </div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
-            </CardContent>
-          </Card>
+          <Link key={stat.name} href={stat.href}>
+            <StatCard
+              title={stat.name}
+              value={stat.value}
+              icon={stat.icon}
+              description={stat.description}
+              alert={stat.alert}
+            />
+          </Link>
         ))}
       </div>
 
@@ -186,7 +182,7 @@ export default async function DashboardPage() {
                   <div className="flex-1">
                     <p className="font-medium">1. Buy tracking labels</p>
                     <p className="mt-0.5 text-sm text-muted-foreground">
-                      Order tracking labels — they&apos;ll arrive at your door within 1-2 business days.
+                      Order tracking labels — they&apos;ll arrive at your door within 3-5 business days.
                     </p>
                   </div>
                   <Button size="sm" asChild>
@@ -262,13 +258,24 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       {shipment.label.batteryPct !== null && (
-                        <span
-                          className={`text-sm ${
-                            shipment.label.batteryPct < 20 ? 'text-destructive' : 'text-muted-foreground'
-                          }`}
-                        >
-                          {shipment.label.batteryPct}%
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <Battery
+                            className={`h-4 w-4 ${
+                              shipment.label.batteryPct < 20
+                                ? 'text-destructive'
+                                : shipment.label.batteryPct < 50
+                                  ? 'text-yellow-500'
+                                  : 'text-green-500'
+                            }`}
+                          />
+                          <span
+                            className={`text-sm ${
+                              shipment.label.batteryPct < 20 ? 'text-destructive font-medium' : 'text-muted-foreground'
+                            }`}
+                          >
+                            {shipment.label.batteryPct}%
+                          </span>
+                        </div>
                       )}
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </div>

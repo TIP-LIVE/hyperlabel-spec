@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, LABEL_PRODUCTS, LabelPackType } from '@/lib/stripe'
-import { getCurrentUser } from '@/lib/auth'
+import { requireOrgAuth } from '@/lib/auth'
+import { handleApiError } from '@/lib/api-utils'
+import { rateLimit, RATE_LIMIT_CHECKOUT, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const checkoutSchema = z.object({
@@ -24,11 +26,12 @@ const checkoutSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    // Rate limit by IP (strict: 10 req/min for checkout)
+    const rl = rateLimit(`checkout:${getClientIp(req)}`, RATE_LIMIT_CHECKOUT)
+    if (!rl.success) return rateLimitResponse(rl)
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const context = await requireOrgAuth()
+    const user = context.user
 
     const body = await req.json()
     const validated = checkoutSchema.safeParse(body)
@@ -71,6 +74,7 @@ export async function POST(req: NextRequest) {
       },
       metadata: {
         userId: user.id,
+        orgId: context.orgId,
         packType,
         quantity: product.quantity.toString(),
         shippingName: shippingAddress.name,
@@ -90,15 +94,12 @@ export async function POST(req: NextRequest) {
       url: session.url,
     })
   } catch (error) {
-    console.error('Error creating checkout session:', error)
-    
     if (error instanceof Error && error.message.includes('Invalid API Key')) {
       return NextResponse.json(
         { error: 'Payment system not configured' },
         { status: 503 }
       )
     }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, 'creating checkout session')
   }
 }

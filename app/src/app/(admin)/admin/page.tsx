@@ -1,6 +1,8 @@
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/lib/db'
-import { Users, Package, ShoppingCart, Radio, AlertTriangle } from 'lucide-react'
+import { Users, Package, ShoppingCart, Radio, AlertTriangle, ArrowRight } from 'lucide-react'
+import { format } from 'date-fns'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +13,6 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminOverviewPage() {
-  // Get counts for overview
   const [
     totalUsers,
     ,
@@ -22,6 +23,7 @@ export default async function AdminOverviewPage() {
     pendingOrders,
     activeShipments,
     lowBatteryLabels,
+    totalShipments,
   ] = await Promise.all([
     db.user.count(),
     db.label.count(),
@@ -32,6 +34,7 @@ export default async function AdminOverviewPage() {
     db.order.count({ where: { status: 'PAID' } }),
     db.shipment.count({ where: { status: 'IN_TRANSIT' } }),
     db.label.count({ where: { batteryPct: { lt: 20, gt: 0 }, status: 'ACTIVE' } }),
+    db.shipment.count(),
   ])
 
   const stats = [
@@ -40,12 +43,14 @@ export default async function AdminOverviewPage() {
       value: totalUsers,
       icon: Users,
       description: 'Registered accounts',
+      href: '/admin/users',
     },
     {
       title: 'Labels in Inventory',
       value: inventoryLabels,
       icon: Package,
       description: `${activeLabels} active, ${depletedLabels} depleted`,
+      href: '/admin/labels',
     },
     {
       title: 'Total Orders',
@@ -53,18 +58,20 @@ export default async function AdminOverviewPage() {
       icon: ShoppingCart,
       description: `${pendingOrders} pending fulfillment`,
       alert: pendingOrders > 0,
+      href: '/admin/orders',
     },
     {
       title: 'Active Shipments',
       value: activeShipments,
       icon: Radio,
-      description: 'Currently in transit',
+      description: `${totalShipments} total`,
+      href: '/admin/shipments?status=IN_TRANSIT',
     },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Alerts */}
+      {/* Alerts — now clickable */}
       {(pendingOrders > 0 || lowBatteryLabels > 0) && (
         <Card className="border-yellow-500/50 bg-yellow-500/10">
           <CardHeader className="pb-2">
@@ -73,43 +80,62 @@ export default async function AdminOverviewPage() {
               Attention Required
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 text-sm text-yellow-200">
+          <CardContent className="space-y-2 text-sm">
             {pendingOrders > 0 && (
-              <p>• {pendingOrders} order(s) awaiting fulfillment</p>
+              <Link
+                href="/admin/orders?status=PAID"
+                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-yellow-200 transition-colors hover:bg-yellow-500/10"
+              >
+                <span>• {pendingOrders} order(s) awaiting fulfillment</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             )}
             {lowBatteryLabels > 0 && (
-              <p>• {lowBatteryLabels} active label(s) with low battery (&lt;20%)</p>
+              <Link
+                href="/admin/devices"
+                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-yellow-200 transition-colors hover:bg-yellow-500/10"
+              >
+                <span>• {lowBatteryLabels} active label(s) with low battery (&lt;20%)</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Stats Grid */}
+      {/* Stats Grid — now clickable */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title} className="border-gray-800 bg-gray-800/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">{stat.title}</CardTitle>
-              <stat.icon
-                className={`h-4 w-4 ${stat.alert ? 'text-yellow-500' : 'text-gray-500'}`}
-              />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-500' : 'text-white'}`}>
-                {stat.value}
-              </div>
-              <p className="text-xs text-gray-500">{stat.description}</p>
-            </CardContent>
-          </Card>
+          <Link key={stat.title} href={stat.href}>
+            <Card className="border-gray-800 bg-gray-800/50 transition-colors hover:border-gray-600 hover:bg-gray-800">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-400">{stat.title}</CardTitle>
+                <stat.icon
+                  className={`h-4 w-4 ${stat.alert ? 'text-yellow-500' : 'text-gray-500'}`}
+                />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-500' : 'text-white'}`}>
+                  {stat.value}
+                </div>
+                <p className="text-xs text-gray-500">{stat.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-gray-800 bg-gray-800/50">
-          <CardHeader>
-            <CardTitle className="text-white">Recent Orders</CardTitle>
-            <CardDescription>Latest orders requiring attention</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-white">Recent Orders</CardTitle>
+              <CardDescription>Latest orders requiring attention</CardDescription>
+            </div>
+            <Link href="/admin/orders" className="text-xs text-primary hover:underline">
+              View all
+            </Link>
           </CardHeader>
           <CardContent>
             <RecentOrders />
@@ -117,9 +143,14 @@ export default async function AdminOverviewPage() {
         </Card>
 
         <Card className="border-gray-800 bg-gray-800/50">
-          <CardHeader>
-            <CardTitle className="text-white">Low Battery Alerts</CardTitle>
-            <CardDescription>Labels with battery below 20%</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-white">Low Battery Alerts</CardTitle>
+              <CardDescription>Labels with battery below 20%</CardDescription>
+            </div>
+            <Link href="/admin/devices" className="text-xs text-primary hover:underline">
+              View all
+            </Link>
           </CardHeader>
           <CardContent>
             <LowBatteryLabels />
@@ -133,9 +164,7 @@ export default async function AdminOverviewPage() {
 async function RecentOrders() {
   const orders = await db.order.findMany({
     where: { status: { in: ['PAID', 'SHIPPED'] } },
-    include: {
-      user: { select: { email: true } },
-    },
+    include: { user: { select: { email: true } } },
     orderBy: { createdAt: 'desc' },
     take: 5,
   })
@@ -147,10 +176,16 @@ async function RecentOrders() {
   return (
     <div className="space-y-3">
       {orders.map((order) => (
-        <div key={order.id} className="flex items-center justify-between">
+        <Link
+          key={order.id}
+          href={`/admin/orders/${order.id}`}
+          className="flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-700/50"
+        >
           <div>
             <p className="text-sm font-medium text-white">{order.user.email}</p>
-            <p className="text-xs text-gray-500">{order.quantity} labels</p>
+            <p className="text-xs text-gray-500">
+              {order.quantity} labels · {format(new Date(order.createdAt), 'PP')}
+            </p>
           </div>
           <span
             className={`rounded px-2 py-1 text-xs ${
@@ -161,7 +196,7 @@ async function RecentOrders() {
           >
             {order.status}
           </span>
-        </div>
+        </Link>
       ))}
     </div>
   )
@@ -169,14 +204,12 @@ async function RecentOrders() {
 
 async function LowBatteryLabels() {
   const labels = await db.label.findMany({
-    where: {
-      batteryPct: { lt: 20, gt: 0 },
-      status: 'ACTIVE',
-    },
+    where: { batteryPct: { lt: 20, gt: 0 }, status: 'ACTIVE' },
     include: {
       shipments: {
         where: { status: 'IN_TRANSIT' },
         take: 1,
+        select: { name: true, id: true },
       },
     },
     orderBy: { batteryPct: 'asc' },
@@ -189,19 +222,28 @@ async function LowBatteryLabels() {
 
   return (
     <div className="space-y-3">
-      {labels.map((label) => (
-        <div key={label.id} className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-white">{label.deviceId}</p>
-            <p className="text-xs text-gray-500">
-              {label.shipments[0]?.name || 'No active shipment'}
-            </p>
+      {labels.map((label) => {
+        const shipment = label.shipments[0]
+        return (
+          <div key={label.id} className="flex items-center justify-between rounded-lg px-2 py-1.5">
+            <div>
+              <p className="text-sm font-medium text-white">{label.deviceId}</p>
+              <p className="text-xs text-gray-500">
+                {shipment ? (
+                  <Link href={`/admin/shipments?q=${label.deviceId}`} className="text-primary hover:underline">
+                    {shipment.name || 'Untitled shipment'}
+                  </Link>
+                ) : (
+                  'No active shipment'
+                )}
+              </p>
+            </div>
+            <span className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-500">
+              {label.batteryPct}%
+            </span>
           </div>
-          <span className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-500">
-            {label.batteryPct}%
-          </span>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

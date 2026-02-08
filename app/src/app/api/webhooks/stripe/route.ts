@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { db } from '@/lib/db'
+import { sendOrderConfirmedNotification, sendLowInventoryAlert } from '@/lib/notifications'
 import Stripe from 'stripe'
 
 /**
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
+  const orgId = session.metadata?.orgId || null
   const quantity = parseInt(session.metadata?.quantity || '1', 10)
 
   if (!userId) {
@@ -104,6 +106,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const order = await db.order.create({
     data: {
       userId,
+      orgId,
       stripeSessionId: session.id,
       stripePaymentId: session.payment_intent as string,
       status: 'PAID',
@@ -127,7 +130,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       `Not enough labels in inventory: need ${quantity}, have ${availableLabels.length}`
     )
     // Order is still created, but labels will need to be assigned manually
-    // TODO: Send alert to admin
+    // Send low-inventory alert to platform admins
+    sendLowInventoryAlert({
+      availableLabels: availableLabels.length,
+      requestedQuantity: quantity,
+      assignedQuantity: Math.min(availableLabels.length, quantity),
+      orderId: order.id,
+      orderUserEmail: session.customer_email || userId,
+    }).catch((err) => console.error('Failed to send low inventory alert:', err))
   }
 
   // Assign available labels to the order
@@ -145,6 +155,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.log(`Assigned ${availableLabels.length} labels to order ${order.id}`)
   }
 
-  // TODO: Send order confirmation email
-  // await sendOrderConfirmationEmail(order, user)
+  // Send order confirmation email (fire and forget)
+  const totalFormatted = session.currency?.toUpperCase() === 'GBP'
+    ? `£${((session.amount_total || 0) / 100).toFixed(2)}`
+    : `$${((session.amount_total || 0) / 100).toFixed(2)}`
+
+  const addressParts = [shippingAddress.line1, shippingAddress.line2, shippingAddress.city, shippingAddress.state, shippingAddress.postalCode, shippingAddress.country].filter(Boolean)
+
+  sendOrderConfirmedNotification({
+    userId,
+    orderNumber: order.id.slice(-8).toUpperCase(),
+    quantity,
+    totalAmount: totalFormatted,
+    shippingName: shippingAddress.name,
+    shippingAddress: addressParts.join(', '),
+  }).catch((err) => console.error('Failed to send order confirmation:', err))
 }

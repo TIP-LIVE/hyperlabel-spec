@@ -9,6 +9,7 @@ export const createShipmentSchema = z.object({
   destinationAddress: z.string().min(1, 'Destination address is required'),
   destinationLat: z.number().min(-90).max(90),
   destinationLng: z.number().min(-180).max(180),
+  consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
   photoUrls: z.array(z.string()).max(5).optional(),
 })
 

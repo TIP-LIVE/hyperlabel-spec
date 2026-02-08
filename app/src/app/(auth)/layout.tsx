@@ -1,14 +1,13 @@
-import { Package } from 'lucide-react'
 import Link from 'next/link'
+import { Logo } from '@/components/ui/logo'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left side - Branding */}
       <div className="hidden lg:flex flex-col justify-between bg-primary p-10 text-primary-foreground">
-        <Link href="/" className="flex items-center gap-2">
-          <Package className="h-8 w-8" />
-          <span className="text-xl font-bold">TIP</span>
+        <Link href="/">
+          <Logo size="lg" iconClassName="text-primary-foreground" textClassName="text-primary-foreground" />
         </Link>
 
         <div className="space-y-4">
@@ -44,14 +43,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="flex flex-col">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b">
-          <Link href="/" className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold">TIP</span>
+          <Link href="/">
+            <Logo size="md" />
           </Link>
         </div>
 
         {/* Auth content */}
-        <div className="flex-1 flex items-center justify-center p-6">{children}</div>
+        <div className="flex-1 flex items-center justify-center px-4 py-6 sm:p-6">{children}</div>
 
         {/* Footer */}
         <div className="p-4 text-center text-sm text-muted-foreground">

@@ -27,7 +27,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
         <Radio className="h-10 w-10 text-muted-foreground/50" />
         <p className="mt-3 text-sm text-muted-foreground">No location events yet</p>
         <p className="text-xs text-muted-foreground">
-          Location data will appear once the tracking device starts transmitting
+          Location data will appear once the tracking label starts transmitting
         </p>
       </div>
     )

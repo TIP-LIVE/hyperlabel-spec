@@ -101,10 +101,14 @@ model Shipment {
   status             ShipmentStatus @default(PENDING)
   shareCode          String         @unique @map("share_code") // Public tracking URL code
   shareEnabled       Boolean        @default(true) @map("share_enabled")
+  consigneeEmail     String?        @map("consignee_email") // Recipient's email for status updates
   photoUrls          String[]       @map("photo_urls") // Cargo photos
   createdAt          DateTime       @default(now()) @map("created_at")
   updatedAt          DateTime       @updatedAt @map("updated_at")
   deliveredAt        DateTime?      @map("delivered_at")
+
+  // Organization scoping (from Clerk Organizations)
+  orgId String? @map("org_id")
 
   // Relations
   userId    String @map("user_id")
@@ -113,6 +117,7 @@ model Shipment {
   label     Label  @relation(fields: [labelId], references: [id])
   locations LocationEvent[]
 
+  @@index([orgId])
   @@map("shipments")
 }
 
@@ -153,20 +158,24 @@ model Order {
   totalAmount      Int         @map("total_amount") // In cents
   currency         String      @default("GBP")
   quantity         Int         // Number of labels
-  
+
   // Shipping info
   shippingAddress  Json?       @map("shipping_address")
   trackingNumber   String?     @map("tracking_number") // DHL/FedEx tracking
   shippedAt        DateTime?   @map("shipped_at")
-  
+
   createdAt        DateTime    @default(now()) @map("created_at")
   updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  // Organization scoping (from Clerk Organizations)
+  orgId String? @map("org_id")
 
   // Relations
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
   labels Label[]
 
+  @@index([orgId])
   @@map("orders")
 }
 
@@ -178,10 +187,13 @@ model Notification {
   read      Boolean  @default(false)
   sentAt    DateTime @default(now()) @map("sent_at")
 
+  // Organization scoping (from Clerk Organizations)
+  orgId String? @map("org_id")
+
   // Relations
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  @@index([userId, sentAt])
+  @@index([userId, orgId, sentAt])
   @@map("notifications")
 }

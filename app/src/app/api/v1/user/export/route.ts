@@ -1,18 +1,25 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 /**
  * GET /api/v1/user/export
- * GDPR Data Export — returns all user data as JSON
+ * GDPR Data Export — returns all user data as JSON or CSV
+ *
+ * Query params:
+ *   format=csv — returns shipments + locations as CSV
+ *   format=json (default) — returns full data as JSON
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser()
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(req.url)
+    const format = searchParams.get('format') || 'json'
 
     // Fetch all user data
     const [userData, shipments, orders, notifications, labels] = await Promise.all([
@@ -85,6 +92,105 @@ export async function GET() {
       }),
     ])
 
+    // CSV format — flattened shipments with location events
+    if (format === 'csv') {
+      const csvLines: string[] = []
+
+      // Shipments CSV
+      csvLines.push('--- SHIPMENTS ---')
+      csvLines.push(
+        'Shipment ID,Name,Status,Device ID,Origin,Destination,Share Code,Created,Delivered'
+      )
+      for (const s of shipments) {
+        csvLines.push(
+          [
+            s.id,
+            escapeCsv(s.name || ''),
+            s.status,
+            s.label.deviceId,
+            escapeCsv(s.originAddress || ''),
+            escapeCsv(s.destinationAddress || ''),
+            s.shareCode,
+            s.createdAt.toISOString(),
+            s.deliveredAt?.toISOString() || '',
+          ].join(',')
+        )
+      }
+
+      csvLines.push('')
+      csvLines.push('--- LOCATION EVENTS ---')
+      csvLines.push(
+        'Shipment ID,Shipment Name,Device ID,Latitude,Longitude,Accuracy (m),Battery %,Altitude,Speed,Recorded At,Received At,Offline Sync'
+      )
+      for (const s of shipments) {
+        for (const l of s.locations) {
+          csvLines.push(
+            [
+              s.id,
+              escapeCsv(s.name || ''),
+              s.label.deviceId,
+              l.latitude,
+              l.longitude,
+              l.accuracyM ?? '',
+              l.batteryPct ?? '',
+              l.altitude ?? '',
+              l.speed ?? '',
+              l.recordedAt.toISOString(),
+              l.receivedAt.toISOString(),
+              l.isOfflineSync,
+            ].join(',')
+          )
+        }
+      }
+
+      csvLines.push('')
+      csvLines.push('--- ORDERS ---')
+      csvLines.push('Order ID,Status,Total (cents),Currency,Quantity,Tracking Number,Created,Shipped')
+      for (const o of orders) {
+        csvLines.push(
+          [
+            o.id,
+            o.status,
+            o.totalAmount,
+            o.currency,
+            o.quantity,
+            o.trackingNumber || '',
+            o.createdAt.toISOString(),
+            o.shippedAt?.toISOString() || '',
+          ].join(',')
+        )
+      }
+
+      csvLines.push('')
+      csvLines.push('--- LABELS ---')
+      csvLines.push('Label ID,Device ID,IMEI,ICCID,Status,Battery %,Firmware,Activated,Created')
+      for (const l of labels) {
+        csvLines.push(
+          [
+            l.id,
+            l.deviceId,
+            l.imei || '',
+            l.iccid || '',
+            l.status,
+            l.batteryPct ?? '',
+            l.firmwareVersion || '',
+            l.activatedAt?.toISOString() || '',
+            l.createdAt.toISOString(),
+          ].join(',')
+        )
+      }
+
+      const csvContent = csvLines.join('\n')
+      return new NextResponse(csvContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="tip-data-export-${new Date().toISOString().slice(0, 10)}.csv"`,
+        },
+      })
+    }
+
+    // JSON format (default)
     const exportData = {
       exportedAt: new Date().toISOString(),
       exportVersion: '1.0',
@@ -146,4 +252,12 @@ export async function GET() {
     console.error('Error exporting user data:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+/** Escape a value for CSV — wraps in quotes if it contains comma, quote, or newline */
+function escapeCsv(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
 }
