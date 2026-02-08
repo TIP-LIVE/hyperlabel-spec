@@ -70,9 +70,12 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy' }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_dummy' }}
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'dummy' }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://tip.live' }}
           NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in'
           NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up'
           NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/dashboard'
           NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/org-selection'
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_dummy' }}
+          CRON_SECRET: 'ci-dummy-cron-secret'
