@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
   Package,
-  MapPin,
   Battery,
   Truck,
   CheckCircle,
@@ -91,8 +90,7 @@ function haversineKm(
 
 export function TrackingPageClient({ code, initialData }: TrackingPageClientProps) {
   const [shipment, setShipment] = useState<ShipmentData>(initialData)
-  const [isPolling, setIsPolling] = useState(true)
-  const [lastPollAt, setLastPollAt] = useState<Date>(new Date())
+  const [isPolling] = useState(true)
   const [pollError, setPollError] = useState(false)
   const [copied, setCopied] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -189,27 +187,25 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
       }))
 
       setPollError(false)
-      setLastPollAt(new Date())
     } catch {
       setPollError(true)
     }
   }, [code, latestLocation, mergeLocations])
 
+  // Derive polling state — avoid setState in effect body
+  const isTerminal = shipment.status === 'DELIVERED' || shipment.status === 'CANCELLED'
+  const shouldPoll = isPolling && !isTerminal
+
   // Set up polling interval
   useEffect(() => {
-    if (shipment.status === 'DELIVERED' || shipment.status === 'CANCELLED') {
-      setIsPolling(false)
-      return
-    }
-
-    if (!isPolling) return
+    if (!shouldPoll) return
 
     pollingRef.current = setInterval(poll, POLL_INTERVAL_MS)
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [isPolling, poll, shipment.status])
+  }, [shouldPoll, poll])
 
   // P0: Instant delivery state update — optimistic update
   const handleDeliveryConfirmed = useCallback(() => {

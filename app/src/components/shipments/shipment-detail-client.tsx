@@ -11,7 +11,6 @@ import {
   Battery,
   Calendar,
   Clock,
-  MapPin,
   Package,
   Share2,
   Truck,
@@ -90,7 +89,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 
 export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetailClientProps) {
   const [shipment, setShipment] = useState<ShipmentData>(initialData)
-  const [isPolling, setIsPolling] = useState(true)
+  const [isPolling] = useState(true)
   const [pollError, setPollError] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -174,18 +173,17 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
     }
   }, [shipment.id, mergeLocations])
 
+  // Derive polling state from shipment status instead of calling setState in effect
+  const shouldPoll = isActive && isPolling
+
   useEffect(() => {
-    if (!isActive) {
-      setIsPolling(false)
-      return
-    }
-    if (!isPolling) return
+    if (!shouldPoll) return
 
     pollingRef.current = setInterval(poll, POLL_INTERVAL_MS)
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [isPolling, poll, isActive])
+  }, [shouldPoll, poll])
 
   const handleManualRefresh = useCallback(() => { poll() }, [poll])
 

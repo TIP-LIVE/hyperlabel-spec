@@ -110,15 +110,17 @@ export function TrackingMap({
   destinationLat,
   destinationLng,
   destinationAddress,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   originAddress,
   height = '400px',
 }: TrackingMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null)
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null)
   const { resolvedTheme } = useTheme()
+  // Track if component has mounted (for theme detection hydration safety)
   const [mounted, setMounted] = useState(false)
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

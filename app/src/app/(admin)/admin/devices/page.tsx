@@ -44,7 +44,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
   }
 
   // Health filter applied after data fetch (requires computed fields)
-  const [allActiveLabels, totalActiveCount, healthCounts] = await Promise.all([
+  const [allActiveLabels, , healthCounts] = await Promise.all([
     db.label.findMany({
       where,
       include: {

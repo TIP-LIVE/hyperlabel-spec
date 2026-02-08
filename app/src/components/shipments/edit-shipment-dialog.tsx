@@ -111,7 +111,7 @@ export function EditShipmentDialog({
               disabled={isLoading}
             />
             <p className="text-xs text-muted-foreground">
-              Note: changing the address here won't update the map pin. Use this to correct typos.
+              Note: changing the address here won&apos;t update the map pin. Use this to correct typos.
             </p>
           </div>
         </div>

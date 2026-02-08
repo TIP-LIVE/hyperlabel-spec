@@ -18,9 +18,10 @@ export function AdminSearch({ placeholder = 'Search...', paramName = 'q' }: Admi
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Sync from URL changes
+  const paramValue = searchParams.get(paramName) || ''
   useEffect(() => {
-    setValue(searchParams.get(paramName) || '')
-  }, [searchParams, paramName])
+    setValue(paramValue)
+  }, [paramValue])
 
   const updateSearch = (newValue: string) => {
     setValue(newValue)

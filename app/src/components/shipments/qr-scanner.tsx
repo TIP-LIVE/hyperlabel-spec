@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ScanLine, Camera, X, Loader2, CheckCircle, AlertCircle, Keyboard } from 'lucide-react'
+import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface QrScannerProps {
@@ -28,25 +28,23 @@ declare global {
   }
 }
 
+// Check camera support eagerly (client-only component)
+const checkCameraSupport = () => {
+  if (typeof navigator === 'undefined') return false
+  return !!navigator.mediaDevices?.getUserMedia
+}
+
 export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
+  const cameraSupported = checkCameraSupport()
   const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<'scanner' | 'manual'>('scanner')
+  const [mode, setMode] = useState<'scanner' | 'manual'>(cameraSupported ? 'scanner' : 'manual')
   const [scanning, setScanning] = useState(false)
   const [manualId, setManualId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [scannedValue, setScannedValue] = useState<string | null>(null)
-  const [cameraSupported, setCameraSupported] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const animationRef = useRef<number | null>(null)
-
-  // Check camera support
-  useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setCameraSupported(false)
-      setMode('manual')
-    }
-  }, [])
 
   // Extract device ID from QR data (could be URL or just device ID)
   const extractDeviceId = useCallback((data: string): string | null => {
@@ -67,6 +65,37 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
 
     return null
   }, [])
+
+  // Stop camera
+  const stopCamera = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+      animationRef.current = null
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setScanning(false)
+  }, [])
+
+  // Handle scanned device ID
+  const handleScannedId = useCallback(
+    (deviceId: string) => {
+      setScannedValue(deviceId)
+      stopCamera()
+      setTimeout(() => {
+        onDeviceIdScanned(deviceId)
+        setOpen(false)
+        setScannedValue(null)
+        toast.success(`Label ${deviceId} scanned successfully!`)
+      }, 1000)
+    },
+    [onDeviceIdScanned, stopCamera]
+  )
 
   // Start camera and scanning
   const startScanning = useCallback(async () => {
@@ -117,38 +146,7 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
       setScanning(false)
       setMode('manual')
     }
-  }, [extractDeviceId])
-
-  // Stop camera
-  const stopCamera = useCallback(() => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-    setScanning(false)
-  }, [])
-
-  // Handle scanned device ID
-  const handleScannedId = useCallback(
-    (deviceId: string) => {
-      setScannedValue(deviceId)
-      stopCamera()
-      setTimeout(() => {
-        onDeviceIdScanned(deviceId)
-        setOpen(false)
-        setScannedValue(null)
-        toast.success(`Label ${deviceId} scanned successfully!`)
-      }, 1000)
-    },
-    [onDeviceIdScanned, stopCamera]
-  )
+  }, [extractDeviceId, handleScannedId, stopCamera])
 
   // Handle manual entry
   const handleManualSubmit = useCallback(() => {
@@ -161,25 +159,26 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     setManualId('')
   }, [manualId, handleScannedId])
 
-  // Cleanup on dialog close
-  useEffect(() => {
-    if (!open) {
-      stopCamera()
-      setError(null)
-      setScannedValue(null)
-      setMode(cameraSupported ? 'scanner' : 'manual')
-    }
-  }, [open, stopCamera, cameraSupported])
-
-  // Start scanning when dialog opens in scanner mode
-  useEffect(() => {
-    if (open && mode === 'scanner' && cameraSupported && !scanning && !scannedValue) {
-      startScanning()
-    }
-  }, [open, mode, cameraSupported, scanning, scannedValue, startScanning])
+  // Handle dialog open/close — avoids setState in effects
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      setOpen(isOpen)
+      if (!isOpen) {
+        // Cleanup on close
+        stopCamera()
+        setError(null)
+        setScannedValue(null)
+        setMode(cameraSupported ? 'scanner' : 'manual')
+      } else if (cameraSupported) {
+        // Auto-start scanning on open
+        startScanning()
+      }
+    },
+    [stopCamera, cameraSupported, startScanning]
+  )
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline" className="gap-2">
           <ScanLine className="h-4 w-4" />
