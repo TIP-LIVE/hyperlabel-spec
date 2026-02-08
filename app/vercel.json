@@ -3,19 +3,19 @@
   "crons": [
     {
       "path": "/api/cron/check-delivery",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/check-battery",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/check-signals",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/check-stuck",
-      "schedule": "0 8 * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/check-reminders",
