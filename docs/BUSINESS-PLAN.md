@@ -6,15 +6,15 @@
 
 ## Executive Summary
 
-**TIP** is a disposable smart tracking label that provides real-time cargo visibility for $20-25 per shipment. Unlike traditional trackers costing $100-500, TIP is thin (3.5mm), works in 180+ countries, and requires no technical setup—just scan, peel, and stick.
+**TIP** is a disposable smart tracking label that provides real-time cargo visibility for $20-25 per shipment. Unlike traditional trackers costing $70-500, TIP is thin (3.5mm), works in 180+ countries, and requires no technical setup—just scan, peel, and stick.
 
 **Market Opportunity:** The global cargo tracking market is valued at $18B (MarketsandMarkets 2024), with a growing segment of small-to-medium businesses underserved by expensive enterprise solutions.
 
-**Business Model:** Direct-to-business label sales with expanding margins at scale (47% → 69% gross margin over 3 years).
+**Business Model:** Direct-to-business label sales with expanding margins at scale (50% → 63% gross margin over 3 years).
 
 **Traction:** Production-ready hardware, live platform, and ready for first customer pilots.
 
-**Funding:** Seeking $250K seed to manufacture initial inventory, acquire first 150 customers, and reach $125K revenue in Year 1.
+**Funding:** Seeking $500K seed to manufacture initial inventory, acquire first 500+ customers, and reach $440K revenue in Year 1.
 
 ---
 
@@ -24,20 +24,20 @@
 
 Businesses shipping high-value goods face three critical challenges:
 
-| Problem | Impact | Current Solutions Fall Short |
-|---------|--------|------------------------------|
-| **Black Holes** | Cargo goes dark during flights, ocean transit, and remote areas | Traditional trackers lose connectivity; carrier systems only work within their network |
-| **Cost Barrier** | Tracking devices cost $100-500+ each | Not economical for single shipments or SMBs |
-| **Complexity** | Enterprise solutions require IT integration | Overkill for businesses shipping 10-100 items/year |
+| Problem | Who Feels It | Impact | Current Solutions Fall Short |
+|---------|-------------|--------|------------------------------|
+| **"Where is my cargo?"** | Consignee | No visibility into shipment location or condition; anxiety and inability to plan | Traditional trackers lose connectivity; carrier systems only work within their network |
+| **Communication breakdown** | Shipper | Updates only every 3-4 days; if something goes wrong, you find out too late | Enterprise solutions require IT integration—overkill for businesses shipping 10-100 items/year |
+| **Carbon footprint gap** | Industry / ESG compliance | 60%+ of corporate emissions originate from supply chains; companies cannot measure or report without shipment-level data | No affordable per-shipment carbon tracking for SMBs; ESG requirements growing |
 
 ### 1.2 Market Pain Points
 
 **From Customer Discovery Interviews (8 conducted, Dec 2025):**
 
-> "I ship $50K worth of electronics from Shenzhen to London. The forwarder gives me updates every 3-4 days. If something goes wrong, I find out too late." 
+> "I ship $50K worth of electronics from Shenzhen to London. The forwarder gives me updates every 3-4 days. If something goes wrong, I find out too late."
 > — Electronics trader, 15 years experience, ships 30 containers/year
 
-> "We tried Tive, but at $200 per tracker, it only makes sense for shipments over $10K. Most of our orders are $2-5K." 
+> "We tried Tive, but at $200 per tracker, it only makes sense for shipments over $10K. Most of our orders are $2-5K."
 > — Amazon FBA seller, $800K annual GMV
 
 **Quantified Pain (Sourced):**
@@ -55,7 +55,7 @@ Businesses shipping high-value goods face three critical challenges:
 
 **TIP** is a credit-card-thin smart tracking label that:
 
-- **Costs $20-25** (vs. $100-500 for competitors)
+- **Costs $20-25** (vs. $70-500 for competitors)
 - **Works everywhere** (180+ countries, including flights & ocean)
 - **Requires zero setup** (scan QR code, peel, stick, track)
 - **Lasts 60+ days** (covers most international shipments)
@@ -79,7 +79,7 @@ Businesses shipping high-value goods face three critical challenges:
 | Feature | Benefit |
 |---------|---------|
 | **Ultra-thin design** (3.5mm) | Fits on any package without bulk |
-| **Global eSIM** (Onomondo) | Works in 180+ countries automatically |
+| **Global softSIM** (Onomondo) | Works in 180+ countries automatically |
 | **Offline storage** | Captures location even without signal, syncs later |
 | **Shareable links** | Consignee tracks without account |
 | **Delivery confirmation** | Automatic geofence detection |
@@ -90,7 +90,7 @@ Businesses shipping high-value goods face three critical challenges:
 | Layer | Technology | Notes |
 |-------|------------|-------|
 | **Hardware** | Custom PCB, LTE Cat-1 modem, GNSS | Designed for manufacturing scale |
-| **Connectivity** | Onomondo eSIM | Single SIM, global coverage |
+| **Connectivity** | Onomondo softSIM | Single SIM, global coverage |
 | **Platform** | Next.js, PostgreSQL, Clerk, Stripe | Modern, scalable architecture |
 | **Hosting** | Vercel / GCP | Auto-scaling, 99.9% uptime |
 
@@ -104,8 +104,8 @@ Businesses shipping high-value goods face three critical challenges:
 |---------|------|-------------|--------|
 | **TAM** | $18B | Global real-time location systems for logistics | MarketsandMarkets 2024 |
 | **SAM** | $1.8B | SMB + mid-market segment (est. 10% of TAM) | Company estimate |
-| **SOM (Year 1)** | $125K | 5,500 labels × $22.73 ASP | Bottom-up from sales targets |
-| **SOM (Year 3)** | $2.55M | 100,000 labels × $25.54 ASP | Bottom-up projection |
+| **SOM (Year 1)** | $440K | 20,000 labels × $22 ASP | Bottom-up from sales targets |
+| **SOM (Year 3)** | $5.16M | 200,000 labels × $25.50 ASP | Bottom-up projection |
 
 **SAM Calculation:**
 - TAM ($18B) × SMB share (10%) = $1.8B
@@ -118,7 +118,7 @@ Businesses shipping high-value goods face three critical challenges:
 
 | Trend | Data Point | Source |
 |-------|------------|--------|
-| eSIM cost reduction | 60-70% cost decline since 2020 | GSMA eSIM Report 2024 |
+| softSIM cost reduction | 60-70% cost decline since 2020 | GSMA softSIM Report 2024 |
 | LTE Cat-1 coverage | 180+ countries with coverage | Onomondo coverage map |
 | Supply chain visibility priority | 47% of leaders cite as top investment | Gartner Supply Chain Survey 2023 |
 | Cross-border e-commerce growth | 14.5% YoY growth | Statista 2024 |
@@ -131,7 +131,7 @@ Businesses shipping high-value goods face three critical challenges:
 | IoT in logistics | 13.2% | Grand View Research 2024 |
 | Disposable trackers | 20-25% (est.) | Emerging segment, limited data |
 
-*Note: Disposable tracker segment is nascent; growth rate estimated based on Reelables growth and eSIM adoption curves.*
+*Note: Disposable tracker segment is nascent; growth rate estimated based on Reelables growth and softSIM adoption curves.*
 
 ### 3.3 Target Customers
 
@@ -143,6 +143,12 @@ Businesses shipping high-value goods face three critical challenges:
 | **E-commerce brands** | 100K+ | High | 50-500/month |
 | **Art & antiques dealers** | 50K+ | Very High | 5-20/month |
 | **Electronics traders** | 200K+ | High | 20-200/month |
+| **High value goods** | Large | Very High | 10-100/month |
+| **Manufacturing** | Large | High | 50-500/month |
+| **Supply chain / logistics** | Large | High | 100-1,000/month |
+| **Pharma** | 50K+ | Very High | 50-500/month |
+| **Time-sensitive goods** | Large | Very High | 20-200/month |
+| **Defence** | Niche | Very High | Custom volumes |
 
 **Secondary (Year 2+):**
 
@@ -178,7 +184,7 @@ Businesses shipping high-value goods face three critical challenges:
 | **Sensitech** | Reusable | $300+ | Pharma/cold chain | Niche, very expensive |
 | **SODAQ** | Smart label | €50-100 | Mid-market | Higher price, reusable model |
 | **Sensos** | Smart label | €30-80 | Mid-market | Similar but higher price |
-| **Reelables** | Disposable | $15-25 | SMB | Direct competitor |
+| **Reelables** | Disposable | $20-30 | SMB | Direct competitor |
 
 ### 4.2 Competitive Positioning
 
@@ -195,11 +201,11 @@ Businesses shipping high-value goods face three critical challenges:
     ENTERPRISE          │           CONSUMER
     (Complex)           │           (Simple)
                         │
-     SODAQ ●            │        
+     SODAQ ●            │
        €75              │        ★ TIP
                         │            $22
      Sensos ●           │        ● Reelables
-       €50              │            $20
+       €50              │            $25
                         │
                     LOW PRICE
 ```
@@ -210,7 +216,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 
 | Dimension | Reelables | TIP | Advantage |
 |-----------|-----------|------------|-----------|
-| **Price** | $15-25 | $20-25 | Reelables (slightly cheaper) |
+| **Price** | $20-30 | $20-25 | TIP (slightly cheaper) |
 | **Battery** | 30-45 days | 60+ days | **TIP** |
 | **Coverage** | ~100 countries | 180+ countries | **TIP** |
 | **Form factor** | Thin | 3.5mm thin | Comparable |
@@ -235,7 +241,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 | **Hardware design** | 3.5mm, 60+ day battery | Medium | Patent application filed Jan 2026 |
 | **Manufacturing relationships** | CEO with 10+ year Shenzhen supplier ties | High | Takes 3-5 years to replicate |
 | **China export network** | Direct access to shipper ecosystem | High | Trust-based, hard to replicate |
-| **Unit economics** | $7.80 COGS at 100K scale | Medium | Achievable by any funded competitor |
+| **Unit economics** | $9.50 COGS at 200K scale | Medium | Achievable by any funded competitor |
 | **First-mover in niche** | China→EU/US disposable tracking | Low | 12-18 month window |
 
 **What's NOT a Moat:**
@@ -251,15 +257,15 @@ Reelables is our most direct competitor. Here's our honest assessment:
 
 ### 5.1 Phase 1: Founder-Led Sales (Months 1-6)
 
-**Target:** 150 customers, 5,500 labels, $125K revenue
+**Target:** 500+ customers, 20,000 labels, $440K revenue
 
 | Channel | Tactic | Expected Customers |
 |---------|--------|-------------------|
-| **Founder network** | Direct outreach to Andrii's contacts | 30-40 |
-| **Amazon seller communities** | Reddit, Facebook groups, forums | 40-50 |
-| **LinkedIn outreach** | Targeted messaging to e-commerce sellers | 30-40 |
-| **Content marketing** | SEO blog posts, YouTube demos | 20-30 |
-| **Referrals** | Customer word-of-mouth | 10-20 |
+| **Founder network** | Direct outreach to Andrii's contacts | 80-100 |
+| **Amazon seller communities** | Reddit, Facebook groups, forums | 100-130 |
+| **LinkedIn outreach** | Targeted messaging to e-commerce sellers | 80-100 |
+| **Content marketing** | SEO blog posts, YouTube demos | 60-80 |
+| **Referrals** | Customer word-of-mouth | 40-60 |
 
 **Key Messages:**
 - "Track your $5K shipment for $22, not $200"
@@ -274,6 +280,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 | **Trade shows** | $15K | Relationship-building |
 | **Partnerships** | BD effort | Revenue share |
 | **API integrations** | Engineering | Enterprise deals |
+| **Cargo platform / freight forwarder SaaS integration** | Engineering + BD | Recurring enterprise revenue |
 
 ### 5.3 Pricing Strategy
 
@@ -325,9 +332,9 @@ Awareness → Interest → Trial → Adoption → Expansion
 | Phase | Volume | Lead Time | Cost/Unit |
 |-------|--------|-----------|-----------|
 | **Pilot** | 1,000 | 90 days | $8.00 |
-| **Year 1** | 8,000 | 60 days | $7.00 |
-| **Year 2** | 40,000 | 45 days | $5.50 |
-| **Year 3** | 120,000 | 30 days | $4.50 |
+| **Year 1** | 8,000 | 60 days | $10.00 |
+| **Year 2** | 40,000 | 45 days | $9.00 |
+| **Year 3** | 120,000 | 30 days | $8.70 |
 
 **Quality Control:**
 - 100% functional testing before shipment
@@ -336,8 +343,10 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 ### 6.3 Fulfillment
 
-| Market | Fulfillment | Ship Time | Cost |
-|--------|-------------|-----------|------|
+Shipping is charged separately to the customer and is not included in COGS.
+
+| Market | Fulfillment | Ship Time | Cost (charged separately) |
+|--------|-------------|-----------|---------------------------|
 | **UK/EU** | UK warehouse | 2-5 days | $2.00 |
 | **US** | Direct from UK (initially) | 5-10 days | $4.00 |
 | **China** | Direct ship | 7-14 days | $3.00 |
@@ -358,27 +367,38 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 ### 7.1 Revenue Projections
 
-| Year | Labels Sold | Revenue | Gross Margin |
-|------|-------------|---------|--------------|
-| **2026** | 5,500 | $125K | 47% |
-| **2027** | 30,000 | $750K | 62% |
-| **2028** | 100,000 | $2.55M | 69% |
+| Year | Labels Sold | ASP | Revenue | Customers | Gross Margin | Net Income |
+|------|-------------|-----|---------|-----------|--------------|------------|
+| **2026** | 20,000 | $22 | $440K | 500+ | 50% | $(40K) |
+| **2027** | 50,000 | $25 | $1.26M | 2,000 | 61% | $270K |
+| **2028** | 200,000 | $25.50 | $5.16M | 8,000 | 63% | $2.0M |
 
-### 7.2 Path to Profitability
+### 7.2 COGS Breakdown (Per Label)
+
+| Component | Year 1 | Year 2 | Year 3 |
+|-----------|--------|--------|--------|
+| **Hardware** | $10.00 | $9.00 | $8.70 |
+| **softSIM** | $0.50 | $0.50 | $0.50 |
+| **Assembly & QC** | $0.50 | $0.40 | $0.30 |
+| **COGS / label** | **$11.00** | **$9.90** | **$9.50** |
+
+*Note: Shipping is charged separately to the customer and is not included in COGS.*
+
+### 7.3 Path to Profitability
 
 | Milestone | Timeline | Revenue | Status |
 |-----------|----------|---------|--------|
 | First sale | Q1 2026 | - | ✅ Ready |
 | Break-even (monthly) | Q4 2026 | $14K/mo | 🎯 Target |
 | Cash flow positive | Q3 2027 | $60K/mo | 🎯 Target |
-| Profitable (annual) | 2028 | $2.55M | 🎯 Target |
+| Profitable (annual) | 2028 | $5.16M | 🎯 Target |
 
-### 7.3 Funding Requirements
+### 7.4 Funding Requirements
 
 | Round | Amount | Use | Milestone |
 |-------|--------|-----|-----------|
-| **Seed** | $250K | Manufacturing, GTM | 5K labels, 150 customers |
-| **Series A** | $1-2M | Scale, team, product | 30K labels, $50K MRR |
+| **Seed** | $500K | Manufacturing, GTM | 20K labels, 500+ customers |
+| **Series A** | $1-2M | Scale, team, product | 50K labels, $100K MRR |
 
 ---
 
@@ -407,7 +427,14 @@ Awareness → Interest → Trial → Adoption → Expansion
 - Denys: Currently 50% (parallel commitment), transitioning to 100% upon funding close
 - Both founders have invested personal capital into prototype development
 
-### 8.2 Hiring Plan
+### 8.2 Core Team
+
+**Anatoliy Standerchuk — Lead Developer**
+- Full-stack engineer with deep experience in IoT platforms and real-time data systems
+- Responsible for platform architecture, API development, and device communication layer
+- Key contributor to TIP's production-ready software stack
+
+### 8.3 Hiring Plan
 
 | Role | Timeline | Salary Range | Focus |
 |------|----------|--------------|-------|
@@ -418,7 +445,7 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 *Salary ranges based on UK/EU remote talent market; may adjust for US hires.*
 
-### 8.3 Advisors
+### 8.4 Advisors
 
 | Advisor | Area | Relationship | Contribution |
 |---------|------|--------------|--------------|
@@ -429,7 +456,7 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 *Advisor names available under NDA. Formal advisory agreements to be established post-seed close.*
 
-### 8.4 Team Gaps & Mitigation
+### 8.5 Team Gaps & Mitigation
 
 | Gap | Risk | Mitigation |
 |-----|------|------------|
@@ -449,7 +476,7 @@ Awareness → Interest → Trial → Adoption → Expansion
 | **Slow adoption** | Medium | High | Pilot programs, case studies, referral incentives |
 | **Competitor entry** | Medium | Medium | Speed to market, customer relationships, IP |
 | **Supply chain** | Low | High | Multiple suppliers, inventory buffer |
-| **Connectivity issues** | Low | Medium | Multi-carrier eSIM, offline storage |
+| **Connectivity issues** | Low | Medium | Multi-carrier softSIM, offline storage |
 
 ### 9.2 Regulatory Considerations
 
@@ -468,18 +495,18 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 | Quarter | Milestone | Success Metric |
 |---------|-----------|----------------|
-| **Q1 2026** | MVP launch | Platform live, first 10 customers |
-| **Q2 2026** | Traction | 50 customers, 2,000 labels sold |
-| **Q3 2026** | Growth | 100 customers, break-even monthly |
-| **Q4 2026** | Scale prep | 150 customers, Series A process |
+| **Q1 2026** | MVP launch | Platform live, first 50 customers |
+| **Q2 2026** | Traction | 150 customers, 8,000 labels sold |
+| **Q3 2026** | Growth | 300 customers, break-even monthly |
+| **Q4 2026** | Scale prep | 500+ customers, Series A process |
 
 ### 10.2 Key Performance Indicators
 
 | KPI | Q1 Target | Q4 Target |
 |-----|-----------|-----------|
-| Labels sold (cumulative) | 500 | 5,500 |
-| Active customers | 25 | 150 |
-| Monthly revenue | $5K | $15K |
+| Labels sold (cumulative) | 2,000 | 20,000 |
+| Active customers | 50 | 500+ |
+| Monthly revenue | $15K | $50K |
 | CAC | <$150 | <$100 |
 | NPS | 30+ | 40+ |
 | Platform uptime | 99.5% | 99.5% |
@@ -490,18 +517,20 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 ### 11.1 Funding Request
 
-**Raising:** $250,000 Seed Round
+**Raising:** $500,000 Seed Round
 
 **Terms:** Convertible note or SAFE, standard seed terms
+
+**Pre-money valuation:** $2.5-4M
 
 ### 11.2 Use of Funds
 
 | Category | Amount | % | Purpose |
 |----------|--------|---|---------|
-| **Manufacturing** | $100,000 | 40% | 8,000 labels (2 production batches) |
-| **Engineering** | $75,000 | 30% | Platform scale, mobile app |
-| **Sales & Marketing** | $50,000 | 20% | Customer acquisition |
-| **Operations** | $25,000 | 10% | Legal, insurance, admin |
+| **Sales & Marketing** | $200,000 | 40% | Customer acquisition, trade shows, content |
+| **Manufacturing** | $150,000 | 30% | 8,000+ labels (2 production batches) |
+| **Engineering** | $100,000 | 20% | Platform scale, mobile app |
+| **Operations** | $50,000 | 10% | Legal, insurance, admin |
 
 ### 11.3 Investor Value-Add
 
@@ -547,11 +576,29 @@ Key screens available:
 
 See [FINANCIAL-MODEL.md](FINANCIAL-MODEL.md) for complete 3-year projections including monthly targets, sensitivity analysis, and break-even analysis.
 
+### E. Marketing Budget
+
+| Category | Year 1 | Year 2 | Year 3 |
+|----------|--------|--------|--------|
+| **Total Marketing** | $100K | $120K | $200K |
+| Trade shows | $10K | $25K | $50K (25% of marketing) |
+| Digital ads | $40K | $50K | $70K |
+| Content & SEO | $30K | $25K | $40K |
+| Other | $20K | $20K | $40K |
+
+### F. Engineering Headcount
+
+| Year | FTEs | Focus |
+|------|------|-------|
+| **Year 1** | 1 FTE | Platform MVP, device integration |
+| **Year 2** | 2 FTE | Mobile app, API, enterprise features |
+| **Year 3** | 3-4 FTE | Scale, analytics, integrations |
+
 ---
 
 **Contact:**
 
-Andrii Tkachuk — andrii@tip.live  
+Andrii Tkachuk — av@tip.live
 Denys Chumak — denys@tip.live
 
 **Website:** tip.live

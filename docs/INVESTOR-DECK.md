@@ -12,22 +12,32 @@
 
 **$20 Smart Tracking Labels for the $18B Cargo Visibility Market**
 
-*Seed Round: $250K*
+*Seed Round: $500K*
 
 ---
 
 ## Slide 2: The Problem
 
-### $15B Lost Annually to Cargo Blind Spots
+### Three Critical Problems in Cargo Visibility
 
-**The Pain:**
-- 68% of SMB shippers report limited or no visibility during international transit (Freightos SMB Survey 2024)
+**1. Consignee Problem: "Where is my cargo?"**
+- Buyers and receivers have zero visibility during international transit
 - Cargo goes "dark" during flights, ocean transit, and remote areas
-- Current solutions cost $100-500 per device
+- 68% of SMB shippers report limited or no visibility (Freightos SMB Survey 2024)
 
-**The Quote:**
-> "I ship $50K worth of electronics from China. My forwarder updates me every 3-4 days. If something goes wrong, I find out too late."
-> — Amazon FBA Seller
+**2. Shipper Problem: Communication Breakdown**
+- Freight forwarders provide updates every 3-4 days at best
+- No real-time status sharing between parties
+- When problems occur, stakeholders find out too late
+
+> "I ship $50K worth of electronics from China. My forwarder updates me every 3-4 days. If something goes wrong, I find out too late." — Amazon FBA Seller
+
+**3. Environmental Tracking: Carbon Footprint Gap**
+- No standardized way to track per-shipment carbon footprint
+- ESG reporting requirements increasing globally (CSRD, SEC climate rules)
+- Supply chain emissions represent 60%+ of total corporate emissions
+
+**Result:** $15B+ lost annually to cargo theft, delays, and misrouted shipments
 
 ---
 
@@ -37,7 +47,7 @@
 
 | Enterprise Trackers | TIP |
 |---------------------|-----|
-| $150-500 per device | $22 per label |
+| $70-500 per device | $22 per label |
 | Bulky, reusable | 3.5mm thin, disposable |
 | Complex IT setup | Scan, peel, stick |
 | Carrier-dependent | 180+ countries |
@@ -71,11 +81,11 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 |--------|-------|--------|
 | **TAM** | $18B | MarketsandMarkets 2024 |
 | **SAM** | $1.8B | SMB segment (10% of TAM) |
-| **SOM Year 1** | $125K | 5,500 labels sold |
-| **SOM Year 3** | $2.55M | 100,000 labels |
+| **SOM Year 1** | $440K | 20,000 labels sold |
+| **SOM Year 3** | $5.1M | 200,000 labels |
 
 **Why Now:**
-- eSIM costs down 60-70% since 2020 (GSMA)
+- softSIM costs down 60-70% since 2020 (GSMA)
 - LTE Cat-1 coverage: 180+ countries
 - 47% of supply chain leaders prioritize visibility (Gartner 2023)
 
@@ -87,19 +97,19 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 | Metric | Year 1 | Year 3 |
 |--------|--------|--------|
-| ASP | $22.73 | $25.54 |
-| COGS/label | $12.00 | $7.80 |
-| **Gross Margin** | **47%** | **69%** |
+| ASP | $22.00 | $25.50 |
+| COGS/label | $11.00 | $9.50 |
+| **Gross Margin** | **50%** | **63%** |
 
 **Margin improvement drivers:**
-- Manufacturing volume: 5.5K → 100K labels
-- eSIM tiered pricing
-- Shipping negotiation
+- Manufacturing volume: 20K → 200K labels
+- softSIM flat-rate pricing
+- Shipping charged separately
 
 **Unit Economics (Year 3):**
-- CAC: $88
+- CAC: $33
 - LTV: $350 (single-order) / $750+ (with repeat purchases*)
-- LTV:CAC: **4.0x** (single-order) / **8.5x** (with repeat*)
+- LTV:CAC: **10.6x** (single-order) / **22.7x** (with repeat*)
 
 *\*Conservative repeat assumption: 1.5 orders/customer/year, 2-year lifespan*
 
@@ -113,10 +123,10 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 |-----------|--------|
 | ✅ Working hardware | Production-ready prototype |
 | ✅ Platform MVP | Live at tip.live |
-| ✅ Global connectivity | Onomondo eSIM (180+ countries) |
+| ✅ Global connectivity | Onomondo softSIM (180+ countries) |
 | ✅ Payments | Stripe integrated |
 | 🔄 First pilots | Feb-Mar 2026 |
-| 🎯 50 labels sold | Q2 2026 |
+| 🎯 First 500 labels sold | Q2 2026 |
 
 ---
 
@@ -139,11 +149,11 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
      Sensos ●           │        ★ TIP
        €50              │            $22
                         │        ● Reelables
-                        │            $20
+                        │            $25
                     LOW PRICE
 ```
 
-**Direct Competitor: Reelables** — same price, but:
+**Direct Competitor: Reelables** — similar price, but:
 - We have 180+ country coverage vs ~100
 - We have 60-day battery vs 30-45 days
 - We focus on China→EU/US (different market)
@@ -165,6 +175,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 **Phase 2 (Months 7-18):**
 - Paid acquisition (Google, LinkedIn)
 - Freight forwarder partnerships
+- Cargo platform / freight forwarder SaaS integration
 - API integrations
 - Trade shows
 
@@ -172,25 +183,25 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 - **Google Ads** — captures high-intent buyers searching "cargo tracker", "shipment tracking label" (bottom-of-funnel, measurable CAC)
 - **LinkedIn** — targets B2B decision makers (importers, supply chain managers) who match our ICP directly
 
-**Target:** 150 customers, $125K revenue in Year 1
+**Target:** 500+ customers, $440K revenue in Year 1
 
 ---
 
 ## Slide 10: Financial Projections
 
-### Path to $2.55M Revenue
+### Path to $5.1M Revenue
 
 | Metric | Year 1 | Year 2 | Year 3 |
 |--------|--------|--------|--------|
-| **Revenue** | $125K | $756K | $2.55M |
-| **Labels Sold** | 5,500 | 30,000 | 100,000 |
-| **Customers** | 150 | 800 | 2,500 |
-| **Gross Margin** | 47% | 62% | 69% |
-| **Net Income** | $(113K) | $65K | $830K |
+| **Revenue** | $440K | $1.26M | $5.16M |
+| **Labels Sold** | 20,000 | 50,000 | 200,000 |
+| **Customers** | 500+ | 2,000 | 8,000 |
+| **Gross Margin** | 50% | 61% | 63% |
+| **Net Income** | $(40K) | $270K | $2.0M |
 
-**Y1→Y2 growth drivers:** 4x paid acquisition budget ($60K vs $15K), repeat orders from Y1 base (40% retention), first case studies accelerating sales cycles
+**Y1→Y2 growth drivers:** Scaled paid acquisition ($120K vs $100K), repeat orders from Y1 base (40% retention), first case studies accelerating sales cycles
 
-**Break-even:** Q4 2026 (monthly), 2027 (annual)
+**Break-even:** Q2 2026 (monthly), 2026 (annual)
 
 ---
 
@@ -210,6 +221,10 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 - Built TIP platform end-to-end (Next.js, PostgreSQL) — MVP live and production-ready
 - MBA candidate; leads business development and investor relations
 
+**Anatoliy Standerchuk — Lead Developer**
+- Full-stack development and platform engineering
+- Core contributor to TIP platform
+
 **Why This Team:**
 - Hardware + software in-house (no outsourcing risk)
 - CEO with 12 years on the ground in Shenzhen manufacturing
@@ -219,21 +234,21 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 ## Slide 12: The Ask
 
-### $250K Seed Round
+### $500K Seed Round
 
 **Use of Funds:**
 
 | Category | Amount | % |
 |----------|--------|---|
-| Manufacturing | $100K | 40% |
-| Engineering | $75K | 30% |
-| Sales & Marketing | $50K | 20% |
-| Operations | $25K | 10% |
+| Sales & Marketing | $200K | 40% |
+| Manufacturing | $150K | 30% |
+| Engineering | $100K | 20% |
+| Operations | $50K | 10% |
 
 **Milestones:**
-- 5,500 labels sold
-- 150 paying customers
-- $125K revenue
+- 20,000 labels sold
+- 500+ paying customers
+- $440K revenue
 - Series A ready in 12-18 months
 
 ---
@@ -244,14 +259,14 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 1. **Hardware ready** — No R&D risk, ready to manufacture
 2. **Platform live** — Customers can order today
-3. **Market timing** — eSIM costs down, LTE coverage up
+3. **Market timing** — softSIM costs down, LTE coverage up
 4. **First-mover** — No dominant player in disposable tracking
-5. **Scalable model** — 70%+ gross margin at scale
+5. **Scalable model** — 63%+ gross margin at scale
 
 **Risk Mitigation:**
 - Working prototype (de-risked hardware)
 - Founder network for first customers
-- Low burn, 12+ months runway
+- Low burn, 18+ months runway
 
 ---
 
@@ -261,11 +276,11 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 **Year 1:** Disposable smart tracking labels for SMB shippers
 
-**Year 2:** Premium subscriptions, enterprise API
+**Year 2:** Premium subscriptions, enterprise API, AI-powered alerts
 
-**Year 3:** Predictive alerts, delay/deviation detection
+**Year 3:** Predictive analytics, delay/deviation detection, niche vertical products (pharma cold-chain, defence, high-value goods)
 
-**Year 5:** Standard tracking solution for global logistics
+**Year 5:** Standard AI-driven tracking solution for global logistics
 
 > "Every package should be as trackable as a rideshare"
 
@@ -275,10 +290,10 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 ### Contact
 
-**Andrii Tkachuk** — andrii@tip.live  
+**Andrii Tkachuk** — av@tip.live
 **Denys Chumak** — denys@tip.live
 
-**Website:** tip.live  
+**Website:** tip.live
 **Demo:** Available upon request
 
 ---
@@ -293,7 +308,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 |------|-------|
 | Dimensions | 10×15cm × 3.5mm |
 | Battery | 60+ days |
-| Connectivity | LTE Cat-1 (global eSIM) |
+| Connectivity | LTE Cat-1 (global softSIM) |
 | Location | GPS/GNSS (~15m) + cell tower fallback |
 | Update frequency | Configurable (30min-2hr) |
 | Offline storage | Stores data locally, syncs when connected |
@@ -305,7 +320,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 | Layer | Technology |
 |-------|------------|
 | **Hardware** | Custom PCB, LTE Cat-1 modem, GNSS |
-| **Connectivity** | Onomondo eSIM |
+| **Connectivity** | Onomondo softSIM |
 | **Backend** | Next.js, PostgreSQL, Prisma |
 | **Auth** | Clerk |
 | **Payments** | Stripe |
@@ -317,14 +332,15 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 | Component | Year 1 | Year 3 |
 |-----------|--------|--------|
-| Hardware | $7.00 | $4.50 |
-| eSIM | $2.00 | $1.50 |
-| Shipping | $2.50 | $1.50 |
+| Hardware | $10.00 | $8.70 |
+| softSIM | $0.50 | $0.50 |
 | Packaging | $0.50 | $0.30 |
-| **COGS** | **$12.00** | **$7.80** |
-| ASP | $22.73 | $25.00 |
-| **Gross Profit** | **$10.73** | **$17.20** |
-| **Margin** | **47%** | **69%** |
+| **COGS** | **$11.00** | **$9.50** |
+| ASP | $22.00 | $25.50 |
+| **Gross Profit** | **$11.00** | **$16.00** |
+| **Margin** | **50%** | **63%** |
+
+*Shipping charged separately to the customer.*
 
 ---
 
@@ -332,7 +348,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 | Feature | TIP | Tive | Roambee | Reelables |
 |---------|------------|------|---------|-----------|
-| Price | $20-25 | $150+ | $200+ | $15-25 |
+| Price | $20-25 | $150+ | $200+ | $20-30 |
 | Form factor | 3.5mm | Bulky | Bulky | Thin |
 | Battery | 60+ days | 30-90 | 90+ | 30-45 |
 | Coverage | 180+ countries | 150+ | 150+ | ~100 |
@@ -347,7 +363,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 | Factor | Reelables | TIP | Winner |
 |--------|-----------|------------|--------|
-| Price | $15-25 | $20-25 | Tie (comparable) |
+| Price | $20-30 | $20-25 | **TIP** (slightly cheaper) |
 | Battery | 30-45 days | 60+ days | **TIP** |
 | Coverage | ~100 countries | 180+ countries | **TIP** |
 | Focus | US domestic | China→EU/US international | **Different markets** |
@@ -372,6 +388,12 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 | Art/antiques | Very High | 5-20 | $30-50 |
 | Electronics traders | High | 20-200 | $20-30 |
 | Freight forwarders | Medium | 100-1000 | $15-20 |
+| High value goods | Very High | 10-50 | $30-50 |
+| Manufacturing | High | 50-200 | $20-30 |
+| Supply chain/logistics | High | 100-500 | $20-25 |
+| Pharma | Very High | 20-100 | $35-50 |
+| Time-sensitive goods | High | 20-100 | $25-35 |
+| Defence | Very High | 10-50 | $40-60 |
 
 ---
 
@@ -392,22 +414,22 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 ```
 Q1 2026: MVP Launch
 ├── Platform live
-├── First 10 customers
+├── First 50 customers
 └── Seed round close
 
 Q2 2026: Traction
-├── 50 customers
-├── 2,000 labels sold
+├── 200 customers
+├── 5,000 labels sold
 └── First case studies
 
 Q3 2026: Growth
-├── 100 customers
+├── 350 customers
 ├── Break-even monthly
 └── Partnership pilots
 
 Q4 2026: Scale
-├── 150 customers
-├── $15K MRR
+├── 500+ customers
+├── $37K MRR
 └── Series A prep
 ```
 
