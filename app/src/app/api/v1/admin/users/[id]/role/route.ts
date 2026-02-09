@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
+import { sendRoleChangedNotification } from '@/lib/notifications'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -49,6 +50,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       where: { id },
       data: { role: validated.data.role },
     })
+
+    // Send email notification to the affected user (fire and forget)
+    const adminName = [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || 'An admin'
+    sendRoleChangedNotification({
+      userId: updated.id,
+      newRole: validated.data.role,
+      changedByName: adminName,
+    }).catch((err) => console.error('Failed to send role change notification:', err))
 
     return NextResponse.json({ user: { id: updated.id, role: updated.role } })
   } catch (error) {

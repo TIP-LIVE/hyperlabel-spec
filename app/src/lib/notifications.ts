@@ -8,6 +8,7 @@ import ShipmentDeliveredEmail from '@/emails/shipment-delivered'
 import OrderShippedEmail from '@/emails/order-shipped'
 import OrderConfirmedEmail from '@/emails/order-confirmed'
 import LowInventoryEmail from '@/emails/low-inventory'
+import RoleChangedEmail from '@/emails/role-changed'
 import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
@@ -656,5 +657,49 @@ export async function sendLowInventoryAlert(params: {
     to: adminEmails,
     subject: `🚨 Low Inventory: ${shortfall} label${shortfall !== 1 ? 's' : ''} short — order ${params.orderId.slice(-8).toUpperCase()} needs attention`,
     html,
+  })
+}
+
+/**
+ * Send role changed notification to user.
+ * Triggered when an admin promotes or demotes a user.
+ */
+export async function sendRoleChangedNotification(params: {
+  userId: string
+  newRole: 'admin' | 'user'
+  changedByName: string
+}): Promise<void> {
+  const user = await db.user.findUnique({
+    where: { id: params.userId },
+    select: { email: true, firstName: true },
+  })
+
+  if (!user?.email) return
+
+  const userName = user.firstName || 'there'
+  const dashboardUrl = `${APP_URL}/dashboard`
+
+  const html = await render(
+    RoleChangedEmail({
+      userName,
+      newRole: params.newRole,
+      changedByName: params.changedByName,
+      dashboardUrl,
+    })
+  )
+
+  const isPromotion = params.newRole === 'admin'
+
+  await sendEmail({
+    to: user.email,
+    subject: isPromotion
+      ? '🛡️ You now have admin access to TIP'
+      : 'Your TIP admin access has been removed',
+    html,
+  })
+
+  await recordNotification(params.userId, 'role_changed', {
+    newRole: params.newRole,
+    changedBy: params.changedByName,
   })
 }
