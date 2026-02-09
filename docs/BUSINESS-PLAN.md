@@ -221,7 +221,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 1. **Geographic focus:** Reelables targets US domestic; we target China export corridor (different customer base)
 2. **Battery life:** 60+ days vs 30-45 covers longer international shipments
 3. **Coverage:** 180+ countries critical for international; Reelables ~100 countries
-4. **Founder advantage:** CEO lives in Shenzhen, direct access to shippers and manufacturers
+4. **Founder advantage:** CEO with 12 years in Shenzhen, direct access to shippers and suppliers
 
 **Competitive Response Plan:**
 - If Reelables enters China corridor: compete on battery life, coverage, local support
@@ -233,7 +233,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 | Advantage | Description | Defensibility | Timeline |
 |-----------|-------------|---------------|----------|
 | **Hardware design** | 3.5mm, 60+ day battery | Medium | Patent application filed Jan 2026 |
-| **Manufacturing relationships** | CEO in Shenzhen with 10+ year ties | High | Takes 3-5 years to replicate |
+| **Manufacturing relationships** | CEO with 10+ year Shenzhen supplier ties | High | Takes 3-5 years to replicate |
 | **China export network** | Direct access to shipper ecosystem | High | Trust-based, hard to replicate |
 | **Unit economics** | $7.80 COGS at 100K scale | Medium | Achievable by any funded competitor |
 | **First-mover in niche** | China→EU/US disposable tracking | Low | 12-18 month window |
@@ -279,10 +279,10 @@ Reelables is our most direct competitor. Here's our honest assessment:
 
 | Pack | Price | Target Customer |
 |------|-------|-----------------|
-| **1 label** | $25 | Trial / occasional |
-| **5-pack** | $110 ($22/ea) | Regular shipper |
-| **10-pack** | $200 ($20/ea) | Volume shipper |
-| **Enterprise** | Custom | 100+ labels/month |
+| **1 Label** | $25 | Trial / occasional |
+| **5 Labels** | $110 ($22/ea) | Regular shipper |
+| **10 Labels** | $200 ($20/ea) | Volume shipper |
+| **Enterprise** | Custom pricing | 100+ labels/month |
 
 **Why This Pricing:**
 - $25 single: Low barrier to trial
@@ -386,12 +386,12 @@ Awareness → Interest → Trial → Adoption → Expansion
 
 ### 8.1 Founders
 
-**Andrii Tkachuk — CEO & Hardware Lead** (Full-time, Shenzhen-based)
-- **Experience:** 12 years in electronics manufacturing and product development
+**Andrii Tkachuk — CEO & Hardware Lead** (Full-time, London-based)
+- **Experience:** 12 years in electronics manufacturing and product development in Shenzhen
 - **UTEC (Founded 2018):** Hardware development company, 8 employees, profitable since 2020
 - **Track Record:** Led development of 15+ IoT products from prototype to mass production
 - **TIP Role:** Hardware design, manufacturing relationships, operations
-- **Unique Value:** Lives in Shenzhen, 10+ year relationships with EMS vendors and component suppliers
+- **Unique Value:** 10+ year relationships with Shenzhen EMS vendors and component suppliers
 - **LinkedIn:** [linkedin.com/in/andrii-tkachuk]
 
 **Denys Chumak — Product & Platform** (Part-time → Full-time post-funding)

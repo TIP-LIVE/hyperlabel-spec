@@ -35,11 +35,11 @@
 
 ### A $20 Tracking Label That Just Works
 
-| Before | After |
-|--------|-------|
-| $200+ tracker | $22 label |
-| Bulky device | 3.5mm thin |
-| Complex setup | Scan, peel, stick |
+| Enterprise Trackers | TIP |
+|---------------------|-----|
+| $150-500 per device | $22 per label |
+| Bulky, reusable | 3.5mm thin, disposable |
+| Complex IT setup | Scan, peel, stick |
 | Carrier-dependent | 180+ countries |
 
 **How it works:**
@@ -168,6 +168,10 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 - API integrations
 - Trade shows
 
+**Why Google + LinkedIn:**
+- **Google Ads** — captures high-intent buyers searching "cargo tracker", "shipment tracking label" (bottom-of-funnel, measurable CAC)
+- **LinkedIn** — targets B2B decision makers (importers, supply chain managers) who match our ICP directly
+
 **Target:** 150 customers, $125K revenue in Year 1
 
 ---
@@ -194,11 +198,11 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 ### Hardware + Software Founders
 
-**Andrii Tkachuk — CEO & Hardware** (Full-time, Shenzhen)
-- 12 years electronics manufacturing in China
+**Andrii Tkachuk — CEO & Hardware** (Full-time, London)
+- 12 years electronics manufacturing experience in Shenzhen
 - Founded UTEC (2018): hardware dev company, 8 employees, profitable
 - 15+ IoT products shipped to production
-- **Key asset:** 10+ year supplier relationships, lives in Shenzhen
+- **Key asset:** 10+ year Shenzhen supplier relationships, direct manufacturing access
 
 **Denys Chumak — Product & Platform** (Part-time → Full-time upon seed close)
 - 6 years product management + engineering
@@ -208,7 +212,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 **Why This Team:**
 - Hardware + software in-house (no outsourcing risk)
-- CEO on the ground in manufacturing hub
+- CEO with 12 years on the ground in Shenzhen manufacturing
 - Proven ability to ship: prototype → platform in 8 months
 
 ---
@@ -352,7 +356,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 **Our Strategy:**
 1. **Don't compete head-on:** Focus on China export corridor (they focus US domestic)
 2. **Win on specs:** 60-day battery and 180+ coverage matter for international
-3. **Founder advantage:** CEO lives in Shenzhen, direct access to shippers
+3. **Founder advantage:** CEO has 12 years in Shenzhen, direct access to shippers and suppliers
 4. **If they enter our market:** Compete on support, relationships, and COGS efficiency
 
 **Bottom line:** We're not claiming to be better than Reelables everywhere. We're claiming to be better for *international shipments from China*.

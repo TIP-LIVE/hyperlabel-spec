@@ -31,10 +31,10 @@
 **Sales Mix (Year 3):**
 | Pack | Units | % of Sales | Revenue |
 |------|-------|------------|---------|
-| 1-label ($25) | 10,000 | 10% | $250,000 |
-| 5-pack ($110) | 30,000 | 30% | $660,000 |
-| 10-pack ($200) | 50,000 | 50% | $1,000,000 |
-| Enterprise (50+) | 10,000 | 10% | $180,000 |
+| 1 Label ($25) | 10,000 | 10% | $250,000 |
+| 5 Labels ($110) | 30,000 | 30% | $660,000 |
+| 10 Labels ($200) | 50,000 | 50% | $1,000,000 |
+| Enterprise (custom) | 10,000 | 10% | $180,000 |
 
 ### 1.2 Subscription Revenue (Year 2+)
 
@@ -287,7 +287,7 @@
 | Assumption | Year 1 | Year 2 | Year 3 | Rationale |
 |------------|--------|--------|--------|-----------|
 | Labels sold | 5,500 | 30,000 | 100,000 | 5.5x Y1→Y2 (founder network), 3.3x Y2→Y3 (scaled channels) |
-| ASP | $22.73 | $25.00 | $25.54 | Mix shift toward 5-packs and enterprise |
+| ASP | $22.73 | $25.00 | $25.54 | Mix shift toward multi-label packs and enterprise |
 | Customer repeat rate | 40% | 55% | 65% | Based on B2B hardware repurchase benchmarks |
 | New customers | 150 | 650 | 1,700 | CAC efficiency improves with brand awareness |
 
