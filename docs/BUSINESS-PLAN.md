@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-**TIP** is a disposable GPS tracking label that provides real-time cargo visibility for $20-25 per shipment. Unlike traditional trackers costing $100-500, TIP is thin (3.5mm), works in 180+ countries, and requires no technical setup—just scan, peel, and stick.
+**TIP** is a disposable smart tracking label that provides real-time cargo visibility for $20-25 per shipment. Unlike traditional trackers costing $100-500, TIP is thin (3.5mm), works in 180+ countries, and requires no technical setup—just scan, peel, and stick.
 
 **Market Opportunity:** The global cargo tracking market is valued at $18B (MarketsandMarkets 2024), with a growing segment of small-to-medium businesses underserved by expensive enterprise solutions.
 
@@ -53,7 +53,7 @@ Businesses shipping high-value goods face three critical challenges:
 
 ### 2.1 Product Overview
 
-**TIP** is a credit-card-thin GPS tracking label that:
+**TIP** is a credit-card-thin smart tracking label that:
 
 - **Costs $20-25** (vs. $100-500 for competitors)
 - **Works everywhere** (180+ countries, including flights & ocean)
@@ -89,7 +89,7 @@ Businesses shipping high-value goods face three critical challenges:
 
 | Layer | Technology | Notes |
 |-------|------------|-------|
-| **Hardware** | Custom PCB, LTE-M modem, GPS | Designed for manufacturing scale |
+| **Hardware** | Custom PCB, LTE Cat-1 modem, GNSS | Designed for manufacturing scale |
 | **Connectivity** | Onomondo eSIM | Single SIM, global coverage |
 | **Platform** | Next.js, PostgreSQL, Clerk, Stripe | Modern, scalable architecture |
 | **Hosting** | Vercel / GCP | Auto-scaling, 99.9% uptime |
@@ -119,7 +119,7 @@ Businesses shipping high-value goods face three critical challenges:
 | Trend | Data Point | Source |
 |-------|------------|--------|
 | eSIM cost reduction | 60-70% cost decline since 2020 | GSMA eSIM Report 2024 |
-| LTE-M/NB-IoT coverage | 180+ countries with coverage | Onomondo coverage map |
+| LTE Cat-1 coverage | 180+ countries with coverage | Onomondo coverage map |
 | Supply chain visibility priority | 47% of leaders cite as top investment | Gartner Supply Chain Survey 2023 |
 | Cross-border e-commerce growth | 14.5% YoY growth | Statista 2024 |
 

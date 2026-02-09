@@ -1,6 +1,6 @@
 # TIP — Investor Teaser
 
-**GPS Tracking Labels for the $18B Cargo Visibility Market**
+**Smart Tracking Labels for the $18B Cargo Visibility Market**
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## Our Solution
 
-**TIP** is a disposable GPS tracking label that costs **$20-25**, works in **180+ countries**, and requires **zero technical setup**.
+**TIP** is a disposable smart tracking label that costs **$20-25**, works in **180+ countries**, and requires **zero technical setup**.
 
 | Feature | TIP | Traditional Trackers |
 |---------|------------|---------------------|

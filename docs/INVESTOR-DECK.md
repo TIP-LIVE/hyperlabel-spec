@@ -10,7 +10,7 @@
 
 ### Track Any Cargo, Anywhere
 
-**$20 GPS Labels for the $18B Cargo Visibility Market**
+**$20 Smart Tracking Labels for the $18B Cargo Visibility Market**
 
 *Seed Round: $250K*
 
@@ -33,7 +33,7 @@
 
 ## Slide 3: The Solution
 
-### A $20 GPS Label That Just Works
+### A $20 Tracking Label That Just Works
 
 | Before | After |
 |--------|-------|
@@ -76,7 +76,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 **Why Now:**
 - eSIM costs down 60-70% since 2020 (GSMA)
-- LTE-M coverage: 180+ countries
+- LTE Cat-1 coverage: 180+ countries
 - 47% of supply chain leaders prioritize visibility (Gartner 2023)
 
 ---
@@ -240,7 +240,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 1. **Hardware ready** — No R&D risk, ready to manufacture
 2. **Platform live** — Customers can order today
-3. **Market timing** — eSIM costs down, LTE-M coverage up
+3. **Market timing** — eSIM costs down, LTE coverage up
 4. **First-mover** — No dominant player in disposable tracking
 5. **Scalable model** — 70%+ gross margin at scale
 
@@ -255,7 +255,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 ### The Future of Cargo Visibility
 
-**Year 1:** Disposable GPS labels for SMB shippers
+**Year 1:** Disposable smart tracking labels for SMB shippers
 
 **Year 2:** Premium subscriptions, enterprise API
 
@@ -288,12 +288,11 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 | Spec | Value |
 |------|-------|
 | Dimensions | 10×15cm × 3.5mm |
-| Weight | 45g |
 | Battery | 60+ days |
-| Connectivity | LTE-M (global) |
-| GPS accuracy | <10m |
-| Update frequency | Configurable (15min-6hr) |
-| Offline storage | 1,000+ data points |
+| Connectivity | LTE Cat-1 (global eSIM) |
+| Location | GPS/GNSS (~15m) + cell tower fallback |
+| Update frequency | Configurable (30min-2hr) |
+| Offline storage | Stores data locally, syncs when connected |
 
 ---
 
@@ -301,7 +300,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 | Layer | Technology |
 |-------|------------|
-| **Hardware** | Custom PCB, Quectel modem, u-blox GPS |
+| **Hardware** | Custom PCB, LTE Cat-1 modem, GNSS |
 | **Connectivity** | Onomondo eSIM |
 | **Backend** | Next.js, PostgreSQL, Prisma |
 | **Auth** | Clerk |
