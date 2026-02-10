@@ -59,9 +59,10 @@ model User {
   notifyOrderShipped   Boolean @default(true) @map("notify_order_shipped")
 
   // Relations
-  orders        Order[]
-  shipments     Shipment[]
-  notifications Notification[]
+  orders         Order[]
+  shipments      Shipment[]
+  notifications  Notification[]
+  savedAddresses SavedAddress[]
 
   @@map("users")
 }
@@ -177,6 +178,32 @@ model Order {
 
   @@index([orgId])
   @@map("orders")
+}
+
+/// SavedAddress - user's saved shipping addresses for quick reuse
+model SavedAddress {
+  id         String   @id @default(cuid())
+  label      String   // Nickname: "Home", "Warehouse Berlin"
+  name       String   // Recipient full name
+  line1      String
+  line2      String?
+  city       String
+  state      String?
+  postalCode String   @map("postal_code")
+  country    String   @db.Char(2) // ISO 2-letter country code
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Organization scoping (from Clerk Organizations)
+  orgId String? @map("org_id")
+
+  // Relations
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, orgId])
+  @@map("saved_addresses")
 }
 
 /// Notification - email/push notifications sent

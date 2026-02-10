@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,9 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { SavedAddressSelector } from '@/components/checkout/saved-address-selector'
 import { toast } from 'sonner'
 import { Loader2, CreditCard, Check, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { countries } from '@/lib/constants/countries'
 
 const formSchema = z.object({
   packType: z.enum(['starter', 'team', 'volume']),
@@ -33,20 +36,6 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>
-
-const countries = [
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'US', name: 'United States' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'UA', name: 'Ukraine' },
-  { code: 'CN', name: 'China' },
-]
 
 const packs = [
   {
@@ -81,6 +70,8 @@ const packs = [
 
 export function BuyLabelsForm() {
   const [loading, setLoading] = useState(false)
+  const [saveAddress, setSaveAddress] = useState(false)
+  const [addressLabel, setAddressLabel] = useState('')
 
   const {
     register,
@@ -108,6 +99,19 @@ export function BuyLabelsForm() {
   const selectedCountry = watch('shippingAddress.country')
   const currentPack = packs.find((p) => p.key === selectedPack)!
 
+  const fillAddress = useCallback(
+    (addr: { name: string; line1: string; line2: string; city: string; state: string; postalCode: string; country: string }) => {
+      setValue('shippingAddress.name', addr.name)
+      setValue('shippingAddress.line1', addr.line1)
+      setValue('shippingAddress.line2', addr.line2)
+      setValue('shippingAddress.city', addr.city)
+      setValue('shippingAddress.state', addr.state)
+      setValue('shippingAddress.postalCode', addr.postalCode)
+      setValue('shippingAddress.country', addr.country)
+    },
+    [setValue]
+  )
+
   const onSubmit = async (data: FormData) => {
     setLoading(true)
 
@@ -121,6 +125,17 @@ export function BuyLabelsForm() {
       if (res.ok) {
         const { url } = await res.json()
         if (url) {
+          // Save address to address book (best-effort, don't block redirect)
+          if (saveAddress && addressLabel.trim()) {
+            fetch('/api/v1/addresses', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                label: addressLabel.trim(),
+                ...data.shippingAddress,
+              }),
+            }).catch(() => {})
+          }
           window.location.href = url
         } else {
           toast.error('Failed to create checkout session')
@@ -210,6 +225,9 @@ export function BuyLabelsForm() {
           </p>
         </div>
 
+        {/* Saved address selector */}
+        <SavedAddressSelector onSelect={fillAddress} onDefaultLoaded={fillAddress} />
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="name">Full Name</Label>
@@ -290,6 +308,28 @@ export function BuyLabelsForm() {
             </Select>
             {errors.shippingAddress?.country && (
               <p className="text-sm text-destructive">{errors.shippingAddress.country.message}</p>
+            )}
+          </div>
+
+          {/* Save this address toggle */}
+          <div className="space-y-2 sm:col-span-2">
+            <div className="flex items-center gap-3">
+              <Switch
+                id="saveAddress"
+                checked={saveAddress}
+                onCheckedChange={setSaveAddress}
+              />
+              <Label htmlFor="saveAddress" className="text-sm font-normal cursor-pointer">
+                Save this address for next time
+              </Label>
+            </div>
+            {saveAddress && (
+              <Input
+                placeholder='Give it a name, e.g. "Home", "Office"'
+                value={addressLabel}
+                onChange={(e) => setAddressLabel(e.target.value)}
+                className="mt-2"
+              />
             )}
           </div>
         </div>

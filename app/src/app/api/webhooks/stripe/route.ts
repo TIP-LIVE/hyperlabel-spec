@@ -170,4 +170,50 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     shippingName: shippingAddress.name,
     shippingAddress: addressParts.join(', '),
   }).catch((err) => console.error('Failed to send order confirmation:', err))
+
+  // Auto-save shipping address to address book (fire-and-forget)
+  if (shippingAddress.line1) {
+    autoSaveAddress(userId, orgId, shippingAddress).catch((err) =>
+      console.error('Failed to auto-save address:', err)
+    )
+  }
+}
+
+/**
+ * Auto-save shipping address to the user's address book if it doesn't already exist.
+ * Duplicate detection uses line1 + postalCode + country as a reasonable proxy.
+ */
+async function autoSaveAddress(
+  userId: string,
+  orgId: string | null,
+  address: { name: string; line1: string; line2: string; city: string; state: string; postalCode: string; country: string }
+) {
+  const existing = await db.savedAddress.findFirst({
+    where: {
+      userId,
+      orgId,
+      line1: address.line1,
+      postalCode: address.postalCode,
+      country: address.country,
+    },
+  })
+
+  if (existing) return
+
+  await db.savedAddress.create({
+    data: {
+      label: `${address.city || 'Shipping'} address`,
+      name: address.name,
+      line1: address.line1,
+      line2: address.line2 || null,
+      city: address.city,
+      state: address.state || null,
+      postalCode: address.postalCode,
+      country: address.country,
+      userId,
+      orgId,
+    },
+  })
+
+  console.log(`Auto-saved address for user ${userId}: ${address.line1}, ${address.city}`)
 }

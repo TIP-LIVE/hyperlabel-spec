@@ -26,6 +26,7 @@ const isDashboardRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/shipments(.*)',
   '/orders(.*)',
+  '/address-book(.*)',
   '/settings(.*)',
   '/buy(.*)',
 ])
