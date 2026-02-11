@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     template: '%s | TIP',
   },
   description:
-    'Door-to-door cargo tracking labels. Stick a label on your shipment and track it from pickup to delivery — in 180+ countries.',
-  keywords: ['cargo tracking', 'door-to-door tracking', 'shipment tracking', 'tracking labels', 'logistics'],
+    'Door-to-door cargo tracking labels. Reliable updates every 2 hours in 180+ countries. AI-powered route detection, delivery alerts. From $20 per label.',
+  keywords: ['cargo tracking', 'door-to-door tracking', 'shipment tracking', 'tracking labels', 'logistics', 'AI cargo tracking', 'smart tracking label'],
   authors: [{ name: 'TIP' }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'),
   openGraph: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     url: 'https://tip.live',
     siteName: 'TIP',
     title: 'TIP — Door-to-Door Cargo Tracking',
-    description: 'Door-to-door cargo tracking labels. Stick a label on your shipment and track it from pickup to delivery.',
+    description: 'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links.',
     images: [
       {
         url: '/og-image.png',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'TIP — Door-to-Door Cargo Tracking',
-    description: 'Door-to-door cargo tracking labels. Stick a label on your shipment and track it from pickup to delivery.',
+    description: 'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links.',
     images: ['/og-image.png'],
   },
   robots: {

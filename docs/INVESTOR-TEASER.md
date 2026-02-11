@@ -16,7 +16,7 @@
 
 ## Our Solution
 
-**TIP** is a disposable smart tracking label: **$20-30**, works in **180+ countries**, zero setup.
+**TIP** is a disposable smart tracking label: **$20-30**, works in **180+ countries**, AI-powered route intelligence, zero setup.
 
 | Feature | TIP | Enterprise Trackers |
 |---------|-----|---------------------|
@@ -24,6 +24,7 @@
 | **Form Factor** | 10×15cm, 3.5mm thin | Bulky devices |
 | **Setup** | Scan QR, peel, stick | Complex onboarding |
 | **Coverage** | 180+ countries, offline capable | Carrier-dependent |
+| **Intelligence** | AI route detection | Basic GPS tracking |
 | **Battery** | 60+ days | Varies |
 
 ---

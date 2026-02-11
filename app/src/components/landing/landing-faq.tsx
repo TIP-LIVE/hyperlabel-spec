@@ -16,12 +16,12 @@ const faqs = [
   {
     question: 'How does tracking work?',
     answer:
-      'Each label has built-in cellular connectivity (eSIM). After you activate it (scan QR, attach to cargo, enter destination), it determines its position via cell tower triangulation and reports location at a configurable interval. You view the position and route history in the TIP dashboard or via a shareable link.',
+      'Each label has built-in cellular connectivity (softSIM). After you activate it (scan QR, attach to cargo, enter destination), it determines its position via cell tower triangulation and reports location every 2 hours by default. Our system automatically detects whether your cargo is on a flight, ocean vessel, or road transport, showing the precise route on the map. You view the position and route history in the TIP dashboard or via a shareable link.',
   },
   {
     question: 'Which countries are supported?',
     answer:
-      'Tracking works in 180+ countries where our connectivity partner has coverage. Labels work on land, sea, and air shipments. Check coverage for your routes when you sign up.',
+      'Tracking works reliably in 180+ countries with stable cellular connectivity. Labels report every 2 hours by default and work on land, sea, and air shipments. Check coverage for your routes when you sign up.',
   },
   {
     question: 'How long does the battery last?',
@@ -47,6 +47,11 @@ const faqs = [
     question: 'Can I track multiple shipments at once?',
     answer:
       'Yes. Each label tracks one shipment, but your dashboard shows all active shipments on a single map. You can buy as many labels as you need and manage them all from one account.',
+  },
+  {
+    question: 'Does TIP use AI?',
+    answer:
+      'Yes. TIP detects transport modes — flights, ocean vessels, trucks — and reconstructs the precise route your cargo takes. You see not just GPS dots, but the actual journey. We\u2019re continuously adding more AI-powered intelligence, including predictive alerts and smarter route analysis.',
   },
   {
     question: 'Do you offer bulk or enterprise pricing?',

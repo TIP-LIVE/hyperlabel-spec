@@ -10,9 +10,10 @@ import {
   Radio,
   Battery,
   Globe,
-  HardDrive,
+  Brain,
+  Tag,
   Share2,
-  Bell,
+  Smartphone,
   Mail,
   ChevronRight,
   Cpu,
@@ -30,11 +31,11 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'TIP — Track Any Cargo, Anywhere',
   description:
-    'Door-to-door cargo tracking labels. Stick on your shipment, track from pickup to delivery. 60+ days battery, 180+ countries. No carrier API needed.',
+    'Door-to-door cargo tracking labels. Reliable updates every 2 hours in 180+ countries. AI-powered route detection, delivery alerts. From $20 per label.',
   openGraph: {
     title: 'TIP — Door-to-Door Cargo Tracking',
     description:
-      'Stick a tracking label on your cargo and follow it from origin to destination. Real-time location, delivery alerts, 180+ countries.',
+      'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links. From $20 per label.',
   },
 }
 
@@ -101,8 +102,8 @@ export default async function HomePage() {
             Door-to-Door Cargo Tracking
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Stick a tracking label on your shipment and follow it from pickup to delivery.
-            Real-time location, delivery alerts, shareable links — in 180+ countries.
+            Reliable tracking every 2 hours in 180+ countries. AI-powered route detection,
+            delivery alerts, shareable links — from $20 per label.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button size="lg" className="gap-2" asChild>
@@ -189,43 +190,43 @@ export default async function HomePage() {
         <div className="container mx-auto px-4">
           <h2 className="text-center text-3xl font-bold md:text-4xl">Why TIP?</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-            Built for reliability and ease of use.
+            Four reasons shippers choose TIP.
           </p>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Globe className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold">Reliable Global Coverage</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Stable connection every 2 hours in 180+ countries. Track on land, sea, and air — your cargo never goes dark.
+              </p>
+            </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <Battery className="h-6 w-6 text-primary" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">60+ Day Battery</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Long-lasting battery so your shipment stays visible for the whole journey.
+                Long-lasting battery covers even the longest international shipments. Offline storage syncs when back online.
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Globe className="h-6 w-6 text-primary" />
+                <Brain className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">180+ Countries</h3>
+              <h3 className="mt-4 text-lg font-semibold">AI Route Intelligence</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Cellular coverage in most countries—track on land, sea, and air.
+                Detects flights, ocean vessels, and road transport to reconstruct your cargo&apos;s precise route — with more AI-powered intelligence on the way.
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <HardDrive className="h-6 w-6 text-primary" />
+                <Tag className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Offline Storage</h3>
+              <h3 className="mt-4 text-lg font-semibold">One Price, No Surprises</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Labels store location data when out of coverage and sync when back online.
-              </p>
-            </div>
-            <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <MapPin className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="mt-4 text-lg font-semibold">Real-Time Tracking</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Live position on a map with configurable update frequency.
+                From $20 per label. No subscription, no hidden fees. Every label includes all features.
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
@@ -234,16 +235,16 @@ export default async function HomePage() {
               </div>
               <h3 className="mt-4 text-lg font-semibold">Shareable Links</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Send a public tracking link to your consignee—no account required to view.
+                Send a public tracking link to your consignee — no account required to view.
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Bell className="h-6 w-6 text-primary" />
+                <Smartphone className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Notifications</h3>
+              <h3 className="mt-4 text-lg font-semibold">Modern &amp; Simple</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Alerts for delivery, low battery, and optional stuck-in-transit detection.
+                Buy online, scan QR to activate, peel and stick. Track from any device — no app needed.
               </p>
             </div>
           </div>

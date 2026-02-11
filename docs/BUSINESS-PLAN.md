@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-**TIP** is a disposable smart tracking label that provides real-time cargo visibility for $20-25 per shipment. Unlike traditional trackers costing $70-500, TIP is thin (3.5mm), works in 180+ countries, and requires no technical setup—just scan, peel, and stick.
+**TIP** is a disposable smart tracking label that provides reliable cargo visibility every 2 hours for $20-25 per shipment. Unlike traditional trackers costing $70-500, TIP is thin (3.5mm), works in 180+ countries with AI-powered route intelligence, and requires no technical setup—just scan, peel, and stick.
 
 **Market Opportunity:** The global cargo tracking market is valued at $18B (MarketsandMarkets 2024), with a growing segment of small-to-medium businesses underserved by expensive enterprise solutions.
 
@@ -219,6 +219,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 | **Price** | $20-30 | $20-25 | TIP (slightly cheaper) |
 | **Battery** | 30-45 days | 60+ days | **TIP** |
 | **Coverage** | ~100 countries | 180+ countries | **TIP** |
+| **Intelligence** | None | AI route detection | **TIP** |
 | **Form factor** | Thin | 3.5mm thin | Comparable |
 | **Funding** | Seed stage | Seed stage | Comparable |
 | **Geography focus** | US domestic | China → EU/US exports | **TIP** (less overlap) |
@@ -227,7 +228,8 @@ Reelables is our most direct competitor. Here's our honest assessment:
 1. **Geographic focus:** Reelables targets US domestic; we target China export corridor (different customer base)
 2. **Battery life:** 60+ days vs 30-45 covers longer international shipments
 3. **Coverage:** 180+ countries critical for international; Reelables ~100 countries
-4. **Founder advantage:** CEO with 12 years in Shenzhen, direct access to shippers and suppliers
+4. **AI route intelligence:** Transport-mode detection and route reconstruction — Reelables offers basic GPS only
+5. **Founder advantage:** CEO with 12 years in Shenzhen, direct access to shippers and suppliers
 
 **Competitive Response Plan:**
 - If Reelables enters China corridor: compete on battery life, coverage, local support
@@ -242,6 +244,7 @@ Reelables is our most direct competitor. Here's our honest assessment:
 | **Manufacturing relationships** | CEO with 10+ year Shenzhen supplier ties | High | Takes 3-5 years to replicate |
 | **China export network** | Direct access to shipper ecosystem | High | Trust-based, hard to replicate |
 | **Unit economics** | $9.50 COGS at 200K scale | Medium | Achievable by any funded competitor |
+| **AI route intelligence** | Transport-mode detection, route reconstruction | Medium | Improving continuously |
 | **First-mover in niche** | China→EU/US disposable tracking | Low | 12-18 month window |
 
 **What's NOT a Moat:**

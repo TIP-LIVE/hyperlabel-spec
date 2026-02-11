@@ -51,6 +51,7 @@
 | Bulky, reusable | 3.5mm thin, disposable |
 | Complex IT setup | Scan, peel, stick |
 | Carrier-dependent | 180+ countries |
+| Basic GPS only | AI route intelligence |
 
 **How it works:**
 ```
@@ -158,7 +159,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 - We have 60-day battery vs 30-45 days
 - We focus on China→EU/US (different market)
 
-**Our Edge:** Best coverage + battery for international shipments
+**Our Edge:** Best coverage + battery + AI route intelligence for international shipments
 
 ---
 
@@ -274,9 +275,9 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 
 ### The Future of Cargo Visibility
 
-**Year 1:** Disposable smart tracking labels for SMB shippers
+**Year 1:** Disposable smart tracking labels with transport-mode detection and route intelligence for SMB shippers
 
-**Year 2:** Premium subscriptions, enterprise API, AI-powered alerts
+**Year 2:** Premium subscriptions, enterprise API, advanced AI-powered alerts
 
 **Year 3:** Predictive analytics, delay/deviation detection, niche vertical products (pharma cold-chain, defence, high-value goods)
 
@@ -352,6 +353,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 | Form factor | 3.5mm | Bulky | Bulky | Thin |
 | Battery | 60+ days | 30-90 | 90+ | 30-45 |
 | Coverage | 180+ countries | 150+ | 150+ | ~100 |
+| Intelligence | AI route detection | Basic | Basic | None |
 | Setup | QR scan | Enterprise | Enterprise | QR scan |
 | Target | SMB (international) | Enterprise | Enterprise | SMB (US domestic) |
 
@@ -366,6 +368,7 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 | Price | $20-30 | $20-25 | **TIP** (slightly cheaper) |
 | Battery | 30-45 days | 60+ days | **TIP** |
 | Coverage | ~100 countries | 180+ countries | **TIP** |
+| Intelligence | None | AI route detection | **TIP** |
 | Focus | US domestic | China→EU/US international | **Different markets** |
 | Funding | Seed stage | Seed stage | Tie |
 
