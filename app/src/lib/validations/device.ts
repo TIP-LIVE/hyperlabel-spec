@@ -21,7 +21,7 @@ export const deviceReportSchema = z.object({
   battery: z.number().min(0).max(100).optional(),
   
   // Timestamp when the device recorded the location
-  recordedAt: z.string().datetime().optional(),
+  recordedAt: z.string().datetime({ offset: true }).optional(),
   
   // Cell tower backup location (from Onomondo)
   cellLatitude: z.number().min(-90).max(90).optional(),
