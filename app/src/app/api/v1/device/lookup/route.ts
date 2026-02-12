@@ -7,8 +7,7 @@ import { rateLimit, RATE_LIMIT_DEVICE, getClientIp, rateLimitResponse } from '@/
  * GET /api/v1/device/lookup?iccid=8945730000000000000
  *
  * Resolves an IMEI or ICCID to a TIP deviceId.
- * Used by the GPS tracker backend (label.utec.ua / Cloud Run) to map
- * hardware identifiers to TIP's Label records.
+ * Used by the device backend to map hardware identifiers to Label records.
  *
  * Authentication: API key in header (X-API-Key) or query param (?key=)
  * Rate limit: 120 req/min per API key
