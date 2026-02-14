@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
 
 interface ShipmentsListProps {
   initialStatus?: string
@@ -40,7 +41,12 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
       }
 
       const data = await res.json()
-      setAllShipments(data.shipments || [])
+      // Extract latest location from locations array returned by API
+      const shipments = (data.shipments || []).map((s: ShipmentRow & { locations?: Array<{ id: string; latitude: number; longitude: number; recordedAt: string }> }) => ({
+        ...s,
+        latestLocation: s.locations?.[0] || null,
+      }))
+      setAllShipments(shipments)
     } catch (err) {
       console.error('Failed to fetch shipments:', err)
       setError(err instanceof Error ? err.message : 'Failed to load shipments')
@@ -52,6 +58,21 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
   useEffect(() => {
     fetchShipments()
   }, [])
+
+  // Prepare locations for reverse geocoding (one per shipment)
+  const locationsToGeocode = useMemo(
+    () =>
+      allShipments
+        .filter((s) => s.latestLocation)
+        .map((s) => ({
+          id: s.id, // use shipment ID as key
+          latitude: s.latestLocation!.latitude,
+          longitude: s.latestLocation!.longitude,
+        })),
+    [allShipments]
+  )
+
+  const locationNames = useReverseGeocode(locationsToGeocode, 20)
 
   // Status counts from full dataset
   const statusCounts = useMemo(() => {
@@ -69,6 +90,16 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
     if (statusFilter === 'all') return allShipments
     return allShipments.filter((s) => s.status === statusFilter)
   }, [allShipments, statusFilter])
+
+  // Enrich with geocoded location info
+  const enrichedShipments = useMemo(
+    () =>
+      filteredShipments.map((s) => ({
+        ...s,
+        locationInfo: locationNames[s.id] || undefined,
+      })),
+    [filteredShipments, locationNames]
+  )
 
   if (loading) {
     return (
@@ -119,7 +150,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
       </div>
       <DataTable
         columns={shipmentColumns}
-        data={filteredShipments}
+        data={enrichedShipments}
         searchKey="name"
         searchPlaceholder="Search shipments..."
       />

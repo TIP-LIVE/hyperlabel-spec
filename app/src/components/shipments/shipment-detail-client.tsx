@@ -11,6 +11,7 @@ import {
   Battery,
   Calendar,
   Clock,
+  MapPin,
   Package,
   Share2,
   Truck,
@@ -25,6 +26,8 @@ import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
+import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
+import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
 const POLL_INTERVAL_MS = 30_000 // 30 seconds for shipper (faster than consignee)
 
@@ -97,6 +100,17 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
   const StatusIcon = statusInfo.icon
   const latestLocation = shipment.locations[0]
   const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
+
+  // Reverse geocode the latest location for the hero banner
+  const latestLocArray = useMemo(
+    () =>
+      latestLocation
+        ? [{ id: 'latest', latitude: latestLocation.latitude, longitude: latestLocation.longitude }]
+        : [],
+    [latestLocation]
+  )
+  const geoNames = useReverseGeocode(latestLocArray, 1)
+  const currentGeo = geoNames['latest']
 
   // Journey progress
   const journeyInfo = useMemo(() => {
@@ -220,12 +234,6 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               Live
             </div>
           )}
-          {latestLocation && (
-            <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              Updated {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
-            </div>
-          )}
           {isPolling && (
             <button
               onClick={handleManualRefresh}
@@ -259,6 +267,33 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
       {pollError && (
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
           Having trouble connecting. Data will refresh automatically.
+        </div>
+      )}
+
+      {/* Current Location Hero Banner */}
+      {latestLocation && (
+        <div className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm">
+          {currentGeo?.countryCode ? (
+            <span className="text-4xl leading-none">{countryCodeToFlag(currentGeo.countryCode)}</span>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <MapPin className="h-5 w-5 text-primary" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xl font-semibold truncate">
+              {currentGeo?.name || `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`}
+            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Last updated {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+              </span>
+            </div>
+          </div>
+          <Badge variant="outline" className="hidden sm:flex text-xs font-mono shrink-0">
+            {latestLocation.latitude.toFixed(4)}, {latestLocation.longitude.toFixed(4)}
+          </Badge>
         </div>
       )}
 
@@ -307,37 +342,44 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         </Card>
       )}
 
+      {/* Live Map — full width, taller */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Live Location
+            {currentGeo?.countryCode && (
+              <span className="text-base font-normal text-muted-foreground">
+                {countryCodeToFlag(currentGeo.countryCode)} {currentGeo.country}
+              </span>
+            )}
+          </CardTitle>
+          <CardDescription>
+            {latestLocation
+              ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
+              : 'No location data yet'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ShipmentMap
+            locations={locationsWithDates.map((loc) => ({
+              id: loc.id,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              recordedAt: loc.recordedAt,
+              batteryPct: loc.batteryPct,
+              accuracyM: loc.accuracyM,
+            }))}
+            destinationLat={shipment.destinationLat}
+            destinationLng={shipment.destinationLng}
+            destinationAddress={shipment.destinationAddress}
+            height="450px"
+          />
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Live Map */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Location</CardTitle>
-              <CardDescription>
-                {latestLocation
-                  ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
-                  : 'No location data yet'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ShipmentMap
-                locations={locationsWithDates.map((loc) => ({
-                  id: loc.id,
-                  latitude: loc.latitude,
-                  longitude: loc.longitude,
-                  recordedAt: loc.recordedAt,
-                  batteryPct: loc.batteryPct,
-                  accuracyM: loc.accuracyM,
-                }))}
-                destinationLat={shipment.destinationLat}
-                destinationLng={shipment.destinationLng}
-                destinationAddress={shipment.destinationAddress}
-                height="350px"
-              />
-            </CardContent>
-          </Card>
-
           {/* Timeline */}
           <Card>
             <CardHeader>

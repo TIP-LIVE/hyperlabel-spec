@@ -1,7 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -63,9 +64,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  // Check ownership
-  if (user && order.userId !== user.id && user.role !== 'admin') {
-    notFound()
+  // Check access: org membership + ownership
+  const { orgId, orgRole } = await auth()
+  if (user && user.role !== 'admin') {
+    // Must be in the same org
+    if (order.orgId && order.orgId !== orgId) {
+      notFound()
+    }
+    // org:member can only see own records
+    if (!canViewAllOrgData(orgRole || 'org:member') && order.userId !== user.id) {
+      notFound()
+    }
   }
 
   const status = statusConfig[order.status]

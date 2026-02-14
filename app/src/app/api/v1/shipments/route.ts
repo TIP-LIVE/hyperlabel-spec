@@ -34,6 +34,16 @@ export async function GET(req: NextRequest) {
               status: true,
             },
           },
+          locations: {
+            orderBy: { recordedAt: 'desc' },
+            take: 1,
+            select: {
+              id: true,
+              latitude: true,
+              longitude: true,
+              recordedAt: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,

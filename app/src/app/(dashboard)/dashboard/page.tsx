@@ -7,7 +7,8 @@ import { StatCard } from '@/components/ui/stat-card'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle } from 'lucide-react'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { formatDistanceToNow } from 'date-fns'
 import type { Metadata } from 'next'
 
@@ -22,7 +23,29 @@ const statusConfig = shipmentStatusConfig
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
-  const userId = user?.id
+  const { orgId, orgRole } = await auth()
+
+  // Build org-scoped query for shipments
+  const where: Record<string, unknown> = {}
+  if (orgId) {
+    where.orgId = orgId
+    if (!canViewAllOrgData(orgRole || 'org:member')) {
+      where.userId = user?.id
+    }
+  } else if (user) {
+    where.userId = user.id
+  }
+
+  // Build org-scoped order filter for label queries
+  const orderFilter: Record<string, unknown> = {}
+  if (orgId) {
+    orderFilter.orgId = orgId
+    if (!canViewAllOrgData(orgRole || 'org:member')) {
+      orderFilter.userId = user?.id
+    }
+  } else if (user) {
+    orderFilter.userId = user.id
+  }
 
   // Get current month start for "delivered this month"
   const now = new Date()
@@ -34,17 +57,17 @@ export default async function DashboardPage() {
       // Active shipments
       db.shipment.count({
         where: {
-          ...(userId && { userId }),
+          ...where,
           status: 'IN_TRANSIT',
         },
       }),
 
       // Total labels owned
-      userId
+      user
         ? db.label.count({
             where: {
               order: {
-                userId,
+                ...orderFilter,
                 status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
               },
             },
@@ -54,17 +77,17 @@ export default async function DashboardPage() {
       // Delivered this month
       db.shipment.count({
         where: {
-          ...(userId && { userId }),
+          ...where,
           status: 'DELIVERED',
           deliveredAt: { gte: monthStart },
         },
       }),
 
       // Low battery labels
-      userId
+      user
         ? db.label.count({
             where: {
-              order: { userId },
+              order: orderFilter,
               batteryPct: { lt: 20, gt: 0 },
               status: 'ACTIVE',
             },
@@ -73,7 +96,7 @@ export default async function DashboardPage() {
 
       // Recent shipments
       db.shipment.findMany({
-        where: userId ? { userId } : {},
+        where,
         include: {
           label: {
             select: {

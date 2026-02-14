@@ -15,7 +15,7 @@ const features = [
   'Offline data storage',
   'Shareable tracking links',
   'Email notifications',
-  'Free shipping included',
+  'Free worldwide shipping',
 ]
 
 export default function BuyLabelsPage() {
@@ -25,7 +25,7 @@ export default function BuyLabelsPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">Buy Tracking Labels</h1>
         <p className="mt-2 text-muted-foreground">
-          One-time purchase &mdash; choose how many labels you need and we&apos;ll ship them to your address
+          One-time purchase &mdash; choose how many labels you need
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export default function BuyLabelsPage() {
         <CardHeader>
           <CardTitle>Order &amp; Checkout</CardTitle>
           <CardDescription>
-            Pick quantity, enter shipping address, and proceed to secure payment
+            Pick a label quantity and proceed to secure payment
           </CardDescription>
         </CardHeader>
         <CardContent>

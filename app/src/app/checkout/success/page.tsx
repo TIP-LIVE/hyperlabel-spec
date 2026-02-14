@@ -52,7 +52,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
           </div>
           <CardTitle className="text-2xl">Order Confirmed!</CardTitle>
           <CardDescription>
-            Thank you for your purchase. Your tracking labels are on their way.
+            Thank you for your purchase. Your tracking labels are ready in your dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -65,7 +65,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                   {sessionError ? 'Your Tracking Labels' : `${quantity} Tracking Label${quantity > 1 ? 's' : ''}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Will be shipped within 3-5 business days
+                  Available in your dashboard now
                 </p>
               </div>
             </div>
@@ -89,19 +89,19 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   1
                 </span>
-                <span>We&apos;ll ship your labels to the provided address</span>
+                <span>Your labels are now in your dashboard</span>
               </li>
               <li className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   2
                 </span>
-                <span>You&apos;ll receive a shipping confirmation email</span>
+                <span>Create a shipment and assign a label to it</span>
               </li>
               <li className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   3
                 </span>
-                <span>Scan the QR code to activate and start tracking</span>
+                <span>Share the tracking link with your shipper and track in real-time</span>
               </li>
             </ol>
           </div>

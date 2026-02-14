@@ -11,10 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Skeleton } from '@/components/ui/skeleton'
 import { MoreHorizontal, Eye, Share2, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { shipmentStatusConfig } from '@/lib/status-config'
+import { countryCodeToFlag } from '@/lib/utils/country-flag'
+import type { GeocodedLocation } from '@/hooks/use-reverse-geocode'
 
 export type ShipmentRow = {
   id: string
@@ -29,6 +32,13 @@ export type ShipmentRow = {
     batteryPct: number | null
     status: string
   }
+  latestLocation: {
+    id: string
+    latitude: number
+    longitude: number
+    recordedAt: string
+  } | null
+  locationInfo?: GeocodedLocation
 }
 
 export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
@@ -51,15 +61,31 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     },
   },
   {
-    accessorKey: 'destinationAddress',
-    header: 'Destination',
+    id: 'currentLocation',
+    header: 'Current Location',
     cell: ({ row }) => {
-      const address = row.getValue('destinationAddress') as string | null
-      if (!address) return <span className="text-muted-foreground">—</span>
+      const info = row.original.locationInfo
+      const loc = row.original.latestLocation
+
+      if (!loc) {
+        return <span className="text-muted-foreground text-sm">No data</span>
+      }
+
+      if (!info) {
+        return <Skeleton className="h-8 w-28" />
+      }
+
       return (
-        <div className="flex items-center gap-1 max-w-[200px]" title={address}>
-          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="truncate text-sm">{address}</span>
+        <div className="flex items-center gap-2 max-w-[220px]">
+          {info.countryCode && (
+            <span className="text-base shrink-0">{countryCodeToFlag(info.countryCode)}</span>
+          )}
+          <div className="min-w-0">
+            <span className="text-sm font-medium truncate block">{info.name}</span>
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
+            </p>
+          </div>
         </div>
       )
     },
@@ -74,6 +100,20 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
+    },
+  },
+  {
+    accessorKey: 'destinationAddress',
+    header: 'Destination',
+    cell: ({ row }) => {
+      const address = row.getValue('destinationAddress') as string | null
+      if (!address) return <span className="text-muted-foreground">—</span>
+      return (
+        <div className="flex items-center gap-1 max-w-[200px]" title={address}>
+          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+          <span className="truncate text-sm">{address}</span>
+        </div>
+      )
     },
   },
   {

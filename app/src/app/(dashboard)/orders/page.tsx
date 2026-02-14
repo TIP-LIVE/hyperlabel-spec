@@ -88,7 +88,7 @@ export default async function OrdersPage() {
         <EmptyState
           icon={Package}
           title="No orders yet"
-          description="Tracking labels start at $25 each. Order a pack and we'll ship them to your address within 3-5 business days."
+          description="Tracking labels start at $25 each. Order a pack and they'll appear in your dashboard instantly."
           action={
             <Button asChild>
               <Link href="/buy">

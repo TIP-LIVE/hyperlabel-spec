@@ -6,8 +6,6 @@ interface OrderConfirmedEmailProps {
   orderNumber: string
   quantity: number
   totalAmount: string
-  shippingName: string
-  shippingAddress: string
   dashboardUrl: string
 }
 
@@ -15,8 +13,6 @@ export function OrderConfirmedEmail({
   orderNumber,
   quantity,
   totalAmount,
-  shippingName,
-  shippingAddress,
   dashboardUrl,
 }: OrderConfirmedEmailProps) {
   return (
@@ -24,8 +20,8 @@ export function OrderConfirmedEmail({
       <Heading style={heading}>Order Confirmed!</Heading>
 
       <Text style={paragraph}>
-        Thank you for your purchase! We&apos;ve received your order and will ship your tracking
-        label{quantity > 1 ? 's' : ''} within 3-5 business days.
+        Thank you for your purchase! Your tracking label{quantity > 1 ? 's are' : ' is'} now
+        available in your dashboard.
       </Text>
 
       <Section style={detailsBox}>
@@ -37,12 +33,6 @@ export function OrderConfirmedEmail({
 
         <Text style={detailLabel}>Total</Text>
         <Text style={detailValue}>{totalAmount}</Text>
-
-        <Text style={detailLabel}>Ship To</Text>
-        <Text style={detailValue}>{shippingName}</Text>
-        <Text style={{ ...detailValue, marginTop: '-12px', color: '#64748b', fontSize: '14px' }}>
-          {shippingAddress}
-        </Text>
       </Section>
 
       <Text style={paragraph}>
@@ -50,10 +40,10 @@ export function OrderConfirmedEmail({
       </Text>
 
       <Section style={stepsList}>
-        <Text style={stepItem}>1. We&apos;ll prepare and ship your labels (3-5 business days)</Text>
-        <Text style={stepItem}>2. You&apos;ll get a shipping confirmation email with tracking</Text>
-        <Text style={stepItem}>3. Once delivered, create a shipment in your dashboard</Text>
-        <Text style={stepItem}>4. Peel the label, attach to your cargo, and start tracking!</Text>
+        <Text style={stepItem}>1. Your labels are now in your dashboard</Text>
+        <Text style={stepItem}>2. Create a shipment and assign a label to it</Text>
+        <Text style={stepItem}>3. Share the tracking link with your shipper</Text>
+        <Text style={stepItem}>4. Track your cargo in real-time until delivery</Text>
       </Section>
 
       <Section style={buttonContainer}>

@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { MapPin, Radio } from 'lucide-react'
 import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
+import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
 interface LocationEvent {
   id: string
@@ -60,7 +61,10 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
               <div className="flex items-center gap-2">
                 <MapPin className="h-3 w-3 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {locationNames[location.id] || `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
+                  {locationNames[location.id]?.countryCode && (
+                    <span className="mr-1">{countryCodeToFlag(locationNames[location.id].countryCode)}</span>
+                  )}
+                  {locationNames[location.id]?.name || `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
                 </span>
                 {location.isOfflineSync && (
                   <span className="rounded bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 text-xs text-yellow-800 dark:text-yellow-200">

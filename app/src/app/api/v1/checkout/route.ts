@@ -7,22 +7,14 @@ import { z } from 'zod'
 
 const checkoutSchema = z.object({
   packType: z.enum(['starter', 'team', 'volume']),
-  // Shipping address for label delivery
-  shippingAddress: z.object({
-    name: z.string().min(1),
-    line1: z.string().min(1),
-    line2: z.string().optional(),
-    city: z.string().min(1),
-    state: z.string().optional(),
-    postalCode: z.string().min(1),
-    country: z.string().length(2), // ISO 2-letter country code
-  }),
 })
 
 /**
  * POST /api/v1/checkout
- * 
+ *
  * Creates a Stripe Checkout session for purchasing label packs.
+ * Shipping address is NOT collected at checkout — labels are assigned
+ * to the user's account and shipped later per-shipment.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -43,7 +35,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { packType, shippingAddress } = validated.data
+    const { packType } = validated.data
     const product = LABEL_PRODUCTS[packType as LabelPackType]
 
     if (!product.priceId) {
@@ -69,21 +61,11 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      shipping_address_collection: {
-        allowed_countries: ['GB', 'US', 'DE', 'FR', 'NL', 'BE', 'AT', 'CH', 'PL', 'UA'],
-      },
       metadata: {
         userId: user.id,
         orgId: context.orgId,
         packType,
         quantity: product.quantity.toString(),
-        shippingName: shippingAddress.name,
-        shippingLine1: shippingAddress.line1,
-        shippingLine2: shippingAddress.line2 || '',
-        shippingCity: shippingAddress.city,
-        shippingState: shippingAddress.state || '',
-        shippingPostalCode: shippingAddress.postalCode,
-        shippingCountry: shippingAddress.country,
       },
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/checkout/cancel`,

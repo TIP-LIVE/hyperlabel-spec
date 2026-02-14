@@ -261,8 +261,6 @@ export async function sendOrderConfirmedNotification(params: {
   orderNumber: string
   quantity: number
   totalAmount: string
-  shippingName: string
-  shippingAddress: string
 }): Promise<void> {
   // Order confirmation always sends — no preference toggle needed
   const user = await db.user.findUnique({
@@ -279,8 +277,6 @@ export async function sendOrderConfirmedNotification(params: {
       orderNumber: params.orderNumber,
       quantity: params.quantity,
       totalAmount: params.totalAmount,
-      shippingName: params.shippingName,
-      shippingAddress: params.shippingAddress,
       dashboardUrl,
     })
   )

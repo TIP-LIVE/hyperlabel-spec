@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { ShipmentDetailClient } from '@/components/shipments/shipment-detail-client'
 import type { Metadata } from 'next'
@@ -56,9 +57,17 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  // Check ownership
-  if (user && shipment.userId !== user.id && user.role !== 'admin') {
-    notFound()
+  // Check access: org membership + ownership
+  const { orgId, orgRole } = await auth()
+  if (user && user.role !== 'admin') {
+    // Must be in the same org
+    if (shipment.orgId && shipment.orgId !== orgId) {
+      notFound()
+    }
+    // org:member can only see own records
+    if (!canViewAllOrgData(orgRole || 'org:member') && shipment.userId !== user.id) {
+      notFound()
+    }
   }
 
   const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${shipment.shareCode}`

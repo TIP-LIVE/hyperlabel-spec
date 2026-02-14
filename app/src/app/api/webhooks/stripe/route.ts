@@ -7,7 +7,7 @@ import Stripe from 'stripe'
 
 /**
  * POST /api/webhooks/stripe
- * 
+ *
  * Handles Stripe webhook events for payment processing.
  */
 export async function POST(req: NextRequest) {
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
 /**
  * Handle successful checkout session.
  * Creates order in database and assigns labels.
+ * Shipping address is NOT stored at checkout — it's collected later per-shipment.
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
@@ -91,18 +92,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Get shipping address from session metadata (we store it there during checkout)
-  const shippingAddress = {
-    name: session.metadata?.shippingName || '',
-    line1: session.metadata?.shippingLine1 || '',
-    line2: session.metadata?.shippingLine2 || '',
-    city: session.metadata?.shippingCity || '',
-    state: session.metadata?.shippingState || '',
-    postalCode: session.metadata?.shippingPostalCode || '',
-    country: session.metadata?.shippingCountry || '',
-  }
-
-  // Create the order
+  // Create the order (no shipping address at this stage)
   const order = await db.order.create({
     data: {
       userId,
@@ -113,7 +103,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       totalAmount: session.amount_total || 0,
       currency: session.currency?.toUpperCase() || 'GBP',
       quantity,
-      shippingAddress,
     },
   })
 
@@ -160,60 +149,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     ? `£${((session.amount_total || 0) / 100).toFixed(2)}`
     : `$${((session.amount_total || 0) / 100).toFixed(2)}`
 
-  const addressParts = [shippingAddress.line1, shippingAddress.line2, shippingAddress.city, shippingAddress.state, shippingAddress.postalCode, shippingAddress.country].filter(Boolean)
-
   sendOrderConfirmedNotification({
     userId,
     orderNumber: order.id.slice(-8).toUpperCase(),
     quantity,
     totalAmount: totalFormatted,
-    shippingName: shippingAddress.name,
-    shippingAddress: addressParts.join(', '),
   }).catch((err) => console.error('Failed to send order confirmation:', err))
-
-  // Auto-save shipping address to address book (fire-and-forget)
-  if (shippingAddress.line1) {
-    autoSaveAddress(userId, orgId, shippingAddress).catch((err) =>
-      console.error('Failed to auto-save address:', err)
-    )
-  }
-}
-
-/**
- * Auto-save shipping address to the user's address book if it doesn't already exist.
- * Duplicate detection uses line1 + postalCode + country as a reasonable proxy.
- */
-async function autoSaveAddress(
-  userId: string,
-  orgId: string | null,
-  address: { name: string; line1: string; line2: string; city: string; state: string; postalCode: string; country: string }
-) {
-  const existing = await db.savedAddress.findFirst({
-    where: {
-      userId,
-      orgId,
-      line1: address.line1,
-      postalCode: address.postalCode,
-      country: address.country,
-    },
-  })
-
-  if (existing) return
-
-  await db.savedAddress.create({
-    data: {
-      label: `${address.city || 'Shipping'} address`,
-      name: address.name,
-      line1: address.line1,
-      line2: address.line2 || null,
-      city: address.city,
-      state: address.state || null,
-      postalCode: address.postalCode,
-      country: address.country,
-      userId,
-      orgId,
-    },
-  })
-
-  console.log(`Auto-saved address for user ${userId}: ${address.line1}, ${address.city}`)
 }

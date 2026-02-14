@@ -2,8 +2,14 @@
 
 import { useState, useEffect } from 'react'
 
+export interface GeocodedLocation {
+  name: string // "London, United Kingdom"
+  country: string // "United Kingdom"
+  countryCode: string // "GB"
+}
+
 // In-memory cache to avoid redundant API calls during a session
-const geocodeCache = new Map<string, string>()
+const geocodeCache = new Map<string, GeocodedLocation>()
 
 function cacheKey(lat: number, lng: number): string {
   // Round to 3 decimal places (~111m precision) to reuse nearby lookups
@@ -15,7 +21,10 @@ function cacheKey(lat: number, lng: number): string {
  * Uses OpenStreetMap Nominatim (free, no API key).
  * Rate-limited to 1 request/second as per Nominatim usage policy.
  */
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+async function reverseGeocode(
+  lat: number,
+  lng: number
+): Promise<GeocodedLocation | null> {
   const key = cacheKey(lat, lng)
   const cached = geocodeCache.get(key)
   if (cached) return cached
@@ -30,14 +39,21 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
       }
     )
 
-    if (!res.ok) return ''
+    if (!res.ok) return null
 
     const data = await res.json()
     const address = data.address || {}
 
     // Build a short location name: city/town + country
-    const city = address.city || address.town || address.village || address.municipality || address.county || ''
+    const city =
+      address.city ||
+      address.town ||
+      address.village ||
+      address.municipality ||
+      address.county ||
+      ''
     const country = address.country || ''
+    const countryCode = (address.country_code || '').toUpperCase()
 
     let name = ''
     if (city && country) {
@@ -53,11 +69,13 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
     }
 
     if (name) {
-      geocodeCache.set(key, name)
+      const result: GeocodedLocation = { name, country, countryCode }
+      geocodeCache.set(key, result)
+      return result
     }
-    return name
+    return null
   } catch {
-    return ''
+    return null
   }
 }
 
@@ -69,7 +87,7 @@ export function useReverseGeocode(
   locations: Array<{ id: string; latitude: number; longitude: number }>,
   maxLocations = 10
 ) {
-  const [names, setNames] = useState<Record<string, string>>({})
+  const [names, setNames] = useState<Record<string, GeocodedLocation>>({})
 
   useEffect(() => {
     if (locations.length === 0) return
@@ -78,7 +96,7 @@ export function useReverseGeocode(
     const toGeocode = locations.slice(0, maxLocations)
 
     async function geocodeAll() {
-      const results: Record<string, string> = {}
+      const results: Record<string, GeocodedLocation> = {}
 
       for (const loc of toGeocode) {
         if (cancelled) break
@@ -89,8 +107,8 @@ export function useReverseGeocode(
           results[loc.id] = cached
         } else {
           // Respect Nominatim rate limit: 1 req/sec
-          const name = await reverseGeocode(loc.latitude, loc.longitude)
-          if (name) results[loc.id] = name
+          const result = await reverseGeocode(loc.latitude, loc.longitude)
+          if (result) results[loc.id] = result
           // Small delay between requests
           await new Promise((r) => setTimeout(r, 1100))
         }
