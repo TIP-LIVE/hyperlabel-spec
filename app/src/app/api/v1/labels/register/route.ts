@@ -58,7 +58,9 @@ export async function POST(req: NextRequest) {
       if (!label) {
         label = await db.label.create({
           data: { deviceId, status: 'INVENTORY' },
-          include: { orderLabels: true },
+          include: {
+            orderLabels: { include: { order: { select: { orgId: true, status: true } } } },
+          },
         })
       }
 

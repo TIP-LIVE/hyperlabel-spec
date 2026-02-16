@@ -59,14 +59,15 @@ async function main() {
 
     if (!label) {
       const imeiEnv = process.env[`${deviceId.replace(/-/g, '_')}_IMEI`]
-      label = await prisma.label.create({
+      const created = await prisma.label.create({
         data: {
           deviceId,
           status: 'INVENTORY',
           ...(imeiEnv && { imei: imeiEnv }),
         },
       })
-      console.log('Created label:', label.deviceId, imeiEnv ? `(IMEI ${imeiEnv})` : '')
+      label = { ...created, orderLabels: [] }
+      console.log('Created label:', created.deviceId, imeiEnv ? `(IMEI ${imeiEnv})` : '')
     } else if (label.orderLabels.length > 0) {
       console.log('Label already in this org:', label.deviceId)
       continue

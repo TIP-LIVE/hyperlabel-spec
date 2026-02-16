@@ -85,11 +85,11 @@ export async function POST(req: NextRequest) {
 
     const { labelId, consigneeEmail, ...data } = validated.data
 
-    // Verify label exists and belongs to user (via order)
+    // Verify label exists and belongs to user (via orderLabels -> order)
     const label = await db.label.findUnique({
       where: { id: labelId },
       include: {
-        order: true,
+        orderLabels: { include: { order: true } },
       },
     })
 

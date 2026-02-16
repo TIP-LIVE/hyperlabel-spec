@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
           shippedAt: true,
           createdAt: true,
           _count: {
-            select: { labels: true },
+            select: { orderLabels: true },
           },
         },
         orderBy: { createdAt: 'desc' },

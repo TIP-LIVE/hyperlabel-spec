@@ -18,13 +18,17 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const order = await db.order.findUnique({
       where: { id },
       include: {
-        labels: {
-          select: {
-            id: true,
-            deviceId: true,
-            status: true,
-            batteryPct: true,
-            activatedAt: true,
+        orderLabels: {
+          include: {
+            label: {
+              select: {
+                id: true,
+                deviceId: true,
+                status: true,
+                batteryPct: true,
+                activatedAt: true,
+              },
+            },
           },
         },
       },
@@ -39,7 +43,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    return NextResponse.json({ order })
+    const orderWithLabels = {
+      ...order,
+      labels: order.orderLabels.map((ol) => ol.label),
+    }
+    const { orderLabels: _, ...rest } = orderWithLabels
+    return NextResponse.json({ order: rest })
   } catch (error) {
     return handleApiError(error, 'fetching order')
   }

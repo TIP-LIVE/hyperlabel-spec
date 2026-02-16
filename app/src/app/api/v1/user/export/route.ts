@@ -60,10 +60,9 @@ export async function GET(req: NextRequest) {
       db.order.findMany({
         where: { userId: user.id },
         include: {
-          labels: {
-            select: {
-              deviceId: true,
-              status: true,
+          orderLabels: {
+            include: {
+              label: { select: { deviceId: true, status: true } },
             },
           },
         },
@@ -73,10 +72,10 @@ export async function GET(req: NextRequest) {
         where: { userId: user.id },
         orderBy: { sentAt: 'desc' },
       }),
-      // Labels owned by user (via orders)
+      // Labels owned by user (via orderLabels -> order)
       db.label.findMany({
         where: {
-          order: { userId: user.id },
+          orderLabels: { some: { order: { userId: user.id } } },
         },
         select: {
           id: true,
@@ -229,7 +228,7 @@ export async function GET(req: NextRequest) {
         trackingNumber: o.trackingNumber,
         createdAt: o.createdAt,
         shippedAt: o.shippedAt,
-        labels: o.labels,
+        labels: o.orderLabels.map((ol) => ol.label),
       })),
       labels,
       notifications: notifications.map((n) => ({

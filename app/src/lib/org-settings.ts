@@ -51,7 +51,7 @@ export async function isLabelInOtherOrg(labelId: string, excludeOrgId: string): 
     where: {
       labelId,
       order: {
-        orgId: { not: null, not: excludeOrgId },
+        orgId: { not: excludeOrgId },
         status: { in: [...PAID_ORDER_STATUSES] },
       },
     },

@@ -34,7 +34,7 @@ export default async function OrdersPage() {
     createdAt: Date
     shippedAt: Date | null
     trackingNumber: string | null
-    _count: { labels: number }
+    _count: { orderLabels: number }
   }> = []
 
   if (user) {
@@ -61,7 +61,7 @@ export default async function OrdersPage() {
         shippedAt: true,
         trackingNumber: true,
         _count: {
-          select: { labels: true },
+          select: { orderLabels: true },
         },
       },
       orderBy: { createdAt: 'desc' },

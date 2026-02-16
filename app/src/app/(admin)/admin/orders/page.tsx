@@ -44,7 +44,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       where,
       include: {
         user: { select: { email: true } },
-        _count: { select: { labels: true } },
+        _count: { select: { orderLabels: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * perPage,
@@ -150,12 +150,12 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                         <td className="py-3">
                           <span
                             className={
-                              order._count.labels < order.quantity
+                              order._count.orderLabels < order.quantity
                                 ? 'text-yellow-400'
                                 : 'text-gray-300'
                             }
                           >
-                            {order._count.labels}/{order.quantity}
+                            {order._count.orderLabels}/{order.quantity}
                           </span>
                         </td>
                         <td className="py-3">
