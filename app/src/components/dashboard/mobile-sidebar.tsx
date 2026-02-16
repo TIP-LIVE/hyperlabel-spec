@@ -53,8 +53,8 @@ export function MobileSidebar() {
               appearance={{
                 elements: {
                   rootBox: 'w-full',
-                  organizationSwitcherTrigger:
-                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm',
+                    organizationSwitcherTrigger:
+                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm text-foreground',
                 },
               }}
             />

@@ -76,7 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   elements: {
                     rootBox: 'hidden lg:flex',
                     organizationSwitcherTrigger:
-                      'rounded-lg border border-border px-3 py-1.5 text-sm',
+                      'rounded-lg border border-border px-3 py-1.5 text-sm text-foreground',
                   },
                 }}
               />
