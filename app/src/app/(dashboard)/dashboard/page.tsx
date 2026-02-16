@@ -104,6 +104,11 @@ export default async function DashboardPage() {
               batteryPct: true,
             },
           },
+          locations: {
+            select: { recordedAt: true },
+            orderBy: { recordedAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -273,7 +278,10 @@ export default async function DashboardPage() {
                         </span>
                         <p className="text-sm text-muted-foreground">
                           {shipment.label.deviceId} ·{' '}
-                          {formatDistanceToNow(new Date(shipment.createdAt), { addSuffix: true })}
+                          {formatDistanceToNow(
+                            new Date(shipment.locations[0]?.recordedAt ?? shipment.updatedAt),
+                            { addSuffix: true }
+                          )}
                         </p>
                       </div>
                     </div>
