@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { AddressInput } from '@/components/ui/address-input'
 
 interface EditShipmentDialogProps {
   shipmentId: string
@@ -32,7 +33,15 @@ export function EditShipmentDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState(currentName || '')
   const [destination, setDestination] = useState(currentDestination || '')
+  const [destLat, setDestLat] = useState<number>(0)
+  const [destLng, setDestLng] = useState<number>(0)
   const router = useRouter()
+
+  function handleAddressSelect(address: string, lat: number, lng: number) {
+    setDestination(address)
+    setDestLat(lat)
+    setDestLng(lng)
+  }
 
   async function handleSave() {
     if (!name.trim()) {
@@ -43,9 +52,15 @@ export function EditShipmentDialog({
     setIsLoading(true)
 
     try {
-      const body: Record<string, string> = {}
+      const body: Record<string, string | number> = {}
       if (name !== currentName) body.name = name
-      if (destination !== currentDestination) body.destinationAddress = destination
+      if (destination !== currentDestination) {
+        body.destinationAddress = destination
+        if (destLat !== 0 && destLng !== 0) {
+          body.destinationLat = destLat
+          body.destinationLng = destLng
+        }
+      }
 
       if (Object.keys(body).length === 0) {
         setOpen(false)
@@ -103,15 +118,15 @@ export function EditShipmentDialog({
 
           <div className="space-y-2">
             <Label htmlFor="edit-destination">Destination Address</Label>
-            <Input
+            <AddressInput
               id="edit-destination"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="e.g. 123 Main St, Berlin"
+              defaultValue={currentDestination || ''}
+              placeholder="Search for an address..."
               disabled={isLoading}
+              onAddressSelect={handleAddressSelect}
             />
             <p className="text-xs text-muted-foreground">
-              Note: changing the address here won&apos;t update the map pin. Use this to correct typos.
+              Select an address from suggestions to update the map pin location.
             </p>
           </div>
         </div>

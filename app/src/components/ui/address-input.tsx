@@ -13,6 +13,8 @@ interface AddressResult {
 interface AddressInputProps {
   id?: string
   placeholder?: string
+  defaultValue?: string
+  disabled?: boolean
   onAddressSelect: (address: string, lat: number, lng: number) => void
   className?: string
 }
@@ -21,8 +23,8 @@ interface AddressInputProps {
  * Address input with autocomplete suggestions.
  * Uses OpenStreetMap Nominatim (free, no API key).
  */
-export function AddressInput({ id, placeholder, onAddressSelect, className }: AddressInputProps) {
-  const [query, setQuery] = useState('')
+export function AddressInput({ id, placeholder, defaultValue, disabled, onAddressSelect, className }: AddressInputProps) {
+  const [query, setQuery] = useState(defaultValue || '')
   const [results, setResults] = useState<AddressResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -221,6 +223,7 @@ export function AddressInput({ id, placeholder, onAddressSelect, className }: Ad
           onKeyDown={handleKeyDown}
           onFocus={() => results.length > 0 && setIsOpen(true)}
           placeholder={placeholder}
+          disabled={disabled}
           className={`pr-10 ${className || ''}`}
         />
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
