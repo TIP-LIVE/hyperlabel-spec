@@ -1,20 +1,29 @@
 import Stripe from 'stripe'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || ''
+let _stripe: Stripe | null = null
 
-if (!stripeSecretKey) {
-  console.warn('STRIPE_SECRET_KEY is not set')
+function getStripe(): Stripe {
+  if (_stripe) return _stripe
+  const key = process.env.STRIPE_SECRET_KEY || ''
+  // Use placeholder when missing so build/SSR (e.g. no env in CI) doesn't throw at module load
+  const keyToUse = key || 'sk_test_build_placeholder'
+  _stripe = new Stripe(keyToUse, { typescript: true })
+  return _stripe
 }
 
-export const stripe = new Stripe(stripeSecretKey, {
-  typescript: true,
+/** Lazy-initialized so build can succeed without STRIPE_SECRET_KEY in env */
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    return (getStripe() as unknown as Record<string, unknown>)[prop as string]
+  },
 })
 
 /**
  * Check if Stripe is properly configured
  */
 export function isStripeConfigured(): boolean {
-  return Boolean(stripeSecretKey && !stripeSecretKey.includes('REPLACE_ME'))
+  const key = process.env.STRIPE_SECRET_KEY || ''
+  return Boolean(key && !key.includes('REPLACE_ME'))
 }
 
 /**
