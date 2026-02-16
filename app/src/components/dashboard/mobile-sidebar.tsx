@@ -51,15 +51,17 @@ export function MobileSidebar() {
               afterSelectOrganizationUrl="/dashboard"
               afterLeaveOrganizationUrl="/org-selection"
               appearance={{
-                variables: {
-                  colorText: 'inherit',
-                },
                 elements: {
                   rootBox: 'w-full',
                   organizationSwitcherTrigger:
-                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm !text-foreground [&>*]:!text-foreground',
+                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm !text-foreground',
+                  organizationSwitcherPopoverCard: 'bg-popover border border-border shadow-lg',
                   organizationPreviewMainIdentifier: '!text-foreground',
-                  organizationSwitcherTriggerIcon: '!text-foreground',
+                  organizationPreviewSecondaryIdentifier: '!text-muted-foreground',
+                  organizationSwitcherPopoverActionButton: '!text-foreground hover:!bg-accent',
+                  organizationSwitcherPopoverActionButtonText: '!text-foreground',
+                  organizationSwitcherPopoverActionButtonIcon: '!text-muted-foreground',
+                  organizationSwitcherPopoverFooter: 'hidden',
                 },
               }}
             />
