@@ -75,16 +75,20 @@ async function main() {
   })
 
   for (const deviceId of soldLabels) {
-    await prisma.label.upsert({
+    const label = await prisma.label.upsert({
       where: { deviceId },
-      update: { orderId: order.id, status: 'SOLD' },
+      update: { status: 'SOLD' },
       create: {
         deviceId,
         imei: `35${Math.random().toString().slice(2, 15)}`,
         status: 'SOLD',
         batteryPct: 100,
-        orderId: order.id,
       },
+    })
+    await prisma.orderLabel.upsert({
+      where: { orderId_labelId: { orderId: order.id, labelId: label.id } },
+      update: {},
+      create: { orderId: order.id, labelId: label.id },
     })
   }
   console.log('✅ Created order with', soldLabels.length, 'sold labels')

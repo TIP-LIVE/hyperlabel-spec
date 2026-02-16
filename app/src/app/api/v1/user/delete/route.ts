@@ -56,27 +56,18 @@ export async function DELETE(req: NextRequest) {
       where: { userId: user.id },
     })
 
-    // 4. Unlink labels from orders (set labels back to INVENTORY, remove orderId)
-    const orderIds = await db.order.findMany({
-      where: { userId: user.id },
-      select: { id: true },
-    })
-
-    if (orderIds.length > 0) {
-      await db.label.updateMany({
-        where: {
-          orderId: { in: orderIds.map((o) => o.id) },
-        },
-        data: {
-          orderId: null,
-          status: 'INVENTORY',
-        },
-      })
-    }
-
-    // 5. Delete orders
+    // 4. Delete orders (cascade removes order_labels)
     await db.order.deleteMany({
       where: { userId: user.id },
+    })
+
+    // 5. Labels that have no orders left become INVENTORY again
+    await db.label.updateMany({
+      where: {
+        orderLabels: { none: {} },
+        status: { in: ['SOLD', 'ACTIVE'] },
+      },
+      data: { status: 'INVENTORY' },
     })
 
     // 6. Delete the user record

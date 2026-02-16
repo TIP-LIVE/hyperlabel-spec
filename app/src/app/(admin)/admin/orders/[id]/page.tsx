@@ -36,13 +36,17 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
     where: { id },
     include: {
       user: { select: { id: true, email: true, firstName: true, lastName: true } },
-      labels: {
-        select: {
-          id: true,
-          deviceId: true,
-          status: true,
-          batteryPct: true,
-          activatedAt: true,
+      orderLabels: {
+        include: {
+          label: {
+            select: {
+              id: true,
+              deviceId: true,
+              status: true,
+              batteryPct: true,
+              activatedAt: true,
+            },
+          },
         },
       },
     },
@@ -196,38 +200,38 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
         <CardHeader className="flex flex-row items-center gap-2">
           <Package className="h-5 w-5 text-gray-400" />
           <CardTitle className="text-white">
-            Labels ({order.labels.length}/{order.quantity})
+            Labels ({order.orderLabels.length}/{order.quantity})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {order.labels.length === 0 ? (
+          {order.orderLabels.length === 0 ? (
             <p className="py-4 text-center text-sm text-gray-500">
               No labels assigned to this order yet
             </p>
           ) : (
             <div className="space-y-2">
-              {order.labels.map((label) => (
+              {order.orderLabels.map((ol) => (
                 <div
-                  key={label.id}
+                  key={ol.label.id}
                   className="flex items-center justify-between rounded-lg border border-gray-700 px-3 py-2"
                 >
                   <div className="flex items-center gap-3">
                     <Package className="h-4 w-4 text-gray-500" />
-                    <span className="font-mono text-sm text-white">{label.deviceId}</span>
+                    <span className="font-mono text-sm text-white">{ol.label.deviceId}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {label.batteryPct !== null && (
-                      <span className={`text-xs ${label.batteryPct < 20 ? 'text-red-400' : 'text-gray-500'}`}>
-                        {label.batteryPct}%
+                    {ol.label.batteryPct !== null && (
+                      <span className={`text-xs ${ol.label.batteryPct < 20 ? 'text-red-400' : 'text-gray-500'}`}>
+                        {ol.label.batteryPct}%
                       </span>
                     )}
                     <Badge className={
-                      label.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                      label.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
-                      label.status === 'DEPLETED' ? 'bg-red-500/20 text-red-400' :
+                      ol.label.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                      ol.label.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
+                      ol.label.status === 'DEPLETED' ? 'bg-red-500/20 text-red-400' :
                       'bg-gray-500/20 text-gray-400'
                     }>
-                      {label.status}
+                      {ol.label.status}
                     </Badge>
                   </div>
                 </div>

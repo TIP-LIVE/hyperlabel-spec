@@ -26,34 +26,33 @@ export async function GET(req: NextRequest) {
 
     let remindersSent = 0
 
-    // 1. Find SOLD labels (bought but not used in a shipment) older than 7 days
     const unusedLabels = await db.label.findMany({
       where: {
         status: 'SOLD',
-        orderId: { not: null },
-        // The order was placed > 7 days ago
-        order: {
-          status: { in: ['SHIPPED', 'DELIVERED'] },
-          shippedAt: { lte: sevenDaysAgo },
+        orderLabels: {
+          some: {
+            order: {
+              status: { in: ['SHIPPED', 'DELIVERED'] },
+              shippedAt: { lte: sevenDaysAgo },
+            },
+          },
         },
-        // Not already assigned to any shipment
         shipments: { none: {} },
       },
       include: {
-        order: {
-          select: {
-            userId: true,
-            shippedAt: true,
+        orderLabels: {
+          include: {
+            order: { select: { userId: true, shippedAt: true } },
           },
         },
       },
     })
 
-    // Group unused labels by user
     const unusedByUser = new Map<string, typeof unusedLabels>()
     for (const label of unusedLabels) {
-      if (!label.order) continue
-      const userId = label.order.userId
+      const firstOrder = label.orderLabels[0]?.order
+      if (!firstOrder) continue
+      const userId = firstOrder.userId
       if (!unusedByUser.has(userId)) {
         unusedByUser.set(userId, [])
       }

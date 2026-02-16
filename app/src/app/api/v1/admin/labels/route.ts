@@ -89,11 +89,9 @@ export async function GET(req: NextRequest) {
       db.label.findMany({
         where,
         include: {
-          order: {
-            select: {
-              id: true,
-              user: { select: { email: true } },
-            },
+          orderLabels: {
+            take: 1,
+            include: { order: { select: { id: true, user: { select: { email: true } } } } },
           },
         },
         orderBy: { createdAt: 'desc' },

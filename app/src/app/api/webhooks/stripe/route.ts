@@ -108,9 +108,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   console.log(`Created order ${order.id} for user ${userId} (${quantity} labels)`)
 
-  // Find available labels in inventory and assign to this order
   const availableLabels = await db.label.findMany({
-    where: { status: 'INVENTORY', orderId: null },
+    where: { status: 'INVENTORY', orderLabels: { none: {} } },
     take: quantity,
   })
 
@@ -129,18 +128,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }).catch((err) => console.error('Failed to send low inventory alert:', err))
   }
 
-  // Assign available labels to the order
   if (availableLabels.length > 0) {
-    await db.label.updateMany({
-      where: {
-        id: { in: availableLabels.map((l) => l.id) },
-      },
-      data: {
-        orderId: order.id,
-        status: 'SOLD',
-      },
+    await db.orderLabel.createMany({
+      data: availableLabels.map((l) => ({ orderId: order.id, labelId: l.id })),
+      skipDuplicates: true,
     })
-
+    await db.label.updateMany({
+      where: { id: { in: availableLabels.map((l) => l.id) } },
+      data: { status: 'SOLD' },
+    })
     console.log(`Assigned ${availableLabels.length} labels to order ${order.id}`)
   }
 

@@ -23,7 +23,14 @@ export async function GET(req: NextRequest) {
     }
 
     const where: Record<string, unknown> = {
-      order: orderFilter,
+      orderLabels: {
+        some: {
+          order: {
+            ...orderFilter,
+            status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+          },
+        },
+      },
     }
 
     if (status) {

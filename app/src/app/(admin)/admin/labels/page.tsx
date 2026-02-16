@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { db } from '@/lib/db'
 import { format } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { Plus, Building2 } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import type { Metadata } from 'next'
 
@@ -41,7 +41,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
     where.OR = [
       { deviceId: { contains: q, mode: 'insensitive' } },
       { imei: { contains: q, mode: 'insensitive' } },
-      { order: { user: { email: { contains: q, mode: 'insensitive' } } } },
+      { orderLabels: { some: { order: { user: { email: { contains: q, mode: 'insensitive' } } } } } },
     ]
   }
 
@@ -49,8 +49,9 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
     db.label.findMany({
       where,
       include: {
-        order: {
-          select: { id: true, user: { select: { email: true } } },
+        orderLabels: {
+          take: 1,
+          include: { order: { select: { id: true, user: { select: { email: true } } } } },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -87,12 +88,20 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
           <h1 className="text-2xl font-bold text-white">Label Inventory</h1>
           <p className="text-gray-400">Track and manage all labels</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/labels/add">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Labels
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild className="border-gray-600">
+            <Link href="/admin/labels/assign">
+              <Building2 className="mr-2 h-4 w-4" />
+              Assign to org(s)
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/labels/add">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Labels
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -160,7 +169,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
                         <span className="text-gray-500">—</span>
                       )}
                     </td>
-                    <td className="py-3 text-gray-300">{label.order?.user?.email || '—'}</td>
+                    <td className="py-3 text-gray-300">{label.orderLabels[0]?.order?.user?.email || '—'}</td>
                     <td className="py-3 text-gray-400">
                       {label.activatedAt ? format(new Date(label.activatedAt), 'PP') : '—'}
                     </td>

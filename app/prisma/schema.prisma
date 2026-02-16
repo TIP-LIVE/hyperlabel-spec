@@ -67,7 +67,8 @@ model User {
   @@map("users")
 }
 
-/// Labels - physical tracking devices with cellular connectivity
+/// Labels - physical tracking devices with cellular connectivity.
+/// A label can belong to multiple organisations via OrderLabel (many-to-many with Order).
 model Label {
   id              String      @id @default(cuid())
   deviceId        String      @unique @map("device_id") // HL-001234
@@ -80,11 +81,10 @@ model Label {
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
-  // Relations
-  orderId   String?   @map("order_id")
-  order     Order?    @relation(fields: [orderId], references: [id])
-  shipments Shipment[]
-  locations LocationEvent[]
+  // Relations (many-to-many with Order so a label can be in multiple orgs)
+  orderLabels OrderLabel[]
+  shipments   Shipment[]
+  locations   LocationEvent[]
 
   @@map("labels")
 }
@@ -172,12 +172,34 @@ model Order {
   orgId String? @map("org_id")
 
   // Relations
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
-  labels Label[]
+  userId      String       @map("user_id")
+  user        User         @relation(fields: [userId], references: [id])
+  orderLabels OrderLabel[]
 
   @@index([orgId])
   @@map("orders")
+}
+
+/// Join table: a label can be in multiple orders (thus multiple orgs)
+model OrderLabel {
+  orderId   String  @map("order_id")
+  labelId   String  @map("label_id")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  label     Label   @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([orderId, labelId])
+  @@map("order_labels")
+}
+
+/// Organisation-level settings (Clerk org ID)
+model OrgSettings {
+  id                         String   @id @default(cuid())
+  orgId                      String   @unique @map("org_id")
+  allowLabelsInMultipleOrgs  Boolean  @default(false) @map("allow_labels_in_multiple_orgs")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  @@map("org_settings")
 }
 
 /// SavedAddress - user's saved shipping addresses for quick reuse

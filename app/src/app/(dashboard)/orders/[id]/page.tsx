@@ -50,11 +50,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
   const order = await db.order.findUnique({
     where: { id },
     include: {
-      labels: {
-        select: {
-          id: true,
-          deviceId: true,
-          status: true,
+      orderLabels: {
+        include: {
+          label: {
+            select: { id: true, deviceId: true, status: true },
+          },
         },
       },
     },
@@ -218,27 +218,27 @@ export default async function OrderDetailPage({ params }: PageProps) {
       )}
 
       {/* Labels Card */}
-      {order.labels.length > 0 && (
+      {order.orderLabels.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
             <Package className="h-5 w-5 text-muted-foreground" />
             <CardTitle>
-              Labels ({order.labels.length})
+              Labels ({order.orderLabels.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {order.labels.map((label) => (
+              {order.orderLabels.map((ol) => (
                 <div
-                  key={label.id}
+                  key={ol.label.id}
                   className="flex items-center justify-between rounded-lg border px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-mono text-sm">{label.deviceId}</span>
+                    <span className="font-mono text-sm">{ol.label.deviceId}</span>
                   </div>
                   <Badge variant="secondary" className="text-xs">
-                    {label.status}
+                    {ol.label.status}
                   </Badge>
                 </div>
               ))}

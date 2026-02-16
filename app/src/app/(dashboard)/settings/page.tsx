@@ -13,6 +13,7 @@ import { isClerkConfigured } from '@/lib/clerk-config'
 import { NotificationPreferences } from '@/components/settings/notification-preferences'
 import { DataExportButton } from '@/components/settings/data-export-button'
 import { DeleteAccountButton } from '@/components/settings/delete-account-button'
+import { OrgLabelSettings } from '@/components/settings/org-label-settings'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -119,19 +120,22 @@ export default async function SettingsPage() {
             {orgRole === 'org:admin' && (
               <>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Team Settings</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Manage members, roles, and organization settings
-                    </p>
+                <div className="space-y-4">
+                  <OrgLabelSettings />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Team Settings</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Manage members, roles, and organization settings
+                      </p>
+                    </div>
+                    <Link
+                      href="/settings/organization"
+                      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors"
+                    >
+                      Manage Team
+                    </Link>
                   </div>
-                  <Link
-                    href="/settings/organization"
-                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors"
-                  >
-                    Manage Team
-                  </Link>
                 </div>
               </>
             )}

@@ -92,10 +92,11 @@ async function main() {
     },
   })
 
-  // Assign label to order 1
-  await prisma.label.update({
-    where: { deviceId: 'HL-100001' },
-    data: { orderId: order1.id },
+  const label1 = await prisma.label.findUniqueOrThrow({ where: { deviceId: 'HL-100001' } })
+  await prisma.orderLabel.upsert({
+    where: { orderId_labelId: { orderId: order1.id, labelId: label1.id } },
+    update: {},
+    create: { orderId: order1.id, labelId: label1.id },
   })
 
   // Order 2: 3-pack, delivered, labels in use
@@ -123,11 +124,12 @@ async function main() {
     },
   })
 
-  // Assign labels to order 2
   for (const deviceId of ['HL-100002', 'HL-100003', 'HL-100004']) {
-    await prisma.label.update({
-      where: { deviceId },
-      data: { orderId: order2.id },
+    const label = await prisma.label.findUniqueOrThrow({ where: { deviceId } })
+    await prisma.orderLabel.upsert({
+      where: { orderId_labelId: { orderId: order2.id, labelId: label.id } },
+      update: {},
+      create: { orderId: order2.id, labelId: label.id },
     })
   }
 
@@ -156,11 +158,12 @@ async function main() {
     },
   })
 
-  // Assign labels to order 3
   for (const deviceId of ['HL-100005', 'HL-100006']) {
-    await prisma.label.update({
-      where: { deviceId },
-      data: { orderId: order3.id },
+    const label = await prisma.label.findUniqueOrThrow({ where: { deviceId } })
+    await prisma.orderLabel.upsert({
+      where: { orderId_labelId: { orderId: order3.id, labelId: label.id } },
+      update: {},
+      create: { orderId: order3.id, labelId: label.id },
     })
   }
 

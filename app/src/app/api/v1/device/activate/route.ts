@@ -26,11 +26,10 @@ export async function POST(req: NextRequest) {
 
     const { deviceId, shipmentId } = validated.data
 
-    // Find the label
     const label = await db.label.findUnique({
       where: { deviceId },
       include: {
-        order: true,
+        orderLabels: { include: { order: { select: { orgId: true, userId: true } } } },
       },
     })
 
@@ -60,16 +59,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify ownership through order - org-aware check
-    if (label.order) {
-      const sameOrg = label.order.orgId && label.order.orgId === context.orgId
-      const sameUser = label.order.userId === context.user.id
-      if (!sameOrg && !sameUser) {
-        return NextResponse.json(
-          { error: 'Forbidden', details: 'You do not own this label' },
-          { status: 403 }
-        )
-      }
+    const hasAccess = label.orderLabels.some(
+      (ol) =>
+        (ol.order.orgId && ol.order.orgId === context.orgId) || ol.order.userId === context.user.id
+    )
+    if (label.orderLabels.length > 0 && !hasAccess) {
+      return NextResponse.json(
+        { error: 'Forbidden', details: 'You do not own this label' },
+        { status: 403 }
+      )
     }
 
     // Activate the label

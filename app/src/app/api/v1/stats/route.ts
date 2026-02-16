@@ -29,9 +29,13 @@ export async function GET() {
       // Total labels owned (from orders that are paid/shipped/delivered)
       db.label.count({
         where: {
-          order: {
-            ...orderFilter,
-            status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+          orderLabels: {
+            some: {
+              order: {
+                ...orderFilter,
+                status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+              },
+            },
           },
         },
       }),
@@ -47,7 +51,7 @@ export async function GET() {
       // Low battery labels (< 20%)
       db.label.count({
         where: {
-          order: orderFilter,
+          orderLabels: { some: { order: orderFilter } },
           batteryPct: { lt: 20, gt: 0 },
           status: 'ACTIVE',
         },

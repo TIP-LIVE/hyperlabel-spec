@@ -21,15 +21,15 @@ const isPublicRoute = createRouteMatcher([
   '/api/health(.*)', // Health checks
 ])
 
-// Dashboard routes that require an active organization
-const isDashboardRoute = createRouteMatcher([
+// Dashboard routes that require an active organization (settings is allowed without org to avoid redirect loops)
+const isDashboardRouteRequiringOrg = createRouteMatcher([
   '/dashboard(.*)',
   '/shipments(.*)',
   '/orders(.*)',
   '/address-book(.*)',
-  '/settings(.*)',
   '/buy(.*)',
 ])
+
 
 // API routes — let route handlers do their own auth (return 401 JSON, not redirect)
 const isApiRoute = createRouteMatcher(['/api/(.*)'])
@@ -51,8 +51,8 @@ const proxy = hasClerkKey
       // Page routes: require authentication (redirects to /sign-in if not logged in)
       await auth.protect()
 
-      // For dashboard routes, require an active organization
-      if (isDashboardRoute(req)) {
+      // For dashboard routes (except /settings), require an active organization
+      if (isDashboardRouteRequiringOrg(req)) {
         const { orgId } = await auth()
         if (!orgId) {
           const orgSelectionUrl = new URL('/org-selection', req.url)

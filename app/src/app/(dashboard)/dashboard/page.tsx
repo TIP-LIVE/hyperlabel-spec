@@ -88,9 +88,13 @@ export default async function DashboardPage() {
       user
         ? db.label.count({
             where: {
-              order: {
-                ...orderFilter,
-                status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+              orderLabels: {
+                some: {
+                  order: {
+                    ...orderFilter,
+                    status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+                  },
+                },
               },
             },
           })
@@ -105,7 +109,7 @@ export default async function DashboardPage() {
       user
         ? db.label.count({
             where: {
-              order: orderFilter,
+              orderLabels: { some: { order: orderFilter } },
               batteryPct: { lt: 20, gt: 0 },
               status: 'ACTIVE',
             },
