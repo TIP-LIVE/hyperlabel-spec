@@ -7,8 +7,6 @@
  */
 
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
 const DATABASE_URL = process.env.DATABASE_URL
@@ -18,7 +16,6 @@ if (!DATABASE_URL) {
 }
 
 const pool = new Pool({ connectionString: DATABASE_URL })
-const prisma = new PrismaClient({ adapter: new PrismaPg(pool) })
 
 async function migrate() {
   console.log('Checking current schema...')
