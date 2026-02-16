@@ -1,5 +1,6 @@
 import { UserButton, OrganizationSwitcher } from '@clerk/nextjs'
 import { currentUser } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { Logo } from '@/components/ui/logo'
 import { redirect } from 'next/navigation'
@@ -30,7 +31,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   if (needSignIn) {
-    redirect('/sign-in')
+    const pathname = (await headers()).get('x-pathname') || '/dashboard'
+    redirect(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`)
   }
 
   return (

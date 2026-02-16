@@ -48,8 +48,13 @@ const proxy = hasClerkKey
       // which returns proper 401/403 JSON responses instead of redirects
       if (isApiRoute(req)) return
 
-      // Page routes: require authentication (redirects to /sign-in if not logged in)
-      await auth.protect()
+      // Page routes: require authentication; redirect to sign-in with return URL so user lands back here after sign-in
+      const { userId } = await auth()
+      if (!userId) {
+        const signInUrl = new URL('/sign-in', req.url)
+        signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname)
+        return NextResponse.redirect(signInUrl)
+      }
 
       // For dashboard routes (except /settings), require an active organization
       if (isDashboardRouteRequiringOrg(req)) {
@@ -59,6 +64,11 @@ const proxy = hasClerkKey
           return NextResponse.redirect(orgSelectionUrl)
         }
       }
+
+      // Pass pathname so dashboard layout can redirect back to this URL after sign-in
+      const requestHeaders = new Headers(req.headers)
+      requestHeaders.set('x-pathname', req.nextUrl.pathname)
+      return NextResponse.next({ request: { headers: requestHeaders } })
     })
   : () => NextResponse.next()
 
