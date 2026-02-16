@@ -74,3 +74,16 @@ export const activateLabelSchema = z.object({
 })
 
 export type ActivateLabelInput = z.infer<typeof activateLabelSchema>
+
+/**
+ * Schema for registering existing tracking labels to the current organisation.
+ * Device IDs are normalized (trimmed, optional HL- prefix).
+ */
+export const registerLabelsSchema = z.object({
+  deviceIds: z
+    .array(z.string().min(1, 'Device ID is required'))
+    .min(1, 'At least one device ID is required')
+    .max(100, 'Maximum 100 labels per request'),
+})
+
+export type RegisterLabelsInput = z.infer<typeof registerLabelsSchema>

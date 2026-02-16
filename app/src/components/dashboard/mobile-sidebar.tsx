@@ -37,14 +37,14 @@ export function MobileSidebar() {
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[85vw] max-w-[300px] p-0">
-        <SheetHeader className="border-b px-6 py-4">
+      <SheetContent side="left" className="flex w-[85vw] max-w-[300px] flex-col p-0">
+        <SheetHeader className="shrink-0 border-b px-6 py-4">
           <SheetTitle>
             <Logo size="md" />
           </SheetTitle>
         </SheetHeader>
         {isClerkConfigured() && (
-          <div className="border-b border-border px-4 py-3">
+          <div className="shrink-0 border-b border-border px-4 py-3">
             <OrganizationSwitcher
               hidePersonal={true}
               afterCreateOrganizationUrl="/dashboard"
@@ -67,7 +67,8 @@ export function MobileSidebar() {
             />
           </div>
         )}
-        <nav className="flex flex-col gap-1 p-4">
+        <nav className="min-h-0 flex-1 overflow-auto p-4">
+          <div className="flex flex-col gap-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
             return (
@@ -87,11 +88,16 @@ export function MobileSidebar() {
               </Link>
             )
           })}
+          </div>
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 border-t p-4">
-          <Button asChild className="w-full" onClick={() => setOpen(false)}>
-            <Link href="/buy">Buy Labels</Link>
-          </Button>
+        <div className="shrink-0 border-t border-border p-4">
+          <Link
+            href="/buy"
+            onClick={() => setOpen(false)}
+            className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+          >
+            Buy Labels
+          </Link>
         </div>
       </SheetContent>
     </Sheet>

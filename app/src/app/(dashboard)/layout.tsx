@@ -1,7 +1,6 @@
 import { UserButton, OrganizationSwitcher } from '@clerk/nextjs'
 import { currentUser } from '@clerk/nextjs/server'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { redirect } from 'next/navigation'
 import { isClerkConfigured } from '@/lib/clerk-config'
@@ -37,20 +36,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-muted">
       {/* Sidebar - Desktop */}
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 border-r border-border bg-card lg:block">
+      <aside className="fixed inset-y-0 left-0 z-50 flex hidden w-64 flex-col border-r border-border bg-card lg:flex">
         {/* Logo */}
-        <div className="flex h-16 items-center border-b border-border px-6">
+        <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
           <Logo size="lg" />
         </div>
 
-        {/* Navigation */}
-        <SidebarNav />
+        {/* Navigation - grows to fill so CTA stays at bottom */}
+        <div className="min-h-0 flex-1 overflow-auto">
+          <SidebarNav />
+        </div>
 
-        {/* Buy Labels CTA */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
-          <Button asChild className="w-full">
-            <Link href="/buy">Buy Labels</Link>
-          </Button>
+        {/* Buy Labels CTA - own block so href is always /buy */}
+        <div className="shrink-0 border-t border-border p-4">
+          <Link
+            href="/buy"
+            className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+          >
+            Buy Labels
+          </Link>
         </div>
       </aside>
 

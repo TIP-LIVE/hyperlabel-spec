@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
+import { AddExistingLabelsButton } from '@/components/dashboard/add-existing-labels-dialog'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle } from 'lucide-react'
 import { db } from '@/lib/db'
@@ -173,12 +174,15 @@ export default async function DashboardPage() {
         title="Dashboard"
         description="Overview of your shipments and tracking labels"
         action={
-          <Button asChild>
-            <Link href="/shipments/new">
-              <Package className="mr-2 h-4 w-4" />
-              New Shipment
-            </Link>
-          </Button>
+          <>
+            <AddExistingLabelsButton />
+            <Button asChild>
+              <Link href="/shipments/new">
+                <Package className="mr-2 h-4 w-4" />
+                New Shipment
+              </Link>
+            </Button>
+          </>
         }
       />
 
