@@ -26,6 +26,7 @@ import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
+import { toast } from 'sonner'
 import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
@@ -302,9 +303,18 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               </span>
             </div>
           </div>
-          <Badge variant="outline" className="hidden sm:flex text-xs font-mono shrink-0">
-            {latestLocation.latitude.toFixed(4)}, {latestLocation.longitude.toFixed(4)}
-          </Badge>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(`${latestLocation.latitude.toFixed(6)}, ${latestLocation.longitude.toFixed(6)}`)
+              toast.success('Coordinates copied')
+            }}
+            className="hidden sm:flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title="Copy coordinates"
+          >
+            <Navigation className="h-3 w-3" />
+            Copy coords
+          </button>
         </div>
       )}
 
