@@ -17,10 +17,12 @@ interface LocationPoint {
 
 interface TrackingMapProps {
   locations: LocationPoint[]
+  originLat?: number | null
+  originLng?: number | null
+  originAddress?: string | null
   destinationLat?: number | null
   destinationLng?: number | null
   destinationAddress?: string | null
-  originAddress?: string | null
   height?: string
 }
 
@@ -34,7 +36,6 @@ const defaultCenter = {
   lng: -0.1278,
 }
 
-// Light map styles — clean, minimal
 const lightStyles: google.maps.MapTypeStyle[] = [
   {
     featureType: 'poi',
@@ -48,7 +49,6 @@ const lightStyles: google.maps.MapTypeStyle[] = [
   },
 ]
 
-// Dark map styles — matches the app's dark theme
 const darkStyles: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
@@ -105,28 +105,52 @@ const darkStyles: google.maps.MapTypeStyle[] = [
   },
 ]
 
+function MapLabel({
+  text,
+  color,
+  position,
+}: {
+  text: string
+  color: string
+  position: google.maps.LatLngLiteral
+}) {
+  return (
+    <OverlayView position={position} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
+      <div
+        className="pointer-events-none -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg"
+        style={{
+          backgroundColor: color,
+          color: '#fff',
+          marginTop: '-36px',
+          border: '2px solid rgba(255,255,255,0.9)',
+        }}
+      >
+        {text}
+      </div>
+    </OverlayView>
+  )
+}
+
 export function TrackingMap({
   locations,
+  originLat,
+  originLng,
+  originAddress,
   destinationLat,
   destinationLng,
   destinationAddress,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  originAddress,
   height = '400px',
 }: TrackingMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null)
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null)
   const { resolvedTheme } = useTheme()
-  // Track if component has mounted (for theme detection hydration safety)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 
   const isDark = mounted && resolvedTheme === 'dark'
 
-  // Update map styles when theme changes
   useEffect(() => {
     if (mapRef) {
       mapRef.setOptions({
@@ -135,29 +159,47 @@ export function TrackingMap({
     }
   }, [isDark, mapRef])
 
-  // Get the latest location (first in array, since ordered desc)
   const latestLocation = locations[0]
+  const hasOrigin = originLat != null && originLng != null
+  const hasDestination = destinationLat != null && destinationLng != null
 
-  // Center on latest location or destination or default
   const center = useMemo(() => {
     if (latestLocation) {
       return { lat: latestLocation.latitude, lng: latestLocation.longitude }
     }
-    if (destinationLat && destinationLng) {
-      return { lat: destinationLat, lng: destinationLng }
+    if (hasDestination) {
+      return { lat: destinationLat!, lng: destinationLng! }
+    }
+    if (hasOrigin) {
+      return { lat: originLat!, lng: originLng! }
     }
     return defaultCenter
-  }, [latestLocation, destinationLat, destinationLng])
+  }, [latestLocation, hasDestination, destinationLat, destinationLng, hasOrigin, originLat, originLng])
 
-  // Path for polyline (reverse order so oldest is first)
-  const path = useMemo(
-    () =>
-      [...locations].reverse().map((loc) => ({
-        lat: loc.latitude,
-        lng: loc.longitude,
-      })),
-    [locations]
-  )
+  // Build the full route path: origin -> location points -> (destination is shown separately)
+  const path = useMemo(() => {
+    const points: google.maps.LatLngLiteral[] = []
+
+    if (hasOrigin) {
+      points.push({ lat: originLat!, lng: originLng! })
+    }
+
+    const reversed = [...locations].reverse()
+    reversed.forEach((loc) => {
+      points.push({ lat: loc.latitude, lng: loc.longitude })
+    })
+
+    return points
+  }, [locations, hasOrigin, originLat, originLng])
+
+  // Dashed line from current location to destination (remaining route)
+  const remainingPath = useMemo(() => {
+    if (!hasDestination || !latestLocation) return []
+    return [
+      { lat: latestLocation.latitude, lng: latestLocation.longitude },
+      { lat: destinationLat!, lng: destinationLng! },
+    ]
+  }, [hasDestination, latestLocation, destinationLat, destinationLng])
 
   const mapOptions: google.maps.MapOptions = useMemo(
     () => ({
@@ -175,26 +217,28 @@ export function TrackingMap({
     (map: google.maps.Map) => {
       setMapRef(map)
 
-      // Fit bounds to show all markers
-      if (locations.length > 0) {
+      if (locations.length > 0 || hasOrigin || hasDestination) {
         const bounds = new google.maps.LatLngBounds()
+        if (hasOrigin) {
+          bounds.extend({ lat: originLat!, lng: originLng! })
+        }
         locations.forEach((loc) => {
           bounds.extend({ lat: loc.latitude, lng: loc.longitude })
         })
-        if (destinationLat && destinationLng) {
-          bounds.extend({ lat: destinationLat, lng: destinationLng })
+        if (hasDestination) {
+          bounds.extend({ lat: destinationLat!, lng: destinationLng! })
         }
-        map.fitBounds(bounds, 50)
+        map.fitBounds(bounds, 60)
       }
     },
-    [locations, destinationLat, destinationLng]
+    [locations, hasOrigin, originLat, originLng, hasDestination, destinationLat, destinationLng]
   )
 
   const onUnmount = useCallback(() => {
     setMapRef(null)
   }, [])
 
-  if (locations.length === 0 && !destinationLat) {
+  if (locations.length === 0 && !hasDestination && !hasOrigin) {
     return (
       <div
         className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-muted/50"
@@ -221,42 +265,80 @@ export function TrackingMap({
         onUnmount={onUnmount}
         options={mapOptions}
       >
-        {/* Route polyline — dashed line connecting all points */}
+        {/* ── Completed route: solid line from origin through all tracked points ── */}
         {path.length > 1 && (
           <Polyline
             path={path}
             options={{
-              strokeColor: '#3b82f6',
+              strokeColor: isDark ? '#60a5fa' : '#3b82f6',
+              strokeOpacity: 0.85,
+              strokeWeight: 3,
+              geodesic: true,
+            }}
+          />
+        )}
+
+        {/* ── Remaining route: dashed line from current location to destination ── */}
+        {remainingPath.length === 2 && (
+          <Polyline
+            path={remainingPath}
+            options={{
+              strokeColor: isDark ? '#60a5fa' : '#3b82f6',
               strokeOpacity: 0,
               icons: [
                 {
                   icon: {
                     path: 'M 0,-1 0,1',
-                    strokeOpacity: 0.6,
-                    strokeWeight: 3,
+                    strokeOpacity: 0.4,
+                    strokeWeight: 2.5,
                     scale: 3,
                   },
                   offset: '0',
-                  repeat: '16px',
+                  repeat: '14px',
                 },
               ],
+              geodesic: true,
             }}
           />
         )}
 
-        {/* Solid route line underneath for better visibility */}
-        {path.length > 1 && (
-          <Polyline
-            path={path}
-            options={{
-              strokeColor: '#3b82f6',
-              strokeOpacity: 0.3,
-              strokeWeight: 3,
-            }}
-          />
+        {/* ── Origin marker ── */}
+        {hasOrigin && (
+          <>
+            <OverlayView
+              position={{ lat: originLat!, lng: originLng! }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div className="relative flex items-center justify-center">
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    backgroundColor: isDark ? '#34d399' : '#10b981',
+                    border: '3px solid rgba(255,255,255,0.95)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  }}
+                />
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    backgroundColor: '#fff',
+                  }}
+                />
+              </div>
+            </OverlayView>
+            <MapLabel
+              text={originAddress ? originAddress.split(',')[0] : 'Origin'}
+              color={isDark ? '#059669' : '#047857'}
+              position={{ lat: originLat!, lng: originLng! }}
+            />
+          </>
         )}
 
-        {/* Historical location markers (smaller, faded) */}
+        {/* ── Historical location dots ── */}
         {locations.slice(1).map((location) => (
           <Marker
             key={location.id}
@@ -264,16 +346,16 @@ export function TrackingMap({
             onClick={() => setSelectedLocation(location)}
             icon={{
               path: google.maps.SymbolPath.CIRCLE,
-              scale: 5,
-              fillColor: isDark ? '#64748b' : '#94a3b8',
-              fillOpacity: 0.6,
+              scale: 4,
+              fillColor: isDark ? '#60a5fa' : '#3b82f6',
+              fillOpacity: 0.5,
               strokeColor: isDark ? '#1e293b' : '#ffffff',
               strokeWeight: 1.5,
             }}
           />
         ))}
 
-        {/* Current location — pulsing outer ring via OverlayView */}
+        {/* ── Current location: pulsing blue dot ── */}
         {latestLocation && (
           <OverlayView
             position={{ lat: latestLocation.latitude, lng: latestLocation.longitude }}
@@ -281,16 +363,35 @@ export function TrackingMap({
           >
             <div className="relative flex items-center justify-center">
               {/* Pulsing ring */}
-              <div className="absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-blue-500/30" />
-              {/* Solid outer ring */}
-              <div className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-blue-500 shadow-lg dark:border-gray-800" />
-              {/* Inner dot */}
-              <div className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full"
+                style={{
+                  width: 36,
+                  height: 36,
+                  backgroundColor: isDark ? 'rgba(96,165,250,0.25)' : 'rgba(59,130,246,0.25)',
+                }}
+              />
+              {/* Outer ring */}
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: 22,
+                  height: 22,
+                  backgroundColor: isDark ? '#60a5fa' : '#3b82f6',
+                  border: '3px solid rgba(255,255,255,0.95)',
+                  boxShadow: '0 2px 10px rgba(59,130,246,0.5)',
+                }}
+              />
+              {/* Inner white dot */}
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ width: 8, height: 8, backgroundColor: '#fff' }}
+              />
             </div>
           </OverlayView>
         )}
 
-        {/* Invisible marker on top for click handling */}
+        {/* Invisible click target for current location */}
         {latestLocation && (
           <Marker
             position={{ lat: latestLocation.latitude, lng: latestLocation.longitude }}
@@ -306,24 +407,48 @@ export function TrackingMap({
           />
         )}
 
-        {/* Destination marker */}
-        {destinationLat && destinationLng && (
-          <Marker
-            position={{ lat: destinationLat, lng: destinationLng }}
-            icon={{
-              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-              scale: 6,
-              fillColor: '#22c55e',
-              fillOpacity: 1,
-              strokeColor: isDark ? '#1e293b' : '#ffffff',
-              strokeWeight: 2,
-              rotation: 180,
-            }}
-            title={destinationAddress || 'Destination'}
-          />
+        {/* ── Destination marker ── */}
+        {hasDestination && (
+          <>
+            <OverlayView
+              position={{ lat: destinationLat!, lng: destinationLng! }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div className="relative flex items-center justify-center">
+                {/* Flag-like pin */}
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderLeft: '10px solid transparent',
+                    borderRight: '10px solid transparent',
+                    borderTop: `16px solid ${isDark ? '#f87171' : '#ef4444'}`,
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  }}
+                />
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{
+                    width: 10,
+                    height: 10,
+                    backgroundColor: isDark ? '#f87171' : '#ef4444',
+                    border: '2px solid rgba(255,255,255,0.95)',
+                    marginTop: -10,
+                    boxShadow: '0 2px 8px rgba(239,68,68,0.4)',
+                  }}
+                />
+              </div>
+            </OverlayView>
+            <MapLabel
+              text={destinationAddress ? destinationAddress.split(',')[0] : 'Destination'}
+              color={isDark ? '#dc2626' : '#b91c1c'}
+              position={{ lat: destinationLat!, lng: destinationLng! }}
+            />
+          </>
         )}
 
-        {/* Info window for selected location */}
+        {/* ── Info window for clicked location ── */}
         {selectedLocation && (
           <InfoWindow
             position={{ lat: selectedLocation.latitude, lng: selectedLocation.longitude }}
@@ -384,31 +509,39 @@ export function TrackingMap({
         )}
       </GoogleMap>
 
-      {/* Map legend */}
+      {/* ── Map legend ── */}
       <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 rounded-lg border bg-background/90 px-3 py-2 text-xs shadow-sm backdrop-blur-sm">
+        {hasOrigin && (
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm" />
+            <span className="text-muted-foreground">
+              {originAddress ? originAddress.split(',')[0] : 'Origin'}
+            </span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full border-2 border-white bg-blue-500 shadow-sm" />
           <span className="text-muted-foreground">Current location</span>
         </div>
         {locations.length > 1 && (
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-slate-400/60" />
+            <div className="h-2 w-2 rounded-full bg-blue-400/50" />
             <span className="text-muted-foreground">Previous locations</span>
           </div>
         )}
-        {destinationLat && destinationLng && (
+        {hasDestination && (
           <div className="flex items-center gap-2">
-            <div className="h-0 w-0 border-l-[5px] border-r-[5px] border-t-[8px] border-l-transparent border-r-transparent border-t-green-500" />
+            <div className="h-0 w-0 border-l-[5px] border-r-[5px] border-t-[8px] border-l-transparent border-r-transparent border-t-red-500" />
             <span className="text-muted-foreground">
               {destinationAddress
-                ? destinationAddress.split(',').slice(0, 2).join(',')
+                ? destinationAddress.split(',')[0]
                 : 'Destination'}
             </span>
           </div>
         )}
       </div>
 
-      {/* Last updated badge */}
+      {/* ── Last updated badge ── */}
       {latestLocation && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border bg-background/90 px-2.5 py-1 text-[11px] shadow-sm backdrop-blur-sm">
           <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />

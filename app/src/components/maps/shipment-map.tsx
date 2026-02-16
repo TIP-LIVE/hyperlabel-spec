@@ -14,6 +14,9 @@ interface LocationPoint {
 
 interface ShipmentMapProps {
   locations: LocationPoint[]
+  originLat?: number | null
+  originLng?: number | null
+  originAddress?: string | null
   destinationLat?: number | null
   destinationLng?: number | null
   destinationAddress?: string | null
