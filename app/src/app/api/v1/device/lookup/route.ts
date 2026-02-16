@@ -54,13 +54,16 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({
+    // Cache for 1 hour — device-to-identifier mappings rarely change
+    const response = NextResponse.json({
       deviceId: label.deviceId,
       imei: label.imei,
       iccid: label.iccid,
       status: label.status,
       batteryPct: label.batteryPct,
     })
+    response.headers.set('Cache-Control', 'public, max-age=3600')
+    return response
   } catch (error) {
     console.error('Error looking up device:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

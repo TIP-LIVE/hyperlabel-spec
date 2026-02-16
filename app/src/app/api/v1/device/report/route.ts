@@ -48,29 +48,52 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Find the label by deviceId
-    const label = await db.label.findUnique({
-      where: { deviceId: data.deviceId },
-      include: {
-        shipments: {
-          where: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: {
-            id: true,
-            name: true,
-            status: true,
-            shareCode: true,
-            userId: true,
-            originAddress: true,
-            destinationAddress: true,
-            destinationLat: true,
-            destinationLng: true,
-            consigneeEmail: true,
-          },
-        },
+    // Shipment select fields (reused for all lookup strategies)
+    const shipmentSelect = {
+      id: true,
+      name: true,
+      status: true,
+      shareCode: true,
+      userId: true,
+      originAddress: true,
+      destinationAddress: true,
+      destinationLat: true,
+      destinationLng: true,
+      consigneeEmail: true,
+    }
+
+    const shipmentInclude = {
+      shipments: {
+        where: { status: { in: ['PENDING', 'IN_TRANSIT'] as ['PENDING', 'IN_TRANSIT'] } },
+        orderBy: { createdAt: 'desc' as const },
+        take: 1,
+        select: shipmentSelect,
       },
-    })
+    }
+
+    // Find the label by deviceId, IMEI, or ICCID
+    let label = data.deviceId
+      ? await db.label.findUnique({
+          where: { deviceId: data.deviceId },
+          include: shipmentInclude,
+        })
+      : null
+
+    // Fallback: look up by IMEI
+    if (!label && data.imei) {
+      label = await db.label.findFirst({
+        where: { imei: data.imei },
+        include: shipmentInclude,
+      })
+    }
+
+    // Fallback: look up by ICCID
+    if (!label && data.iccid) {
+      label = await db.label.findFirst({
+        where: { iccid: data.iccid },
+        include: shipmentInclude,
+      })
+    }
 
     if (!label) {
       return NextResponse.json({ error: 'Device not found' }, { status: 404 })
