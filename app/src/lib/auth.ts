@@ -23,37 +23,48 @@ export async function getCurrentUser() {
     return null
   }
 
-  const { userId } = await auth()
+  try {
+    const { userId } = await auth()
 
-  if (!userId) {
+    if (!userId) {
+      return null
+    }
+
+    // Try to find user in database
+    let user = await db.user.findUnique({
+      where: { clerkId: userId },
+    })
+
+    // If not found, sync from Clerk (webhook may not have fired yet)
+    if (!user) {
+      const clerkUser = await currentUser()
+
+      if (clerkUser) {
+        const emailAddress = clerkUser.emailAddresses[0]?.emailAddress || ''
+        try {
+          user = await db.user.create({
+            data: {
+              clerkId: clerkUser.id,
+              email: emailAddress,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+              imageUrl: clerkUser.imageUrl,
+              role: isAdminEmail(emailAddress) ? 'admin' : 'user',
+            },
+          })
+        } catch {
+          // Race: webhook may have created user. Refetch.
+          user = await db.user.findUnique({
+            where: { clerkId: userId },
+          })
+        }
+      }
+    }
+
+    return user
+  } catch {
     return null
   }
-
-  // Try to find user in database
-  let user = await db.user.findUnique({
-    where: { clerkId: userId },
-  })
-
-  // If not found, sync from Clerk (webhook may not have fired yet)
-  if (!user) {
-    const clerkUser = await currentUser()
-
-    if (clerkUser) {
-      const emailAddress = clerkUser.emailAddresses[0]?.emailAddress || ''
-      user = await db.user.create({
-        data: {
-          clerkId: clerkUser.id,
-          email: emailAddress,
-          firstName: clerkUser.firstName,
-          lastName: clerkUser.lastName,
-          imageUrl: clerkUser.imageUrl,
-          role: isAdminEmail(emailAddress) ? 'admin' : 'user',
-        },
-      })
-    }
-  }
-
-  return user
 }
 
 /**

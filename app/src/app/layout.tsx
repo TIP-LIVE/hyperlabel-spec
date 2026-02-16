@@ -71,6 +71,8 @@ function ConditionalClerkProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/dashboard"
       appearance={{
         variables: {
           colorPrimary: '#008800',

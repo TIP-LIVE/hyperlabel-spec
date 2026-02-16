@@ -52,6 +52,8 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=xxx
 RESEND_API_KEY=re_xxx
 ```
 
+**Clerk redirects:** The app sets `signInFallbackRedirectUrl` and `signUpFallbackRedirectUrl` in code. In Vercel (or any host), remove `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` if present, to avoid deprecation warnings in the console.
+
 ### 3. Set Up Database
 
 ```bash

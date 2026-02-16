@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,13 +24,27 @@ const statusConfig = shipmentStatusConfig
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
-  const { orgId, orgRole } = await auth()
+  let orgId: string | null = null
+  let orgRole: string | null = null
+  let needSignIn = false
+
+  try {
+    const authResult = await auth()
+    orgId = authResult.orgId ?? null
+    orgRole = authResult.orgRole ?? null
+  } catch {
+    needSignIn = true
+  }
+
+  if (needSignIn) {
+    redirect('/sign-in')
+  }
 
   // Build org-scoped query for shipments
   const where: Record<string, unknown> = {}
   if (orgId) {
     where.orgId = orgId
-    if (!canViewAllOrgData(orgRole || 'org:member')) {
+    if (!canViewAllOrgData(orgRole ?? 'org:member')) {
       where.userId = user?.id
     }
   } else if (user) {
@@ -40,7 +55,7 @@ export default async function DashboardPage() {
   const orderFilter: Record<string, unknown> = {}
   if (orgId) {
     orderFilter.orgId = orgId
-    if (!canViewAllOrgData(orgRole || 'org:member')) {
+    if (!canViewAllOrgData(orgRole ?? 'org:member')) {
       orderFilter.userId = user?.id
     }
   } else if (user) {
@@ -51,18 +66,24 @@ export default async function DashboardPage() {
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  // Fetch stats and recent shipments in parallel
-  const [activeShipments, totalLabels, deliveredThisMonth, lowBatteryLabels, recentShipments] =
-    await Promise.all([
-      // Active shipments
-      db.shipment.count({
-        where: {
-          ...where,
-          status: 'IN_TRANSIT',
-        },
-      }),
+  let activeShipments = 0
+  let totalLabels = 0
+  let deliveredThisMonth = 0
+  let lowBatteryLabels = 0
+  let recentShipments: Array<{
+    id: string
+    name: string | null
+    status: keyof typeof statusConfig
+    updatedAt: Date
+    label?: { deviceId: string; batteryPct: number | null } | null
+    locations: Array<{ recordedAt: Date }>
+  }> = []
 
-      // Total labels owned
+  try {
+    const [active, total, delivered, lowBattery, recent] = await Promise.all([
+      db.shipment.count({
+        where: { ...where, status: 'IN_TRANSIT' },
+      }),
       user
         ? db.label.count({
             where: {
@@ -73,8 +94,6 @@ export default async function DashboardPage() {
             },
           })
         : 0,
-
-      // Delivered this month
       db.shipment.count({
         where: {
           ...where,
@@ -82,8 +101,6 @@ export default async function DashboardPage() {
           deliveredAt: { gte: monthStart },
         },
       }),
-
-      // Low battery labels
       user
         ? db.label.count({
             where: {
@@ -93,16 +110,11 @@ export default async function DashboardPage() {
             },
           })
         : 0,
-
-      // Recent shipments
       db.shipment.findMany({
         where,
         include: {
           label: {
-            select: {
-              deviceId: true,
-              batteryPct: true,
-            },
+            select: { deviceId: true, batteryPct: true },
           },
           locations: {
             select: { recordedAt: true },
@@ -114,6 +126,14 @@ export default async function DashboardPage() {
         take: 5,
       }),
     ])
+    activeShipments = active
+    totalLabels = total
+    deliveredThisMonth = delivered
+    lowBatteryLabels = lowBattery
+    recentShipments = recent
+  } catch {
+    // Database unreachable or query error — render dashboard with empty data
+  }
 
   const stats = [
     {
@@ -262,6 +282,7 @@ export default async function DashboardPage() {
             <div className="space-y-4">
               {recentShipments.map((shipment) => {
                 const status = statusConfig[shipment.status]
+                const label = shipment.label
                 return (
                   <Link
                     key={shipment.id}
@@ -277,7 +298,7 @@ export default async function DashboardPage() {
                           {shipment.name || 'Untitled Shipment'}
                         </span>
                         <p className="text-sm text-muted-foreground">
-                          {shipment.label.deviceId} ·{' '}
+                          {label?.deviceId ?? '—'} ·{' '}
                           {formatDistanceToNow(
                             new Date(shipment.locations[0]?.recordedAt ?? shipment.updatedAt),
                             { addSuffix: true }
@@ -286,23 +307,23 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {shipment.label.batteryPct !== null && (
+                      {label != null && label.batteryPct !== null && (
                         <div className="flex items-center gap-1">
                           <Battery
                             className={`h-4 w-4 ${
-                              shipment.label.batteryPct < 20
+                              label.batteryPct < 20
                                 ? 'text-destructive'
-                                : shipment.label.batteryPct < 50
+                                : label.batteryPct < 50
                                   ? 'text-yellow-500'
                                   : 'text-green-500'
                             }`}
                           />
                           <span
                             className={`text-sm ${
-                              shipment.label.batteryPct < 20 ? 'text-destructive font-medium' : 'text-muted-foreground'
+                              label.batteryPct < 20 ? 'text-destructive font-medium' : 'text-muted-foreground'
                             }`}
                           >
-                            {shipment.label.batteryPct}%
+                            {label.batteryPct}%
                           </span>
                         </div>
                       )}

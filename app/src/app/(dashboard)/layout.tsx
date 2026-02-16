@@ -14,15 +14,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const clerkEnabled = isClerkConfigured()
 
   let firstName = 'User'
+  let needSignIn = false
 
   if (clerkEnabled) {
-    const user = await currentUser()
+    try {
+      const user = await currentUser()
 
-    if (!user) {
-      redirect('/sign-in')
+      if (!user) {
+        needSignIn = true
+      } else {
+        firstName = user.firstName || user.emailAddresses[0]?.emailAddress?.split('@')[0] || 'User'
+      }
+    } catch {
+      needSignIn = true
     }
+  }
 
-    firstName = user.firstName || user.emailAddresses[0]?.emailAddress?.split('@')[0] || 'User'
+  if (needSignIn) {
+    redirect('/sign-in')
   }
 
   return (

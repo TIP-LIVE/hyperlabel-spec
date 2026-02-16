@@ -2,6 +2,13 @@ import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
+  // Serve logo for legacy PWA icon paths (stops 404 from cached manifests)
+  async rewrites() {
+    return [
+      { source: '/android-chrome-192x192.png', destination: '/logo.svg' },
+      { source: '/android-chrome-512x512.png', destination: '/logo.svg' },
+    ]
+  },
   // Security headers for all routes
   async headers() {
     return [
