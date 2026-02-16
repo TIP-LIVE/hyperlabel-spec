@@ -1,0 +1,63 @@
+# Manual workflow: copy app and workflows from this repo (hyperlabel-spec) into TIP-LIVE/tip and push.
+# Use this for Option A: one repo (tip) with one set of keys.
+#
+# Required secret in this repo (hyperlabel-spec):
+#   TIP_REPO_TOKEN - GitHub PAT or fine-grained token with contents: write (and read) on repo TIP-LIVE/tip
+#
+# How to create: GitHub → Settings → Developer settings → Personal access tokens (or Fine-grained)
+#   Scope: repo (or minimum: contents read/write for TIP-LIVE/tip)
+# Add the token as TIP_REPO_TOKEN in: hyperlabel-spec → Settings → Secrets and variables → Actions
+
+name: Migrate code to tip repo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    name: Copy to tip and push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout hyperlabel-spec (this repo)
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout tip repo
+        uses: actions/checkout@v4
+        with:
+          repository: TIP-LIVE/tip
+          token: ${{ secrets.TIP_REPO_TOKEN }}
+          path: tip
+          ref: main
+
+      - name: Copy app (exclude .next, node_modules, .env)
+        run: |
+          mkdir -p tip/app
+          rsync -a --delete \
+            --exclude='.next' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='.env.local' \
+            --exclude='.env.*.local' \
+            source/app/ tip/app/
+
+      - name: Copy workflows
+        run: |
+          mkdir -p tip/.github/workflows
+          for f in deploy.yml run-migration.yml ci.yml; do
+            if [ -f "source/.github/workflows/$f" ]; then
+              cp "source/.github/workflows/$f" "tip/.github/workflows/$f"
+              echo "  $f"
+            fi
+          done
+
+      - name: Commit and push to tip
+        run: |
+          cd tip
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app .github/workflows
+          git diff --staged --quiet && echo "No changes" && exit 0
+          git commit -m "chore: sync app and workflows from hyperlabel-spec"
+          git push origin main
