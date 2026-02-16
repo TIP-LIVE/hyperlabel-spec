@@ -98,6 +98,7 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
       latitude: loc.latitude,
       longitude: loc.longitude,
       recordedAt: loc.recordedAt.toISOString(),
+      receivedAt: loc.receivedAt.toISOString(),
       batteryPct: loc.batteryPct,
       accuracyM: loc.accuracyM,
       isOfflineSync: loc.isOfflineSync,

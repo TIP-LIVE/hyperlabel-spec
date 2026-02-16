@@ -36,6 +36,7 @@ interface LocationPoint {
   latitude: number
   longitude: number
   recordedAt: string
+  receivedAt?: string
   batteryPct: number | null
   accuracyM: number | null
   altitude?: number | null
@@ -201,11 +202,21 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
 
   const handleManualRefresh = useCallback(() => { poll() }, [poll])
 
-  const locationsWithDates = shipment.locations.map((l) => ({
-    ...l,
-    recordedAt: new Date(l.recordedAt),
-    isOfflineSync: l.isOfflineSync ?? false,
-  }))
+  const OFFLINE_SYNC_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
+
+  const locationsWithDates = shipment.locations.map((l) => {
+    const recordedAt = new Date(l.recordedAt)
+    const receivedAt = l.receivedAt ? new Date(l.receivedAt) : null
+    // Offline sync = gap between device recording and server receiving > 5 min
+    const isOfflineSync = receivedAt
+      ? receivedAt.getTime() - recordedAt.getTime() > OFFLINE_SYNC_THRESHOLD_MS
+      : l.isOfflineSync ?? false
+    return {
+      ...l,
+      recordedAt,
+      isOfflineSync,
+    }
+  })
 
   return (
     <div className="space-y-6">

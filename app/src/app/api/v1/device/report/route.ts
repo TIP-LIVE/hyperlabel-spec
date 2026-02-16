@@ -104,6 +104,13 @@ export async function POST(req: NextRequest) {
 
     // Parse recorded timestamp or use current time
     const recordedAt = data.recordedAt ? new Date(data.recordedAt) : new Date()
+    const receivedAt = new Date()
+
+    // Auto-detect offline sync: if recorded time is > 5 min before server receive, it's offline
+    const OFFLINE_SYNC_THRESHOLD_MS = 5 * 60 * 1000
+    const isOfflineSync = data.isOfflineSync === true
+      ? true // Explicitly marked by webhook
+      : receivedAt.getTime() - recordedAt.getTime() > OFFLINE_SYNC_THRESHOLD_MS
 
     // Store the location event
     const locationEvent = await db.locationEvent.create({
@@ -117,7 +124,8 @@ export async function POST(req: NextRequest) {
         speed: data.speed,
         batteryPct: data.battery,
         recordedAt,
-        isOfflineSync: data.isOfflineSync,
+        receivedAt,
+        isOfflineSync,
         cellLatitude: data.cellLatitude,
         cellLongitude: data.cellLongitude,
       },
