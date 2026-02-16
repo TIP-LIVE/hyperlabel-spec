@@ -73,10 +73,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 afterSelectOrganizationUrl="/dashboard"
                 afterLeaveOrganizationUrl="/org-selection"
                 appearance={{
+                  variables: {
+                    colorText: 'inherit',
+                  },
                   elements: {
                     rootBox: 'hidden lg:flex',
                     organizationSwitcherTrigger:
-                      'rounded-lg border border-border px-3 py-1.5 text-sm text-foreground',
+                      'rounded-lg border border-border px-3 py-1.5 text-sm !text-foreground [&>*]:!text-foreground',
+                    organizationPreviewMainIdentifier: '!text-foreground',
+                    organizationSwitcherTriggerIcon: '!text-foreground',
                   },
                 }}
               />

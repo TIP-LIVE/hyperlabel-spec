@@ -51,10 +51,15 @@ export function MobileSidebar() {
               afterSelectOrganizationUrl="/dashboard"
               afterLeaveOrganizationUrl="/org-selection"
               appearance={{
+                variables: {
+                  colorText: 'inherit',
+                },
                 elements: {
                   rootBox: 'w-full',
-                    organizationSwitcherTrigger:
-                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm text-foreground',
+                  organizationSwitcherTrigger:
+                    'w-full justify-between rounded-lg border border-border px-3 py-1.5 text-sm !text-foreground [&>*]:!text-foreground',
+                  organizationPreviewMainIdentifier: '!text-foreground',
+                  organizationSwitcherTriggerIcon: '!text-foreground',
                 },
               }}
             />
