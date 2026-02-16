@@ -158,11 +158,13 @@ The quiz transforms the technical onboarding into a journey through a peaceful f
 
 **Visual**: Sunlight breaking through trees, path becoming clearer
 
+**Git Branch**: `product-tour`
+
 #### Goal Framework Overview
 
 The goal selection is the foundation that shapes the entire quiz experience. We use a two-step approach:
 1. **Primary Goal** - High-level intent
-2. **Sub-Goal** - Specific use case
+2. **Sub-Goal** - Specific use case (includes "Other" for custom goals)
 
 ---
 
@@ -197,6 +199,12 @@ The goal selection is the foundation that shapes the entire quiz experience. We 
 │     │  🌐 EXPAND MY NETWORK                                         │       │
 │     │                                                               │       │
 │     │  Meet peers, attend events, build relationships               │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ✨ SOMETHING ELSE                                            │       │
+│     │                                                               │       │
+│     │  I have a different goal in mind                              │       │
 │     └───────────────────────────────────────────────────────────────┘       │
 │                                                                             │
 │     💡 "Each AI assistant specializes in different outreach strategies"     │
@@ -239,6 +247,11 @@ The goal selection is the foundation that shapes the entire quiz experience. We 
 │     │     Outsource work, find service providers                    │       │
 │     └───────────────────────────────────────────────────────────────┘       │
 │                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ✨ Other                                                     │       │
+│     │     Describe your specific business growth goal               │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -266,6 +279,11 @@ The goal selection is the foundation that shapes the entire quiz experience. We 
 │     ┌───────────────────────────────────────────────────────────────┐       │
 │     │  🎓 Find advisors & board members                             │       │
 │     │     Strategic guidance and governance                         │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ✨ Other                                                     │       │
+│     │     Describe who you're looking to hire                       │       │
 │     └───────────────────────────────────────────────────────────────┘       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -299,6 +317,11 @@ The goal selection is the foundation that shapes the entire quiz experience. We 
 │     │     Connect with journalists, bloggers, publications          │       │
 │     └───────────────────────────────────────────────────────────────┘       │
 │                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ✨ Other                                                     │       │
+│     │     Describe the opportunity you're looking for               │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -328,8 +351,45 @@ The goal selection is the foundation that shapes the entire quiz experience. We 
 │     │     Industry experts and influencers to learn from            │       │
 │     └───────────────────────────────────────────────────────────────┘       │
 │                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │  ✨ Other                                                     │       │
+│     │     Describe who you want to connect with                     │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+#### If "SOMETHING ELSE":
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│     Tell us what you're looking for:                                        │
+│                                                                             │
+│     ┌───────────────────────────────────────────────────────────────┐       │
+│     │                                                               │       │
+│     │  Describe your goal in your own words:                        │       │
+│     │                                                               │       │
+│     │  ┌─────────────────────────────────────────────────────────┐  │       │
+│     │  │ I want to find podcast hosts who interview startup     │  │       │
+│     │  │ founders to get exposure for my new product...         │  │       │
+│     │  │                                                        │  │       │
+│     │  └─────────────────────────────────────────────────────────┘  │       │
+│     │                                                               │       │
+│     │  💡 Examples:                                                 │       │
+│     │  • "Find real estate agents interested in AI tools"           │       │
+│     │  • "Connect with university professors in my field"           │       │
+│     │  • "Find potential acquisition targets in my industry"        │       │
+│     │                                                               │       │
+│     └───────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│     AI will help you create the perfect search criteria.                    │
+│                                                                             │
+│                         [ Continue → ]                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Note**: "Other" and "Something Else" goals skip to natural language persona creation (Path B) since we don't have predefined templates for them.
 
 ---
 
@@ -425,7 +485,7 @@ Each sub-goal may have additional questions to personalize the experience:
 
 ```typescript
 // Goal type definitions
-type PrimaryGoal = 'grow_business' | 'build_team' | 'find_opportunities' | 'expand_network';
+type PrimaryGoal = 'grow_business' | 'build_team' | 'find_opportunities' | 'expand_network' | 'other';
 
 type SubGoal = 
   // Grow Business
@@ -434,21 +494,27 @@ type SubGoal =
   | 'influencer_marketing'
   | 'investors_advisors'
   | 'agencies_vendors'
+  | 'other_growth'           // Other business growth goal
   // Build Team
   | 'hire_fulltime'
   | 'find_freelancers'
   | 'find_cofounders'
   | 'find_board_advisors'
+  | 'other_hiring'           // Other hiring goal
   // Find Opportunities
   | 'invest_in_startups'
   | 'guest_posts_seo'
   | 'speaking_opportunities'
   | 'press_media'
+  | 'other_opportunities'    // Other opportunity goal
   // Expand Network
   | 'industry_peers'
   | 'event_connections'
   | 'local_professionals'
-  | 'thought_leaders';
+  | 'thought_leaders'
+  | 'other_networking'       // Other networking goal
+  // Something Else (Primary = 'other')
+  | 'custom_goal';           // Fully custom goal
 
 interface GoalConfig {
   id: SubGoal;
@@ -1598,7 +1664,7 @@ type QuizStep =
   | 'success';
 
 // Goal types (from Phase 2 configuration)
-type PrimaryGoal = 'grow_business' | 'build_team' | 'find_opportunities' | 'expand_network';
+type PrimaryGoal = 'grow_business' | 'build_team' | 'find_opportunities' | 'expand_network' | 'other';
 
 type SubGoal = 
   // Grow Business
@@ -1607,21 +1673,27 @@ type SubGoal =
   | 'influencer_marketing'
   | 'investors_advisors'
   | 'agencies_vendors'
+  | 'other_growth'           // Other business growth goal
   // Build Team
   | 'hire_fulltime'
   | 'find_freelancers'
   | 'find_cofounders'
   | 'find_board_advisors'
+  | 'other_hiring'           // Other hiring goal
   // Find Opportunities
   | 'invest_in_startups'
   | 'guest_posts_seo'
   | 'speaking_opportunities'
   | 'press_media'
+  | 'other_opportunities'    // Other opportunity goal
   // Expand Network
   | 'industry_peers'
   | 'event_connections'
   | 'local_professionals'
-  | 'thought_leaders';
+  | 'thought_leaders'
+  | 'other_networking'       // Other networking goal
+  // Something Else (Primary = 'other')
+  | 'custom_goal';           // Fully custom goal
 
 // Goal-specific details (varies by subGoal)
 type GoalDetails = 
@@ -1629,7 +1701,14 @@ type GoalDetails =
   | InvestorDetails
   | GuestPostDetails
   | RecruitingDetails
+  | OtherGoalDetails         // For "Other" / custom goals
   | null;
+
+interface OtherGoalDetails {
+  description: string;       // User's free-text description of their goal
+  suggestedJobTitles?: string[];  // AI-suggested titles based on description
+  suggestedIndustries?: string[]; // AI-suggested industries
+}
 
 interface InfluencerDetails {
   niche: string;

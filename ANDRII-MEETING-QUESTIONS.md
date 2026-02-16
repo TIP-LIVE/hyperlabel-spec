@@ -1,4 +1,4 @@
-# HyperLabel: Questions for Andrii
+# TIP: Questions for Andrii
 **Meeting Date:** January 27, 2026  
 **Purpose:** Clarify label lifecycle & hardware details
 

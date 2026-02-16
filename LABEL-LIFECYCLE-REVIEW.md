@@ -1,4 +1,4 @@
-# HyperLabel: Label Lifecycle Review
+# TIP: Label Lifecycle Review
 
 **Purpose:** Discussion document for Denys & Andrii  
 **Date:** January 26, 2026  
@@ -29,7 +29,7 @@ MANUFACTURING → INVENTORY → PURCHASE → SHIP TO SHIPPER → ACTIVATE → TR
 
 | Question | Options | Answer |
 |----------|---------|--------|
-| **Who triggers label shipment?** | Automatic (when shipper enters address) / Manual (HyperLabel team) | |
+| **Who triggers label shipment?** | Automatic (when shipper enters address) / Manual (TIP team) | |
 | **What if shipper never responds to link?** | Timeout after X days? Refund? Re-assign? | |
 | **Is label tracked during shipping TO shipper?** | Yes (active) / No (dormant until activation) | |
 | **What if label lost in transit to shipper?** | Replacement? Refund? | |
