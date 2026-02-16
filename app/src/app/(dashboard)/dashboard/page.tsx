@@ -258,21 +258,19 @@ export default async function DashboardPage() {
               {recentShipments.map((shipment) => {
                 const status = statusConfig[shipment.status]
                 return (
-                  <div
+                  <Link
                     key={shipment.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    href={`/shipments/${shipment.id}`}
+                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                         <Package className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <Link
-                          href={`/shipments/${shipment.id}`}
-                          className="font-medium hover:underline"
-                        >
+                        <span className="font-medium">
                           {shipment.name || 'Untitled Shipment'}
-                        </Link>
+                        </span>
                         <p className="text-sm text-muted-foreground">
                           {shipment.label.deviceId} ·{' '}
                           {formatDistanceToNow(new Date(shipment.createdAt), { addSuffix: true })}
@@ -302,7 +300,7 @@ export default async function DashboardPage() {
                       )}
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </div>
-                  </div>
+                  </Link>
                 )
               })}
             </div>
