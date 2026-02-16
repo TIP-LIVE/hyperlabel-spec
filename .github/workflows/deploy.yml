@@ -39,8 +39,11 @@ jobs:
       - name: Pull Vercel Environment
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Build Project
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: npm run build
         env:
           # All secrets injected from GitHub Secrets → Vercel
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
