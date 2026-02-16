@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
-  Package,
   MapPin,
   ShoppingCart,
   StickyNote,
@@ -29,13 +28,13 @@ import { isClerkConfigured } from '@/lib/clerk-config'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'TIP — Track Any Cargo, Anywhere',
+  title: 'TIP — Live Door-to-Door Tracking Label For Any Cargo',
   description:
-    'Door-to-door cargo tracking labels. Reliable updates every 2 hours in 180+ countries. AI-powered route detection, delivery alerts. From $20 per label.',
+    'Stick a tracking label on your shipment and follow it from pickup to delivery. Real-time location, delivery alerts, shareable links — in 180+ countries.',
   openGraph: {
-    title: 'TIP — Door-to-Door Cargo Tracking',
+    title: 'TIP — Live Door-to-Door Tracking Label For Any Cargo',
     description:
-      'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links. From $20 per label.',
+      'Stick a tracking label on your shipment and follow it from pickup to delivery. Real-time location, delivery alerts, shareable links — in 180+ countries.',
   },
 }
 
@@ -95,40 +94,84 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b bg-gradient-to-b from-muted to-background py-20 md:py-28">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="mx-auto max-w-4xl text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-            Door-to-Door Cargo Tracking
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Reliable tracking every 2 hours in 180+ countries. AI-powered route detection,
-            delivery alerts, shareable links — from $20 per label.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button size="lg" className="gap-2" asChild>
-              <Link href="/sign-up">
-                Buy Labels
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="#how-it-works">How It Works</Link>
-            </Button>
-          </div>
-          <div className="mt-16 flex justify-center">
-            <div className="flex h-24 w-full max-w-72 items-center justify-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5">
-              <Package className="h-12 w-12 text-primary/60" />
-              <div className="text-left">
-                <p className="text-sm font-semibold text-primary">Tracking Label</p>
-                <p className="text-xs text-muted-foreground">Peel. Stick. Track door to door.</p>
+      {/* Hero — dark background, bold typography */}
+      <section className="relative overflow-hidden border-b bg-black py-20 md:py-28">
+        <div className="container mx-auto px-4">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* Left: copy */}
+            <div>
+              <Logo size="lg" iconClassName="text-white" textClassName="text-white" />
+              <h1 className="mt-8 text-headline text-4xl text-white md:text-5xl lg:text-6xl">
+                Live Door-to-Door
+                <br />
+                Tracking Label
+                <br />
+                For Any Cargo
+              </h1>
+              <p className="mt-6 max-w-lg text-body-brand text-gray-400 md:text-lg">
+                Stick a tracking label on your shipment and follow it from pickup to delivery.
+                Real-time location, delivery alerts, shareable links — in 180+ countries.
+              </p>
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Button size="lg" className="gap-2" asChild>
+                  <Link href="/sign-up">
+                    Buy Labels
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="border-gray-700 text-white hover:bg-gray-900" asChild>
+                  <Link href="#how-it-works">How It Works</Link>
+                </Button>
               </div>
             </div>
+
+            {/* Right: tracking card preview */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                {/* Map placeholder */}
+                <div className="relative h-40 rounded-xl bg-gradient-to-br from-green-100 to-green-200 overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative">
+                      <div className="h-20 w-20 rounded-full bg-primary/20 animate-pulse" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-primary/40" />
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="h-5 w-5 rounded bg-gray-700" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Tracking info */}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                    <span className="font-semibold text-gray-900">Cargo Robbie 16</span>
+                  </div>
+                  <div className="mt-3 flex gap-8">
+                    <div>
+                      <p className="text-xs text-gray-500">Distance Left</p>
+                      <p className="text-2xl font-bold text-gray-900">8,21 <span className="text-sm font-normal text-gray-400">km</span></p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Estimated Arrival</p>
+                      <p className="text-2xl font-bold text-gray-900">18:44 <span className="text-sm font-normal text-gray-400">4 Feb</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer branding */}
+          <div className="mt-16 flex items-center gap-2 text-sm text-gray-500">
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span>tip.live</span>
           </div>
         </div>
       </section>
 
-      {/* How it works — 3 steps */}
+      {/* How it works — 4 steps */}
       <section id="how-it-works" className="scroll-mt-20 py-20 md:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-center text-3xl font-bold md:text-4xl">How It Works</h2>
@@ -137,8 +180,8 @@ export default async function HomePage() {
           </p>
           <div className="mt-16 grid gap-10 md:grid-cols-4">
             <div className="relative flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <ShoppingCart className="h-7 w-7 text-primary" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black text-white dark:bg-primary dark:text-black">
+                <ShoppingCart className="h-7 w-7" />
               </div>
               <h3 className="mt-4 text-xl font-semibold">1. Order Labels</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -149,8 +192,8 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="relative flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <StickyNote className="h-7 w-7 text-primary" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black text-white dark:bg-primary dark:text-black">
+                <StickyNote className="h-7 w-7" />
               </div>
               <h3 className="mt-4 text-xl font-semibold">2. Activate &amp; Attach</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -161,8 +204,8 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="relative flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Radio className="h-7 w-7 text-primary" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black text-white dark:bg-primary dark:text-black">
+                <Radio className="h-7 w-7" />
               </div>
               <h3 className="mt-4 text-xl font-semibold">3. Track Anywhere</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -173,8 +216,8 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <MapPin className="h-7 w-7 text-primary" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black text-white dark:bg-primary dark:text-black">
+                <MapPin className="h-7 w-7" />
               </div>
               <h3 className="mt-4 text-xl font-semibold">4. Delivery Alert</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -194,8 +237,8 @@ export default async function HomePage() {
           </p>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Globe className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Globe className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">Reliable Global Coverage</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -203,8 +246,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Battery className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Battery className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">60+ Day Battery</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -212,8 +255,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Brain className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Brain className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">AI Route Intelligence</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -221,8 +264,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Tag className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Tag className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">One Price, No Surprises</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -230,8 +273,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Share2 className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Share2 className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">Shareable Links</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -239,8 +282,8 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Smartphone className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Smartphone className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold">Modern &amp; Simple</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -260,8 +303,8 @@ export default async function HomePage() {
           </p>
           <div className="mx-auto mt-16 grid max-w-4xl gap-8 md:grid-cols-2">
             <div className="flex gap-4 rounded-xl border bg-card p-6 shadow-sm">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Cpu className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Cpu className="h-6 w-6" />
               </div>
               <div>
                 <h3 className="font-semibold">Electronics &amp; Components</h3>
@@ -271,8 +314,8 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="flex gap-4 rounded-xl border bg-card p-6 shadow-sm">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Pill className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Pill className="h-6 w-6" />
               </div>
               <div>
                 <h3 className="font-semibold">Pharma &amp; Healthcare</h3>
@@ -282,8 +325,8 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="flex gap-4 rounded-xl border bg-card p-6 shadow-sm">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Palette className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Palette className="h-6 w-6" />
               </div>
               <div>
                 <h3 className="font-semibold">Art &amp; Collectibles</h3>
@@ -293,8 +336,8 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="flex gap-4 rounded-xl border bg-card p-6 shadow-sm">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Plane className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
+                <Plane className="h-6 w-6" />
               </div>
               <div>
                 <h3 className="font-semibold">Air Cargo &amp; Freight</h3>
@@ -322,11 +365,11 @@ export default async function HomePage() {
                 <span className="text-3xl font-bold">$25</span>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>• Full tracking &amp; map</li>
-                <li>• Shareable link</li>
-                <li>• Email notifications</li>
-                <li>• Free shipping</li>
-                <li>• 60+ day battery</li>
+                <li>&#8226; Full tracking &amp; map</li>
+                <li>&#8226; Shareable link</li>
+                <li>&#8226; Email notifications</li>
+                <li>&#8226; Free shipping</li>
+                <li>&#8226; 60+ day battery</li>
               </ul>
               <Button className="mt-6 w-full" variant="outline" asChild>
                 <Link href="/sign-up">Buy 1 Label</Link>
@@ -342,9 +385,9 @@ export default async function HomePage() {
                 <span className="text-3xl font-bold">$110</span>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>• Same features as single</li>
-                <li>• Free shipping</li>
-                <li>• Save $15 vs buying one by one</li>
+                <li>&#8226; Same features as single</li>
+                <li>&#8226; Free shipping</li>
+                <li>&#8226; Save $15 vs buying one by one</li>
               </ul>
               <Button className="mt-6 w-full" asChild>
                 <Link href="/sign-up">Buy 5 Labels</Link>
@@ -357,10 +400,10 @@ export default async function HomePage() {
                 <span className="text-3xl font-bold">$200</span>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li>• Same features as single</li>
-                <li>• Free shipping</li>
-                <li>• Lowest price per label</li>
-                <li>• Save $50 vs buying one by one</li>
+                <li>&#8226; Same features as single</li>
+                <li>&#8226; Free shipping</li>
+                <li>&#8226; Lowest price per label</li>
+                <li>&#8226; Save $50 vs buying one by one</li>
               </ul>
               <Button className="mt-6 w-full" variant="outline" asChild>
                 <Link href="/sign-up">Buy 10 Labels</Link>
@@ -388,7 +431,7 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold md:text-4xl">Get in Touch</h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Questions about tracking, orders, or enterprise? We’re here to help.
+            Questions about tracking, orders, or enterprise? We&apos;re here to help.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
             <a
@@ -416,32 +459,35 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8">
+      <footer className="border-t bg-black py-8 text-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <Logo size="md" />
-            <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-              <Link href="#features" className="hover:text-foreground">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="h-2 w-2 rounded-full bg-red-500" />
+              <span className="font-medium">tip.live</span>
+            </div>
+            <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
+              <Link href="#features" className="hover:text-white">
                 Features
               </Link>
-              <Link href="#pricing" className="hover:text-foreground">
+              <Link href="#pricing" className="hover:text-white">
                 Pricing
               </Link>
-              <Link href="#faq" className="hover:text-foreground">
+              <Link href="#faq" className="hover:text-white">
                 FAQ
               </Link>
-              <Link href="#contact" className="hover:text-foreground">
+              <Link href="#contact" className="hover:text-white">
                 Contact
               </Link>
-              <Link href="/privacy" className="hover:text-foreground">
+              <Link href="/privacy" className="hover:text-white">
                 Privacy
               </Link>
-              <Link href="/terms" className="hover:text-foreground">
+              <Link href="/terms" className="hover:text-white">
                 Terms
               </Link>
             </nav>
           </div>
-          <p className="mt-8 text-center text-sm text-muted-foreground">
+          <p className="mt-8 text-center text-sm text-gray-500">
             &copy; {new Date().getFullYear()} TIP. All rights reserved.
           </p>
         </div>

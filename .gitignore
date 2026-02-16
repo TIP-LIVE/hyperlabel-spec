@@ -2,3 +2,6 @@
 SPEC_INTERNAL.md
 HyperLabel-Spec-Overview_INTERNAL.html
 .DS_Store
+.venv-heylead
+.vercel
+.env*.local

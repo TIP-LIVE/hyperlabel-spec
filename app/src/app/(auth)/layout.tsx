@@ -5,13 +5,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left side - Branding */}
-      <div className="hidden lg:flex flex-col justify-between bg-primary p-10 text-primary-foreground">
+      <div className="hidden lg:flex flex-col justify-between bg-black p-10 text-white">
         <Link href="/">
-          <Logo size="lg" iconClassName="text-primary-foreground" textClassName="text-primary-foreground" />
+          <Logo size="lg" iconClassName="text-white" textClassName="text-white" />
         </Link>
 
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Door-to-Door Cargo Tracking</h2>
+          <h2 className="text-headline text-2xl font-bold">Live Door-to-Door Tracking Label For Any Cargo</h2>
           <p className="text-lg opacity-90">
             Stick a tracking label on your shipment and follow it from pickup to delivery.
             Real-time visibility across land, sea, and air — in 180+ countries.

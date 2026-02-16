@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <style>
     .prose h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .prose h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #2563eb; }
+    .prose h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #00FF00; }
     .prose h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
     .prose p { margin-bottom: 0.75rem; }
     .prose ul, .prose ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
@@ -16,11 +16,11 @@
     .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem; }
     .prose th, .prose td { border: 1px solid #374151; padding: 0.5rem; text-align: left; }
     .prose th { background: #1f2937; font-weight: 600; }
-    .prose blockquote { border-left: 3px solid #2563eb; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #9ca3af; }
+    .prose blockquote { border-left: 3px solid #00FF00; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #9ca3af; }
     .prose code { background: #1f2937; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.875rem; }
     .prose pre { background: #1f2937; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; }
     .prose pre code { background: none; padding: 0; }
-    .prose strong { color: #60a5fa; }
+    .prose strong { color: #00FF00; }
     .comment-highlight { animation: highlight 2s ease-out; }
     @keyframes highlight { from { background-color: #fef08a; } to { background-color: transparent; } }
     .slide-nav::-webkit-scrollbar { height: 6px; }
@@ -37,7 +37,7 @@
       </div>
       <div class="flex items-center gap-3">
         <span id="commentCount" class="text-sm text-gray-400"></span>
-        <button onclick="exportReport()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors">
+        <button onclick="exportReport()" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
           Export Report
         </button>
         <button onclick="clearAllComments()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
@@ -48,7 +48,7 @@
     <!-- Document Tabs -->
     <div class="max-w-7xl mx-auto px-4 pb-2">
       <div class="flex gap-2">
-        <button onclick="switchDocument('deck')" id="tab-deck" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white">
+        <button onclick="switchDocument('deck')" id="tab-deck" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white">
           Investor Deck
         </button>
         <button onclick="switchDocument('teaser')" id="tab-teaser" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600">
@@ -95,7 +95,7 @@
         <button onclick="closeModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
           Cancel
         </button>
-        <button onclick="saveComment()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors">
+        <button onclick="saveComment()" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
           Save
         </button>
       </div>
@@ -113,7 +113,7 @@
         <pre id="reportContent" class="bg-gray-900 p-4 rounded-lg text-sm whitespace-pre-wrap"></pre>
       </div>
       <div class="flex gap-2 mt-4">
-        <button onclick="copyReport()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors">
+        <button onclick="copyReport()" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
           Copy to Clipboard
         </button>
         <button onclick="downloadReport()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
@@ -1274,11 +1274,11 @@ The following supporting documentation is available upon request:
           <div id="${slide.id}" class="slide-card bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 bg-gray-750 border-b border-gray-700" style="background: #1f2937;">
               <div class="flex items-center gap-3">
-                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold">${slide.index}</span>
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold">${slide.index}</span>
                 <h2 class="text-lg font-semibold text-white">${slide.title}</h2>
               </div>
               <button onclick="openModal('${slide.id}', '${slide.title.replace(/'/g, "\\'")}')"
-                      class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors">
+                      class="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
                 + Add Comment
               </button>
             </div>
@@ -1326,11 +1326,11 @@ The following supporting documentation is available upon request:
 
       // Update tabs
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.remove('bg-green-500', 'text-white');
         btn.classList.add('bg-gray-700', 'text-gray-300');
       });
       document.getElementById(`tab-${docKey}`).classList.remove('bg-gray-700', 'text-gray-300');
-      document.getElementById(`tab-${docKey}`).classList.add('bg-blue-600', 'text-white');
+      document.getElementById(`tab-${docKey}`).classList.add('bg-green-500', 'text-white');
 
       renderSlideNav();
       renderSlides();

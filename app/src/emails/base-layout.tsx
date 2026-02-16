@@ -116,6 +116,6 @@ const footerText = {
 }
 
 const link = {
-  color: '#556cd6',
+  color: '#00CC00',
   textDecoration: 'underline',
 }

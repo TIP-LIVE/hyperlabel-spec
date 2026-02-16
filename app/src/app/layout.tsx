@@ -69,7 +69,22 @@ function ConditionalClerkProvider({ children }: { children: React.ReactNode }) {
     return <>{children}</>
   }
 
-  return <ClerkProvider>{children}</ClerkProvider>
+  return (
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: '#008800',
+          colorBackground: '#ffffff',
+          colorText: '#0a0a0a',
+          colorInputBackground: '#ffffff',
+          colorInputText: '#0a0a0a',
+          colorDanger: '#dc2626',
+        },
+      }}
+    >
+      {children}
+    </ClerkProvider>
+  )
 }
 
 export default function RootLayout({

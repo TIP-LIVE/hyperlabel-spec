@@ -60,10 +60,9 @@ const nextConfig: NextConfig = {
 const sentryConfig = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
   silent: !process.env.CI, // Suppress logs in local dev
   widenClientFileUpload: true,
-  disableLogger: true,
-  automaticVercelMonitors: true,
 }
 
 export default process.env.SENTRY_DSN
