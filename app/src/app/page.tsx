@@ -119,7 +119,7 @@ export default async function HomePage() {
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-gray-700 text-white hover:bg-gray-900" asChild>
+                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" asChild>
                   <Link href="#how-it-works">How It Works</Link>
                 </Button>
               </div>
