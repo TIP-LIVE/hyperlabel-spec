@@ -63,6 +63,10 @@ export default async function DashboardPage() {
     orderFilter.userId = user.id
   }
 
+  if (process.env.NODE_ENV !== 'test') {
+    console.info('[Dashboard] orgId:', orgId ?? 'none', 'orgRole:', orgRole ?? 'none', 'orderFilter:', JSON.stringify(orderFilter))
+  }
+
   // Get current month start for "delivered this month"
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -136,7 +140,13 @@ export default async function DashboardPage() {
     deliveredThisMonth = delivered
     lowBatteryLabels = lowBattery
     recentShipments = recent
-  } catch {
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Dashboard] stats:', { activeShipments: active, totalLabels: total, deliveredThisMonth: delivered, lowBatteryLabels: lowBattery })
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('[Dashboard] query error:', err instanceof Error ? err.message : String(err))
+    }
     // Database unreachable or query error — render dashboard with empty data
   }
 

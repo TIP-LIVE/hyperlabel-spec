@@ -81,6 +81,10 @@ export async function POST(req: NextRequest) {
       const skippedAlreadyInOrg: string[] = []
       const skippedInUse: string[] = []
 
+      if (process.env.NODE_ENV !== 'test') {
+        console.info('[Register] assignment orgId:', orgId, 'deviceIds:', deviceIds)
+      }
+
       for (const deviceId of deviceIds) {
         let label = await db.label.findUnique({
           where: { deviceId },
@@ -100,6 +104,9 @@ export async function POST(req: NextRequest) {
         }
 
         const alreadyInThisOrg = label.orderLabels.length > 0
+        if (process.env.NODE_ENV !== 'test' && (alreadyInThisOrg || (label.status !== 'INVENTORY' && label.status !== 'SOLD'))) {
+          console.info('[Register] skip', { deviceId, orgId, alreadyInThisOrg, status: label.status, orderLabelsInOrg: label.orderLabels.length })
+        }
         if (alreadyInThisOrg) {
           skipped.push(deviceId)
           skippedAlreadyInOrg.push(deviceId)
