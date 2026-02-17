@@ -34,10 +34,10 @@ import { QrScanner } from '@/components/shipments/qr-scanner'
 const formSchema = z.object({
   name: z.string().min(1, 'Shipment name is required').max(200),
   labelId: z.string().min(1, 'Please select a label'),
-  originAddress: z.string().min(1, 'Origin address is required'),
+  originAddress: z.string().optional().default(''),
   originLat: z.number().min(-90).max(90),
   originLng: z.number().min(-180).max(180),
-  destinationAddress: z.string().min(1, 'Destination address is required'),
+  destinationAddress: z.string().optional().default(''),
   destinationLat: z.number().min(-90).max(90),
   destinationLng: z.number().min(-180).max(180),
   consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
@@ -388,7 +388,7 @@ export function CreateShipmentForm() {
 
         {/* Origin */}
         <div className="space-y-2">
-          <Label htmlFor="origin">Origin Address</Label>
+          <Label htmlFor="origin">Origin Address (optional)</Label>
           <AddressInput
             id="origin"
             placeholder="e.g., 45 Warehouse Rd, London, UK"
@@ -404,7 +404,7 @@ export function CreateShipmentForm() {
 
         {/* Destination */}
         <div className="space-y-2">
-          <Label htmlFor="destination">Destination Address</Label>
+          <Label htmlFor="destination">Destination Address (optional)</Label>
           <AddressInput
             id="destination"
             placeholder="e.g., 123 Main St, Berlin, Germany"

@@ -3,10 +3,10 @@ import { z } from 'zod'
 export const createShipmentSchema = z.object({
   name: z.string().min(1, 'Shipment name is required').max(200),
   labelId: z.string().min(1, 'Label ID is required'),
-  originAddress: z.string().min(1, 'Origin address is required'),
+  originAddress: z.string().optional().default(''),
   originLat: z.number().min(-90).max(90),
   originLng: z.number().min(-180).max(180),
-  destinationAddress: z.string().min(1, 'Destination address is required'),
+  destinationAddress: z.string().optional().default(''),
   destinationLat: z.number().min(-90).max(90),
   destinationLng: z.number().min(-180).max(180),
   consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),

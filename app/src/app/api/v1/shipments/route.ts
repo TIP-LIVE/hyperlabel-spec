@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { labelId, consigneeEmail, ...data } = validated.data
+    const originAddress = data.originAddress?.trim() || null
+    const destinationAddress = data.destinationAddress?.trim() || null
 
     // Verify label exists and belongs to user (via orderLabels -> order)
     const label = await db.label.findUnique({
@@ -130,10 +132,12 @@ export async function POST(req: NextRequest) {
       attempts++
     }
 
-    // Create shipment
+    // Create shipment (empty addresses stored as null)
     const shipment = await db.shipment.create({
       data: {
         ...data,
+        originAddress,
+        destinationAddress,
         shareCode,
         userId: context.user.id,
         orgId: context.orgId,
@@ -183,8 +187,8 @@ export async function POST(req: NextRequest) {
         shipmentName: shipment.name || 'Shipment',
         senderName,
         shareCode: shipment.shareCode,
-        originAddress: data.originAddress,
-        destinationAddress: data.destinationAddress,
+        originAddress: shipment.originAddress,
+        destinationAddress: shipment.destinationAddress,
       }).catch((err) => console.error('Failed to send consignee notification:', err))
     }
 
