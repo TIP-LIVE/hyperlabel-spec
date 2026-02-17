@@ -58,11 +58,23 @@ export async function POST(req: Request) {
       role: isAdminEmail(emailAddress) ? 'admin' : 'user' as const,
     }
 
-    await db.user.upsert({
-      where: { clerkId: id },
-      create: { clerkId: id, ...data },
-      update: data,
-    })
+    try {
+      await db.user.upsert({
+        where: { clerkId: id },
+        create: { clerkId: id, ...data },
+        update: data,
+      })
+    } catch (err: unknown) {
+      const prismaErr = err as { code?: string; meta?: { target?: string[] } }
+      if (prismaErr.code === 'P2002' && prismaErr.meta?.target?.includes('email')) {
+        await db.user.updateMany({
+          where: { email: emailAddress },
+          data: { clerkId: id, ...data },
+        })
+      } else {
+        throw err
+      }
+    }
 
     console.log(`User created/updated: ${id} (${emailAddress})${isAdminEmail(emailAddress) ? ' [auto-admin]' : ''}`)
   }
