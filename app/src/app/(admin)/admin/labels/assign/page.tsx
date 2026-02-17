@@ -13,7 +13,20 @@ export const metadata: Metadata = {
   description: 'Admin: assign tracking labels to one or more organisations',
 }
 
-export default async function AssignLabelsPage() {
+interface AssignPageProps {
+  searchParams: Promise<{ ids?: string }>
+}
+
+export default async function AssignLabelsPage({ searchParams }: AssignPageProps) {
+  const { ids: idsParam } = await searchParams
+  const initialDeviceIds: string[] =
+    idsParam != null && idsParam.trim() !== ''
+      ? idsParam
+          .split(',')
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean)
+      : []
+
   const orgs = await db.order.findMany({
     where: { orgId: { not: null } },
     select: { orgId: true },
@@ -28,7 +41,7 @@ export default async function AssignLabelsPage() {
           <Link href="/admin/labels">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-        </Button>
+        </div>
         <div>
           <h1 className="text-2xl font-bold text-white">Assign Labels to Organisations</h1>
           <p className="text-gray-400">
@@ -47,7 +60,10 @@ export default async function AssignLabelsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AssignLabelsToOrgsForm knownOrgIds={knownOrgIds} />
+          <AssignLabelsToOrgsForm
+            knownOrgIds={knownOrgIds}
+            initialDeviceIds={initialDeviceIds.length > 0 ? initialDeviceIds : undefined}
+          />
         </CardContent>
       </Card>
     </div>
