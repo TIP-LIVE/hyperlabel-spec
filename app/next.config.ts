@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
 
+// TIP Next.js app
 const nextConfig: NextConfig = {
   // Serve logo for legacy PWA icon paths (stops 404 from cached manifests)
   async rewrites() {
