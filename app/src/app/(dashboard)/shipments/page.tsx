@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Plus, Package, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { ShipmentsList } from '@/components/shipments/shipments-list'
 import { isClerkConfigured } from '@/lib/clerk-config'
@@ -27,13 +27,10 @@ export default async function ShipmentsPage({ searchParams }: ShipmentsPageProps
   const user = await getCurrentUser()
   const { orgId, orgRole } = await auth()
 
-  // Build org-scoped query
+  // B2B: org is top-level — all org members see same shipments
   const where: Record<string, unknown> = {}
   if (orgId) {
     where.orgId = orgId
-    if (!canViewAllOrgData(orgRole || 'org:member')) {
-      where.userId = user?.id
-    }
   } else if (user) {
     where.userId = user.id
   }

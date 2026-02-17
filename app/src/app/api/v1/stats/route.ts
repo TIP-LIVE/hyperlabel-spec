@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireOrgAuth, orgScopedWhere, canViewAllOrgData } from '@/lib/auth'
+import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 
 /**
@@ -14,11 +14,8 @@ export async function GET() {
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    // Build org-scoped order filter for label queries
+    // B2B: org is top-level
     const orderFilter: Record<string, unknown> = { orgId: context.orgId }
-    if (!canViewAllOrgData(context.orgRole)) {
-      orderFilter.userId = context.user.id
-    }
 
     const [activeShipments, totalLabels, deliveredThisMonth, lowBatteryLabels] = await Promise.all([
       // Active shipments count

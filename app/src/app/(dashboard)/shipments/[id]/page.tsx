@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { ShipmentDetailClient } from '@/components/shipments/shipment-detail-client'
@@ -60,12 +60,8 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
   // Check access: org membership + ownership
   const { orgId, orgRole } = await auth()
   if (user && user.role !== 'admin') {
-    // Must be in the same org
+    // B2B: only same-org can view
     if (shipment.orgId && shipment.orgId !== orgId) {
-      notFound()
-    }
-    // org:member can only see own records
-    if (!canViewAllOrgData(orgRole || 'org:member') && shipment.userId !== user.id) {
       notFound()
     }
   }

@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { orderStatusConfig } from '@/lib/status-config'
 import { Package, ShoppingCart, Truck } from 'lucide-react'
 import { db } from '@/lib/db'
-import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { format } from 'date-fns'
 import type { Metadata } from 'next'
@@ -38,13 +38,10 @@ export default async function OrdersPage() {
   }> = []
 
   if (user) {
-    // Build org-scoped query
+    // B2B: org is top-level — all org members see same orders
     const where: Record<string, unknown> = {}
     if (orgId) {
       where.orgId = orgId
-      if (!canViewAllOrgData(orgRole || 'org:member')) {
-        where.userId = user.id
-      }
     } else {
       where.userId = user.id
     }

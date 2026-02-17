@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireOrgAuth, canViewAllOrgData } from '@/lib/auth'
+import { requireOrgAuth } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 
 /**
@@ -13,13 +13,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
 
-    // Build where clause - labels owned by org through orders
+    // B2B: org is top-level — all org members see same labels
     const orderFilter: Record<string, unknown> = {
       orgId: context.orgId,
       status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-    }
-    if (!canViewAllOrgData(context.orgRole)) {
-      orderFilter.userId = context.user.id
     }
 
     const where: Record<string, unknown> = {

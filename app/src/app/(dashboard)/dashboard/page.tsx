@@ -9,7 +9,7 @@ import { AddExistingLabelsButton } from '@/components/dashboard/add-existing-lab
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle } from 'lucide-react'
 import { db } from '@/lib/db'
-import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { formatDistanceToNow } from 'date-fns'
 import type { Metadata } from 'next'
@@ -41,24 +41,17 @@ export default async function DashboardPage() {
     redirect('/sign-in')
   }
 
-  // Build org-scoped query for shipments
+  // B2B: org is top-level — all org members see same shipments and labels
   const where: Record<string, unknown> = {}
   if (orgId) {
     where.orgId = orgId
-    if (!canViewAllOrgData(orgRole ?? 'org:member')) {
-      where.userId = user?.id
-    }
   } else if (user) {
     where.userId = user.id
   }
 
-  // Build org-scoped order filter for label queries
   const orderFilter: Record<string, unknown> = {}
   if (orgId) {
     orderFilter.orgId = orgId
-    if (!canViewAllOrgData(orgRole ?? 'org:member')) {
-      orderFilter.userId = user?.id
-    }
   } else if (user) {
     orderFilter.userId = user.id
   }

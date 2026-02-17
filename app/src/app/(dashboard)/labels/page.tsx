@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Package, Battery, Plus, ShoppingCart } from 'lucide-react'
 import { db } from '@/lib/db'
-import { getCurrentUser, canViewAllOrgData } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { formatDistanceToNow } from 'date-fns'
 import type { Metadata } from 'next'
@@ -39,12 +39,10 @@ export default async function LabelsPage() {
     redirect('/sign-in')
   }
 
+  // B2B: org is top-level — all org members see same labels
   const orderFilter: Record<string, unknown> = {}
   if (orgId) {
     orderFilter.orgId = orgId
-    if (!canViewAllOrgData(orgRole ?? 'org:member')) {
-      orderFilter.userId = user?.id
-    }
   } else if (user) {
     orderFilter.userId = user.id
   }
