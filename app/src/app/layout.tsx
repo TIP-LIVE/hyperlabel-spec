@@ -64,8 +64,8 @@ export const metadata: Metadata = {
 function ConditionalClerkProvider({ children }: { children: React.ReactNode }) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-  // Skip ClerkProvider if no valid key (allows build to complete)
-  if (!publishableKey || publishableKey.startsWith('pk_test_REPLACE')) {
+  // Skip ClerkProvider if no valid key (allows build to complete in CI with dummy key)
+  if (!publishableKey || publishableKey.startsWith('pk_test_REPLACE') || publishableKey === 'pk_test_dummy') {
     return <>{children}</>
   }
 

@@ -37,7 +37,8 @@ const isApiRoute = createRouteMatcher(['/api/(.*)'])
 // Check if Clerk is configured
 const hasClerkKey =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_REPLACE')
+  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_REPLACE') &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_dummy'
 
 // Create the proxy handler (Next.js 16 renamed middleware → proxy)
 const proxy = hasClerkKey
