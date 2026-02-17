@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -34,16 +34,27 @@ import { QrScanner } from '@/components/shipments/qr-scanner'
 const formSchema = z.object({
   name: z.string().min(1, 'Shipment name is required').max(200),
   labelId: z.string().min(1, 'Please select a label'),
-  originAddress: z.string().optional().default(''),
+  originAddress: z.string().default(''),
   originLat: z.number().min(-90).max(90),
   originLng: z.number().min(-180).max(180),
-  destinationAddress: z.string().optional().default(''),
+  destinationAddress: z.string().default(''),
   destinationLat: z.number().min(-90).max(90),
   destinationLng: z.number().min(-180).max(180),
   consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
 })
 
-type FormData = z.infer<typeof formSchema>
+/** Explicit type so useForm + zodResolver get required string for address fields (schema uses .default('')) */
+type FormData = {
+  name: string
+  labelId: string
+  originAddress: string
+  originLat: number
+  originLng: number
+  destinationAddress: string
+  destinationLat: number
+  destinationLng: number
+  consigneeEmail?: string
+}
 
 type AvailableLabel = {
   id: string
@@ -87,7 +98,7 @@ export function CreateShipmentForm() {
     watch,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<FormData>,
     defaultValues: {
       name: '',
       labelId: '',
