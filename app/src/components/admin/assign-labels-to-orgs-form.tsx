@@ -14,6 +14,12 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Loader2, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 
 function parseDeviceIds(text: string): string[] {
   return text
@@ -126,6 +132,27 @@ export function AssignLabelsToOrgsForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <Accordion type="single" collapsible className="rounded-lg border border-border/60 bg-muted/20">
+        <AccordionItem value="how" className="border-0">
+          <AccordionTrigger className="px-4 py-3 text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:no-underline">
+            How it works
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-3 pt-0 text-muted-foreground text-xs leading-relaxed">
+            <ul className="list-inside space-y-1.5">
+              <li>
+                <strong className="text-foreground">One org per label:</strong> Each device ID is assigned to exactly one organisation. If you list the same ID in multiple rows, it ends up in the <em>last</em> organisation you list.
+              </li>
+              <li>
+                <strong className="text-foreground">Already assigned:</strong> Labels that already belong to the target org are skipped (no error).
+              </li>
+              <li>
+                <strong className="text-foreground">Format:</strong> Device IDs can be one per line or comma-separated (e.g. TIP-001, HL-001234).
+              </li>
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
       {knownOrgIds.length > 2 && (
         <div className="space-y-2">
           <Label htmlFor="org-search" className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
@@ -164,7 +191,7 @@ export function AssignLabelsToOrgsForm({
             className={
               rows.length > 1
                 ? 'grid grid-cols-1 gap-x-4 gap-y-2 border border-t-0 border-border bg-card/50 p-4 sm:grid-cols-[1fr_1fr] first:border-t-0 last:rounded-b-lg'
-                : 'rounded-xl border border-border bg-card/50 p-5 shadow-sm space-y-4'
+                : 'rounded-xl border border-border bg-card/60 p-6 shadow-sm space-y-6'
             }
           >
             {rows.length > 1 ? (
@@ -178,7 +205,7 @@ export function AssignLabelsToOrgsForm({
                     onValueChange={(v) => updateRow(index, 'orgId', v)}
                   >
                     <SelectTrigger id={`org-${index}`} className="w-full bg-background/50">
-                      <SelectValue placeholder="Select or paste ID below" />
+                      <SelectValue placeholder="Select organisation or paste org_... ID" />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredOrgIds.length === 0 && orgIdsForSelect.length === 0 && (
@@ -235,7 +262,7 @@ export function AssignLabelsToOrgsForm({
                     Organisation {index + 1}
                   </span>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor={`org-${index}`}>Organisation</Label>
                     <Select
@@ -243,7 +270,7 @@ export function AssignLabelsToOrgsForm({
                       onValueChange={(v) => updateRow(index, 'orgId', v)}
                     >
                       <SelectTrigger id={`org-${index}`} className="w-full bg-background/50">
-                        <SelectValue placeholder="Select or paste ID below" />
+                        <SelectValue placeholder="Select organisation or paste org_... ID" />
                       </SelectTrigger>
                       <SelectContent>
                         {filteredOrgIds.length === 0 && orgIdsForSelect.length === 0 && (
@@ -274,17 +301,23 @@ export function AssignLabelsToOrgsForm({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`devices-${index}`}>Device IDs</Label>
-                  <p className="text-muted-foreground text-xs">
-                    One per line or comma-separated, e.g. HL-001234, TIP-001
-                  </p>
+                  <Label htmlFor={`devices-${index}`}>
+                    Device IDs
+                    <span className="text-muted-foreground ml-1.5 font-normal text-xs">
+                      (one per line or comma-separated)
+                    </span>
+                  </Label>
                   <textarea
                     id={`devices-${index}`}
                     className="min-h-[88px] w-full rounded-lg border border-input bg-background/50 px-3 py-2.5 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder={'TIP-001\nTIP-003'}
+                    placeholder="e.g. TIP-001, TIP-003"
+                    aria-describedby={`devices-hint-${index}`}
                     value={row.deviceIds}
                     onChange={(e) => updateRow(index, 'deviceIds', e.target.value)}
                   />
+                  <p id={`devices-hint-${index}`} className="sr-only">
+                    One per line or comma-separated, e.g. HL-001234, TIP-001
+                  </p>
                 </div>
               </>
             )}
@@ -292,13 +325,12 @@ export function AssignLabelsToOrgsForm({
         ))}
       </div>
 
-
-      <div className="flex flex-wrap gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={addRow}>
+      <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <Button type="button" variant="outline" onClick={addRow} className="order-2 sm:order-1">
           <Plus className="mr-2 h-4 w-4" />
           Add another organisation
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} className="order-1 w-full sm:order-2 sm:w-auto">
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Assign labels
         </Button>

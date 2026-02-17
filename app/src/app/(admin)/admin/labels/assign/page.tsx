@@ -35,31 +35,33 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
   const knownOrgIds = orgs.map((o) => o.orgId).filter((id): id is string => id != null)
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/labels">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Assign Labels to Organisations</h1>
-          <p className="text-gray-400">
-            Add or move labels to any organisation. Labels already in the target org are skipped.
-          </p>
+    <div className="mx-auto max-w-3xl space-y-7">
+      <header className="space-y-1.5">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" asChild className="shrink-0">
+            <Link href="/admin/labels" aria-label="Back to Label Inventory">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            Assign Labels to Organisations
+          </h1>
         </div>
-      </div>
+        <p className="text-muted-foreground pl-11 text-sm sm:pl-12">
+          Add or move labels to an organisation. See “How it works” below for rules and format.
+        </p>
+      </header>
 
-      <Card className="border-gray-800 bg-gray-800/50">
-        <CardHeader>
-          <CardTitle className="text-white">Assignments</CardTitle>
-          <CardDescription>
-            Choose one or more organisations and the device IDs to assign. A label can only belong
-            to one org; if the same device ID appears in multiple rows, it will end up in the last
-            processed org.
+      <Card className="border-border/80 bg-card/80 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-foreground">
+            Assignments
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Choose an organisation and enter the device IDs to assign.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-1">
           <AssignLabelsToOrgsForm
             knownOrgIds={knownOrgIds}
             initialDeviceIds={initialDeviceIds.length > 0 ? initialDeviceIds : undefined}
