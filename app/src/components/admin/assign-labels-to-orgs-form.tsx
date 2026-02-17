@@ -119,8 +119,37 @@ export function AssignLabelsToOrgsForm({
         return
       }
 
-      const total = data.results?.reduce((acc: number, r: { registered: number }) => acc + r.registered, 0) ?? 0
-      toast.success(`Assigned ${total} label(s) across ${data.results?.length ?? 0} organisation(s)`)
+      const results = data.results ?? []
+      const total = results.reduce((acc: number, r: { registered: number }) => acc + r.registered, 0)
+      const firstError = results.find((r: { error?: string }) => r.error) as { error?: string } | undefined
+      const allAlreadyInOrg = results.flatMap((r: { skippedAlreadyInOrg?: string[] }) => r.skippedAlreadyInOrg ?? [])
+      const allInUse = results.flatMap((r: { skippedInUse?: string[] }) => r.skippedInUse ?? [])
+      const inOrgList = [...new Set(allAlreadyInOrg)]
+      const inUseList = [...new Set(allInUse)]
+
+      if (total === 0) {
+        if (firstError?.error) {
+          toast.error(firstError.error)
+          return
+        }
+        if (inOrgList.length > 0 || inUseList.length > 0) {
+          const parts: string[] = []
+          if (inOrgList.length > 0) {
+            parts.push(`${inOrgList.join(', ')} already in this organisation`)
+          }
+          if (inUseList.length > 0) {
+            parts.push(`${inUseList.join(', ')} are in use (Active/Depleted) in another organisation and can't be reassigned`)
+          }
+          toast.warning(`No labels assigned: ${parts.join('. ')}.`)
+          return
+        }
+        toast.warning(
+          'No labels were assigned. Check that device IDs exist and the organisation has at least one order.'
+        )
+        return
+      }
+
+      toast.success(`Assigned ${total} label(s) across ${results.length} organisation(s)`)
       router.push('/admin/labels')
       router.refresh()
     } catch {

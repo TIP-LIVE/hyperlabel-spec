@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
       registered: number
       labels: string[]
       skipped: string[]
+      skippedAlreadyInOrg?: string[]
+      skippedInUse?: string[]
       error?: string
     }> = []
 
@@ -76,6 +78,8 @@ export async function POST(req: NextRequest) {
 
       const labelsToAssign: { id: string; deviceId: string }[] = []
       const skipped: string[] = []
+      const skippedAlreadyInOrg: string[] = []
+      const skippedInUse: string[] = []
 
       for (const deviceId of deviceIds) {
         let label = await db.label.findUnique({
@@ -98,10 +102,12 @@ export async function POST(req: NextRequest) {
         const alreadyInThisOrg = label.orderLabels.length > 0
         if (alreadyInThisOrg) {
           skipped.push(deviceId)
+          skippedAlreadyInOrg.push(deviceId)
           continue
         }
         if (label.status !== 'INVENTORY' && label.status !== 'SOLD') {
           skipped.push(deviceId)
+          skippedInUse.push(deviceId)
           continue
         }
 
@@ -115,6 +121,8 @@ export async function POST(req: NextRequest) {
           registered: 0,
           labels: [],
           skipped,
+          ...(skippedAlreadyInOrg.length > 0 && { skippedAlreadyInOrg }),
+          ...(skippedInUse.length > 0 && { skippedInUse }),
         })
         continue
       }
@@ -146,6 +154,8 @@ export async function POST(req: NextRequest) {
         registered: labelsToAssign.length,
         labels: labelsToAssign.map((l) => l.deviceId),
         skipped: skipped.length > 0 ? skipped : [],
+        ...(skippedAlreadyInOrg.length > 0 && { skippedAlreadyInOrg }),
+        ...(skippedInUse.length > 0 && { skippedInUse }),
       })
     }
 
