@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { Logo } from '@/components/ui/logo'
 import { redirect } from 'next/navigation'
+import { getCurrentUser } from '@/lib/auth'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { MobileSidebar } from '@/components/dashboard/mobile-sidebar'
 import { SidebarNav } from '@/components/dashboard/sidebar-nav'
@@ -44,6 +45,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     console.log('[dashboard layout] redirect to sign-in (needSignIn)', { pathname, redirectUrl, redirectTarget })
     redirect(redirectTarget)
   }
+
+  const dbUser = await getCurrentUser()
+  const isPlatformAdmin = dbUser?.role === 'admin'
 
   return (
     <div className="min-h-screen bg-muted">
@@ -91,6 +95,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
           {/* Org switcher + Theme toggle + User button */}
           <div className="flex items-center gap-2">
+            {isPlatformAdmin && (
+              <Link
+                href="/admin/labels"
+                className="hidden rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:inline-flex"
+              >
+                Admin
+              </Link>
+            )}
             {clerkEnabled && (
               <OrganizationSwitcher
                 hidePersonal={true}

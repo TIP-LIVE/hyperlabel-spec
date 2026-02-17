@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Loader2, PackagePlus } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, PackagePlus, Settings2, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -35,6 +36,8 @@ export function AddExistingLabelsDialog({
   const router = useRouter()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [conflictDeviceIds, setConflictDeviceIds] = useState<string[] | null>(null)
+  const [skippedDueToStatus, setSkippedDueToStatus] = useState<string[] | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -60,26 +63,31 @@ export function AddExistingLabelsDialog({
 
       if (!res.ok) {
         if (res.status === 409 && data.deviceIds?.length) {
-          toast.error(
-            `These labels are already registered to another organisation: ${data.deviceIds.join(', ')}`
-          )
+          setConflictDeviceIds(data.deviceIds)
         } else {
           toast.error(data.error || 'Failed to register labels')
         }
         return
       }
 
+      setConflictDeviceIds(null)
       if (data.registered > 0) {
+        setSkippedDueToStatus(null)
         toast.success(`${data.registered} label(s) added to your organisation`)
         setInput('')
         onOpenChange(false)
         router.refresh()
       } else {
-        toast.info(data.message || 'No new labels to register.')
-        if (data.alreadyInOrg?.length) {
-          setInput('')
-          onOpenChange(false)
-          router.refresh()
+        if (data.skippedDueToStatus?.length) {
+          setSkippedDueToStatus(data.skippedDueToStatus)
+        } else {
+          setSkippedDueToStatus(null)
+          toast.info(data.message || 'No new labels to register.')
+          if (data.alreadyInOrg?.length) {
+            setInput('')
+            onOpenChange(false)
+            router.refresh()
+          }
         }
       }
     } catch {
@@ -90,7 +98,16 @@ export function AddExistingLabelsDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          setConflictDeviceIds(null)
+          setSkippedDueToStatus(null)
+        }
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add existing labels</DialogTitle>
@@ -102,6 +119,50 @@ export function AddExistingLabelsDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {conflictDeviceIds?.length ? (
+              <div
+                role="alert"
+                className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"
+              >
+                <p className="font-medium">Labels are in another organisation</p>
+                <p className="mt-1 text-muted-foreground">
+                  To add {conflictDeviceIds.length === 1 ? 'this label' : 'these labels'} here, turn
+                  on &quot;Allow labels in multiple organisations&quot; in organisation settings.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3 gap-2"
+                  onClick={() => {
+                    onOpenChange(false)
+                    router.push('/settings/organization')
+                  }}
+                >
+                  <Settings2 className="h-4 w-4" />
+                  Open organisation settings
+                </Button>
+              </div>
+            ) : null}
+            {skippedDueToStatus?.length ? (
+              <div
+                role="alert"
+                className="rounded-lg border border-blue-500/50 bg-blue-500/10 px-4 py-3 text-sm text-blue-800 dark:text-blue-200"
+              >
+                <p className="font-medium">Labels exist but are in use</p>
+                <p className="mt-1 text-muted-foreground">
+                  {skippedDueToStatus.length === 1 ? 'This label' : 'These labels'} are ACTIVE or
+                  DEPLETED. Only INVENTORY or SOLD labels can be added here. To see all labels in the
+                  database, open Admin → Labels.
+                </p>
+                <Button variant="secondary" size="sm" className="mt-3 gap-2" asChild>
+                  <Link href="/admin/labels" onClick={() => onOpenChange(false)}>
+                    <ShieldCheck className="h-4 w-4" />
+                    View all labels (Admin)
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
             <div className="grid gap-2">
               <Label htmlFor="device-ids">Device IDs</Label>
               <textarea

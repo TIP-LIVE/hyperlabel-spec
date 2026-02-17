@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     const labelsToAssign: { id: string; deviceId: string }[] = []
     const alreadyInOrg: string[] = []
     const otherOrg: string[] = []
+    const skippedDueToStatus: string[] = []
 
     for (const deviceId of deviceIds) {
       let label = await db.label.findUnique({
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (label.status !== 'INVENTORY' && label.status !== 'SOLD') {
+        skippedDueToStatus.push(deviceId)
         continue
       }
 
@@ -103,10 +105,14 @@ export async function POST(req: NextRequest) {
         order: null,
         registered: 0,
         alreadyInOrg: alreadyInOrg.length > 0 ? alreadyInOrg : undefined,
+        skippedDueToStatus:
+          skippedDueToStatus.length > 0 ? skippedDueToStatus : undefined,
         message:
           alreadyInOrg.length > 0
             ? 'All given labels are already in this organisation.'
-            : 'No labels to register.',
+            : skippedDueToStatus.length > 0
+              ? 'Labels exist but are ACTIVE or DEPLETED; only INVENTORY or SOLD can be added here.'
+              : 'No labels to register.',
       })
     }
 
