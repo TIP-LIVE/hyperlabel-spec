@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useOrganization } from '@clerk/nextjs'
-import { LayoutDashboard, MapPin, ShoppingCart, BookUser, Settings, Building2 } from 'lucide-react'
+import { LayoutDashboard, MapPin, Package, ShoppingCart, BookUser, Settings, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isClerkConfigured } from '@/lib/clerk-config'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Shipments', href: '/shipments', icon: MapPin },
+  { name: 'Labels', href: '/labels', icon: Package },
   { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Addresses', href: '/address-book', icon: BookUser },
   { name: 'Settings', href: '/settings', icon: Settings },
