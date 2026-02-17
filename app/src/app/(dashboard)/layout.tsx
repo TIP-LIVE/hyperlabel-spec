@@ -9,6 +9,9 @@ import { MobileSidebar } from '@/components/dashboard/mobile-sidebar'
 import { SidebarNav } from '@/components/dashboard/sidebar-nav'
 import { ThemeToggle } from '@/components/theme-toggle'
 
+// Avoid prerendering dashboard when Clerk is skipped (CI with pk_test_dummy); SidebarNav uses useOrganization().
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Check if Clerk is configured
   const clerkEnabled = isClerkConfigured()
