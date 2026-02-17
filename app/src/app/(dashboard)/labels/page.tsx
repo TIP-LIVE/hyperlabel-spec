@@ -72,18 +72,21 @@ export default async function LabelsPage() {
       })
     : []
 
+  const newShipmentAction = (
+    <Button asChild>
+      <Link href="/shipments/new">
+        <Plus className="mr-2 h-4 w-4" />
+        New Shipment
+      </Link>
+    </Button>
+  )
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Labels"
         description="Your tracking labels — device IDs, battery, and status"
-        action={
-          <Button asChild>
-            <Link href="/shipments/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Shipment
-            </Link>
-          }
+        action={newShipmentAction}
       />
 
       {labels.length === 0 ? (
@@ -112,7 +115,7 @@ export default async function LabelsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Your labels ({labels.length})</CardTitle>
+            <CardTitle>{`Your labels (${labels.length})`}</CardTitle>
             <CardDescription>Device ID, status, and battery. Use a label when creating a shipment.</CardDescription>
           </CardHeader>
           <CardContent>
