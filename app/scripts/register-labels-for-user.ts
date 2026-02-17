@@ -21,6 +21,8 @@ const DEVICE_IDS = (process.env.DEVICE_IDS ?? 'TIP-001,TIP-003')
   .split(',')
   .map((s) => s.trim().toUpperCase())
   .filter(Boolean)
+/** When set, only create an order for the org (no labels). Use so the org is "findable" and Assign UI works. */
+const BOOTSTRAP_ORG_ONLY = process.env.BOOTSTRAP_ORG_ONLY === '1' || process.env.BOOTSTRAP_ORG_ONLY === 'true'
 
 if (!DATABASE_URL) {
   console.error('DATABASE_URL is required')
@@ -71,16 +73,37 @@ async function main() {
     } else if (label.orderLabels.length > 0) {
       console.log('Label already in this org:', label.deviceId)
       continue
-    } else if (label.status !== 'INVENTORY' && label.status !== 'SOLD') {
-      console.log('Label', label.deviceId, 'status', label.status, ', skipping')
-      continue
     }
+    // Allow any status when manually adding to org (e.g. ACTIVE in another org)
 
     labelsToAssign.push({ id: label.id, deviceId: label.deviceId })
   }
 
-  if (labelsToAssign.length === 0) {
+  if (labelsToAssign.length === 0 && !BOOTSTRAP_ORG_ONLY) {
     console.log('No new labels to register.')
+    return
+  }
+
+  if (BOOTSTRAP_ORG_ONLY) {
+    const existing = await prisma.order.findFirst({
+      where: { orgId: ORG_ID },
+      select: { id: true },
+    })
+    if (existing) {
+      console.log('Org already has an order:', existing.id)
+      return
+    }
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        orgId: ORG_ID,
+        status: 'PAID',
+        totalAmount: 0,
+        currency: 'GBP',
+        quantity: 0,
+      },
+    })
+    console.log('Created bootstrap order', order.id, 'for org. You can now use Assign Labels in the app.')
     return
   }
 

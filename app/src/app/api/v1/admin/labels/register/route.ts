@@ -26,7 +26,7 @@ const bodySchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin()
+    const adminUser = await requireAdmin()
 
     const body = await req.json()
     const parsed = bodySchema.safeParse(body)
@@ -62,18 +62,13 @@ export async function POST(req: NextRequest) {
           where: { orgId },
           select: { userId: true },
         })
-        if (!existingOrder) {
-          results.push({
-            orgId,
-            orderId: null,
-            registered: 0,
-            labels: [],
-            skipped: [],
-            error: 'No user found for this organisation. Create an order in this org first or pass userId.',
-          })
-          continue
+        if (existingOrder) {
+          userId = existingOrder.userId
+        } else {
+          // Org has no orders yet (e.g. brand‑new Clerk org). Use current admin as order owner
+          // so assignment works without a bootstrap script or “create an order first”.
+          userId = adminUser.id
         }
-        userId = existingOrder.userId
       }
 
       const labelsToAssign: { id: string; deviceId: string }[] = []

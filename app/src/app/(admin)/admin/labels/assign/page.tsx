@@ -58,7 +58,10 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
             Assignments
           </CardTitle>
           <CardDescription className="text-sm">
-            Choose an organisation and enter the device IDs to assign.
+            Choose an organisation and enter the device IDs to assign. The list only includes orgs
+            that already have orders. If your org (e.g. TIP PROD TEST) is not listed, use
+            &quot;Other&quot; and paste its Organisation ID from the Clerk dashboard — that org
+            must have at least one order first.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-1">
