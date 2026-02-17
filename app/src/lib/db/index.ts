@@ -25,8 +25,8 @@ function createPrismaClient() {
       connectionString = `${connectionString}${sep}sslmode=verify-full`
     } else {
       connectionString = connectionString.replace(
-        /([?&])sslmode=(?:prefer|require|verify-ca)(&|$)/i,
-        '$1sslmode=verify-full$2'
+        /sslmode=(?:prefer|require|verify-ca)/gi,
+        'sslmode=verify-full'
       )
     }
   }

@@ -48,25 +48,16 @@ export async function getCurrentUser() {
           imageUrl: clerkUser.imageUrl,
           role: (isAdminEmail(emailAddress) ? 'admin' : 'user') as 'admin' | 'user',
         }
-        try {
-          user = await db.user.upsert({
-            where: { clerkId: clerkUser.id },
-            create: { clerkId: clerkUser.id, ...data },
-            update: data,
+        const existingByEmail = await db.user.findUnique({ where: { email: emailAddress } })
+        if (existingByEmail) {
+          user = await db.user.update({
+            where: { id: existingByEmail.id },
+            data: { clerkId: clerkUser.id, ...data },
           })
-        } catch (err: unknown) {
-          const prismaErr = err as { code?: string; meta?: { target?: string[] } }
-          if (prismaErr.code === 'P2002' && prismaErr.meta?.target?.includes('email')) {
-            await db.user.updateMany({
-              where: { email: emailAddress },
-              data: { clerkId: clerkUser.id, ...data },
-            })
-            user = await db.user.findUnique({
-              where: { clerkId: clerkUser.id },
-            })
-          } else {
-            throw err
-          }
+        } else {
+          user = await db.user.create({
+            data: { clerkId: clerkUser.id, ...data },
+          })
         }
       }
     }
