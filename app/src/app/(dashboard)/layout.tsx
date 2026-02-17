@@ -31,8 +31,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   if (needSignIn) {
-    const pathname = (await headers()).get('x-pathname') || '/dashboard'
-    redirect(`/sign-in?redirect_url=${encodeURIComponent(pathname)}`)
+    const h = await headers()
+    const pathname = h.get('x-pathname') || '/dashboard'
+    const host = h.get('x-forwarded-host') || h.get('host') || ''
+    const proto = h.get('x-forwarded-proto') || 'https'
+    const origin = host ? `${proto}://${host}` : ''
+    const redirectUrl = origin ? `${origin}${pathname}` : pathname
+    const redirectTarget = `/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`
+    console.log('[dashboard layout] redirect to sign-in (needSignIn)', { pathname, redirectUrl, redirectTarget })
+    redirect(redirectTarget)
   }
 
   return (

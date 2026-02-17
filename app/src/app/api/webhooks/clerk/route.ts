@@ -50,18 +50,21 @@ export async function POST(req: Request) {
     const primaryEmail = email_addresses.find((email) => email.id === evt.data.primary_email_address_id)
     const emailAddress = primaryEmail?.email_address || ''
 
-    await db.user.create({
-      data: {
-        clerkId: id,
-        email: emailAddress,
-        firstName: first_name || null,
-        lastName: last_name || null,
-        imageUrl: image_url || null,
-        role: isAdminEmail(emailAddress) ? 'admin' : 'user',
-      },
+    const data = {
+      email: emailAddress,
+      firstName: first_name || null,
+      lastName: last_name || null,
+      imageUrl: image_url || null,
+      role: isAdminEmail(emailAddress) ? 'admin' : 'user' as const,
+    }
+
+    await db.user.upsert({
+      where: { clerkId: id },
+      create: { clerkId: id, ...data },
+      update: data,
     })
 
-    console.log(`User created: ${id} (${emailAddress})${isAdminEmail(emailAddress) ? ' [auto-admin]' : ''}`)
+    console.log(`User created/updated: ${id} (${emailAddress})${isAdminEmail(emailAddress) ? ' [auto-admin]' : ''}`)
   }
 
   if (eventType === 'user.updated') {

@@ -51,8 +51,12 @@ const proxy = hasClerkKey
       // Page routes: require authentication; redirect to sign-in with return URL so user lands back here after sign-in
       const { userId } = await auth()
       if (!userId) {
+        const pathname = req.nextUrl.pathname
         const signInUrl = new URL('/sign-in', req.url)
-        signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname)
+        // Clerk may expect full URL for redirect_url
+        const redirectUrl = new URL(pathname, req.url).toString()
+        signInUrl.searchParams.set('redirect_url', redirectUrl)
+        console.log('[proxy] redirect to sign-in (no userId)', { pathname, redirect_url: redirectUrl, signInUrl: signInUrl.toString() })
         return NextResponse.redirect(signInUrl)
       }
 
@@ -66,8 +70,10 @@ const proxy = hasClerkKey
       }
 
       // Pass pathname so dashboard layout can redirect back to this URL after sign-in
+      const pathname = req.nextUrl.pathname
       const requestHeaders = new Headers(req.headers)
-      requestHeaders.set('x-pathname', req.nextUrl.pathname)
+      requestHeaders.set('x-pathname', pathname)
+      console.log('[proxy] auth ok, passing x-pathname', { pathname })
       return NextResponse.next({ request: { headers: requestHeaders } })
     })
   : () => NextResponse.next()

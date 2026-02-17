@@ -15,8 +15,17 @@ function createPrismaClient() {
     return new PrismaClient()
   }
 
+  // Silence pg SSL warning: prefer/require are treated as verify-full; set explicitly for remote DBs.
+  // For local dev without SSL use DATABASE_URL with ?sslmode=disable.
+  let connectionString = process.env.DATABASE_URL
+  const isLocalHost = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(connectionString)
+  if (!connectionString.includes('sslmode=') && !isLocalHost) {
+    const sep = connectionString.includes('?') ? '&' : '?'
+    connectionString = `${connectionString}${sep}sslmode=verify-full`
+  }
+
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
   })
 
   const adapter = new PrismaPg(pool)

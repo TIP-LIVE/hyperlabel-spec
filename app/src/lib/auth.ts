@@ -41,23 +41,18 @@ export async function getCurrentUser() {
 
       if (clerkUser) {
         const emailAddress = clerkUser.emailAddresses[0]?.emailAddress || ''
-        try {
-          user = await db.user.create({
-            data: {
-              clerkId: clerkUser.id,
-              email: emailAddress,
-              firstName: clerkUser.firstName,
-              lastName: clerkUser.lastName,
-              imageUrl: clerkUser.imageUrl,
-              role: isAdminEmail(emailAddress) ? 'admin' : 'user',
-            },
-          })
-        } catch {
-          // Race: webhook may have created user. Refetch.
-          user = await db.user.findUnique({
-            where: { clerkId: userId },
-          })
+        const data = {
+          email: emailAddress,
+          firstName: clerkUser.firstName,
+          lastName: clerkUser.lastName,
+          imageUrl: clerkUser.imageUrl,
+          role: (isAdminEmail(emailAddress) ? 'admin' : 'user') as 'admin' | 'user',
         }
+        user = await db.user.upsert({
+          where: { clerkId: clerkUser.id },
+          create: { clerkId: clerkUser.id, ...data },
+          update: data,
+        })
       }
     }
 

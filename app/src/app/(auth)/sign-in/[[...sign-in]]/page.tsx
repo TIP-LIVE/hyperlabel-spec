@@ -6,7 +6,13 @@ export const metadata: Metadata = {
   description: 'Sign in to your TIP account',
 }
 
-export default function SignInPage() {
+type Props = { searchParams: Promise<{ redirect_url?: string }> }
+
+export default async function SignInPage({ searchParams }: Props) {
+  const params = await searchParams
+  const redirectUrl = params.redirect_url ?? ''
+  console.log('[sign-in page] loaded', { redirect_url: redirectUrl, hasRedirect: !!redirectUrl })
+
   return (
     <div className="w-full max-w-md">
       <div className="mb-8 text-center lg:text-left">
@@ -16,7 +22,7 @@ export default function SignInPage() {
         </p>
       </div>
 
-      <SignIn />
+      <SignIn fallbackRedirectUrl={redirectUrl || undefined} />
     </div>
   )
 }
