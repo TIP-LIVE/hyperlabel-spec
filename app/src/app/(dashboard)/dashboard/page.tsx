@@ -241,6 +241,22 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           {recentShipments.length === 0 ? (
+            totalLabels > 0 ? (
+              <div className="py-8 text-center">
+                <div className="mx-auto max-w-sm space-y-4">
+                  <h3 className="text-lg font-semibold">You have {totalLabels} label{totalLabels === 1 ? '' : 's'} ready</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create a shipment to attach a label and start tracking your cargo in real-time.
+                  </p>
+                  <Button asChild>
+                    <Link href="/shipments/new">
+                      <Package className="mr-2 h-4 w-4" />
+                      New Shipment
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <div className="py-8">
               <div className="mb-6 text-center">
                 <h3 className="text-lg font-semibold">Welcome! Here&apos;s how to get started</h3>
@@ -306,6 +322,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </div>
+            )
           ) : (
             <div className="space-y-4">
               {recentShipments.map((shipment) => {
