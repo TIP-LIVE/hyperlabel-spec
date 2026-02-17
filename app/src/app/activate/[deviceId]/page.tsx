@@ -24,8 +24,8 @@ export default async function ActivateLabelPage({ params }: PageProps) {
   const { deviceId: rawDeviceId } = await params
   const deviceId = decodeURIComponent(rawDeviceId).toUpperCase()
 
-  // Validate device ID format
-  if (!/^HL-\d{6}$/.test(deviceId)) {
+  // Validate device ID format (TIP-001, TIP-123, HL-001234)
+  if (!/^(TIP-\d+|HL-\d{6})$/i.test(deviceId)) {
     return (
       <ActivateLayout>
         <Card className="max-w-md">
@@ -34,7 +34,7 @@ export default async function ActivateLabelPage({ params }: PageProps) {
             <CardTitle className="mt-4">Invalid Label</CardTitle>
             <CardDescription>
               &ldquo;{deviceId}&rdquo; is not a valid TIP tracking label ID.
-              Valid IDs look like <span className="font-mono">HL-001234</span>.
+              Valid IDs look like <span className="font-mono">TIP-001</span> or <span className="font-mono">HL-001234</span>.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">

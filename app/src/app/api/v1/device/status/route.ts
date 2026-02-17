@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { rateLimit, RATE_LIMIT_DEVICE, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 /**
- * GET /api/v1/device/status?deviceId=HL-001234
+ * GET /api/v1/device/status?deviceId=TIP-001
  *
  * Returns current device health: battery, last seen, signal status, active shipment.
  * Used by the Cloud Run device-api service for health monitoring.
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const deviceId = req.nextUrl.searchParams.get('deviceId')
     if (!deviceId) {
       return NextResponse.json(
-        { error: 'Missing parameter', details: 'Provide ?deviceId=HL-XXXXXX' },
+        { error: 'Missing parameter', details: 'Provide ?deviceId=TIP-001 or HL-001234' },
         { status: 400 }
       )
     }

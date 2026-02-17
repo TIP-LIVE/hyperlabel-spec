@@ -71,7 +71,7 @@ model User {
 /// A label can belong to multiple organisations via OrderLabel (many-to-many with Order).
 model Label {
   id              String      @id @default(cuid())
-  deviceId        String      @unique @map("device_id") // HL-001234
+  deviceId        String      @unique @map("device_id") // e.g. TIP-001, HL-001234
   imei            String?     @unique // Device IMEI
   iccid           String?     @unique // SIM card ID
   status          LabelStatus @default(INVENTORY)

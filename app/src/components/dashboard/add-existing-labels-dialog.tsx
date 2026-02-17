@@ -43,7 +43,7 @@ export function AddExistingLabelsDialog({
     e.preventDefault()
     const deviceIds = parseDeviceIds(input)
     if (deviceIds.length === 0) {
-      toast.error('Enter at least one device ID (e.g. HL-001234)')
+      toast.error('Enter at least one device ID (e.g. TIP-001 or HL-001234)')
       return
     }
     if (deviceIds.length > 100) {
@@ -112,7 +112,7 @@ export function AddExistingLabelsDialog({
         <DialogHeader>
           <DialogTitle>Add existing labels</DialogTitle>
           <DialogDescription>
-            Enter the device IDs of tracking labels you already have (e.g. HL-001234). They will be
+            Enter the device IDs of tracking labels you already have (e.g. TIP-001 or HL-001234). They will be
             added to this organisation and appear under Total Labels. One per line or
             comma-separated.
           </DialogDescription>
@@ -168,7 +168,7 @@ export function AddExistingLabelsDialog({
               <textarea
                 id="device-ids"
                 className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder={'HL-001234\nHL-001235\nHL-001236'}
+                placeholder={'TIP-001\nTIP-002\nHL-001234'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={loading}

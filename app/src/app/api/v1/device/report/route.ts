@@ -25,10 +25,21 @@ export async function POST(req: NextRequest) {
     const expectedKey = process.env.DEVICE_API_KEY
 
     if (expectedKey && apiKey !== expectedKey) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn('[Device report] 401 Invalid API key', { hasKey: !!apiKey })
+      }
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
     }
 
-    const body = await req.json()
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON', details: 'Request body must be valid JSON' },
+        { status: 400 }
+      )
+    }
     const validated = deviceReportSchema.safeParse(body)
 
     if (!validated.success) {
@@ -96,6 +107,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (!label) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn('[Device report] 404 Device not found', {
+          deviceId: data.deviceId ?? null,
+          imei: data.imei ?? null,
+          iccid: data.iccid ?? null,
+        })
+      }
       return NextResponse.json({ error: 'Device not found' }, { status: 404 })
     }
 
@@ -113,6 +131,13 @@ export async function POST(req: NextRequest) {
       : receivedAt.getTime() - recordedAt.getTime() > OFFLINE_SYNC_THRESHOLD_MS
 
     // Store the location event
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Device report] storing location', {
+        deviceId: label.deviceId,
+        shipmentId: activeShipment?.id ?? null,
+        recordedAt: recordedAt.toISOString(),
+      })
+    }
     const locationEvent = await db.locationEvent.create({
       data: {
         labelId: label.id,

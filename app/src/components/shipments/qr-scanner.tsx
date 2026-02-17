@@ -48,17 +48,21 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
 
   // Extract device ID from QR data (could be URL or just device ID)
   const extractDeviceId = useCallback((data: string): string | null => {
-    // Direct device ID format: HL-XXXXXX
-    const directMatch = data.match(/HL-\d{6}/i)
-    if (directMatch) return directMatch[0].toUpperCase()
+    // Direct device ID: TIP-001, TIP-123, or HL-001234
+    const tipMatch = data.match(/TIP-\d+/i)
+    if (tipMatch) return tipMatch[0].toUpperCase()
+    const hlMatch = data.match(/HL-\d{6}/i)
+    if (hlMatch) return hlMatch[0].toUpperCase()
 
-    // URL format: https://tip.live/activate/HL-001234 or ?deviceId=HL-001234
+    // URL format: https://tip.live/activate/TIP-001 or ?deviceId=TIP-001
     try {
       const url = new URL(data)
-      const pathMatch = url.pathname.match(/HL-\d{6}/i)
-      if (pathMatch) return pathMatch[0].toUpperCase()
+      const pathTip = url.pathname.match(/TIP-\d+/i)
+      if (pathTip) return pathTip[0].toUpperCase()
+      const pathHl = url.pathname.match(/HL-\d{6}/i)
+      if (pathHl) return pathHl[0].toUpperCase()
       const param = url.searchParams.get('deviceId')
-      if (param) return param.toUpperCase()
+      if (param) return param.trim().toUpperCase()
     } catch {
       // Not a URL, ignore
     }
@@ -148,11 +152,11 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     }
   }, [extractDeviceId, handleScannedId, stopCamera])
 
-  // Handle manual entry
+  // Handle manual entry (TIP-001, TIP-123, or HL-001234)
   const handleManualSubmit = useCallback(() => {
     const id = manualId.trim().toUpperCase()
-    if (!id.match(/^HL-\d{6}$/)) {
-      setError('Invalid device ID format. Expected: HL-XXXXXX (e.g., HL-001234)')
+    if (!id.match(/^(TIP-\d+|HL-\d{6})$/)) {
+      setError('Invalid device ID. Use TIP-001 or HL-001234 format.')
       return
     }
     handleScannedId(id)
@@ -277,7 +281,7 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
                   <div className="flex gap-2">
                     <Input
                       id="deviceId"
-                      placeholder="HL-001234"
+                      placeholder="TIP-001 or HL-001234"
                       value={manualId}
                       onChange={(e) => {
                         setManualId(e.target.value)
@@ -291,7 +295,7 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    The device ID is printed on the back of your tracking label (e.g., HL-001234)
+                    The device ID is printed on the back of your tracking label (e.g., TIP-001 or HL-001234)
                   </p>
                 </div>
               </>
