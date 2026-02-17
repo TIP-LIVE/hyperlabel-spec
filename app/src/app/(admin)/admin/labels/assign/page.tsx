@@ -41,7 +41,7 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
           <Link href="/admin/labels">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-        </div>
+        </Button>
         <div>
           <h1 className="text-2xl font-bold text-white">Assign Labels to Organisations</h1>
           <p className="text-gray-400">
