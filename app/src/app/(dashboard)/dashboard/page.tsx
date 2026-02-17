@@ -182,12 +182,16 @@ export default async function DashboardPage() {
     },
   ]
 
+  /** Short org ID for verification (assign to this org to see labels here) */
+  const shortOrgId = orgId && orgId.length > 20 ? '…' + orgId.slice(-12) : orgId ?? ''
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Overview of your shipments and tracking labels"
-        action={
+      <div>
+        <PageHeader
+          title="Dashboard"
+          description="Overview of your shipments and tracking labels"
+          action={
           <>
             <AddExistingLabelsButton />
             <Button asChild>
@@ -198,7 +202,13 @@ export default async function DashboardPage() {
             </Button>
           </>
         }
-      />
+        />
+        {orgId && (
+          <p className="mt-1 font-mono text-xs text-muted-foreground" title={orgId}>
+            Org ID: {shortOrgId}
+          </p>
+        )}
+      </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

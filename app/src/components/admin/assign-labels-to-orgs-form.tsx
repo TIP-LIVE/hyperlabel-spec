@@ -36,6 +36,8 @@ function shortOrgId(id: string, max = 24): string {
 
 interface AssignLabelsToOrgsFormProps {
   knownOrgIds: string[]
+  /** Current Clerk org (from auth) — assign here to see labels on that org's dashboard */
+  currentOrgId?: string | null
   /** Pre-fill first row device IDs when coming from Label Inventory selection */
   initialDeviceIds?: string[]
 }
@@ -48,6 +50,7 @@ const defaultRow = (): { orgId: string; otherOrgId: string; deviceIds: string } 
 
 export function AssignLabelsToOrgsForm({
   knownOrgIds,
+  currentOrgId,
   initialDeviceIds,
 }: AssignLabelsToOrgsFormProps) {
   const router = useRouter()
@@ -61,16 +64,20 @@ export function AssignLabelsToOrgsForm({
   )
 
   const filteredOrgIds = useMemo(() => {
-    if (!orgSearch.trim()) return knownOrgIds
+    const base = currentOrgId ? [...new Set([currentOrgId, ...knownOrgIds])] : knownOrgIds
+    if (!orgSearch.trim()) return base
     const q = orgSearch.trim().toLowerCase()
-    return knownOrgIds.filter((id) => id.toLowerCase().includes(q))
-  }, [knownOrgIds, orgSearch])
+    return base.filter((id) => id.toLowerCase().includes(q))
+  }, [knownOrgIds, orgSearch, currentOrgId])
 
   /** Org IDs to show in dropdown: filtered list plus any currently selected (so selection doesn’t disappear when search hides it) */
   const orgIdsForSelect = useMemo(() => {
-    const selected = rows.map((r) => r.orgId).filter((id) => id && id !== '__other__' && knownOrgIds.includes(id))
-    return [...new Set([...filteredOrgIds, ...selected])]
-  }, [filteredOrgIds, rows, knownOrgIds])
+    const selected = rows
+      .map((r) => (r.orgId === '__other__' ? r.otherOrgId.trim() : r.orgId))
+      .filter((id) => id && id !== '__other__')
+    const withCurrent = currentOrgId ? [currentOrgId, ...filteredOrgIds] : filteredOrgIds
+    return [...new Set([...withCurrent, ...selected])]
+  }, [filteredOrgIds, rows, currentOrgId])
 
   const addRow = () => {
     setRows((r) => [...r, { orgId: '', otherOrgId: '', deviceIds: '' }])
@@ -244,7 +251,9 @@ export function AssignLabelsToOrgsForm({
                       )}
                       {orgIdsForSelect.map((id) => (
                         <SelectItem key={id} value={id} title={id}>
-                          <span className="font-mono text-xs">{shortOrgId(id)}</span>
+                          <span className="font-mono text-xs">
+                            {id === currentOrgId ? `Your current org (${shortOrgId(id)})` : shortOrgId(id)}
+                          </span>
                         </SelectItem>
                       ))}
                       <SelectItem value="__other__">Other (paste Clerk org ID)</SelectItem>
@@ -309,7 +318,9 @@ export function AssignLabelsToOrgsForm({
                         )}
                         {orgIdsForSelect.map((id) => (
                           <SelectItem key={id} value={id} title={id}>
-                            <span className="font-mono text-xs">{shortOrgId(id)}</span>
+                            <span className="font-mono text-xs">
+                              {id === currentOrgId ? `Your current org (${shortOrgId(id)})` : shortOrgId(id)}
+                            </span>
                           </SelectItem>
                         ))}
                         <SelectItem value="__other__">Other (paste Clerk org ID)</SelectItem>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
 import { AssignLabelsToOrgsForm } from '@/components/admin/assign-labels-to-orgs-form'
+import { auth } from '@clerk/nextjs/server'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -26,6 +27,14 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
           .map((s) => s.trim().toUpperCase())
           .filter(Boolean)
       : []
+
+  let currentOrgId: string | null = null
+  try {
+    const authResult = await auth()
+    currentOrgId = authResult.orgId ?? null
+  } catch {
+    // Clerk not configured or not in org context
+  }
 
   const orgs = await db.order.findMany({
     where: { orgId: { not: null } },
@@ -58,15 +67,18 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
             Assignments
           </CardTitle>
           <CardDescription className="text-sm">
-            Choose an organisation and enter the device IDs to assign. The list only includes orgs
-            that already have orders. If your org (e.g. TIP PROD TEST) is not listed, use
-            &quot;Other&quot; and paste its Organisation ID from the Clerk dashboard — that org
-            must have at least one order first.
+            Choose an organisation and enter the device IDs to assign. To see labels on your
+            dashboard, switch to that org in the header first, then open this page and select
+            &quot;Your current org&quot; — that way the assignment matches the org you&apos;re
+            viewing. The list also includes orgs that already have orders; if yours is missing, use
+            &quot;Other&quot; and paste its Organisation ID from Clerk (the org must have at least
+            one order first).
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-1">
           <AssignLabelsToOrgsForm
             knownOrgIds={knownOrgIds}
+            currentOrgId={currentOrgId}
             initialDeviceIds={initialDeviceIds.length > 0 ? initialDeviceIds : undefined}
           />
         </CardContent>
