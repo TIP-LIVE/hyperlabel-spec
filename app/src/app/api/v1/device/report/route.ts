@@ -114,12 +114,33 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    if (!label) {
+    // Auto-register: if no label found but IMEI provided, create one automatically
+    if (!label && (data.imei || data.iccid)) {
+      const nextDeviceId = await generateNextDeviceId()
+      const newLabel = await db.label.create({
+        data: {
+          deviceId: nextDeviceId,
+          imei: data.imei || null,
+          iccid: data.iccid || null,
+          status: 'ACTIVE',
+          activatedAt: new Date(),
+        },
+        include: shipmentInclude,
+      })
+      label = newLabel
       if (process.env.NODE_ENV !== 'test') {
-        console.warn('[Device report] 404 Device not found', {
-          deviceId: data.deviceId ?? null,
+        console.info('[Device report] auto-registered new label', {
+          deviceId: nextDeviceId,
           imei: data.imei ?? null,
           iccid: data.iccid ?? null,
+        })
+      }
+    }
+
+    if (!label) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn('[Device report] 404 Device not found (no IMEI/ICCID to auto-register)', {
+          deviceId: data.deviceId ?? null,
         })
       }
       return NextResponse.json({ error: 'Device not found' }, { status: 404 })
@@ -264,6 +285,7 @@ export async function POST(req: NextRequest) {
       success: true,
       locationId: locationEvent.id,
       shipmentId: activeShipment?.id || null,
+      deviceId: label.deviceId,
     })
   } catch (error) {
     console.error('Error processing device report:', error)
@@ -288,4 +310,26 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 function toRad(deg: number): number {
   return deg * (Math.PI / 180)
+}
+
+/**
+ * Generate the next sequential TIP device ID (TIP-001, TIP-002, ...).
+ * Finds the highest existing TIP-xxx label and increments.
+ */
+async function generateNextDeviceId(): Promise<string> {
+  const latest = await db.label.findFirst({
+    where: { deviceId: { startsWith: 'TIP-' } },
+    orderBy: { deviceId: 'desc' },
+    select: { deviceId: true },
+  })
+
+  let nextNum = 1
+  if (latest) {
+    const match = latest.deviceId.match(/^TIP-(\d+)$/)
+    if (match) {
+      nextNum = parseInt(match[1], 10) + 1
+    }
+  }
+
+  return `TIP-${String(nextNum).padStart(3, '0')}`
 }
