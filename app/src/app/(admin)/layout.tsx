@@ -96,6 +96,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {/* Desktop title */}
           <h1 className="hidden text-lg font-medium text-white lg:block">TIP Admin</h1>
           <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white" asChild>
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Client View
+              </Link>
+            </Button>
             <span className="hidden text-sm text-gray-400 sm:block">{user?.email}</span>
             <div className="h-8 w-8 rounded-full bg-primary/20" />
           </div>
