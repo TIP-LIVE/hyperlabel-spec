@@ -73,9 +73,17 @@ export async function POST(req: NextRequest) {
       consigneeEmail: true,
     }
 
+    // Include recently delivered shipments (1h grace) so late-arriving
+    // location reports from offline buffers still get associated.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const shipmentInclude = {
       shipments: {
-        where: { status: { in: ['PENDING', 'IN_TRANSIT'] as ['PENDING', 'IN_TRANSIT'] } },
+        where: {
+          OR: [
+            { status: { in: ['PENDING', 'IN_TRANSIT'] as ['PENDING', 'IN_TRANSIT'] } },
+            { status: 'DELIVERED' as const, deliveredAt: { gte: oneHourAgo } },
+          ],
+        },
         orderBy: { createdAt: 'desc' as const },
         take: 1,
         select: shipmentSelect,
