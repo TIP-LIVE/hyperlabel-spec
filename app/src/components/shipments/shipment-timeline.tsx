@@ -62,11 +62,6 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                   )}
                   {locationNames[location.id]?.name || `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
                 </span>
-                {location.isOfflineSync && (
-                  <span className="rounded bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 text-xs text-yellow-800 dark:text-yellow-200">
-                    Offline sync
-                  </span>
-                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 {format(new Date(location.recordedAt), 'PPp')}
