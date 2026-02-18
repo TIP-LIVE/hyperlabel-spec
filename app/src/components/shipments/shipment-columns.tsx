@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MoreHorizontal, Eye, Share2, MapPin } from 'lucide-react'
+import { MoreHorizontal, Eye, Share2, Battery } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { shipmentStatusConfig } from '@/lib/status-config'
@@ -61,36 +61,6 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     },
   },
   {
-    id: 'currentLocation',
-    header: 'Current Location',
-    cell: ({ row }) => {
-      const info = row.original.locationInfo
-      const loc = row.original.latestLocation
-
-      if (!loc) {
-        return <span className="text-muted-foreground text-sm">No data</span>
-      }
-
-      if (!info) {
-        return <Skeleton className="h-8 w-28" />
-      }
-
-      return (
-        <div className="flex items-center gap-2 max-w-[220px]">
-          {info.countryCode && (
-            <span className="text-base shrink-0">{countryCodeToFlag(info.countryCode)}</span>
-          )}
-          <div className="min-w-0">
-            <span className="text-sm font-medium truncate block">{info.name}</span>
-            <p className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
-            </p>
-          </div>
-        </div>
-      )
-    },
-  },
-  {
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
@@ -103,15 +73,26 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     },
   },
   {
-    accessorKey: 'destinationAddress',
-    header: 'Destination',
+    id: 'currentLocation',
+    header: 'Location',
     cell: ({ row }) => {
-      const address = row.getValue('destinationAddress') as string | null
-      if (!address) return <span className="text-muted-foreground">—</span>
+      const info = row.original.locationInfo
+      const loc = row.original.latestLocation
+
+      if (!loc) {
+        return <span className="text-muted-foreground text-xs">No data yet</span>
+      }
+
+      if (!info) {
+        return <Skeleton className="h-5 w-24" />
+      }
+
       return (
-        <div className="flex items-center gap-1 max-w-[200px]" title={address}>
-          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="truncate text-sm">{address}</span>
+        <div className="flex items-center gap-2 max-w-[200px]">
+          {info.countryCode && (
+            <span className="text-sm shrink-0">{countryCodeToFlag(info.countryCode)}</span>
+          )}
+          <span className="text-sm truncate">{info.name}</span>
         </div>
       )
     },
@@ -121,22 +102,32 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     header: 'Battery',
     cell: ({ row }) => {
       const battery = row.original.label.batteryPct
-      if (battery === null) return <span className="text-muted-foreground">—</span>
+      if (battery === null) return <span className="text-muted-foreground text-xs">—</span>
+      const color =
+        battery < 20
+          ? 'text-red-600 dark:text-red-400'
+          : battery < 50
+            ? 'text-yellow-600 dark:text-yellow-400'
+            : 'text-green-600 dark:text-green-400'
       return (
-        <span className={battery < 20 ? 'text-destructive font-medium' : ''}>
+        <span className={`flex items-center gap-1 text-sm ${color}`}>
+          <Battery className="h-3.5 w-3.5" />
           {battery}%
         </span>
       )
     },
   },
   {
-    accessorKey: 'createdAt',
-    header: 'Created',
+    id: 'lastUpdate',
+    header: 'Last Update',
     cell: ({ row }) => {
-      const date = row.getValue('createdAt') as Date
+      const loc = row.original.latestLocation
+      if (!loc) {
+        return <span className="text-muted-foreground text-xs">—</span>
+      }
       return (
-        <span className="text-muted-foreground text-sm">
-          {formatDistanceToNow(new Date(date), { addSuffix: true })}
+        <span className="text-muted-foreground text-xs">
+          {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
         </span>
       )
     },
@@ -150,7 +141,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
+            <Button variant="ghost" size="icon-sm">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>

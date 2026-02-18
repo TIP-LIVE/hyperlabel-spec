@@ -257,7 +257,7 @@ export function TrackingMap({
   }
 
   return (
-    <div style={{ height }} className="relative overflow-hidden rounded-lg">
+    <div style={{ height }} className="relative overflow-hidden rounded-xl">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={center}
@@ -347,11 +347,11 @@ export function TrackingMap({
             onClick={() => setSelectedLocation(location)}
             icon={{
               path: google.maps.SymbolPath.CIRCLE,
-              scale: 4,
+              scale: 5,
               fillColor: isDark ? '#60a5fa' : '#3b82f6',
-              fillOpacity: 0.5,
-              strokeColor: isDark ? '#1e293b' : '#ffffff',
-              strokeWeight: 1.5,
+              fillOpacity: 0.7,
+              strokeColor: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.9)',
+              strokeWeight: 2,
             }}
           />
         ))}
@@ -511,40 +511,34 @@ export function TrackingMap({
       </GoogleMap>
 
       {/* ── Map legend ── */}
-      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 rounded-lg border bg-background/90 px-3 py-2 text-xs shadow-sm backdrop-blur-sm">
+      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1 rounded-xl border bg-background/95 px-3 py-2 text-[11px] shadow-md backdrop-blur-sm">
         {hasOrigin && (
           <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm" />
-            <span className="text-muted-foreground">
-              {originAddress ? originAddress.split(',')[0] : 'Origin'}
-            </span>
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+            <span className="text-muted-foreground">Origin</span>
           </div>
         )}
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full border-2 border-white bg-blue-500 shadow-sm" />
-          <span className="text-muted-foreground">Current location</span>
+          <div className="h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-white" />
+          <span className="text-muted-foreground">Current</span>
         </div>
         {locations.length > 1 && (
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-blue-400/50" />
-            <span className="text-muted-foreground">Previous locations</span>
+            <div className="h-2 w-2 rounded-full bg-blue-400/60" />
+            <span className="text-muted-foreground">History</span>
           </div>
         )}
         {hasDestination && (
           <div className="flex items-center gap-2">
-            <div className="h-0 w-0 border-l-[5px] border-r-[5px] border-t-[8px] border-l-transparent border-r-transparent border-t-red-500" />
-            <span className="text-muted-foreground">
-              {destinationAddress
-                ? destinationAddress.split(',')[0]
-                : 'Destination'}
-            </span>
+            <div className="h-0 w-0 border-l-[4px] border-r-[4px] border-t-[7px] border-l-transparent border-r-transparent border-t-red-500" />
+            <span className="text-muted-foreground">Destination</span>
           </div>
         )}
       </div>
 
       {/* ── Last updated badge ── */}
       {latestLocation && (
-        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border bg-background/90 px-2.5 py-1 text-[11px] shadow-sm backdrop-blur-sm">
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border bg-background/95 px-3 py-1.5 text-[11px] shadow-md backdrop-blur-sm">
           <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           <span className="text-muted-foreground">
             {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}

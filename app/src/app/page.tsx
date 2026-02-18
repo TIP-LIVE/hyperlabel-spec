@@ -81,11 +81,11 @@ export default async function HomePage() {
               FAQ
             </Link>
           </nav>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild className="hidden sm:inline-flex">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
               <Link href="/sign-in">Sign In</Link>
             </Button>
-            <Button asChild className="hidden sm:inline-flex">
+            <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
               <Link href="/sign-up">Get Started</Link>
             </Button>
             <ThemeToggle />
@@ -112,15 +112,15 @@ export default async function HomePage() {
                 Stick a tracking label on your shipment and follow it from pickup to delivery.
                 Real-time location, delivery alerts, shareable links — in 180+ countries.
               </p>
-              <div className="mt-10 flex flex-wrap items-center gap-4">
-                <Button size="lg" className="gap-2" asChild>
-                  <Link href="/sign-up">
-                    Buy Labels
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
+              <div className="mt-10 flex flex-wrap items-center gap-3">
+                <Button size="lg" className="h-12 rounded-full px-8 text-base font-semibold shadow-lg" asChild>
+                  <Link href="/sign-up">Buy Labels</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" asChild>
-                  <Link href="#how-it-works">How It Works</Link>
+                <Button size="lg" variant="ghost" className="h-12 rounded-full px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white" asChild>
+                  <Link href="#how-it-works">
+                    Learn More
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -371,7 +371,7 @@ export default async function HomePage() {
                 <li>&#8226; Free shipping</li>
                 <li>&#8226; 60+ day battery</li>
               </ul>
-              <Button className="mt-6 w-full" variant="outline" asChild>
+              <Button className="mt-6 w-full rounded-full" variant="outline" asChild>
                 <Link href="/sign-up">Buy 1 Label</Link>
               </Button>
             </div>
@@ -389,7 +389,7 @@ export default async function HomePage() {
                 <li>&#8226; Free shipping</li>
                 <li>&#8226; Save $15 vs buying one by one</li>
               </ul>
-              <Button className="mt-6 w-full" asChild>
+              <Button className="mt-6 w-full rounded-full" asChild>
                 <Link href="/sign-up">Buy 5 Labels</Link>
               </Button>
             </div>
@@ -405,7 +405,7 @@ export default async function HomePage() {
                 <li>&#8226; Lowest price per label</li>
                 <li>&#8226; Save $50 vs buying one by one</li>
               </ul>
-              <Button className="mt-6 w-full" variant="outline" asChild>
+              <Button className="mt-6 w-full rounded-full" variant="outline" asChild>
                 <Link href="/sign-up">Buy 10 Labels</Link>
               </Button>
             </div>
@@ -452,7 +452,7 @@ export default async function HomePage() {
           <p className="mx-auto mt-3 max-w-lg opacity-90">
             Get your first tracking label and follow your cargo from pickup to delivery.
           </p>
-          <Button size="lg" variant="secondary" className="mt-6" asChild>
+          <Button size="lg" variant="secondary" className="mt-8 h-12 rounded-full px-8 text-base font-semibold" asChild>
             <Link href="/sign-up">Get Your First Label</Link>
           </Button>
         </div>

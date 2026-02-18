@@ -236,43 +236,43 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             <p className="text-sm text-muted-foreground">{shipment.label.deviceId}</p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {isPolling && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
               </span>
               Live
+              <button
+                onClick={handleManualRefresh}
+                className="ml-1 rounded-full p-0.5 transition-colors hover:bg-accent"
+                title="Refresh now"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </button>
             </div>
           )}
-          {isPolling && (
-            <button
-              onClick={handleManualRefresh}
-              className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-              title="Refresh now"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <Badge variant={statusInfo.variant} className="gap-1">
+          <Badge variant={statusInfo.variant} className="gap-1 px-3 py-1">
             <StatusIcon className="h-3 w-3" />
             {statusInfo.label}
           </Badge>
-          {isActive && (
-            <EditShipmentDialog
-              shipmentId={shipment.id}
-              currentName={shipment.name}
-              currentDestination={shipment.destinationAddress}
-            />
-          )}
-          <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />
-          {isActive && (
-            <CancelShipmentDialog
-              shipmentId={shipment.id}
-              shipmentName={shipment.name}
-            />
-          )}
+          <div className="flex items-center gap-1.5">
+            {isActive && (
+              <EditShipmentDialog
+                shipmentId={shipment.id}
+                currentName={shipment.name}
+                currentDestination={shipment.destinationAddress}
+              />
+            )}
+            <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />
+            {isActive && (
+              <CancelShipmentDialog
+                shipmentId={shipment.id}
+                shipmentName={shipment.name}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -284,7 +284,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
 
       {/* Current Location Hero Banner */}
       {latestLocation && (
-        <div className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-4 rounded-xl border bg-card px-5 py-4 shadow-sm">
           {currentGeo?.countryCode ? (
             <span className="text-4xl leading-none">{countryCodeToFlag(currentGeo.countryCode)}</span>
           ) : (
@@ -293,13 +293,13 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-xl font-semibold truncate">
+            <p className="text-lg font-semibold truncate">
               {currentGeo?.name || `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`}
             </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3 shrink-0" />
               <span>
-                Last updated {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+                {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
               </span>
             </div>
           </div>
@@ -309,11 +309,11 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               navigator.clipboard.writeText(`${latestLocation.latitude.toFixed(6)}, ${latestLocation.longitude.toFixed(6)}`)
               toast.success('Coordinates copied')
             }}
-            className="hidden sm:flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="hidden sm:flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title="Copy coordinates"
           >
             <Navigation className="h-3 w-3" />
-            Copy coords
+            Copy
           </button>
         </div>
       )}
@@ -419,7 +419,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Route Card */}
           <Card>
             <CardHeader>
@@ -551,13 +551,13 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg bg-muted p-3">
-                <p className="break-all font-mono text-xs">{trackingUrl}</p>
+              <div className="rounded-xl bg-muted px-3 py-2.5">
+                <p className="break-all font-mono text-xs text-muted-foreground">{trackingUrl}</p>
               </div>
               <ShareLinkButton
                 shareCode={shipment.shareCode}
                 trackingUrl={trackingUrl}
-                className="mt-3 w-full"
+                className="mt-3 w-full rounded-full"
               />
             </CardContent>
           </Card>
