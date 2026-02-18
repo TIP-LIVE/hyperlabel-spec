@@ -16,6 +16,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { SignOutButton } from '@clerk/nextjs'
 import { AdminMobileSidebar } from '@/components/admin/admin-mobile-sidebar'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const adminNavigation = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -95,13 +96,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
           {/* Desktop title */}
           <h1 className="hidden text-lg font-medium text-white lg:block">TIP Admin</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white" asChild>
+          <div className="flex items-center gap-3">
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
               <Link href="/dashboard">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Client View
               </Link>
             </Button>
+            <ThemeToggle />
             <span className="hidden text-sm text-gray-400 sm:block">{user?.email}</span>
             <div className="h-8 w-8 rounded-full bg-primary/20" />
           </div>
