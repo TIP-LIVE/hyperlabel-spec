@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MoreHorizontal, Eye, Share2, MapPin, Truck, Send } from 'lucide-react'
+import { MoreHorizontal, Eye, Share2, MapPin, Truck, Send, Battery } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { shipmentStatusConfig } from '@/lib/status-config'
@@ -124,6 +124,12 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     cell: ({ row }) => {
       const battery = row.original.label?.batteryPct ?? null
       if (battery === null) return <span className="text-muted-foreground">—</span>
+      const color =
+        battery < 20
+          ? 'text-red-600 dark:text-red-400'
+          : battery < 50
+            ? 'text-yellow-600 dark:text-yellow-400'
+            : 'text-green-600 dark:text-green-400'
       return (
         <span className={`flex items-center gap-1 text-sm ${color}`}>
           <Battery className="h-3.5 w-3.5" />
