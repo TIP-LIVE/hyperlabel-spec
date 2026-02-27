@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MoreHorizontal, Eye, Share2, Battery } from 'lucide-react'
+import { MoreHorizontal, Eye, Share2, MapPin, Truck, Send } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { shipmentStatusConfig } from '@/lib/status-config'
@@ -22,6 +22,7 @@ import type { GeocodedLocation } from '@/hooks/use-reverse-geocode'
 export type ShipmentRow = {
   id: string
   name: string | null
+  type: 'CARGO_TRACKING' | 'LABEL_DISPATCH'
   destinationAddress: string | null
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED'
   shareCode: string
@@ -31,7 +32,15 @@ export type ShipmentRow = {
     deviceId: string
     batteryPct: number | null
     status: string
-  }
+  } | null
+  shipmentLabels?: Array<{
+    label: {
+      id: string
+      deviceId: string
+      batteryPct: number | null
+      status: string
+    }
+  }>
   latestLocation: {
     id: string
     latitude: number
@@ -47,15 +56,27 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     header: 'Shipment',
     cell: ({ row }) => {
       const name = row.getValue('name') as string | null
+      const isDispatch = row.original.type === 'LABEL_DISPATCH'
+      const labelCount = row.original.shipmentLabels?.length || 0
+
       return (
-        <div>
-          <Link
-            href={`/shipments/${row.original.id}`}
-            className="font-medium hover:underline"
-          >
-            {name || 'Untitled Shipment'}
-          </Link>
-          <p className="text-xs text-muted-foreground">{row.original.label.deviceId}</p>
+        <div className="flex items-start gap-2">
+          <div className="mt-0.5 shrink-0 text-muted-foreground">
+            {isDispatch ? <Send className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+          </div>
+          <div>
+            <Link
+              href={`/shipments/${row.original.id}`}
+              className="font-medium hover:underline"
+            >
+              {name || (isDispatch ? 'Unnamed Dispatch' : 'Unnamed Cargo')}
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              {isDispatch
+                ? `${labelCount} label${labelCount !== 1 ? 's' : ''}`
+                : row.original.label?.deviceId || '—'}
+            </p>
+          </div>
         </div>
       )
     },
@@ -101,14 +122,8 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     accessorKey: 'label.batteryPct',
     header: 'Battery',
     cell: ({ row }) => {
-      const battery = row.original.label.batteryPct
-      if (battery === null) return <span className="text-muted-foreground text-xs">—</span>
-      const color =
-        battery < 20
-          ? 'text-red-600 dark:text-red-400'
-          : battery < 50
-            ? 'text-yellow-600 dark:text-yellow-400'
-            : 'text-green-600 dark:text-green-400'
+      const battery = row.original.label?.batteryPct ?? null
+      if (battery === null) return <span className="text-muted-foreground">—</span>
       return (
         <span className={`flex items-center gap-1 text-sm ${color}`}>
           <Battery className="h-3.5 w-3.5" />

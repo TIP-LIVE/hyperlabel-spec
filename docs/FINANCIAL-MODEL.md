@@ -11,7 +11,7 @@
 | **Revenue** | $440K | $1.26M | $5.16M |
 | **Labels Sold** | 20,000 | 50,000 | 200,000 |
 | **Gross Margin** | 50% | 61% | 63% |
-| **Net Income** | $(40K) | $270K | $2.0M |
+| **Net Income** | $(50K) | $223K | $1.85M |
 | **Customers** | 500+ | 2,000 | 8,000 |
 
 *Note: All projections use conservative assumptions. See Section 7 for sensitivity analysis.*
@@ -31,10 +31,10 @@
 **Sales Mix (Year 3):**
 | Pack | Units | % of Sales | Revenue |
 |------|-------|------------|---------|
-| 1 Label ($25) | 20,000 | 10% | $500,000 |
-| 5 Labels ($110) | 60,000 | 30% | $1,320,000 |
-| 10 Labels ($200) | 100,000 | 50% | $2,000,000 |
-| Enterprise (custom) | 20,000 | 10% | $360,000 |
+| 1 Label ($29) | 20,000 | 10% | $580,000 |
+| 5 Labels ($135) | 60,000 | 30% | $1,620,000 |
+| 10 Labels ($250) | 100,000 | 50% | $2,500,000 |
+| Enterprise ($20/ea) | 20,000 | 10% | $400,000 |
 
 ### 1.2 Subscription Revenue (Year 2+)
 
@@ -44,7 +44,7 @@
 | **2027** | 50 | $500 | $6,000 |
 | **2028** | 300 | $4,500 | $54,000 |
 
-**Premium Subscription:** $10/month (extended retention, analytics, priority support)
+**Premium Subscription:** $10/month in Year 2, $15/month in Year 3 (extended retention, analytics, priority support)
 
 ### 1.3 Total Revenue Summary
 
@@ -91,8 +91,8 @@
 | **Infrastructure** | $18,000 | $36,000 | $72,000 |
 | Cloud hosting (GCP) | $6,000 | $18,000 | $42,000 |
 | SaaS tools | $6,000 | $10,000 | $18,000 |
-| Payment processing (~3%) | $13,200 | $37,700 | $154,600 |
-| Domain/SSL/misc | $2,400 | $4,000 | $6,000 |
+| Domain, SSL & other | $6,000 | $8,000 | $12,000 |
+| **Payment Processing (~3%)** | **$13,200** | **$37,700** | **$154,600** |
 | **Marketing** | $100,000 | $120,000 | $200,000 |
 | Digital ads | $60,000 | $65,000 | $100,000 |
 | Content/SEO | $20,000 | $20,000 | $30,000 |
@@ -102,7 +102,7 @@
 | Legal/accounting | $6,000 | $12,000 | $20,000 |
 | Insurance | $3,000 | $6,000 | $12,000 |
 | Travel | $3,000 | $7,000 | $13,000 |
-| **Total OpEx** | **$250,000** | **$431,000** | **$767,000** |
+| **Total OpEx** | **$263,200** | **$468,700** | **$921,600** |
 
 ### 2.3 Manufacturing Working Capital
 
@@ -156,13 +156,13 @@
 | **Revenue** | $440,000 | $1,256,000 | $5,154,000 |
 | COGS | ($220,000) | ($495,000) | ($1,900,000) |
 | **Gross Profit** | $220,000 | $761,000 | $3,254,000 |
-| Operating Expenses | ($250,000) | ($431,000) | ($767,000) |
-| **EBITDA** | **($30,000)** | **$330,000** | **$2,487,000** |
+| Operating Expenses | ($263,200) | ($468,700) | ($921,600) |
+| **EBITDA** | **($43,200)** | **$292,300** | **$2,332,400** |
 | D&A | ($5,000) | ($10,000) | ($15,000) |
 | Interest | ($2,000) | ($3,000) | ($4,000) |
-| **Net Income (Pre-Tax)** | **($37,000)** | **$317,000** | **$2,468,000** |
-| Tax (20%) | $0 | ($63,400) | ($493,600) |
-| **Net Income** | **($37,000)** | **$253,600** | **$1,974,400** |
+| **Net Income (Pre-Tax)** | **($50,200)** | **$279,300** | **$2,313,400** |
+| Tax (20%) | $0 | ($55,860) | ($462,680) |
+| **Net Income** | **($50,200)** | **$223,440** | **$1,850,720** |
 
 ---
 
@@ -172,10 +172,10 @@
 
 | | Year 1 | Year 2 | Year 3 |
 |--|--------|--------|--------|
-| Starting Cash | $500,000 | $383,000 | $586,600 |
-| Net Income | ($37,000) | $253,600 | $1,974,400 |
+| Starting Cash | $500,000 | $369,800 | $543,240 |
+| Net Income | ($50,200) | $223,440 | $1,850,720 |
 | Working Capital Changes | ($80,000) | ($50,000) | ($100,000) |
-| **Ending Cash** | **$383,000** | **$586,600** | **$2,461,000** |
+| **Ending Cash** | **$369,800** | **$543,240** | **$2,293,960** |
 
 ### 5.2 Funding Requirements
 
@@ -235,18 +235,18 @@
 
 | Scenario | Labels Sold | Revenue | Net Income |
 |----------|-------------|---------|------------|
-| **Bear** | 100,000 | $2.55M | $500K |
-| **Base** | 200,000 | $5.16M | $2.0M |
-| **Bull** | 400,000 | $10M | $5.0M |
+| **Bear** | 100,000 | $2.55M | $440K |
+| **Base** | 200,000 | $5.16M | $1.85M |
+| **Bull** | 400,000 | $10M | $4.8M |
 
 ### 7.2 Break-Even Analysis
 
 | Metric | Value |
 |--------|-------|
-| Fixed Costs (Monthly) | $20,800 |
+| Fixed Costs (Monthly) | $21,900 |
 | Contribution Margin | $11.00 |
-| **Break-Even (Labels/Month)** | **1,900** |
-| **Break-Even (Annual Revenue)** | **$500,000** |
+| **Break-Even (Labels/Month)** | **2,000** |
+| **Break-Even (Annual Revenue)** | **$528,000** |
 
 ### 7.3 Key Risks & Mitigations
 

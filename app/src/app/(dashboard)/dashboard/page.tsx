@@ -333,7 +333,7 @@ export default async function DashboardPage() {
                       </div>
                       <div>
                         <span className="font-medium">
-                          {shipment.name || 'Untitled Shipment'}
+                          {shipment.name || 'Unnamed Cargo'}
                         </span>
                         <p className="text-sm text-muted-foreground">
                           {label?.deviceId ?? '—'} ·{' '}

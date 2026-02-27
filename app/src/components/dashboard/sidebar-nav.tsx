@@ -34,7 +34,7 @@ export function SidebarNav() {
             key={item.name}
             href={item.href}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px] active:bg-accent/80 active:scale-[0.98]',
               isActive
                 ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -49,7 +49,7 @@ export function SidebarNav() {
         <Link
           href="/settings/organization"
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px] active:bg-accent/80 active:scale-[0.98]',
             pathname === '/settings/organization' || pathname.startsWith('/settings/organization/')
               ? 'bg-primary/10 text-primary'
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'

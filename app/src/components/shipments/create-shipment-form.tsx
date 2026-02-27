@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -27,12 +28,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Eye,
+  Truck,
+  Send,
 } from 'lucide-react'
 import { AddressInput } from '@/components/ui/address-input'
 import { QrScanner } from '@/components/shipments/qr-scanner'
+import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
 
-const formSchema = z.object({
-  name: z.string().min(1, 'Shipment name is required').max(200),
+const cargoFormSchema = z.object({
+  name: z.string().min(1, 'Cargo name is required').max(200),
   labelId: z.string().min(1, 'Please select a label'),
   originAddress: z.string().default(''),
   originLat: z.number().min(-90).max(90),
@@ -41,10 +45,11 @@ const formSchema = z.object({
   destinationLat: z.number().min(-90).max(90),
   destinationLng: z.number().min(-180).max(180),
   consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
+  consigneePhone: z.string().max(30).optional().or(z.literal('')),
 })
 
 /** Explicit type so useForm + zodResolver get required string for address fields (schema uses .default('')) */
-type FormData = {
+type CargoFormData = {
   name: string
   labelId: string
   originAddress: string
@@ -54,6 +59,27 @@ type FormData = {
   destinationLat: number
   destinationLng: number
   consigneeEmail?: string
+  consigneePhone?: string
+}
+
+const dispatchFormSchema = z.object({
+  name: z.string().min(1, 'Dispatch name is required').max(200),
+  originAddress: z.string().default(''),
+  originLat: z.number().min(-90).max(90),
+  originLng: z.number().min(-180).max(180),
+  destinationAddress: z.string().default(''),
+  destinationLat: z.number().min(-90).max(90),
+  destinationLng: z.number().min(-180).max(180),
+})
+
+type DispatchFormData = {
+  name: string
+  originAddress: string
+  originLat: number
+  originLng: number
+  destinationAddress: string
+  destinationLat: number
+  destinationLng: number
 }
 
 type AvailableLabel = {
@@ -83,9 +109,60 @@ type CargoAnalysis = {
   summary: string
 }
 
+type ShipmentType = 'CARGO_TRACKING' | 'LABEL_DISPATCH'
+
 export function CreateShipmentForm() {
   const router = useRouter()
+  const [shipmentType, setShipmentType] = useState<ShipmentType>('CARGO_TRACKING')
   const [loading, setLoading] = useState(false)
+
+  return (
+    <div className="space-y-6">
+      {/* Type Toggle */}
+      <Tabs
+        value={shipmentType}
+        onValueChange={(v) => setShipmentType(v as ShipmentType)}
+      >
+        <TabsList className="w-full">
+          <TabsTrigger value="CARGO_TRACKING" className="flex-1 gap-1.5">
+            <Truck className="h-4 w-4" />
+            Track Cargo
+          </TabsTrigger>
+          <TabsTrigger value="LABEL_DISPATCH" className="flex-1 gap-1.5">
+            <Send className="h-4 w-4" />
+            Label Dispatch
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <p className="text-sm text-muted-foreground">
+        {shipmentType === 'CARGO_TRACKING'
+          ? 'Attach a single tracking label to your cargo and monitor its journey in real time.'
+          : 'Ship multiple labels from your warehouse to a customer location.'}
+      </p>
+
+      {shipmentType === 'CARGO_TRACKING' ? (
+        <CargoTrackingForm loading={loading} setLoading={setLoading} router={router} />
+      ) : (
+        <LabelDispatchForm loading={loading} setLoading={setLoading} router={router} />
+      )}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────
+// CARGO TRACKING FORM
+// ────────────────────────────────────────────────────────
+
+function CargoTrackingForm({
+  loading,
+  setLoading,
+  router,
+}: {
+  loading: boolean
+  setLoading: (v: boolean) => void
+  router: ReturnType<typeof useRouter>
+}) {
   const [labels, setLabels] = useState<AvailableLabel[]>([])
   const [labelsLoading, setLabelsLoading] = useState(true)
   const [photos, setPhotos] = useState<PhotoState[]>([])
@@ -97,8 +174,8 @@ export function CreateShipmentForm() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema) as Resolver<FormData>,
+  } = useForm<CargoFormData>({
+    resolver: zodResolver(cargoFormSchema) as Resolver<CargoFormData>,
     defaultValues: {
       name: '',
       labelId: '',
@@ -109,12 +186,13 @@ export function CreateShipmentForm() {
       destinationLat: 0,
       destinationLng: 0,
       consigneeEmail: '',
+      consigneePhone: '',
     },
   })
 
   const selectedLabelId = watch('labelId')
 
-  // Handle QR scanner result — find matching label and select it
+  // Handle QR scanner result
   const handleQrScanned = useCallback(
     (deviceId: string) => {
       const matchingLabel = labels.find(
@@ -183,7 +261,6 @@ export function CreateShipmentForm() {
         const data = await res.json()
         return data.url
       }
-      // If upload service not available, fall back to base64
       return null
     } catch {
       return null
@@ -215,7 +292,7 @@ export function CreateShipmentForm() {
     }
   }, [])
 
-  // Photo upload handlers — upload + analyze in parallel
+  // Photo upload handlers
   const handlePhotoSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files
@@ -233,15 +310,12 @@ export function CreateShipmentForm() {
       const startIndex = photos.length
       setPhotos((prev) => [...prev, ...newPhotos].slice(0, 5))
 
-      // Reset input so same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = ''
 
-      // Process each photo: upload + AI analysis in parallel
       for (let i = 0; i < newPhotos.length; i++) {
         const photoIndex = startIndex + i
         const file = newPhotos[i].file
 
-        // Run upload and analysis concurrently
         const [uploadedUrl, analysis] = await Promise.all([
           uploadPhoto(file),
           analyzePhoto(file),
@@ -261,7 +335,6 @@ export function CreateShipmentForm() {
           return updated
         })
 
-        // Show AI analysis toast
         if (analysis) {
           if (analysis.hazardWarnings.length > 0) {
             toast.warning(`Hazard detected: ${analysis.hazardWarnings.join(', ')}`)
@@ -284,17 +357,15 @@ export function CreateShipmentForm() {
     })
   }, [])
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: CargoFormData) => {
     setLoading(true)
 
     try {
-      // Collect photo URLs — use uploaded URLs or fall back to base64
       const photoUrls: string[] = []
       for (const photo of photos) {
         if (photo.uploadedUrl) {
           photoUrls.push(photo.uploadedUrl)
         } else {
-          // Fallback: convert to base64 if upload failed/not available
           const reader = new FileReader()
           const dataUrl = await new Promise<string>((resolve) => {
             reader.onloadend = () => resolve(reader.result as string)
@@ -307,7 +378,7 @@ export function CreateShipmentForm() {
       const res = await fetch('/api/v1/shipments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, photoUrls }),
+        body: JSON.stringify({ type: 'CARGO_TRACKING', ...data, photoUrls }),
       })
 
       if (res.ok) {
@@ -332,16 +403,18 @@ export function CreateShipmentForm() {
     }
   }
 
-  // Get AI analysis summary for display
   const firstAnalysis = photos.find((p) => p.analysis)?.analysis
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Shipment Name */}
+      {/* Cargo Name / ID */}
       <div className="space-y-2">
-        <Label htmlFor="name">Shipment Name</Label>
-        <Input id="name" placeholder="e.g., Electronics to Berlin" {...register('name')} />
+        <Label htmlFor="name">Cargo Name / ID</Label>
+        <Input id="name" placeholder="e.g., Electronics — INV-2024-001" {...register('name')} />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+        <p className="text-xs text-muted-foreground">
+          Include cargo reference or invoice number to identify shipments on your dashboard.
+        </p>
       </div>
 
       {/* Label Selection */}
@@ -390,53 +463,15 @@ export function CreateShipmentForm() {
         )}
       </div>
 
-      {/* Origin & Destination Addresses */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Navigation className="h-4 w-4" />
-          Route Details
-        </div>
+      {/* Route Details */}
+      <RouteSection
+        register={register}
+        errors={errors}
+        onOriginSelect={handleOriginSelect}
+        onDestinationSelect={handleDestinationSelect}
+      />
 
-        {/* Origin */}
-        <div className="space-y-2">
-          <Label htmlFor="origin">Origin Address (optional)</Label>
-          <AddressInput
-            id="origin"
-            placeholder="e.g., 45 Warehouse Rd, London, UK"
-            onAddressSelect={handleOriginSelect}
-          />
-          {errors.originAddress && (
-            <p className="text-sm text-destructive">{errors.originAddress.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Where the cargo is being shipped from. Start typing for suggestions.
-          </p>
-        </div>
-
-        {/* Destination */}
-        <div className="space-y-2">
-          <Label htmlFor="destination">Destination Address (optional)</Label>
-          <AddressInput
-            id="destination"
-            placeholder="e.g., 123 Main St, Berlin, Germany"
-            onAddressSelect={handleDestinationSelect}
-          />
-          {errors.destinationAddress && (
-            <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Where the cargo is going. Used for delivery detection.
-          </p>
-        </div>
-      </div>
-
-      {/* Hidden coordinate fields */}
-      <input type="hidden" {...register('originLat', { valueAsNumber: true })} />
-      <input type="hidden" {...register('originLng', { valueAsNumber: true })} />
-      <input type="hidden" {...register('destinationLat', { valueAsNumber: true })} />
-      <input type="hidden" {...register('destinationLng', { valueAsNumber: true })} />
-
-      {/* Consignee Email */}
+      {/* Consignee */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Mail className="h-4 w-4" />
@@ -458,6 +493,18 @@ export function CreateShipmentForm() {
             delivery.
           </p>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="consigneePhone">Consignee Phone</Label>
+          <Input
+            id="consigneePhone"
+            type="tel"
+            placeholder="+44 7700 900000"
+            {...register('consigneePhone')}
+          />
+          <p className="text-xs text-muted-foreground">
+            Optional phone number for the recipient.
+          </p>
+        </div>
       </div>
 
       {/* Cargo Photos */}
@@ -467,7 +514,6 @@ export function CreateShipmentForm() {
           <span className="text-xs text-muted-foreground">(optional, max 5)</span>
         </div>
 
-        {/* Photo Previews */}
         {photos.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {photos.map((photo, index) => (
@@ -481,13 +527,11 @@ export function CreateShipmentForm() {
                   alt={`Cargo photo ${index + 1}`}
                   className="h-full w-full object-cover"
                 />
-                {/* Uploading/analyzing overlay */}
                 {(photo.uploading || photo.analyzing) && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <Loader2 className="h-5 w-5 animate-spin text-white" />
                   </div>
                 )}
-                {/* Analysis status indicator */}
                 {!photo.analyzing && photo.analysis && (
                   <div className="absolute bottom-0.5 left-0.5">
                     {photo.analysis.labelVisible ? (
@@ -518,7 +562,6 @@ export function CreateShipmentForm() {
           </div>
         )}
 
-        {/* AI Analysis Summary Card */}
         {firstAnalysis && (
           <div className="rounded-lg border bg-muted/50 p-3 text-sm">
             <div className="flex items-center gap-1.5 font-medium">
@@ -562,7 +605,6 @@ export function CreateShipmentForm() {
           </div>
         )}
 
-        {/* Upload Button */}
         {photos.length < 5 && (
           <button
             type="button"
@@ -614,5 +656,221 @@ export function CreateShipmentForm() {
         </Button>
       </div>
     </form>
+  )
+}
+
+// ────────────────────────────────────────────────────────
+// LABEL DISPATCH FORM
+// ────────────────────────────────────────────────────────
+
+function LabelDispatchForm({
+  loading,
+  setLoading,
+  router,
+}: {
+  loading: boolean
+  setLoading: (v: boolean) => void
+  router: ReturnType<typeof useRouter>
+}) {
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<DispatchFormData>({
+    resolver: zodResolver(dispatchFormSchema) as Resolver<DispatchFormData>,
+    defaultValues: {
+      name: '',
+      originAddress: '',
+      originLat: 0,
+      originLng: 0,
+      destinationAddress: '',
+      destinationLat: 0,
+      destinationLng: 0,
+    },
+  })
+
+  const handleOriginSelect = useCallback(
+    (address: string, lat: number, lng: number) => {
+      setValue('originAddress', address)
+      if (lat !== 0 && lng !== 0) {
+        setValue('originLat', lat)
+        setValue('originLng', lng)
+      }
+    },
+    [setValue]
+  )
+
+  const handleDestinationSelect = useCallback(
+    (address: string, lat: number, lng: number) => {
+      setValue('destinationAddress', address)
+      if (lat !== 0 && lng !== 0) {
+        setValue('destinationLat', lat)
+        setValue('destinationLng', lng)
+      }
+    },
+    [setValue]
+  )
+
+  const onSubmit = async (data: DispatchFormData) => {
+    if (selectedLabelIds.length === 0) {
+      toast.error('Please select at least one label to dispatch')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/v1/shipments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'LABEL_DISPATCH',
+          ...data,
+          labelIds: selectedLabelIds,
+        }),
+      })
+
+      if (res.ok) {
+        const { shipment } = await res.json()
+        toast.success('Label dispatch created successfully!')
+        router.push(`/shipments/${shipment.id}`)
+      } else {
+        let errorMessage = 'Failed to create dispatch'
+        try {
+          const errorData = await res.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          errorMessage = res.statusText || errorMessage
+        }
+        toast.error(errorMessage)
+      }
+    } catch (error) {
+      console.error('Error creating dispatch:', error)
+      toast.error('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Dispatch Name */}
+      <div className="space-y-2">
+        <Label htmlFor="dispatch-name">Dispatch Name</Label>
+        <Input
+          id="dispatch-name"
+          placeholder="e.g., Labels for Berlin Warehouse"
+          {...register('name')}
+        />
+        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+        <p className="text-xs text-muted-foreground">
+          A name to identify this label dispatch on your dashboard.
+        </p>
+      </div>
+
+      {/* Multi-Label Selector */}
+      <div className="space-y-2">
+        <Label>Labels to Dispatch</Label>
+        <MultiLabelSelector
+          selectedIds={selectedLabelIds}
+          onChange={setSelectedLabelIds}
+        />
+      </div>
+
+      {/* Route Details */}
+      <RouteSection
+        register={register}
+        errors={errors}
+        onOriginSelect={handleOriginSelect}
+        onDestinationSelect={handleDestinationSelect}
+      />
+
+      {/* Submit */}
+      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={() => router.back()}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="w-full sm:w-auto"
+          disabled={loading || selectedLabelIds.length === 0}
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Create Dispatch ({selectedLabelIds.length} label{selectedLabelIds.length !== 1 ? 's' : ''})
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+// ────────────────────────────────────────────────────────
+// SHARED: Route Details Section
+// ────────────────────────────────────────────────────────
+
+function RouteSection({
+  register,
+  errors,
+  onOriginSelect,
+  onDestinationSelect,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  register: any
+  errors: Record<string, { message?: string }>
+  onOriginSelect: (address: string, lat: number, lng: number) => void
+  onDestinationSelect: (address: string, lat: number, lng: number) => void
+}) {
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Navigation className="h-4 w-4" />
+          Route Details
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="origin">Origin Address (optional)</Label>
+          <AddressInput
+            id="origin"
+            placeholder="e.g., 45 Warehouse Rd, London, UK"
+            onAddressSelect={onOriginSelect}
+          />
+          {errors.originAddress && (
+            <p className="text-sm text-destructive">{errors.originAddress.message}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Where the cargo is being shipped from. Start typing for suggestions.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="destination">Destination Address (optional)</Label>
+          <AddressInput
+            id="destination"
+            placeholder="e.g., 123 Main St, Berlin, Germany"
+            onAddressSelect={onDestinationSelect}
+          />
+          {errors.destinationAddress && (
+            <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Where the cargo is going. Used for delivery detection.
+          </p>
+        </div>
+      </div>
+
+      {/* Hidden coordinate fields */}
+      <input type="hidden" {...register('originLat', { valueAsNumber: true })} />
+      <input type="hidden" {...register('originLng', { valueAsNumber: true })} />
+      <input type="hidden" {...register('destinationLat', { valueAsNumber: true })} />
+      <input type="hidden" {...register('destinationLng', { valueAsNumber: true })} />
+    </>
   )
 }

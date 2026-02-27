@@ -54,7 +54,7 @@ interface ShipmentData {
   label: {
     deviceId: string
     batteryPct: number | null
-  }
+  } | null
   locations: LocationPoint[]
 }
 
@@ -145,12 +145,12 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
 
   // Simplified battery status for consignee
   const batteryStatus = useMemo(() => {
-    const pct = shipment.label.batteryPct
+    const pct = shipment.label?.batteryPct ?? null
     if (pct === null) return { label: 'Unknown', color: 'text-muted-foreground' }
     if (pct >= 50) return { label: 'Good', color: 'text-green-600 dark:text-green-400' }
     if (pct >= 20) return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' }
     return { label: 'Low', color: 'text-destructive' }
-  }, [shipment.label.batteryPct])
+  }, [shipment.label?.batteryPct])
 
   // Merge new locations into the existing set (dedup by id)
   const mergeLocations = useCallback((existing: LocationPoint[], incoming: LocationPoint[]) => {

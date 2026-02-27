@@ -165,7 +165,7 @@ export function BuyLabelsForm() {
         <div className="mt-3 space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">
-              {currentPack.name} &times; tracking label
+              {currentPack.labels} &times; TIP Tracking Label
             </span>
             <span className="font-medium">${currentPack.price}.00</span>
           </div>

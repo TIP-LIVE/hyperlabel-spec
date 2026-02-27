@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     const shipmentsWithSilentLabels = await db.shipment.findMany({
       where: {
         status: 'IN_TRANSIT',
+        labelId: { not: null },
         label: {
           status: 'ACTIVE',
           locations: {
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest) {
     let notificationsSent = 0
 
     for (const shipment of shipmentsWithSilentLabels) {
+      if (!shipment.label) continue
       const lastLocation = shipment.label.locations[0]
 
       // Check if we already sent a no-signal notification in the last 24h

@@ -50,6 +50,11 @@ export function validateLocation(lat: number, lng: number): boolean {
   if (lat === 0 && lng === 0) {
     return false
   }
+
+  // Reject default map center coordinates (London placeholder, not a real device location)
+  if (Math.abs(lat - 51.5074) < 0.0001 && Math.abs(lng - (-0.1278)) < 0.0001) {
+    return false
+  }
   
   // Check valid ranges
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {

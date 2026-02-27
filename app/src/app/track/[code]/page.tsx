@@ -84,7 +84,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
     destinationLng: shipment.destinationLng,
     deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
     createdAt: shipment.createdAt.toISOString(),
-    label: shipment.label,
+    label: shipment.label ? { deviceId: shipment.label.deviceId, batteryPct: shipment.label.batteryPct } : null,
     locations: shipment.locations.map((loc) => ({
       id: loc.id,
       latitude: loc.latitude,

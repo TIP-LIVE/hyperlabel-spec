@@ -76,17 +76,27 @@ export async function POST(req: NextRequest) {
     // Include recently delivered shipments (1h grace) so late-arriving
     // location reports from offline buffers still get associated.
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const activeShipmentWhere = {
+      OR: [
+        { status: { in: ['PENDING', 'IN_TRANSIT'] as ['PENDING', 'IN_TRANSIT'] } },
+        { status: 'DELIVERED' as const, deliveredAt: { gte: oneHourAgo } },
+      ],
+    }
     const shipmentInclude = {
+      // Direct relation (CARGO_TRACKING shipments)
       shipments: {
-        where: {
-          OR: [
-            { status: { in: ['PENDING', 'IN_TRANSIT'] as ['PENDING', 'IN_TRANSIT'] } },
-            { status: 'DELIVERED' as const, deliveredAt: { gte: oneHourAgo } },
-          ],
-        },
+        where: activeShipmentWhere,
         orderBy: { createdAt: 'desc' as const },
         take: 1,
         select: shipmentSelect,
+      },
+      // Join table relation (LABEL_DISPATCH shipments)
+      shipmentLabels: {
+        where: { shipment: activeShipmentWhere },
+        include: {
+          shipment: { select: shipmentSelect },
+        },
+        take: 1,
       },
     }
 
@@ -146,8 +156,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Device not found' }, { status: 404 })
     }
 
-    // Get the active shipment (if any)
-    const activeShipment = label.shipments[0]
+    // Get the active shipment (if any) — check direct relation first, then join table
+    const activeShipment = label.shipments[0] || label.shipmentLabels[0]?.shipment
 
     // Parse recorded timestamp or use current time
     const recordedAt = data.recordedAt ? new Date(data.recordedAt) : new Date()

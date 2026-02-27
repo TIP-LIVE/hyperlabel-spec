@@ -28,6 +28,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
       ? initialStatus
       : 'all'
   )
+  const [typeFilter, setTypeFilter] = useState<string>('all')
 
   const fetchShipments = async () => {
     setLoading(true)
@@ -85,11 +86,17 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
     )
   }, [allShipments])
 
-  // Client-side filter
+  // Client-side filters
   const filteredShipments = useMemo(() => {
-    if (statusFilter === 'all') return allShipments
-    return allShipments.filter((s) => s.status === statusFilter)
-  }, [allShipments, statusFilter])
+    let result = allShipments
+    if (statusFilter !== 'all') {
+      result = result.filter((s) => s.status === statusFilter)
+    }
+    if (typeFilter !== 'all') {
+      result = result.filter((s) => s.type === typeFilter)
+    }
+    return result
+  }, [allShipments, statusFilter, typeFilter])
 
   // Enrich with geocoded location info
   const enrichedShipments = useMemo(
@@ -126,7 +133,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[220px]">
             <SelectValue placeholder="Filter by status" />
@@ -145,6 +152,16 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
             <SelectItem value="CANCELLED">
               Cancelled{statusCounts.CANCELLED ? ` (${statusCounts.CANCELLED})` : ''}
             </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="CARGO_TRACKING">Cargo Tracking</SelectItem>
+            <SelectItem value="LABEL_DISPATCH">Label Dispatch</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
             s.id,
             escapeCsv(s.name || ''),
             s.status,
-            s.label.deviceId,
+            s.label?.deviceId || '—',
             escapeCsv(s.originAddress || ''),
             escapeCsv(s.destinationAddress || ''),
             s.shareCode,
@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
             [
               s.id,
               escapeCsv(s.name || ''),
-              s.label.deviceId,
+              s.label?.deviceId || '—',
               l.latitude,
               l.longitude,
               l.accuracyM ?? '',

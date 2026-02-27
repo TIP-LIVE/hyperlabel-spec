@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     const shipments = await db.shipment.findMany({
       where: {
         status: 'IN_TRANSIT',
+        labelId: { not: null },
         destinationLat: { not: null },
         destinationLng: { not: null },
       },
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest) {
     let deliveriesDetected = 0
 
     for (const shipment of shipments) {
+      if (!shipment.label) continue
       const locations = shipment.label.locations
       if (locations.length < 2) continue
 

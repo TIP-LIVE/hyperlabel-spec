@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
 import { AssignLabelsToOrgsForm } from '@/components/admin/assign-labels-to-orgs-form'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -43,6 +43,22 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
   })
   const knownOrgIds = orgs.map((o) => o.orgId).filter((id): id is string => id != null)
 
+  // Resolve org names from Clerk
+  const orgNames: Record<string, string> = {}
+  try {
+    const clerk = await clerkClient()
+    const results = await Promise.allSettled(
+      knownOrgIds.map((id) => clerk.organizations.getOrganization({ organizationId: id }))
+    )
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        orgNames[result.value.id] = result.value.name
+      }
+    }
+  } catch {
+    // Clerk not configured or API error — fall back to IDs
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-7">
       <header className="space-y-1.5">
@@ -78,6 +94,7 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
         <CardContent className="pt-1">
           <AssignLabelsToOrgsForm
             knownOrgIds={knownOrgIds}
+            orgNames={orgNames}
             currentOrgId={currentOrgId}
             initialDeviceIds={initialDeviceIds.length > 0 ? initialDeviceIds : undefined}
           />

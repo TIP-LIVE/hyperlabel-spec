@@ -158,8 +158,8 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
                         </td>
                         <td className="py-3 text-gray-300">{s.user.email}</td>
                         <td className="py-3">
-                          <span className="font-mono text-gray-300">{s.label.deviceId}</span>
-                          {s.label.batteryPct !== null && (
+                          <span className="font-mono text-gray-300">{s.label?.deviceId ?? '—'}</span>
+                          {s.label?.batteryPct !== null && s.label?.batteryPct !== undefined && (
                             <span
                               className={`ml-2 text-xs ${
                                 s.label.batteryPct < 20 ? 'text-red-400' : 'text-gray-500'

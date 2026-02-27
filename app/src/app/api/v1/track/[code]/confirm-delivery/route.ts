@@ -96,7 +96,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         await sendShipmentDeliveredNotification({
           userId: shipment.user.id,
           shipmentName: shipment.name || 'Shipment',
-          deviceId: shipment.label.deviceId,
+          deviceId: shipment.label?.deviceId ?? 'unknown',
           shareCode: code,
           destination: shipment.destinationAddress || 'Destination',
         })

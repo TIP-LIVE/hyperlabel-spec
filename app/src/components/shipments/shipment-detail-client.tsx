@@ -9,7 +9,6 @@ import { Separator } from '@/components/ui/separator'
 import {
   ArrowLeft,
   Battery,
-  Calendar,
   Clock,
   MapPin,
   Package,
@@ -19,6 +18,7 @@ import {
   RefreshCw,
   Navigation,
   ArrowRight,
+  Send,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ShipmentMap } from '@/components/maps/shipment-map'
@@ -45,8 +45,17 @@ interface LocationPoint {
   isOfflineSync?: boolean
 }
 
+interface LabelInfo {
+  deviceId: string
+  batteryPct: number | null
+  status: string
+  firmwareVersion: string | null
+  activatedAt: string | null
+}
+
 interface ShipmentData {
   id: string
+  type: 'CARGO_TRACKING' | 'LABEL_DISPATCH'
   name: string | null
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED'
   originAddress: string | null
@@ -58,13 +67,10 @@ interface ShipmentData {
   deliveredAt: string | null
   createdAt: string
   shareCode: string
-  label: {
-    deviceId: string
-    batteryPct: number | null
-    status: string
-    firmwareVersion: string | null
-    activatedAt: string | null
-  }
+  consigneeEmail: string | null
+  consigneePhone: string | null
+  label: LabelInfo | null
+  shipmentLabels?: LabelInfo[]
   locations: LocationPoint[]
 }
 
@@ -169,11 +175,10 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         status: updated.status,
         deliveredAt: updated.deliveredAt,
         destinationAddress: updated.destinationAddress,
-        label: {
+        label: updated.label ? {
           ...prev.label,
-          batteryPct: updated.label.batteryPct,
-          status: updated.label.status,
-        },
+          ...updated.label,
+        } : prev.label,
         locations: mergeLocations(
           prev.locations,
           updated.locations.map((l: LocationPoint & { recordedAt: string | Date }) => ({
@@ -230,10 +235,22 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {shipment.name || 'Untitled Shipment'}
-            </h1>
-            <p className="text-sm text-muted-foreground">{shipment.label.deviceId}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight">
+                {shipment.name || (shipment.type === 'LABEL_DISPATCH' ? 'Unnamed Dispatch' : 'Unnamed Cargo')}
+              </h1>
+              {shipment.type === 'LABEL_DISPATCH' && (
+                <Badge variant="secondary" className="gap-1">
+                  <Send className="h-3 w-3" />
+                  Dispatch
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {shipment.type === 'LABEL_DISPATCH'
+                ? `${shipment.shipmentLabels?.length || 0} labels`
+                : shipment.label?.deviceId || '—'}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -409,7 +426,10 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             <CardHeader>
               <CardTitle>Location History</CardTitle>
               <CardDescription>
-                {shipment.locations.length} location events recorded
+                {shipment.locations.length} location events recorded. New points appear when the
+                tracking device sends reports to the server (via cellular or when it syncs after
+                being offline). If you don&apos;t see new updates, the device may be off, out of
+                coverage, or the report endpoint may not be receiving data.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -458,86 +478,132 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             </CardContent>
           </Card>
 
-          {/* Shipment Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Shipment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Created</p>
-                  <p className="font-medium">
-                    {format(new Date(shipment.createdAt), 'PPP')}
-                  </p>
-                </div>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </div>
-              {shipment.deliveredAt && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Delivered</p>
-                      <p className="font-medium">
-                        {format(new Date(shipment.deliveredAt), 'PPP')}
-                      </p>
-                    </div>
-                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Label Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Label Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Device ID</p>
-                  <p className="font-mono font-medium">{shipment.label.deviceId}</p>
-                </div>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Battery</p>
-                  <p
-                    className={`font-medium ${
-                      (shipment.label.batteryPct ?? 100) < 20 ? 'text-destructive' : ''
-                    }`}
-                  >
-                    {shipment.label.batteryPct !== null
-                      ? `${shipment.label.batteryPct}%`
-                      : 'Unknown'}
-                  </p>
-                </div>
-                <Battery
-                  className={`h-4 w-4 ${
-                    (shipment.label.batteryPct ?? 100) < 20
-                      ? 'text-destructive'
-                      : 'text-muted-foreground'
-                  }`}
-                />
-              </div>
-              {shipment.label.activatedAt && (
-                <>
-                  <Separator />
+          {/* Shipment Info — only show when there's delivery info */}
+          {shipment.deliveredAt && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Shipment Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Activated</p>
+                    <p className="text-sm text-muted-foreground">Delivered</p>
                     <p className="font-medium">
-                      {format(new Date(shipment.label.activatedAt), 'PPP')}
+                      {format(new Date(shipment.deliveredAt), 'PPP')}
                     </p>
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Consignee Info — only show if email or phone is set */}
+          {(shipment.consigneeEmail || shipment.consigneePhone) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Consignee</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {shipment.consigneeEmail && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="text-sm">{shipment.consigneeEmail}</p>
+                  </div>
+                )}
+                {shipment.consigneePhone && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone</p>
+                    <p className="text-sm">{shipment.consigneePhone}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Label Info — single label for cargo, list for dispatch */}
+          {shipment.label && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Label Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Device ID</p>
+                    <p className="font-mono font-medium">{shipment.label.deviceId}</p>
+                  </div>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Battery</p>
+                    <p
+                      className={`font-medium ${
+                        (shipment.label.batteryPct ?? 100) < 20 ? 'text-destructive' : ''
+                      }`}
+                    >
+                      {shipment.label.batteryPct !== null
+                        ? `${shipment.label.batteryPct}%`
+                        : 'Unknown'}
+                    </p>
+                  </div>
+                  <Battery
+                    className={`h-4 w-4 ${
+                      (shipment.label.batteryPct ?? 100) < 20
+                        ? 'text-destructive'
+                        : 'text-muted-foreground'
+                    }`}
+                  />
+                </div>
+                {shipment.label.activatedAt && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Activated</p>
+                      <p className="font-medium">
+                        {format(new Date(shipment.label.activatedAt), 'PPP')}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Dispatch Labels List */}
+          {shipment.type === 'LABEL_DISPATCH' && shipment.shipmentLabels && shipment.shipmentLabels.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  Dispatched Labels ({shipment.shipmentLabels.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {shipment.shipmentLabels.map((label) => (
+                    <div
+                      key={label.deviceId}
+                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                    >
+                      <div>
+                        <p className="font-mono text-sm font-medium">{label.deviceId}</p>
+                        <p className="text-xs text-muted-foreground">{label.status}</p>
+                      </div>
+                      {label.batteryPct !== null && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Battery className="h-3.5 w-3.5" />
+                          {label.batteryPct}%
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Share Card */}
           <Card>

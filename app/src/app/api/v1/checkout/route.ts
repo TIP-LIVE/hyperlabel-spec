@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, LABEL_PRODUCTS, LabelPackType } from '@/lib/stripe'
+import { stripe, LABEL_PRODUCTS, LabelPackType, isStripeConfigured } from '@/lib/stripe'
 import { requireOrgAuth } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { rateLimit, RATE_LIMIT_CHECKOUT, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
@@ -38,11 +38,18 @@ export async function POST(req: NextRequest) {
     const { packType } = validated.data
     const product = LABEL_PRODUCTS[packType as LabelPackType]
 
-    if (!product.priceId) {
-      // Fallback: Create a price on the fly if no price ID configured
-      // In production, prices should be pre-created in Stripe Dashboard
+    if (!isStripeConfigured()) {
+      console.error('[checkout] Stripe not configured: STRIPE_SECRET_KEY is missing or invalid')
       return NextResponse.json(
-        { error: 'Product not configured', details: 'Stripe price ID not set for this product' },
+        { error: 'Payment system is not available. Please contact support.' },
+        { status: 503 }
+      )
+    }
+
+    if (!product.priceId) {
+      console.error(`[checkout] Missing Stripe price ID for pack type: ${packType}. Set STRIPE_PRICE_${packType.toUpperCase()} env var.`)
+      return NextResponse.json(
+        { error: `The ${product.name} pack is not available for purchase right now. Please contact support.` },
         { status: 400 }
       )
     }
@@ -77,10 +84,15 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     if (error instanceof Error && error.message.includes('Invalid API Key')) {
+      console.error('[checkout] Invalid Stripe API key:', error.message)
       return NextResponse.json(
-        { error: 'Payment system not configured' },
+        { error: 'Payment system is temporarily unavailable. Please try again later.' },
         { status: 503 }
       )
+    }
+    // Log the full Stripe error for debugging
+    if (error instanceof Error) {
+      console.error('[checkout] Stripe error:', error.message)
     }
     return handleApiError(error, 'creating checkout session')
   }

@@ -46,6 +46,20 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
           activatedAt: true,
         },
       },
+      shipmentLabels: {
+        include: {
+          label: {
+            select: {
+              id: true,
+              deviceId: true,
+              batteryPct: true,
+              status: true,
+              firmwareVersion: true,
+              activatedAt: true,
+            },
+          },
+        },
+      },
       locations: {
         orderBy: { recordedAt: 'desc' },
         take: 100,
@@ -69,8 +83,17 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
   const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${shipment.shareCode}`
 
   // Serialize for client component (Dates → strings)
+  const serializeLabel = (l: { deviceId: string; batteryPct: number | null; status: string; firmwareVersion: string | null; activatedAt: Date | null }) => ({
+    deviceId: l.deviceId,
+    batteryPct: l.batteryPct,
+    status: l.status,
+    firmwareVersion: l.firmwareVersion,
+    activatedAt: l.activatedAt?.toISOString() ?? null,
+  })
+
   const serializedData = {
     id: shipment.id,
+    type: shipment.type,
     name: shipment.name,
     status: shipment.status,
     originAddress: shipment.originAddress,
@@ -82,13 +105,10 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
     deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
     createdAt: shipment.createdAt.toISOString(),
     shareCode: shipment.shareCode,
-    label: {
-      deviceId: shipment.label.deviceId,
-      batteryPct: shipment.label.batteryPct,
-      status: shipment.label.status,
-      firmwareVersion: shipment.label.firmwareVersion,
-      activatedAt: shipment.label.activatedAt?.toISOString() ?? null,
-    },
+    consigneeEmail: shipment.consigneeEmail,
+    consigneePhone: shipment.consigneePhone,
+    label: shipment.label ? serializeLabel(shipment.label) : null,
+    shipmentLabels: shipment.shipmentLabels.map((sl) => serializeLabel(sl.label)),
     locations: shipment.locations.map((loc) => ({
       id: loc.id,
       latitude: loc.latitude,

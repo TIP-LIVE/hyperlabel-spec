@@ -34,7 +34,7 @@ const pool = new Pool({ connectionString: DATABASE_URL })
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) })
 
 async function main() {
-  type Where = { id?: { in: string[] }; orgId?: string | null | { not: string }; OR?: Array<{ orgId: string | null }> }
+  type Where = { id?: { in: string[] }; orgId?: string | null | { not: string }; OR?: Array<{ orgId: string | null | { not: string } }> }
   const where: Where = {}
   if (SHIPMENT_IDS?.length) {
     where.id = { in: SHIPMENT_IDS }

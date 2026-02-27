@@ -143,6 +143,7 @@ export function TrackingMap({
 }: TrackingMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null)
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null)
+  const [legendOpen, setLegendOpen] = useState(false)
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -209,6 +210,7 @@ export function TrackingMap({
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
+      gestureHandling: 'greedy',
       styles: isDark ? darkStyles : lightStyles,
     }),
     [isDark]
@@ -257,7 +259,7 @@ export function TrackingMap({
   }
 
   return (
-    <div style={{ height }} className="relative overflow-hidden rounded-xl">
+    <div style={{ height, touchAction: 'none' }} className="relative overflow-hidden rounded-lg">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={center}
@@ -266,7 +268,7 @@ export function TrackingMap({
         onUnmount={onUnmount}
         options={mapOptions}
       >
-        {/* ── Completed route: solid line from origin through all tracked points ── */}
+        {/* ── Completed route: solid line with direction arrows ── */}
         {path.length > 1 && (
           <Polyline
             path={path}
@@ -275,6 +277,19 @@ export function TrackingMap({
               strokeOpacity: 0.85,
               strokeWeight: 3,
               geodesic: true,
+              icons: [
+                {
+                  icon: {
+                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                    scale: 2.5,
+                    fillColor: isDark ? '#60a5fa' : '#3b82f6',
+                    fillOpacity: 1,
+                    strokeWeight: 0,
+                  },
+                  offset: '50px',
+                  repeat: '120px',
+                },
+              ],
             }}
           />
         )}
@@ -510,31 +525,39 @@ export function TrackingMap({
         )}
       </GoogleMap>
 
-      {/* ── Map legend ── */}
-      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1 rounded-xl border bg-background/95 px-3 py-2 text-[11px] shadow-md backdrop-blur-sm">
-        {hasOrigin && (
-          <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-            <span className="text-muted-foreground">Origin</span>
+      {/* ── Map legend (collapsible) ── */}
+      <button
+        type="button"
+        onClick={() => setLegendOpen((v) => !v)}
+        className="absolute bottom-3 left-3 z-10 rounded-lg border bg-background/90 px-2.5 py-1.5 text-xs shadow-sm backdrop-blur-sm transition-all"
+      >
+        {legendOpen ? (
+          <div className="flex flex-col gap-1.5">
+            {hasOrigin && (
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="text-muted-foreground">Origin</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+              <span className="text-muted-foreground">Current</span>
+            </div>
+            {hasDestination && (
+              <div className="flex items-center gap-2">
+                <div className="h-0 w-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500" />
+                <span className="text-muted-foreground">Destination</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-primary text-[10px]">&#9654;&#9654;</span>
+              <span className="text-muted-foreground">Direction</span>
+            </div>
           </div>
+        ) : (
+          <span className="text-muted-foreground">Legend</span>
         )}
-        <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-white" />
-          <span className="text-muted-foreground">Current</span>
-        </div>
-        {locations.length > 1 && (
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-blue-400/60" />
-            <span className="text-muted-foreground">History</span>
-          </div>
-        )}
-        {hasDestination && (
-          <div className="flex items-center gap-2">
-            <div className="h-0 w-0 border-l-[4px] border-r-[4px] border-t-[7px] border-l-transparent border-r-transparent border-t-red-500" />
-            <span className="text-muted-foreground">Destination</span>
-          </div>
-        )}
-      </div>
+      </button>
 
       {/* ── Last updated badge ── */}
       {latestLocation && (

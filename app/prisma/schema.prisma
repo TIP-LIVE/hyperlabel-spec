@@ -27,6 +27,11 @@ enum ShipmentStatus {
   CANCELLED   // Shipment cancelled
 }
 
+enum ShipmentType {
+  CARGO_TRACKING       // Customer tracks their cargo with a label
+  LABEL_DISPATCH       // TIP ships labels from warehouse to customer
+}
+
 enum OrderStatus {
   PENDING     // Awaiting payment
   PAID        // Payment received
@@ -82,16 +87,18 @@ model Label {
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
   // Relations (many-to-many with Order so a label can be in multiple orgs)
-  orderLabels OrderLabel[]
-  shipments   Shipment[]
-  locations   LocationEvent[]
+  orderLabels    OrderLabel[]
+  shipments      Shipment[]
+  shipmentLabels ShipmentLabel[] // For LABEL_DISPATCH multi-label shipments
+  locations      LocationEvent[]
 
   @@map("labels")
 }
 
-/// Shipments - cargo being tracked
+/// Shipments - cargo being tracked or label dispatches
 model Shipment {
   id                 String         @id @default(cuid())
+  type               ShipmentType   @default(CARGO_TRACKING)
   name               String?        // Cargo description
   originAddress      String?        @map("origin_address")
   originLat          Float?         @map("origin_lat")
@@ -103,6 +110,7 @@ model Shipment {
   shareCode          String         @unique @map("share_code") // Public tracking URL code
   shareEnabled       Boolean        @default(true) @map("share_enabled")
   consigneeEmail     String?        @map("consignee_email") // Recipient's email for status updates
+  consigneePhone     String?        @map("consignee_phone") // Recipient's phone number
   photoUrls          String[]       @map("photo_urls") // Cargo photos
   createdAt          DateTime       @default(now()) @map("created_at")
   updatedAt          DateTime       @updatedAt @map("updated_at")
@@ -112,11 +120,12 @@ model Shipment {
   orgId String? @map("org_id")
 
   // Relations
-  userId    String @map("user_id")
-  user      User   @relation(fields: [userId], references: [id])
-  labelId   String @map("label_id")
-  label     Label  @relation(fields: [labelId], references: [id])
-  locations LocationEvent[]
+  userId         String          @map("user_id")
+  user           User            @relation(fields: [userId], references: [id])
+  labelId        String?         @map("label_id") // Primary label (CARGO_TRACKING, nullable for LABEL_DISPATCH)
+  label          Label?          @relation(fields: [labelId], references: [id])
+  shipmentLabels ShipmentLabel[] // Multiple labels (used for LABEL_DISPATCH)
+  locations      LocationEvent[]
 
   @@index([orgId])
   @@map("shipments")
@@ -189,6 +198,17 @@ model OrderLabel {
 
   @@id([orderId, labelId])
   @@map("order_labels")
+}
+
+/// Join table: labels included in a shipment (used for LABEL_DISPATCH type)
+model ShipmentLabel {
+  shipmentId String   @map("shipment_id")
+  labelId    String   @map("label_id")
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  label      Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([shipmentId, labelId])
+  @@map("shipment_labels")
 }
 
 /// Organisation-level settings (Clerk org ID)

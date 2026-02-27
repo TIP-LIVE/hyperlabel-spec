@@ -106,12 +106,12 @@ export function EditShipmentDialog({
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Shipment Name</Label>
+            <Label htmlFor="edit-name">Cargo Name / ID</Label>
             <Input
               id="edit-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Electronics to Berlin"
+              placeholder="e.g., Electronics — INV-2024-001"
               disabled={isLoading}
             />
           </div>

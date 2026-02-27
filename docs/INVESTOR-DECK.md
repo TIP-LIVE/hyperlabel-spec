@@ -198,11 +198,11 @@ Buy → Peel & Stick → Track Anywhere → Confirm Delivery
 | **Labels Sold** | 20,000 | 50,000 | 200,000 |
 | **Customers** | 500+ | 2,000 | 8,000 |
 | **Gross Margin** | 50% | 61% | 63% |
-| **Net Income** | $(40K) | $270K | $2.0M |
+| **Net Income** | $(50K) | $223K | $1.85M |
 
 **Y1→Y2 growth drivers:** Scaled paid acquisition ($120K vs $100K), repeat orders from Y1 base (40% retention), first case studies accelerating sales cycles
 
-**Break-even:** Q2 2026 (monthly), 2026 (annual)
+**Break-even:** Q3 2026 (monthly), 2027 (annual)
 
 ---
 

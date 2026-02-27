@@ -93,6 +93,8 @@ export async function GET(req: NextRequest) {
     })
 
     for (const shipment of staleShipments) {
+      if (!shipment.label) continue
+
       // Check if we already sent a reminder in the last 24h
       const recentReminder = await db.notification.findFirst({
         where: {

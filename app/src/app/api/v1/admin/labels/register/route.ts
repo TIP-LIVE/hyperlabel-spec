@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
       labels: string[]
       skipped: string[]
       skippedAlreadyInOrg?: string[]
-      skippedInUse?: string[]
       error?: string
     }> = []
 
@@ -74,7 +73,6 @@ export async function POST(req: NextRequest) {
       const labelsToAssign: { id: string; deviceId: string }[] = []
       const skipped: string[] = []
       const skippedAlreadyInOrg: string[] = []
-      const skippedInUse: string[] = []
 
       if (process.env.NODE_ENV !== 'test') {
         console.info('[Register] assignment orgId:', orgId, 'deviceIds:', deviceIds)
@@ -99,20 +97,14 @@ export async function POST(req: NextRequest) {
         }
 
         const alreadyInThisOrg = label.orderLabels.length > 0
-        if (process.env.NODE_ENV !== 'test' && (alreadyInThisOrg || (label.status !== 'INVENTORY' && label.status !== 'SOLD'))) {
-          console.info('[Register] skip', { deviceId, orgId, alreadyInThisOrg, status: label.status, orderLabelsInOrg: label.orderLabels.length })
+        if (process.env.NODE_ENV !== 'test' && alreadyInThisOrg) {
+          console.info('[Register] skip (already in org)', { deviceId, orgId, orderLabelsInOrg: label.orderLabels.length })
         }
         if (alreadyInThisOrg) {
           skipped.push(deviceId)
           skippedAlreadyInOrg.push(deviceId)
           continue
         }
-        if (label.status !== 'INVENTORY' && label.status !== 'SOLD') {
-          skipped.push(deviceId)
-          skippedInUse.push(deviceId)
-          continue
-        }
-
         labelsToAssign.push({ id: label.id, deviceId: label.deviceId })
       }
 
@@ -124,7 +116,6 @@ export async function POST(req: NextRequest) {
           labels: [],
           skipped,
           ...(skippedAlreadyInOrg.length > 0 && { skippedAlreadyInOrg }),
-          ...(skippedInUse.length > 0 && { skippedInUse }),
         })
         continue
       }
@@ -157,7 +148,6 @@ export async function POST(req: NextRequest) {
         labels: labelsToAssign.map((l) => l.deviceId),
         skipped: skipped.length > 0 ? skipped : [],
         ...(skippedAlreadyInOrg.length > 0 && { skippedAlreadyInOrg }),
-        ...(skippedInUse.length > 0 && { skippedInUse }),
       })
     }
 

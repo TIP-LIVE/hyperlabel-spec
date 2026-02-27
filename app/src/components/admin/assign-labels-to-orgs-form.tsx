@@ -28,14 +28,10 @@ function parseDeviceIds(text: string): string[] {
     .filter(Boolean)
 }
 
-/** Shorten org ID for display; show last 16 chars so it's scannable */
-function shortOrgId(id: string, max = 24): string {
-  if (id.length <= max) return id
-  return '…' + id.slice(-Math.min(16, id.length - 4))
-}
-
 interface AssignLabelsToOrgsFormProps {
   knownOrgIds: string[]
+  /** Map of orgId → display name (from Clerk) */
+  orgNames?: Record<string, string>
   /** Current Clerk org (from auth) — assign here to see labels on that org's dashboard */
   currentOrgId?: string | null
   /** Pre-fill first row device IDs when coming from Label Inventory selection */
@@ -50,6 +46,7 @@ const defaultRow = (): { orgId: string; otherOrgId: string; deviceIds: string } 
 
 export function AssignLabelsToOrgsForm({
   knownOrgIds,
+  orgNames = {},
   currentOrgId,
   initialDeviceIds,
 }: AssignLabelsToOrgsFormProps) {
@@ -63,12 +60,22 @@ export function AssignLabelsToOrgsForm({
         : [defaultRow()]
   )
 
+  /** Display label for an org: name if available, otherwise shortened ID */
+  const orgLabel = (id: string) => {
+    if (orgNames[id]) return orgNames[id]
+    if (id.length <= 24) return id
+    return '…' + id.slice(-16)
+  }
+
   const filteredOrgIds = useMemo(() => {
     const base = currentOrgId ? [...new Set([currentOrgId, ...knownOrgIds])] : knownOrgIds
     if (!orgSearch.trim()) return base
     const q = orgSearch.trim().toLowerCase()
-    return base.filter((id) => id.toLowerCase().includes(q))
-  }, [knownOrgIds, orgSearch, currentOrgId])
+    return base.filter((id) => {
+      const name = orgNames[id]
+      return id.toLowerCase().includes(q) || (name && name.toLowerCase().includes(q))
+    })
+  }, [knownOrgIds, orgSearch, currentOrgId, orgNames])
 
   /** Org IDs to show in dropdown: filtered list plus any currently selected (so selection doesn’t disappear when search hides it) */
   const orgIdsForSelect = useMemo(() => {
@@ -130,24 +137,15 @@ export function AssignLabelsToOrgsForm({
       const total = results.reduce((acc: number, r: { registered: number }) => acc + r.registered, 0)
       const firstError = results.find((r: { error?: string }) => r.error) as { error?: string } | undefined
       const allAlreadyInOrg = results.flatMap((r: { skippedAlreadyInOrg?: string[] }) => r.skippedAlreadyInOrg ?? [])
-      const allInUse = results.flatMap((r: { skippedInUse?: string[] }) => r.skippedInUse ?? [])
       const inOrgList = [...new Set(allAlreadyInOrg)]
-      const inUseList = [...new Set(allInUse)]
 
       if (total === 0) {
         if (firstError?.error) {
           toast.error(firstError.error)
           return
         }
-        if (inOrgList.length > 0 || inUseList.length > 0) {
-          const parts: string[] = []
-          if (inOrgList.length > 0) {
-            parts.push(`${inOrgList.join(', ')} already in this organisation`)
-          }
-          if (inUseList.length > 0) {
-            parts.push(`${inUseList.join(', ')} are in use (Active/Depleted) in another organisation and can't be reassigned`)
-          }
-          toast.warning(`No labels assigned: ${parts.join('. ')}.`)
+        if (inOrgList.length > 0) {
+          toast.warning(`No labels assigned: ${inOrgList.join(', ')} already in this organisation.`)
           return
         }
         toast.warning(
@@ -199,7 +197,7 @@ export function AssignLabelsToOrgsForm({
             <Input
               id="org-search"
               type="search"
-              placeholder="Type part of org ID to filter…"
+              placeholder="Search by organisation name…"
               className="pl-9 bg-background/50 border-border"
               value={orgSearch}
               onChange={(e) => setOrgSearch(e.target.value)}
@@ -252,7 +250,7 @@ export function AssignLabelsToOrgsForm({
                       {orgIdsForSelect.map((id) => (
                         <SelectItem key={id} value={id} title={id}>
                           <span className="font-mono text-xs">
-                            {id === currentOrgId ? `Your current org (${shortOrgId(id)})` : shortOrgId(id)}
+                            {id === currentOrgId ? `${orgLabel(id)} (current)` : orgLabel(id)}
                           </span>
                         </SelectItem>
                       ))}
@@ -319,7 +317,7 @@ export function AssignLabelsToOrgsForm({
                         {orgIdsForSelect.map((id) => (
                           <SelectItem key={id} value={id} title={id}>
                             <span className="font-mono text-xs">
-                              {id === currentOrgId ? `Your current org (${shortOrgId(id)})` : shortOrgId(id)}
+                              {id === currentOrgId ? `${orgLabel(id)} (current)` : orgLabel(id)}
                             </span>
                           </SelectItem>
                         ))}

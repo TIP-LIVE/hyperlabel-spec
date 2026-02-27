@@ -372,9 +372,9 @@ Shipping is charged separately to the customer and is not included in COGS.
 
 | Year | Labels Sold | ASP | Revenue | Customers | Gross Margin | Net Income |
 |------|-------------|-----|---------|-----------|--------------|------------|
-| **2026** | 20,000 | $22 | $440K | 500+ | 50% | $(40K) |
-| **2027** | 50,000 | $25 | $1.26M | 2,000 | 61% | $270K |
-| **2028** | 200,000 | $25.50 | $5.16M | 8,000 | 63% | $2.0M |
+| **2026** | 20,000 | $22 | $440K | 500+ | 50% | $(50K) |
+| **2027** | 50,000 | $25 | $1.26M | 2,000 | 61% | $223K |
+| **2028** | 200,000 | $25.50 | $5.16M | 8,000 | 63% | $1.85M |
 
 ### 7.2 COGS Breakdown (Per Label)
 
@@ -392,9 +392,9 @@ Shipping is charged separately to the customer and is not included in COGS.
 | Milestone | Timeline | Revenue | Status |
 |-----------|----------|---------|--------|
 | First sale | Q1 2026 | - | ✅ Ready |
-| Break-even (monthly) | Q4 2026 | $14K/mo | 🎯 Target |
+| Break-even (monthly) | Q3 2026 | $22K/mo | 🎯 Target |
 | Cash flow positive | Q3 2027 | $60K/mo | 🎯 Target |
-| Profitable (annual) | 2028 | $5.16M | 🎯 Target |
+| Profitable (annual) | 2027 | $1.26M | 🎯 Target |
 
 ### 7.4 Funding Requirements
 
