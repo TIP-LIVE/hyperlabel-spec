@@ -53,10 +53,13 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
     for (const result of results) {
       if (result.status === 'fulfilled') {
         orgNames[result.value.id] = result.value.name
+      } else {
+        console.error('[AssignLabels] Clerk org fetch failed:', result.reason)
       }
     }
-  } catch {
-    // Clerk not configured or API error — fall back to IDs
+    console.info('[AssignLabels] orgNames resolved:', Object.keys(orgNames).length, 'of', knownOrgIds.length)
+  } catch (err) {
+    console.error('[AssignLabels] Clerk client error:', err)
   }
 
   return (
