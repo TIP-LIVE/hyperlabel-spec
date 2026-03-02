@@ -174,7 +174,12 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         name: updated.name,
         status: updated.status,
         deliveredAt: updated.deliveredAt,
+        originAddress: updated.originAddress,
+        originLat: updated.originLat,
+        originLng: updated.originLng,
         destinationAddress: updated.destinationAddress,
+        destinationLat: updated.destinationLat,
+        destinationLng: updated.destinationLng,
         label: updated.label ? {
           ...prev.label,
           ...updated.label,
@@ -279,6 +284,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               <EditShipmentDialog
                 shipmentId={shipment.id}
                 currentName={shipment.name}
+                currentOrigin={shipment.originAddress}
                 currentDestination={shipment.destinationAddress}
               />
             )}

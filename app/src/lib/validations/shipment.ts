@@ -37,6 +37,9 @@ export const createShipmentSchema = z.discriminatedUnion('type', [
 
 export const updateShipmentSchema = z.object({
   name: z.string().min(1).max(200).optional(),
+  originAddress: z.string().optional(),
+  originLat: z.number().min(-90).max(90).optional(),
+  originLng: z.number().min(-180).max(180).optional(),
   destinationAddress: z.string().optional(),
   destinationLat: z.number().min(-90).max(90).optional(),
   destinationLng: z.number().min(-180).max(180).optional(),

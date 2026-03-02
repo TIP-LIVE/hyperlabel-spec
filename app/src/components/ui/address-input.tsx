@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { MapPin, Loader2, X, Search, CheckCircle2, Navigation, Sparkles } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface AddressResult {
   displayName: string
@@ -141,7 +142,10 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
   }
 
   const handleUseMyLocation = useCallback(() => {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser')
+      return
+    }
 
     setGeoLoading(true)
     navigator.geolocation.getCurrentPosition(
@@ -173,8 +177,21 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
           setGeoLoading(false)
         }
       },
-      () => {
+      (error: GeolocationPositionError) => {
         setGeoLoading(false)
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error('Location access denied. Please enable location permissions in your browser settings.')
+            break
+          case error.POSITION_UNAVAILABLE:
+            toast.error('Location unavailable. Please try again or enter the address manually.')
+            break
+          case error.TIMEOUT:
+            toast.error('Location request timed out. Please try again.')
+            break
+          default:
+            toast.error('Could not determine your location. Please enter the address manually.')
+        }
       },
       { enableHighAccuracy: true, timeout: 10000 }
     )

@@ -21,21 +21,32 @@ import { AddressInput } from '@/components/ui/address-input'
 interface EditShipmentDialogProps {
   shipmentId: string
   currentName: string | null
+  currentOrigin: string | null
   currentDestination: string | null
 }
 
 export function EditShipmentDialog({
   shipmentId,
   currentName,
+  currentOrigin,
   currentDestination,
 }: EditShipmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState(currentName || '')
+  const [origin, setOrigin] = useState(currentOrigin || '')
+  const [originLat, setOriginLat] = useState<number>(0)
+  const [originLng, setOriginLng] = useState<number>(0)
   const [destination, setDestination] = useState(currentDestination || '')
   const [destLat, setDestLat] = useState<number>(0)
   const [destLng, setDestLng] = useState<number>(0)
   const router = useRouter()
+
+  function handleOriginSelect(address: string, lat: number, lng: number) {
+    setOrigin(address)
+    setOriginLat(lat)
+    setOriginLng(lng)
+  }
 
   function handleAddressSelect(address: string, lat: number, lng: number) {
     setDestination(address)
@@ -54,6 +65,13 @@ export function EditShipmentDialog({
     try {
       const body: Record<string, string | number> = {}
       if (name !== currentName) body.name = name
+      if (origin !== currentOrigin) {
+        body.originAddress = origin
+        if (originLat !== 0 && originLng !== 0) {
+          body.originLat = originLat
+          body.originLng = originLng
+        }
+      }
       if (destination !== currentDestination) {
         body.destinationAddress = destination
         if (destLat !== 0 && destLng !== 0) {
@@ -100,7 +118,7 @@ export function EditShipmentDialog({
         <DialogHeader>
           <DialogTitle>Edit Shipment</DialogTitle>
           <DialogDescription>
-            Update the shipment name or destination address.
+            Update the shipment name, origin, or destination address.
           </DialogDescription>
         </DialogHeader>
 
@@ -114,6 +132,20 @@ export function EditShipmentDialog({
               placeholder="e.g., Electronics — INV-2024-001"
               disabled={isLoading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-origin">Origin Address</Label>
+            <AddressInput
+              id="edit-origin"
+              defaultValue={currentOrigin || ''}
+              placeholder="Search for an address..."
+              disabled={isLoading}
+              onAddressSelect={handleOriginSelect}
+            />
+            <p className="text-xs text-muted-foreground">
+              Where the cargo is being shipped from.
+            </p>
           </div>
 
           <div className="space-y-2">
