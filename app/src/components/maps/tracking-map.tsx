@@ -4,7 +4,7 @@ import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView } from '@react-goo
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { format, formatDistanceToNow } from 'date-fns'
-import { MapPin } from 'lucide-react'
+import { MapPin, LocateFixed } from 'lucide-react'
 
 interface LocationPoint {
   id: string
@@ -105,31 +105,6 @@ const darkStyles: google.maps.MapTypeStyle[] = [
   },
 ]
 
-function MapLabel({
-  text,
-  color,
-  position,
-}: {
-  text: string
-  color: string
-  position: google.maps.LatLngLiteral
-}) {
-  return (
-    <OverlayView position={position} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
-      <div
-        className="pointer-events-none -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg"
-        style={{
-          backgroundColor: color,
-          color: '#fff',
-          marginTop: '-36px',
-          border: '2px solid rgba(255,255,255,0.9)',
-        }}
-      >
-        {text}
-      </div>
-    </OverlayView>
-  )
-}
 
 export function TrackingMap({
   locations,
@@ -144,6 +119,8 @@ export function TrackingMap({
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null)
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
+  const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
+  const [locating, setLocating] = useState(false)
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -241,6 +218,24 @@ export function TrackingMap({
     setMapRef(null)
   }, [])
 
+  const locateUser = useCallback(() => {
+    if (!navigator.geolocation || !mapRef) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setUserLocation(loc)
+        mapRef.panTo(loc)
+        mapRef.setZoom(14)
+        setLocating(false)
+      },
+      () => {
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }, [mapRef])
+
   if (locations.length === 0 && !hasDestination && !hasOrigin) {
     return (
       <div
@@ -253,6 +248,46 @@ export function TrackingMap({
           <p className="mt-1 text-xs text-muted-foreground/70">
             Location updates will appear once the label starts transmitting
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Origin/destination set but no actual tracking events yet
+  if (locations.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed bg-muted/50"
+        style={{ height }}
+      >
+        <MapPin className="h-8 w-8 text-muted-foreground/40" />
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Waiting for location data</p>
+          <p className="text-xs text-muted-foreground/70">
+            The map will update automatically once the label starts transmitting
+          </p>
+        </div>
+        <div className="flex flex-col items-center gap-2 rounded-lg bg-background/80 px-4 py-3 text-sm">
+          {hasOrigin && (
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">A</span>
+              </div>
+              <span className="text-muted-foreground truncate max-w-[250px]">
+                {originAddress || 'Origin set'}
+              </span>
+            </div>
+          )}
+          {hasDestination && (
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <span className="text-[10px] font-bold text-red-700 dark:text-red-300">B</span>
+              </div>
+              <span className="text-muted-foreground truncate max-w-[250px]">
+                {destinationAddress || 'Destination set'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -319,15 +354,26 @@ export function TrackingMap({
         )}
 
         {/* ── Origin marker ── */}
-        {hasOrigin && (
-          <>
-            <OverlayView
-              position={{ lat: originLat!, lng: originLng! }}
-              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            >
-              <div className="relative flex items-center justify-center">
+        {mapRef && hasOrigin && (
+          <OverlayView
+            position={{ lat: originLat!, lng: originLng! }}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div className="pointer-events-none flex flex-col items-center" style={{ transform: 'translate(-50%, -50%)' }}>
+              <div
+                className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg"
+                style={{
+                  backgroundColor: isDark ? '#059669' : '#047857',
+                  color: '#fff',
+                  marginBottom: 4,
+                  border: '2px solid rgba(255,255,255,0.9)',
+                }}
+              >
+                {originAddress ? originAddress.split(',')[0] : 'Origin'}
+              </div>
+              <div className="relative flex items-center justify-center" style={{ width: 18, height: 18 }}>
                 <div
-                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  className="absolute rounded-full"
                   style={{
                     width: 18,
                     height: 18,
@@ -337,7 +383,7 @@ export function TrackingMap({
                   }}
                 />
                 <div
-                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  className="absolute rounded-full"
                   style={{
                     width: 7,
                     height: 7,
@@ -345,13 +391,8 @@ export function TrackingMap({
                   }}
                 />
               </div>
-            </OverlayView>
-            <MapLabel
-              text={originAddress ? originAddress.split(',')[0] : 'Origin'}
-              color={isDark ? '#059669' : '#047857'}
-              position={{ lat: originLat!, lng: originLng! }}
-            />
-          </>
+            </div>
+          </OverlayView>
         )}
 
         {/* ── Historical location dots ── */}
@@ -372,7 +413,7 @@ export function TrackingMap({
         ))}
 
         {/* ── Current location: pulsing blue dot ── */}
-        {latestLocation && (
+        {mapRef && latestLocation && (
           <OverlayView
             position={{ lat: latestLocation.latitude, lng: latestLocation.longitude }}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
@@ -424,16 +465,27 @@ export function TrackingMap({
         )}
 
         {/* ── Destination marker ── */}
-        {hasDestination && (
-          <>
-            <OverlayView
-              position={{ lat: destinationLat!, lng: destinationLng! }}
-              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            >
-              <div className="relative flex items-center justify-center">
+        {mapRef && hasDestination && (
+          <OverlayView
+            position={{ lat: destinationLat!, lng: destinationLng! }}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div className="pointer-events-none flex flex-col items-center" style={{ transform: 'translate(-50%, -50%)' }}>
+              <div
+                className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg"
+                style={{
+                  backgroundColor: isDark ? '#dc2626' : '#b91c1c',
+                  color: '#fff',
+                  marginBottom: 4,
+                  border: '2px solid rgba(255,255,255,0.9)',
+                }}
+              >
+                {destinationAddress ? destinationAddress.split(',')[0] : 'Destination'}
+              </div>
+              <div className="relative flex items-center justify-center" style={{ width: 20, height: 20 }}>
                 {/* Flag-like pin */}
                 <div
-                  className="absolute -translate-x-1/2 -translate-y-1/2"
+                  className="absolute"
                   style={{
                     width: 0,
                     height: 0,
@@ -444,7 +496,7 @@ export function TrackingMap({
                   }}
                 />
                 <div
-                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  className="absolute rounded-full"
                   style={{
                     width: 10,
                     height: 10,
@@ -455,13 +507,37 @@ export function TrackingMap({
                   }}
                 />
               </div>
-            </OverlayView>
-            <MapLabel
-              text={destinationAddress ? destinationAddress.split(',')[0] : 'Destination'}
-              color={isDark ? '#dc2626' : '#b91c1c'}
-              position={{ lat: destinationLat!, lng: destinationLng! }}
-            />
-          </>
+            </div>
+          </OverlayView>
+        )}
+
+        {/* ── User location marker ── */}
+        {mapRef && userLocation && (
+          <OverlayView
+            position={userLocation}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div className="relative flex items-center justify-center">
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full"
+                style={{
+                  width: 32,
+                  height: 32,
+                  backgroundColor: 'rgba(168,85,247,0.25)',
+                }}
+              />
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: 16,
+                  height: 16,
+                  backgroundColor: '#a855f7',
+                  border: '3px solid rgba(255,255,255,0.95)',
+                  boxShadow: '0 2px 8px rgba(168,85,247,0.5)',
+                }}
+              />
+            </div>
+          </OverlayView>
         )}
 
         {/* ── Info window for clicked location ── */}
@@ -549,6 +625,12 @@ export function TrackingMap({
                 <span className="text-muted-foreground">Destination</span>
               </div>
             )}
+            {userLocation && (
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+                <span className="text-muted-foreground">You</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="text-primary text-[10px]">&#9654;&#9654;</span>
               <span className="text-muted-foreground">Direction</span>
@@ -557,6 +639,19 @@ export function TrackingMap({
         ) : (
           <span className="text-muted-foreground">Legend</span>
         )}
+      </button>
+
+      {/* ── Locate me button ── */}
+      <button
+        type="button"
+        onClick={locateUser}
+        disabled={locating}
+        title="Show my location"
+        className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg border bg-background/90 shadow-sm backdrop-blur-sm transition-all hover:bg-background disabled:opacity-50"
+      >
+        <LocateFixed
+          className={`h-4 w-4 ${userLocation ? 'text-purple-500' : 'text-muted-foreground'} ${locating ? 'animate-spin' : ''}`}
+        />
       </button>
 
       {/* ── Last updated badge ── */}
