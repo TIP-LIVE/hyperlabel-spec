@@ -647,7 +647,7 @@ export function TrackingMap({
         onClick={locateUser}
         disabled={locating}
         title="Show my location"
-        className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg border bg-background/90 shadow-sm backdrop-blur-sm transition-all hover:bg-background disabled:opacity-50"
+        className="absolute top-3 right-14 z-10 flex h-9 w-9 items-center justify-center rounded-lg border bg-background/90 shadow-sm backdrop-blur-sm transition-all hover:bg-background disabled:opacity-50"
       >
         <LocateFixed
           className={`h-4 w-4 ${userLocation ? 'text-purple-500' : 'text-muted-foreground'} ${locating ? 'animate-spin' : ''}`}
