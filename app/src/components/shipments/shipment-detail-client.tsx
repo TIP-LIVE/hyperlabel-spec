@@ -434,13 +434,13 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         <div className="space-y-6 lg:col-span-2">
           {/* Timeline */}
           <Card>
-            <CardHeader>
+            <CardHeader className="px-3 sm:px-6">
               <CardTitle>Location History</CardTitle>
               <CardDescription>
                 {shipment.locations.length} location updates
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6">
               <ShipmentTimeline locations={locationsWithDates} />
             </CardContent>
           </Card>

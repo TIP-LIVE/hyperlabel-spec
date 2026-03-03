@@ -418,13 +418,13 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
 
             {/* Timeline */}
             <Card className="mt-6">
-              <CardHeader>
+              <CardHeader className="px-3 sm:px-6">
                 <CardTitle>Location History</CardTitle>
                 <CardDescription>
                   {shipment.locations.length} location updates
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 sm:px-6">
                 <PublicTimeline
                   locations={locationsWithDates.map((loc) => ({
                     id: loc.id,

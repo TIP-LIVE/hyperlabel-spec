@@ -126,7 +126,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
   return (
     <div className="relative">
       {/* Timeline line */}
-      <div className="absolute left-4 top-0 h-full w-px bg-border" />
+      <div className="absolute left-3 sm:left-4 top-0 h-full w-px bg-border" />
 
       {/* Events */}
       <div className="space-y-3 sm:space-y-4">
@@ -138,9 +138,9 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
           if (isSingleEvent) {
             const location = group.events[0]
             return (
-              <div key={location.id} className="relative flex gap-4 pl-10">
+              <div key={location.id} className="relative flex gap-4 pl-8 sm:pl-10">
                 <div
-                  className={`absolute left-2 top-1 h-4 w-4 rounded-full border-2 ${
+                  className={`absolute left-1 sm:left-2 top-1 h-4 w-4 rounded-full border-2 ${
                     isLatestGroup
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground/30 bg-background'
@@ -159,10 +159,10 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
               <button
                 type="button"
                 onClick={() => toggleGroup(groupIndex)}
-                className="relative flex w-full items-start gap-4 pl-10 text-left hover:bg-accent/30 rounded-lg transition-colors -ml-1 pl-11 pr-2 py-1"
+                className="relative flex w-full items-start gap-4 text-left hover:bg-accent/30 rounded-lg transition-colors -ml-1 pl-9 sm:pl-11 pr-2 py-1"
               >
                 <div
-                  className={`absolute left-3 top-2 h-4 w-4 rounded-full border-2 ${
+                  className={`absolute left-2 sm:left-3 top-2 h-4 w-4 rounded-full border-2 ${
                     isLatestGroup
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground/30 bg-background'
@@ -195,7 +195,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
               </button>
 
               {isExpanded && (
-                <div className="mt-2 space-y-2 sm:space-y-3 border-l-2 border-dashed border-muted-foreground/20 ml-[15px] pl-8">
+                <div className="mt-2 space-y-2 sm:space-y-3 border-l-2 border-dashed border-muted-foreground/20 ml-[11px] sm:ml-[15px] pl-6 sm:pl-8">
                   {group.events.map((location) => (
                     <div key={location.id} className="min-h-[36px] sm:min-h-[40px]">
                       {renderLocationRow(location)}
