@@ -437,10 +437,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             <CardHeader>
               <CardTitle>Location History</CardTitle>
               <CardDescription>
-                {shipment.locations.length} location events recorded. New points appear when the
-                tracking device sends reports to the server (via cellular or when it syncs after
-                being offline). If you don&apos;t see new updates, the device may be off, out of
-                coverage, or the report endpoint may not be receiving data.
+                {shipment.locations.length} location updates
               </CardDescription>
             </CardHeader>
             <CardContent>

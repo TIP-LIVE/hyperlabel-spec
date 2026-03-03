@@ -64,7 +64,7 @@ export async function reverseGeocode(
   // 3. Call Nominatim
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&accept-language=en`,
       {
         headers: {
           'User-Agent': 'TIP-Cargo-Tracking/1.0 (tip.live)',

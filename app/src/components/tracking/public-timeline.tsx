@@ -129,7 +129,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
       <div className="absolute left-4 top-0 h-full w-px bg-border" />
 
       {/* Events */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {groups.map((group, groupIndex) => {
           const isLatestGroup = groupIndex === 0
           const isExpanded = expandedGroups.has(groupIndex)
@@ -195,9 +195,9 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
               </button>
 
               {isExpanded && (
-                <div className="mt-2 space-y-3 border-l-2 border-dashed border-muted-foreground/20 ml-[15px] pl-8">
+                <div className="mt-2 space-y-2 sm:space-y-3 border-l-2 border-dashed border-muted-foreground/20 ml-[15px] pl-8">
                   {group.events.map((location) => (
-                    <div key={location.id} className="min-h-[40px]">
+                    <div key={location.id} className="min-h-[36px] sm:min-h-[40px]">
                       {renderLocationRow(location)}
                     </div>
                   ))}

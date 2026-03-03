@@ -132,7 +132,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
       <div className="absolute left-4 top-0 h-full w-px bg-border" />
 
       {/* Events */}
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-6">
         {groups.map((group, groupIndex) => {
           const isLatestGroup = groupIndex === 0
           const isExpanded = expandedGroups.has(groupIndex)
@@ -142,7 +142,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
             // Single event — render normally
             const location = group.events[0]
             return (
-              <div key={location.id} className="relative flex gap-4 pl-10 min-h-[56px]">
+              <div key={location.id} className="relative flex gap-4 pl-10 min-h-[44px] sm:min-h-[56px]">
                 <div
                   className={`absolute left-2 top-1 h-4 w-4 rounded-full border-2 ${
                     isLatestGroup
@@ -165,7 +165,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
               <button
                 type="button"
                 onClick={() => toggleGroup(groupIndex)}
-                className="relative flex w-full items-start gap-4 pl-10 min-h-[56px] text-left hover:bg-accent/30 rounded-lg transition-colors -ml-1 pl-11 pr-2 py-1"
+                className="relative flex w-full items-start gap-4 pl-10 min-h-[44px] sm:min-h-[56px] text-left hover:bg-accent/30 rounded-lg transition-colors -ml-1 pl-11 pr-2 py-1"
               >
                 <div
                   className={`absolute left-3 top-2 h-4 w-4 rounded-full border-2 ${
@@ -202,9 +202,9 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
 
               {/* Expanded individual events */}
               {isExpanded && (
-                <div className="mt-2 space-y-4 border-l-2 border-dashed border-muted-foreground/20 ml-[15px] pl-8">
+                <div className="mt-2 space-y-2 sm:space-y-4 border-l-2 border-dashed border-muted-foreground/20 ml-[15px] pl-8">
                   {group.events.map((location) => (
-                    <div key={location.id} className="min-h-[44px]">
+                    <div key={location.id} className="min-h-[36px] sm:min-h-[44px]">
                       {renderLocationRow(location, false)}
                     </div>
                   ))}
