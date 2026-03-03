@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeAwareClerkProvider } from '@/components/clerk-provider'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -61,34 +61,6 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
 }
 
-function ConditionalClerkProvider({ children }: { children: React.ReactNode }) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-
-  // Skip ClerkProvider if no valid key (allows build to complete in CI with dummy key)
-  if (!publishableKey || publishableKey.startsWith('pk_test_REPLACE') || publishableKey === 'pk_test_dummy') {
-    return <>{children}</>
-  }
-
-  return (
-    <ClerkProvider
-      signInFallbackRedirectUrl="/dashboard"
-      signUpFallbackRedirectUrl="/dashboard"
-      appearance={{
-        variables: {
-          colorPrimary: '#008800',
-          colorBackground: '#ffffff',
-          colorText: '#0a0a0a',
-          colorInputBackground: '#ffffff',
-          colorInputText: '#0a0a0a',
-          colorDanger: '#dc2626',
-        },
-      }}
-    >
-      {children}
-    </ClerkProvider>
-  )
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -98,7 +70,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ConditionalClerkProvider>{children}</ConditionalClerkProvider>
+          <ThemeAwareClerkProvider>{children}</ThemeAwareClerkProvider>
           <Toaster position="top-right" />
         </ThemeProvider>
       </body>
