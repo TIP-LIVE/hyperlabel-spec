@@ -118,6 +118,9 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
       batteryPct: loc.batteryPct,
       accuracyM: loc.accuracyM,
       isOfflineSync: loc.isOfflineSync,
+      geocodedCity: loc.geocodedCity,
+      geocodedCountry: loc.geocodedCountry,
+      geocodedCountryCode: loc.geocodedCountryCode,
     })),
   }
 

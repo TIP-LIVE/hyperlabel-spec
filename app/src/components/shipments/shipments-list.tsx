@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
 
 interface ShipmentsListProps {
   initialStatus?: string
@@ -60,21 +59,6 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
     fetchShipments()
   }, [])
 
-  // Prepare locations for reverse geocoding (one per shipment)
-  const locationsToGeocode = useMemo(
-    () =>
-      allShipments
-        .filter((s) => s.latestLocation)
-        .map((s) => ({
-          id: s.id, // use shipment ID as key
-          latitude: s.latestLocation!.latitude,
-          longitude: s.latestLocation!.longitude,
-        })),
-    [allShipments]
-  )
-
-  const locationNames = useReverseGeocode(locationsToGeocode, 20)
-
   // Status counts from full dataset
   const statusCounts = useMemo(() => {
     return allShipments.reduce<Record<string, number>>(
@@ -97,16 +81,6 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
     }
     return result
   }, [allShipments, statusFilter, typeFilter])
-
-  // Enrich with geocoded location info
-  const enrichedShipments = useMemo(
-    () =>
-      filteredShipments.map((s) => ({
-        ...s,
-        locationInfo: locationNames[s.id] || undefined,
-      })),
-    [filteredShipments, locationNames]
-  )
 
   if (loading) {
     return (
@@ -167,7 +141,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
       </div>
       <DataTable
         columns={shipmentColumns}
-        data={enrichedShipments}
+        data={filteredShipments}
         searchKey="name"
         searchPlaceholder="Search shipments..."
       />

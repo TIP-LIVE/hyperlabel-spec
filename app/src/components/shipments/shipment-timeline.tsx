@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MapPin, Radio, ChevronDown } from 'lucide-react'
-import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +14,9 @@ interface LocationEvent {
   batteryPct: number | null
   recordedAt: Date
   isOfflineSync: boolean
+  geocodedCity: string | null
+  geocodedCountry: string | null
+  geocodedCountryCode: string | null
 }
 
 interface ShipmentTimelineProps {
@@ -27,7 +29,7 @@ interface LocationGroup {
   representative: LocationEvent
 }
 
-/** Check if two coordinates are within ~500m of each other */
+/** Check if two coordinates are within ~500m of each other (fallback for un-geocoded records) */
 function isNearby(a: LocationEvent, b: LocationEvent): boolean {
   const dlat = Math.abs(a.latitude - b.latitude)
   const dlng = Math.abs(a.longitude - b.longitude)
@@ -35,7 +37,7 @@ function isNearby(a: LocationEvent, b: LocationEvent): boolean {
   return dlat < 0.005 && dlng < 0.005
 }
 
-/** Group consecutive locations that are within ~500m of each other */
+/** Group consecutive locations by geocoded city name, falling back to spatial proximity */
 function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] {
   if (locations.length === 0) return []
 
@@ -43,19 +45,37 @@ function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] 
   let current: LocationGroup = { events: [locations[0]], representative: locations[0] }
 
   for (let i = 1; i < locations.length; i++) {
-    if (isNearby(current.representative, locations[i])) {
-      current.events.push(locations[i])
+    const prev = current.representative
+    const curr = locations[i]
+
+    // Group by geocoded city when available, fall back to spatial for un-geocoded records
+    const sameGroup =
+      prev.geocodedCity && curr.geocodedCity
+        ? prev.geocodedCity === curr.geocodedCity
+        : isNearby(prev, curr)
+
+    if (sameGroup) {
+      current.events.push(curr)
     } else {
       groups.push(current)
-      current = { events: [locations[i]], representative: locations[i] }
+      current = { events: [curr], representative: curr }
     }
   }
   groups.push(current)
   return groups
 }
 
+/** Build display name from geocoded fields or fallback to coordinates */
+function locationDisplayName(location: LocationEvent): string {
+  if (location.geocodedCity && location.geocodedCountry) {
+    return `${location.geocodedCity}, ${location.geocodedCountry}`
+  }
+  if (location.geocodedCity) return location.geocodedCity
+  if (location.geocodedCountry) return location.geocodedCountry
+  return `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
+}
+
 export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
-  const locationNames = useReverseGeocode(locations)
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
   const groups = useMemo(() => groupConsecutiveLocations(locations), [locations])
@@ -86,16 +106,15 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
 
   /** Render a single location row */
   function renderLocationRow(location: LocationEvent, isLatest: boolean) {
-    const geo = locationNames[location.id]
     return (
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
           <span className="text-sm font-medium truncate">
-            {geo?.countryCode && (
-              <span className="mr-1">{countryCodeToFlag(geo.countryCode)}</span>
+            {location.geocodedCountryCode && (
+              <span className="mr-1">{countryCodeToFlag(location.geocodedCountryCode)}</span>
             )}
-            {geo?.name || `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
+            {locationDisplayName(location)}
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -139,7 +158,6 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
           // Grouped events — show summary with expand/collapse
           const first = group.events[0] // newest
           const last = group.events[group.events.length - 1] // oldest
-          const geo = locationNames[first.id]
 
           return (
             <div key={first.id}>
@@ -160,10 +178,10 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                   <div className="flex items-center gap-2">
                     <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
                     <span className="text-sm font-medium truncate">
-                      {geo?.countryCode && (
-                        <span className="mr-1">{countryCodeToFlag(geo.countryCode)}</span>
+                      {first.geocodedCountryCode && (
+                        <span className="mr-1">{countryCodeToFlag(first.geocodedCountryCode)}</span>
                       )}
-                      {geo?.name || `${first.latitude.toFixed(4)}, ${first.longitude.toFixed(4)}`}
+                      {locationDisplayName(first)}
                     </span>
                     <span className="shrink-0 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                       x{group.events.length}

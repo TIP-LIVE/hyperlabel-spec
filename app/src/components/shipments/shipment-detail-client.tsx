@@ -27,7 +27,6 @@ import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
 import { toast } from 'sonner'
-import { useReverseGeocode } from '@/hooks/use-reverse-geocode'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
 const POLL_INTERVAL_MS = 30_000 // 30 seconds for shipper (faster than consignee)
@@ -43,6 +42,9 @@ interface LocationPoint {
   altitude?: number | null
   speed?: number | null
   isOfflineSync?: boolean
+  geocodedCity: string | null
+  geocodedCountry: string | null
+  geocodedCountryCode: string | null
 }
 
 interface LabelInfo {
@@ -109,16 +111,19 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
   const latestLocation = shipment.locations[0]
   const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
 
-  // Reverse geocode the latest location for the hero banner
-  const latestLocArray = useMemo(
-    () =>
-      latestLocation
-        ? [{ id: 'latest', latitude: latestLocation.latitude, longitude: latestLocation.longitude }]
-        : [],
-    [latestLocation]
-  )
-  const geoNames = useReverseGeocode(latestLocArray, 1)
-  const currentGeo = geoNames['latest']
+  // Derive geocoded info from the latest location's server-side data
+  const currentGeo = useMemo(() => {
+    if (!latestLocation) return null
+    const { geocodedCity, geocodedCountry, geocodedCountryCode } = latestLocation
+    if (!geocodedCity && !geocodedCountry) return null
+    return {
+      name: geocodedCity && geocodedCountry
+        ? `${geocodedCity}, ${geocodedCountry}`
+        : geocodedCity || geocodedCountry || null,
+      country: geocodedCountry,
+      countryCode: geocodedCountryCode,
+    }
+  }, [latestLocation])
 
   // Journey progress
   const journeyInfo = useMemo(() => {

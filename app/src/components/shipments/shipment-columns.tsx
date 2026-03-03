@@ -11,13 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Skeleton } from '@/components/ui/skeleton'
 import { MoreHorizontal, Eye, Share2, MapPin, Truck, Send, Battery } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
-import type { GeocodedLocation } from '@/hooks/use-reverse-geocode'
 
 export type ShipmentRow = {
   id: string
@@ -46,8 +44,10 @@ export type ShipmentRow = {
     latitude: number
     longitude: number
     recordedAt: string
+    geocodedCity: string | null
+    geocodedCountry: string | null
+    geocodedCountryCode: string | null
   } | null
-  locationInfo?: GeocodedLocation
 }
 
 export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
@@ -97,23 +97,28 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     id: 'currentLocation',
     header: 'Location',
     cell: ({ row }) => {
-      const info = row.original.locationInfo
       const loc = row.original.latestLocation
 
       if (!loc) {
         return <span className="text-muted-foreground text-xs">No data yet</span>
       }
 
-      if (!info) {
-        return <Skeleton className="h-5 w-24" />
+      if (!loc.geocodedCity) {
+        return (
+          <span className="text-muted-foreground text-xs">
+            {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
+          </span>
+        )
       }
 
       return (
         <div className="flex items-center gap-2 max-w-[200px]">
-          {info.countryCode && (
-            <span className="text-sm shrink-0">{countryCodeToFlag(info.countryCode)}</span>
+          {loc.geocodedCountryCode && (
+            <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
           )}
-          <span className="text-sm truncate">{info.name}</span>
+          <span className="text-sm truncate">
+            {loc.geocodedCity}{loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}
+          </span>
         </div>
       )
     },

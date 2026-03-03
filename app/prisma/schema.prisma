@@ -148,6 +148,11 @@ model LocationEvent {
   cellLatitude  Float?   @map("cell_latitude")
   cellLongitude Float?   @map("cell_longitude")
 
+  // Reverse-geocoded address (populated server-side at ingest)
+  geocodedCity        String?  @map("geocoded_city")
+  geocodedCountry     String?  @map("geocoded_country")
+  geocodedCountryCode String?  @map("geocoded_country_code")
+
   // Relations
   labelId    String    @map("label_id")
   label      Label     @relation(fields: [labelId], references: [id])

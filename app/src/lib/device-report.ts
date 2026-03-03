@@ -1,0 +1,380 @@
+import { db } from '@/lib/db'
+import { validateLocation } from '@/lib/validations/device'
+import { reverseGeocode } from '@/lib/geocoding'
+import {
+  sendShipmentDeliveredNotification,
+  sendConsigneeInTransitNotification,
+  sendConsigneeDeliveredNotification,
+} from '@/lib/notifications'
+import { format } from 'date-fns'
+
+/** Input shape for the shared location report processing logic. */
+export interface LocationReportInput {
+  deviceId?: string
+  imei?: string
+  iccid?: string
+
+  latitude: number
+  longitude: number
+
+  accuracy?: number
+  altitude?: number
+  speed?: number
+  battery?: number
+
+  recordedAt?: string
+
+  cellLatitude?: number
+  cellLongitude?: number
+
+  isOfflineSync?: boolean
+}
+
+export interface LocationReportResult {
+  success: boolean
+  locationId: string
+  shipmentId: string | null
+  deviceId: string
+}
+
+export class LocationReportError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public details?: unknown
+  ) {
+    super(message)
+    this.name = 'LocationReportError'
+  }
+}
+
+/**
+ * Process a single location report.
+ * Shared by /device/report and /device/onomondo endpoints.
+ */
+export async function processLocationReport(
+  input: LocationReportInput
+): Promise<LocationReportResult> {
+  // Validate coordinates
+  if (!validateLocation(input.latitude, input.longitude)) {
+    throw new LocationReportError(
+      'Invalid coordinates',
+      400,
+      'Location appears to be null island or invalid'
+    )
+  }
+
+  // Shipment select fields (reused for all lookup strategies)
+  const shipmentSelect = {
+    id: true,
+    name: true,
+    status: true,
+    shareCode: true,
+    userId: true,
+    originAddress: true,
+    destinationAddress: true,
+    destinationLat: true,
+    destinationLng: true,
+    consigneeEmail: true,
+  }
+
+  // Include recently delivered shipments (1h grace) so late-arriving
+  // location reports from offline buffers still get associated.
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+  const activeShipmentWhere = {
+    OR: [
+      {
+        status: {
+          in: ['PENDING', 'IN_TRANSIT'] as ['PENDING', 'IN_TRANSIT'],
+        },
+      },
+      { status: 'DELIVERED' as const, deliveredAt: { gte: oneHourAgo } },
+    ],
+  }
+  const shipmentInclude = {
+    shipments: {
+      where: activeShipmentWhere,
+      orderBy: { createdAt: 'desc' as const },
+      take: 1,
+      select: shipmentSelect,
+    },
+    shipmentLabels: {
+      where: { shipment: activeShipmentWhere },
+      include: {
+        shipment: { select: shipmentSelect },
+      },
+      take: 1,
+    },
+  }
+
+  // Find the label by deviceId, IMEI, or ICCID
+  let label = input.deviceId
+    ? await db.label.findUnique({
+        where: { deviceId: input.deviceId },
+        include: shipmentInclude,
+      })
+    : null
+
+  if (!label && input.imei) {
+    label = await db.label.findFirst({
+      where: { imei: input.imei },
+      include: shipmentInclude,
+    })
+  }
+
+  if (!label && input.iccid) {
+    label = await db.label.findFirst({
+      where: { iccid: input.iccid },
+      include: shipmentInclude,
+    })
+  }
+
+  // Auto-register: if no label found but IMEI/ICCID provided, create one
+  if (!label && (input.imei || input.iccid)) {
+    const nextDeviceId = await generateNextDeviceId()
+    const newLabel = await db.label.create({
+      data: {
+        deviceId: nextDeviceId,
+        imei: input.imei || null,
+        iccid: input.iccid || null,
+        status: 'ACTIVE',
+        activatedAt: new Date(),
+      },
+      include: shipmentInclude,
+    })
+    label = newLabel
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Device report] auto-registered new label', {
+        deviceId: nextDeviceId,
+        imei: input.imei ?? null,
+        iccid: input.iccid ?? null,
+      })
+    }
+  }
+
+  if (!label) {
+    throw new LocationReportError('Device not found', 404)
+  }
+
+  // Get the active shipment (if any)
+  const activeShipment =
+    label.shipments[0] || label.shipmentLabels[0]?.shipment
+
+  // Parse recorded timestamp or use current time
+  const recordedAt = input.recordedAt ? new Date(input.recordedAt) : new Date()
+  const receivedAt = new Date()
+
+  // Auto-detect offline sync: if recorded time is > 5 min before receive, it's offline
+  const OFFLINE_SYNC_THRESHOLD_MS = 5 * 60 * 1000
+  const isOfflineSync =
+    input.isOfflineSync === true
+      ? true
+      : receivedAt.getTime() - recordedAt.getTime() > OFFLINE_SYNC_THRESHOLD_MS
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.info('[Device report] storing location', {
+      deviceId: label.deviceId,
+      shipmentId: activeShipment?.id ?? null,
+      recordedAt: recordedAt.toISOString(),
+    })
+  }
+
+  const locationEvent = await db.locationEvent.create({
+    data: {
+      labelId: label.id,
+      shipmentId: activeShipment?.id || null,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      accuracyM: input.accuracy ? Math.round(input.accuracy) : null,
+      altitude: input.altitude,
+      speed: input.speed,
+      batteryPct: input.battery,
+      recordedAt,
+      receivedAt,
+      isOfflineSync,
+      cellLatitude: input.cellLatitude,
+      cellLongitude: input.cellLongitude,
+    },
+  })
+
+  // Reverse-geocode the location and persist on the record
+  try {
+    const geo = await reverseGeocode(input.latitude, input.longitude)
+    if (geo) {
+      await db.locationEvent.update({
+        where: { id: locationEvent.id },
+        data: {
+          geocodedCity: geo.city,
+          geocodedCountry: geo.country,
+          geocodedCountryCode: geo.countryCode,
+        },
+      })
+    }
+  } catch (err) {
+    // Geocoding failure should never block location ingest
+    console.warn('[Device report] geocoding failed:', err)
+  }
+
+  // Update label battery if provided
+  if (input.battery !== undefined) {
+    await db.label.update({
+      where: { id: label.id },
+      data: { batteryPct: input.battery },
+    })
+  }
+
+  // If shipment is PENDING and we received first location, update to IN_TRANSIT
+  if (activeShipment && activeShipment.status === 'PENDING') {
+    await db.shipment.update({
+      where: { id: activeShipment.id },
+      data: { status: 'IN_TRANSIT' },
+    })
+
+    if (activeShipment.consigneeEmail) {
+      sendConsigneeInTransitNotification({
+        consigneeEmail: activeShipment.consigneeEmail,
+        shipmentName: activeShipment.name || 'Shipment',
+        shareCode: activeShipment.shareCode,
+        originAddress: activeShipment.originAddress,
+        destinationAddress: activeShipment.destinationAddress,
+      }).catch((err) =>
+        console.error(
+          'Failed to send consignee in-transit notification:',
+          err
+        )
+      )
+    }
+  }
+
+  // Check for delivery (if within geofence of destination)
+  // Only run geofence if accuracy is good enough (or unknown = GPS assumed)
+  const DELIVERY_THRESHOLD_M = 100
+  const shouldCheckDelivery =
+    !input.accuracy || input.accuracy <= DELIVERY_THRESHOLD_M
+
+  if (
+    shouldCheckDelivery &&
+    activeShipment &&
+    activeShipment.status === 'IN_TRANSIT' &&
+    activeShipment.destinationLat &&
+    activeShipment.destinationLng
+  ) {
+    const distance = calculateDistance(
+      input.latitude,
+      input.longitude,
+      activeShipment.destinationLat,
+      activeShipment.destinationLng
+    )
+
+    if (distance <= DELIVERY_THRESHOLD_M) {
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000)
+      const recentLocations = await db.locationEvent.findMany({
+        where: {
+          shipmentId: activeShipment.id,
+          recordedAt: { gte: thirtyMinAgo },
+        },
+        orderBy: { recordedAt: 'desc' },
+      })
+
+      const allNearDestination =
+        recentLocations.length >= 2 &&
+        recentLocations.every((loc) => {
+          const d = calculateDistance(
+            loc.latitude,
+            loc.longitude,
+            activeShipment.destinationLat!,
+            activeShipment.destinationLng!
+          )
+          return d <= DELIVERY_THRESHOLD_M
+        })
+
+      if (allNearDestination) {
+        await db.shipment.update({
+          where: { id: activeShipment.id },
+          data: { status: 'DELIVERED', deliveredAt: new Date() },
+        })
+
+        sendShipmentDeliveredNotification({
+          userId: activeShipment.userId,
+          shipmentName: activeShipment.name || 'Unnamed Shipment',
+          deviceId: label.deviceId,
+          shareCode: activeShipment.shareCode,
+          destination:
+            activeShipment.destinationAddress || 'Destination',
+        }).catch((err) =>
+          console.error('Failed to send delivery notification:', err)
+        )
+
+        if (activeShipment.consigneeEmail) {
+          sendConsigneeDeliveredNotification({
+            consigneeEmail: activeShipment.consigneeEmail,
+            shipmentName: activeShipment.name || 'Shipment',
+            shareCode: activeShipment.shareCode,
+            destinationAddress: activeShipment.destinationAddress,
+            deliveredAt: format(new Date(), 'PPpp'),
+          }).catch((err) =>
+            console.error(
+              'Failed to send consignee delivery notification:',
+              err
+            )
+          )
+        }
+      }
+    }
+  }
+
+  return {
+    success: true,
+    locationId: locationEvent.id,
+    shipmentId: activeShipment?.id || null,
+    deviceId: label.deviceId,
+  }
+}
+
+/**
+ * Calculate distance between two coordinates using Haversine formula.
+ * Returns distance in meters.
+ */
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371000
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180)
+}
+
+/**
+ * Generate the next sequential TIP device ID (TIP-001, TIP-002, ...).
+ */
+async function generateNextDeviceId(): Promise<string> {
+  const latest = await db.label.findFirst({
+    where: { deviceId: { startsWith: 'TIP-' } },
+    orderBy: { deviceId: 'desc' },
+    select: { deviceId: true },
+  })
+
+  let nextNum = 1
+  if (latest) {
+    const match = latest.deviceId.match(/^TIP-(\d+)$/)
+    if (match) {
+      nextNum = parseInt(match[1], 10) + 1
+    }
+  }
+
+  return `TIP-${String(nextNum).padStart(3, '0')}`
+}

@@ -37,6 +37,9 @@ interface LocationPoint {
   batteryPct: number | null
   accuracyM: number | null
   isOfflineSync?: boolean
+  geocodedCity: string | null
+  geocodedCountry: string | null
+  geocodedCountryCode: string | null
 }
 
 interface ShipmentData {
@@ -431,6 +434,9 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                     accuracyM: loc.accuracyM,
                     batteryPct: loc.batteryPct,
                     isOfflineSync: loc.isOfflineSync ?? false,
+                    geocodedCity: loc.geocodedCity,
+                    geocodedCountry: loc.geocodedCountry,
+                    geocodedCountryCode: loc.geocodedCountryCode,
                   }))}
                 />
               </CardContent>
