@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, LABEL_PRODUCTS, LabelPackType, isStripeConfigured } from '@/lib/stripe'
 import { requireOrgAuth } from '@/lib/auth'
-import { handleApiError } from '@/lib/api-utils'
 import { rateLimit, RATE_LIMIT_CHECKOUT, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -17,14 +16,18 @@ const checkoutSchema = z.object({
  * to the user's account and shipped later per-shipment.
  */
 export async function POST(req: NextRequest) {
+  let step = 'init'
   try {
     // Rate limit by IP (strict: 10 req/min for checkout)
+    step = 'rate-limit'
     const rl = rateLimit(`checkout:${getClientIp(req)}`, RATE_LIMIT_CHECKOUT)
     if (!rl.success) return rateLimitResponse(rl)
 
+    step = 'auth'
     const context = await requireOrgAuth()
     const user = context.user
 
+    step = 'parse-body'
     const body = await req.json()
     const validated = checkoutSchema.safeParse(body)
 
@@ -38,6 +41,7 @@ export async function POST(req: NextRequest) {
     const { packType } = validated.data
     const product = LABEL_PRODUCTS[packType as LabelPackType]
 
+    step = 'stripe-config-check'
     if (!isStripeConfigured()) {
       console.error('[checkout] Stripe not configured: STRIPE_SECRET_KEY is missing or invalid')
       return NextResponse.json(
@@ -56,11 +60,12 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
 
+    step = 'stripe-create-session'
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
-      customer_email: user.email,
+      ...(user.email ? { customer_email: user.email } : {}),
       client_reference_id: user.id,
       line_items: [
         {
@@ -83,17 +88,40 @@ export async function POST(req: NextRequest) {
       url: session.url,
     })
   } catch (error) {
-    if (error instanceof Error && error.message.includes('Invalid API Key')) {
-      console.error('[checkout] Invalid Stripe API key:', error.message)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error(`[checkout] Error at step="${step}":`, errorMsg)
+    if (error instanceof Error && error.stack) {
+      console.error('[checkout] Stack:', error.stack)
+    }
+
+    // Handle Stripe-specific errors with useful messages
+    if (error && typeof error === 'object' && 'type' in error) {
+      const stripeError = error as { type: string; code?: string; message?: string }
+
+      if (stripeError.type === 'StripeAuthenticationError') {
+        return NextResponse.json(
+          { error: 'Payment system is temporarily unavailable. Please try again later.' },
+          { status: 503 }
+        )
+      }
+
+      if (stripeError.type === 'StripeInvalidRequestError') {
+        return NextResponse.json(
+          { error: stripeError.message || 'Invalid payment request. Please try again.' },
+          { status: 400 }
+        )
+      }
+
       return NextResponse.json(
-        { error: 'Payment system is temporarily unavailable. Please try again later.' },
-        { status: 503 }
+        { error: 'Payment processing error. Please try again.' },
+        { status: 502 }
       )
     }
-    // Log the full Stripe error for debugging
-    if (error instanceof Error) {
-      console.error('[checkout] Stripe error:', error.message)
-    }
-    return handleApiError(error, 'creating checkout session')
+
+    // Return the step info in the error to help debug
+    return NextResponse.json(
+      { error: `Checkout failed at step: ${step}. ${errorMsg}` },
+      { status: 500 }
+    )
   }
 }

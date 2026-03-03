@@ -109,18 +109,50 @@ export async function requireAdmin() {
 /**
  * Require authentication AND an active organization.
  * Returns user, orgId, and orgRole.
- * Throws if user is not authenticated or has no active org.
+ * Calls auth() once to get userId + orgId, then looks up user in DB.
  */
 export async function requireOrgAuth(): Promise<AuthContext> {
-  const user = await getCurrentUser()
-  if (!user) {
+  const { userId, orgId, orgRole } = await auth()
+
+  if (!userId) {
     throw new Error('Unauthorized')
   }
 
-  const { orgId, orgRole } = await auth()
-
   if (!orgId) {
     throw new Error('Organization required')
+  }
+
+  // Look up user in DB
+  let user = await db.user.findUnique({ where: { clerkId: userId } })
+
+  // If not found, sync from Clerk (webhook may not have fired yet)
+  if (!user) {
+    const clerkUser = await currentUser()
+    if (clerkUser) {
+      const emailAddress = clerkUser.emailAddresses[0]?.emailAddress || ''
+      const data = {
+        email: emailAddress,
+        firstName: clerkUser.firstName,
+        lastName: clerkUser.lastName,
+        imageUrl: clerkUser.imageUrl,
+        role: (isAdminEmail(emailAddress) ? 'admin' : 'user') as 'admin' | 'user',
+      }
+      const existingByEmail = await db.user.findUnique({ where: { email: emailAddress } })
+      if (existingByEmail) {
+        user = await db.user.update({
+          where: { id: existingByEmail.id },
+          data: { clerkId: clerkUser.id, ...data },
+        })
+      } else {
+        user = await db.user.create({
+          data: { clerkId: clerkUser.id, ...data },
+        })
+      }
+    }
+  }
+
+  if (!user) {
+    throw new Error('Unauthorized')
   }
 
   return {
