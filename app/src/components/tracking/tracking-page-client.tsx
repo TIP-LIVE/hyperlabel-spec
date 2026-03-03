@@ -388,7 +388,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Map */}
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>Live Location</CardTitle>
@@ -417,7 +417,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             </Card>
 
             {/* Timeline */}
-            <Card className="mt-6">
+            <Card className="mt-6 overflow-hidden">
               <CardHeader className="px-3 sm:px-6">
                 <CardTitle>Location History</CardTitle>
                 <CardDescription>

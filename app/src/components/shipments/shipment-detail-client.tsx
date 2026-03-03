@@ -235,7 +235,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
@@ -431,9 +431,9 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           {/* Timeline */}
-          <Card>
+          <Card className="overflow-hidden">
             <CardHeader className="px-3 sm:px-6">
               <CardTitle>Location History</CardTitle>
               <CardDescription>
