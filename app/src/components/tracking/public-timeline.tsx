@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
+import { formatDateRange } from '@/lib/utils/format-date-range'
+import { cn } from '@/lib/utils'
 
 interface LocationEvent {
   id: string
@@ -126,12 +128,13 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
   return (
     <div className="relative">
       {/* Timeline line */}
-      <div className="absolute left-3 sm:left-4 top-0 h-full w-px bg-border" />
+      <div className="absolute left-3 sm:left-4 top-0 bottom-8 w-px bg-border" />
 
       {/* Events */}
       <div className="space-y-3 sm:space-y-4">
         {groups.map((group, groupIndex) => {
           const isLatestGroup = groupIndex === 0
+          const isLastGroup = groupIndex === groups.length - 1
           const isExpanded = expandedGroups.has(groupIndex)
           const isSingleEvent = group.events.length === 1
 
@@ -140,11 +143,15 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
             return (
               <div key={location.id} className="relative flex gap-4 pl-8 sm:pl-10">
                 <div
-                  className={`absolute left-1 sm:left-2 top-1 h-4 w-4 rounded-full border-2 ${
-                    isLatestGroup
+                  className={cn(
+                    'absolute left-1 sm:left-2 rounded-full border-2',
+                    isLastGroup
+                      ? 'top-2 h-2.5 w-2.5 border-muted-foreground/20 bg-background'
+                      : 'top-1 h-4 w-4',
+                    !isLastGroup && (isLatestGroup
                       ? 'border-primary bg-primary'
-                      : 'border-muted-foreground/30 bg-background'
-                  }`}
+                      : 'border-muted-foreground/30 bg-background')
+                  )}
                 />
                 {renderLocationRow(location)}
               </div>
@@ -162,11 +169,15 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
                 className="relative flex w-full items-start gap-4 text-left hover:bg-accent/30 rounded-lg transition-colors -ml-1 pl-9 sm:pl-11 pr-2 py-1"
               >
                 <div
-                  className={`absolute left-2 sm:left-3 top-2 h-4 w-4 rounded-full border-2 ${
-                    isLatestGroup
+                  className={cn(
+                    'absolute left-2 sm:left-3 rounded-full border-2',
+                    isLastGroup
+                      ? 'top-3 h-2.5 w-2.5 border-muted-foreground/20 bg-background'
+                      : 'top-2 h-4 w-4',
+                    !isLastGroup && (isLatestGroup
                       ? 'border-primary bg-primary'
-                      : 'border-muted-foreground/30 bg-background'
-                  }`}
+                      : 'border-muted-foreground/30 bg-background')
+                  )}
                 />
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
@@ -187,9 +198,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(first.recordedAt), 'PPp')}
-                    {' — '}
-                    {format(new Date(last.recordedAt), 'PPp')}
+                    {formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
                   </p>
                 </div>
               </button>
