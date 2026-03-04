@@ -147,10 +147,10 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
               <div key={location.id} className="relative flex gap-4 pl-8 sm:pl-10 min-h-[44px] sm:min-h-[56px]">
                 <div
                   className={cn(
-                    'absolute left-1 sm:left-2 rounded-full border-2',
+                    'absolute rounded-full border-2',
                     isLastGroup
-                      ? 'top-2 h-2.5 w-2.5 border-muted-foreground/20 bg-background'
-                      : 'top-1 h-4 w-4',
+                      ? 'left-[7px] sm:left-[11px] top-2 h-2.5 w-2.5 border-muted-foreground/20 bg-background'
+                      : 'left-1 sm:left-2 top-1 h-4 w-4',
                     !isLastGroup && (isLatestGroup
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground/30 bg-background')
@@ -175,10 +175,10 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
               >
                 <div
                   className={cn(
-                    'absolute left-2 sm:left-3 rounded-full border-2',
+                    'absolute rounded-full border-2',
                     isLastGroup
-                      ? 'top-3 h-2.5 w-2.5 border-muted-foreground/20 bg-background'
-                      : 'top-2 h-4 w-4',
+                      ? 'left-[11px] sm:left-[15px] top-3 h-2.5 w-2.5 border-muted-foreground/20 bg-background'
+                      : 'left-2 sm:left-3 top-2 h-4 w-4',
                     !isLastGroup && (isLatestGroup
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground/30 bg-background')
