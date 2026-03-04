@@ -25,12 +25,12 @@
 
 ## 1. Architecture Overview
 
-TIP is a door-to-door cargo tracking platform. Physical tracking labels (with GPS + cellular) are attached to cargo and transmit location data as the shipment moves.
+TIP is a door-to-door cargo tracking platform. Physical tracking labels (with cellular modem + Onomondo SIM) are attached to cargo and transmit location data as the shipment moves. Location is derived from cell tower triangulation (~500-1000m accuracy), not GPS.
 
 ### Current Architecture (Before You)
 
 ```
-Hardware Label (GPS + Onomondo SIM)
+Hardware Label (Cellular modem + Onomondo SIM)
         │
         ▼
 ┌──────────────────────────┐
@@ -51,7 +51,7 @@ Hardware Label (GPS + Onomondo SIM)
 ### Target Architecture (After You)
 
 ```
-Hardware Label (GPS + Onomondo SIM)
+Hardware Label (Cellular modem + Onomondo SIM)
         │
         ▼
 ┌──────────────────────────┐
@@ -94,10 +94,10 @@ Build a **Cloud Run service** that:
 
 ```
 Step 1: Hardware label powers on (tab pulled)
-        └─ GPS module acquires fix
-        └─ Cellular module connects via Onomondo SIM
+        └─ Cellular modem connects via Onomondo SIM
+        └─ Location derived from cell tower triangulation (~500-1000m accuracy)
 
-Step 2: Label sends location data every ~10 minutes
+Step 2: Label sends location data every ~2 hours
         └─ HTTP POST to Onomondo connector endpoint
         └─ Onomondo forwards to YOUR Cloud Run webhook URL
 
@@ -159,9 +159,9 @@ The API key will be provided to you. You can also use query param `?key=<DEVICE_
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `deviceId` | string | **Yes** | Device identifier, e.g. `"HL-001234"`. Must match a Label record in TIP's database. |
-| `latitude` | number | **Yes** | GPS latitude, -90 to 90 |
-| `longitude` | number | **Yes** | GPS longitude, -180 to 180 |
-| `accuracy` | number | No | GPS accuracy in meters (positive) |
+| `latitude` | number | **Yes** | Latitude from cell tower triangulation, -90 to 90 |
+| `longitude` | number | **Yes** | Longitude from cell tower triangulation, -180 to 180 |
+| `accuracy` | number | No | Location accuracy in meters (positive) |
 | `altitude` | number | No | Altitude in meters |
 | `speed` | number | No | Speed in m/s (>= 0) |
 | `battery` | number | No | Battery percentage, 0-100 |
@@ -219,7 +219,7 @@ IN_TRANSIT ── geofence + dwell time ──→ DELIVERED
 ```
 
 - **PENDING → IN_TRANSIT**: Automatic on first location report for that shipment
-- **IN_TRANSIT → DELIVERED**: Automatic when 2+ readings within 100m of destination for 30+ minutes
+- **IN_TRANSIT → DELIVERED**: Automatic when 2+ readings within 1500m of destination for 30+ minutes (threshold accounts for cell tower triangulation accuracy ~500-1000m)
 
 ### 5d. Email Notifications
 - **In-Transit**: Consignee gets "your shipment is on the way" email
@@ -283,7 +283,7 @@ INVENTORY → Label in warehouse, not yet sold
     ↓ (purchased by customer)
 SOLD → Label shipped to customer, not yet activated
     ↓ (QR code scanned by customer)
-ACTIVE → GPS transmitting, tracking cargo
+ACTIVE → Cellular modem transmitting, tracking cargo
     ↓ (battery dies)
 DEPLETED → Battery dead, no longer transmitting
 ```
@@ -298,8 +298,8 @@ This is what the hardware labels currently send to label.utec.ua. Your service n
 interface DeviceDataOut {
   iccid: string              // SIM card ID (maps to Label.iccid)
   imei: string               // Device IMEI (maps to Label.imei)
-  latitude: number           // GPS latitude
-  longitude: number          // GPS longitude
+  latitude: number           // Cell tower triangulated latitude
+  longitude: number          // Cell tower triangulated longitude
   timestamp: string          // ISO datetime
   onomondo_latitude?: number // Cell tower triangulation (backup)
   onomondo_longitude?: number
@@ -326,9 +326,9 @@ timestamp               → recordedAt
 onomondo_latitude       → cellLatitude
 onomondo_longitude      → cellLongitude
 battery                 → battery
-(not available)         → accuracy (set from GPS metadata if available)
-(not available)         → altitude (set from GPS metadata if available)
-(not available)         → speed (set from GPS metadata if available)
+(not available)         → accuracy (cell tower accuracy if available)
+(not available)         → altitude (not available from cell tower)
+(not available)         → speed (not available from cell tower)
 offline_queue[].item    → send each as separate report with isOfflineSync=true
 ```
 

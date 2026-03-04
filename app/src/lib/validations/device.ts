@@ -13,7 +13,7 @@ export const deviceReportSchema = z.object({
   imei: z.string().min(1).optional(),
   iccid: z.string().min(1).optional(),
 
-  // Location coordinates (from cell tower triangulation)
+  // Location coordinates (cell tower triangulation via Onomondo)
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
 
@@ -92,3 +92,65 @@ export const registerLabelsSchema = z.object({
 })
 
 export type RegisterLabelsInput = z.infer<typeof registerLabelsSchema>
+
+/**
+ * Schema for Onomondo HTTPS connector payloads.
+ * This is the DeviceDataOut format from firmware, forwarded by Onomondo's HTTPS connector.
+ */
+export const onomondoConnectorSchema = z.object({
+  iccid: z.string().min(1),
+  imei: z.string().min(1),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  timestamp: z.string(),
+  onomondo_latitude: z.number().min(-90).max(90).optional(),
+  onomondo_longitude: z.number().min(-180).max(180).optional(),
+  battery: z.number().min(0).max(100).optional(),
+  signal_strength: z.number().optional(),
+  offline_queue: z
+    .array(
+      z.object({
+        timestamp: z.string(),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        battery_pct: z.number().min(0).max(100).optional(),
+      })
+    )
+    .optional()
+    .default([]),
+})
+
+export type OnomonodoConnectorInput = z.infer<typeof onomondoConnectorSchema>
+
+/**
+ * Schema for Onomondo Location Update webhook payload.
+ * Fires on every cell tower change. lat/lng can be null when location
+ * cannot be determined.
+ */
+export const onomondoLocationUpdateSchema = z.object({
+  type: z.literal('location'),
+  imei: z.string().min(1),
+  iccid: z.string().min(1),
+  sim_id: z.string(),
+  location: z.object({
+    cell_id: z.number(),
+    location_area_code: z.number().nullable(),
+    accuracy: z.number().nullable(),
+    lat: z.string().nullable(),
+    lng: z.string().nullable(),
+  }),
+  network: z.object({
+    name: z.string(),
+    country: z.string(),
+    country_code: z.string(),
+    mcc: z.string(),
+    mnc: z.string(),
+  }),
+  network_type: z.string(),
+  sim_label: z.string(),
+  time: z.string(),
+  ipv4: z.string(),
+  session_id: z.string(),
+})
+
+export type OnomonodoLocationUpdateInput = z.infer<typeof onomondoLocationUpdateSchema>

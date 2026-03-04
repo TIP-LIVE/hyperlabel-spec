@@ -7,6 +7,7 @@ import {
   sendConsigneeDeliveredNotification,
 } from '@/lib/notifications'
 import { format } from 'date-fns'
+import { syncSimLabelToOnomondo } from '@/lib/onomondo'
 
 /** Input shape for the shared location report processing logic. */
 export interface LocationReportInput {
@@ -14,8 +15,8 @@ export interface LocationReportInput {
   imei?: string
   iccid?: string
 
-  latitude: number
-  longitude: number
+  latitude?: number
+  longitude?: number
 
   accuracy?: number
   altitude?: number
@@ -28,6 +29,7 @@ export interface LocationReportInput {
   cellLongitude?: number
 
   isOfflineSync?: boolean
+  source?: 'GPS' | 'CELL_TOWER'
 }
 
 export interface LocationReportResult {
@@ -55,14 +57,29 @@ export class LocationReportError extends Error {
 export async function processLocationReport(
   input: LocationReportInput
 ): Promise<LocationReportResult> {
+  // Resolve effective coordinates — for CELL_TOWER source, primary lat/lng
+  // may not be provided, so fall back to cell tower coords
+  const effectiveLat = input.latitude ?? input.cellLatitude
+  const effectiveLng = input.longitude ?? input.cellLongitude
+
+  if (effectiveLat === undefined || effectiveLng === undefined) {
+    throw new LocationReportError(
+      'No coordinates provided',
+      400,
+      'Either latitude/longitude or cellLatitude/cellLongitude must be provided'
+    )
+  }
+
   // Validate coordinates
-  if (!validateLocation(input.latitude, input.longitude)) {
+  if (!validateLocation(effectiveLat, effectiveLng)) {
     throw new LocationReportError(
       'Invalid coordinates',
       400,
       'Location appears to be null island or invalid'
     )
   }
+
+  const isCellTowerOnly = input.source === 'CELL_TOWER'
 
   // Shipment select fields (reused for all lookup strategies)
   const shipmentSelect = {
@@ -149,6 +166,13 @@ export async function processLocationReport(
         imei: input.imei ?? null,
         iccid: input.iccid ?? null,
       })
+
+      // Sync deviceId as SIM label in Onomondo dashboard (fire-and-forget)
+      if (input.iccid) {
+        syncSimLabelToOnomondo(input.iccid, nextDeviceId).catch((err) =>
+          console.warn('[Onomondo] label sync failed:', err)
+        )
+      }
     }
   }
 
@@ -183,8 +207,8 @@ export async function processLocationReport(
     data: {
       labelId: label.id,
       shipmentId: activeShipment?.id || null,
-      latitude: input.latitude,
-      longitude: input.longitude,
+      latitude: effectiveLat,
+      longitude: effectiveLng,
       accuracyM: input.accuracy ? Math.round(input.accuracy) : null,
       altitude: input.altitude,
       speed: input.speed,
@@ -192,14 +216,15 @@ export async function processLocationReport(
       recordedAt,
       receivedAt,
       isOfflineSync,
-      cellLatitude: input.cellLatitude,
-      cellLongitude: input.cellLongitude,
+      cellLatitude: input.cellLatitude ?? (isCellTowerOnly ? effectiveLat : null),
+      cellLongitude: input.cellLongitude ?? (isCellTowerOnly ? effectiveLng : null),
+      source: input.source ?? 'GPS',
     },
   })
 
   // Reverse-geocode the location and persist on the record
   try {
-    const geo = await reverseGeocode(input.latitude, input.longitude)
+    const geo = await reverseGeocode(effectiveLat, effectiveLng)
     if (geo) {
       await db.locationEvent.update({
         where: { id: locationEvent.id },
@@ -247,10 +272,12 @@ export async function processLocationReport(
   }
 
   // Check for delivery (if within geofence of destination)
-  // Only run geofence if accuracy is good enough (or unknown = GPS assumed)
-  const DELIVERY_THRESHOLD_M = 100
+  // Threshold is 1500m because location is cell tower triangulation (~500-1000m accuracy).
+  // Skip for CELL_TOWER webhook source (those are secondary/supplementary data points).
+  const DELIVERY_THRESHOLD_M = 1500
   const shouldCheckDelivery =
-    !input.accuracy || input.accuracy <= DELIVERY_THRESHOLD_M
+    !isCellTowerOnly &&
+    (!input.accuracy || input.accuracy <= DELIVERY_THRESHOLD_M)
 
   if (
     shouldCheckDelivery &&
@@ -260,8 +287,8 @@ export async function processLocationReport(
     activeShipment.destinationLng
   ) {
     const distance = calculateDistance(
-      input.latitude,
-      input.longitude,
+      effectiveLat,
+      effectiveLng,
       activeShipment.destinationLat,
       activeShipment.destinationLng
     )

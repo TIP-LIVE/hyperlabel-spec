@@ -1,6 +1,6 @@
 'use client'
 
-import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView } from '@react-google-maps/api'
+import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView, Circle } from '@react-google-maps/api'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { format, formatDistanceToNow } from 'date-fns'
@@ -35,6 +35,10 @@ const defaultCenter = {
   lat: 51.5074,
   lng: -0.1278,
 }
+
+// Default accuracy radius for cell tower triangulation (~750m)
+// Used when accuracyM is not available on a location point
+const DEFAULT_CELL_TOWER_ACCURACY_M = 750
 
 const lightStyles: google.maps.MapTypeStyle[] = [
   {
@@ -448,6 +452,38 @@ export function TrackingMap({
           </OverlayView>
         )}
 
+        {/* ── Accuracy radius circle for current location ── */}
+        {latestLocation && (
+          <Circle
+            center={{ lat: latestLocation.latitude, lng: latestLocation.longitude }}
+            radius={latestLocation.accuracyM || DEFAULT_CELL_TOWER_ACCURACY_M}
+            options={{
+              fillColor: isDark ? '#60a5fa' : '#3b82f6',
+              fillOpacity: 0.08,
+              strokeColor: isDark ? '#60a5fa' : '#3b82f6',
+              strokeOpacity: 0.3,
+              strokeWeight: 1.5,
+              clickable: false,
+            }}
+          />
+        )}
+
+        {/* ── Accuracy radius circle for selected (clicked) location ── */}
+        {selectedLocation && selectedLocation.id !== latestLocation?.id && (
+          <Circle
+            center={{ lat: selectedLocation.latitude, lng: selectedLocation.longitude }}
+            radius={selectedLocation.accuracyM || DEFAULT_CELL_TOWER_ACCURACY_M}
+            options={{
+              fillColor: isDark ? '#60a5fa' : '#3b82f6',
+              fillOpacity: 0.06,
+              strokeColor: isDark ? '#60a5fa' : '#3b82f6',
+              strokeOpacity: 0.2,
+              strokeWeight: 1,
+              clickable: false,
+            }}
+          />
+        )}
+
         {/* Invisible click target for current location */}
         {latestLocation && (
           <Marker
@@ -592,9 +628,7 @@ export function TrackingMap({
                 {selectedLocation.batteryPct !== null && (
                   <span>🔋 {selectedLocation.batteryPct}%</span>
                 )}
-                {selectedLocation.accuracyM && (
-                  <span>📍 ±{selectedLocation.accuracyM}m</span>
-                )}
+                <span>📍 ±{selectedLocation.accuracyM || DEFAULT_CELL_TOWER_ACCURACY_M}m</span>
               </div>
             </div>
           </InfoWindow>

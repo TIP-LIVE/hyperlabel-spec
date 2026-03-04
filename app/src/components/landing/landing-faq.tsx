@@ -51,7 +51,7 @@ const faqs = [
   {
     question: 'Does TIP use AI?',
     answer:
-      'Yes. TIP detects transport modes — flights, ocean vessels, trucks — and reconstructs the precise route your cargo takes. You see not just GPS dots, but the actual journey. We\u2019re continuously adding more AI-powered intelligence, including predictive alerts and smarter route analysis.',
+      'Yes. TIP detects transport modes — flights, ocean vessels, trucks — and reconstructs the precise route your cargo takes. You see not just location dots, but the actual journey. We\u2019re continuously adding more AI-powered intelligence, including predictive alerts and smarter route analysis.',
   },
   {
     question: 'Do you offer bulk or enterprise pricing?',

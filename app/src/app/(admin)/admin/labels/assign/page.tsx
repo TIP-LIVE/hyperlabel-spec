@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
 import { AssignLabelsToOrgsForm } from '@/components/admin/assign-labels-to-orgs-form'
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
+import { createClerkClient } from '@clerk/backend'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -43,10 +44,10 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
   })
   const knownOrgIds = orgs.map((o) => o.orgId).filter((id): id is string => id != null)
 
-  // Resolve org names from Clerk
+  // Resolve org names from Clerk (use @clerk/backend directly — more reliable on Vercel)
   const orgNames: Record<string, string> = {}
   try {
-    const clerk = await clerkClient()
+    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! })
     const results = await Promise.allSettled(
       knownOrgIds.map((id) => clerk.organizations.getOrganization({ organizationId: id }))
     )
@@ -57,7 +58,6 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
         console.error('[AssignLabels] Clerk org fetch failed:', result.reason)
       }
     }
-    console.info('[AssignLabels] orgNames resolved:', Object.keys(orgNames).length, 'of', knownOrgIds.length)
   } catch (err) {
     console.error('[AssignLabels] Clerk client error:', err)
   }

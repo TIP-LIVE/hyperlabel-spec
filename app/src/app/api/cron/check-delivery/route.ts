@@ -5,8 +5,9 @@ import { sendShipmentDeliveredNotification } from '@/lib/notifications'
 // Cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET
 
-// Delivery threshold: 100 meters from destination (per spec §5.4)
-const DELIVERY_THRESHOLD_M = 100
+// Delivery threshold: 1500m from destination.
+// Device uses cell tower triangulation (~500-1000m accuracy), not GPS.
+const DELIVERY_THRESHOLD_M = 1500
 // Dwell time: must be within radius for at least 30 minutes
 const DWELL_TIME_MS = 30 * 60 * 1000
 
@@ -14,7 +15,8 @@ const DWELL_TIME_MS = 30 * 60 * 1000
  * GET /api/cron/check-delivery
  * Cron job to check if any in-transit shipments have reached their destination.
  * Uses geofence detection: if the last N location points (covering 30+ minutes)
- * are all within 100m of the destination, mark as delivered.
+ * are all within 1500m of the destination, mark as delivered.
+ * Threshold is 1500m because location is cell tower triangulation (~500-1000m accuracy).
  */
 export async function GET(req: NextRequest) {
   // Verify cron secret

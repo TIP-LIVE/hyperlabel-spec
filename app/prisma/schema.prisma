@@ -40,6 +40,11 @@ enum OrderStatus {
   CANCELLED   // Order cancelled
 }
 
+enum LocationSource {
+  GPS         // Device firmware location report (currently cell tower, name kept for backward compat)
+  CELL_TOWER  // Onomondo Location Update webhook (cell tower triangulation)
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -131,7 +136,7 @@ model Shipment {
   @@map("shipments")
 }
 
-/// LocationEvent - location data points from devices (cell tower triangulation)
+/// LocationEvent - location data points from devices
 model LocationEvent {
   id            String   @id @default(cuid())
   latitude      Float
@@ -143,7 +148,8 @@ model LocationEvent {
   recordedAt    DateTime @map("recorded_at") // When device recorded
   receivedAt    DateTime @default(now()) @map("received_at") // When server received
   isOfflineSync Boolean  @default(false) @map("is_offline_sync")
-  
+  source        LocationSource @default(GPS) @map("source")
+
   // Cell tower backup location (from Onomondo)
   cellLatitude  Float?   @map("cell_latitude")
   cellLongitude Float?   @map("cell_longitude")
