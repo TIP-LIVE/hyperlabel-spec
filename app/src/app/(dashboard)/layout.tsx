@@ -77,7 +77,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Main content */}
       <div className="xl:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 xl:px-6">
+        <header className="xl:sticky xl:top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 xl:px-6">
           {/* Mobile menu button */}
           <MobileSidebar />
 
