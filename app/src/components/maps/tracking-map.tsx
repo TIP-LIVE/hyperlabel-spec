@@ -510,7 +510,7 @@ export function TrackingMap({
               <div
                 className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg"
                 style={{
-                  backgroundColor: isDark ? '#dc2626' : '#b91c1c',
+                  backgroundColor: isDark ? '#c2410c' : '#9a3412',
                   color: '#fff',
                   marginBottom: 4,
                   border: '2px solid rgba(255,255,255,0.9)',
@@ -518,28 +518,23 @@ export function TrackingMap({
               >
                 {destinationAddress ? destinationAddress.split(',')[0] : 'Destination'}
               </div>
-              <div className="relative flex items-center justify-center" style={{ width: 20, height: 20 }}>
-                {/* Flag-like pin */}
+              <div className="relative flex items-center justify-center" style={{ width: 18, height: 18 }}>
                 <div
-                  className="absolute"
+                  className="absolute rounded-full"
                   style={{
-                    width: 0,
-                    height: 0,
-                    borderLeft: '10px solid transparent',
-                    borderRight: '10px solid transparent',
-                    borderTop: `16px solid ${isDark ? '#f87171' : '#ef4444'}`,
-                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    width: 18,
+                    height: 18,
+                    backgroundColor: isDark ? '#fb923c' : '#f97316',
+                    border: '3px solid rgba(255,255,255,0.95)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                   }}
                 />
                 <div
                   className="absolute rounded-full"
                   style={{
-                    width: 10,
-                    height: 10,
-                    backgroundColor: isDark ? '#f87171' : '#ef4444',
-                    border: '2px solid rgba(255,255,255,0.95)',
-                    marginTop: -10,
-                    boxShadow: '0 2px 8px rgba(239,68,68,0.4)',
+                    width: 7,
+                    height: 7,
+                    backgroundColor: '#fff',
                   }}
                 />
               </div>
@@ -655,7 +650,7 @@ export function TrackingMap({
             </div>
             {hasDestination && (
               <div className="flex items-center gap-2">
-                <div className="h-0 w-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500" />
+                <div className="h-2.5 w-2.5 rounded-full bg-orange-500" />
                 <span className="text-muted-foreground">Destination</span>
               </div>
             )}
