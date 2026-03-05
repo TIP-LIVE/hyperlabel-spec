@@ -71,7 +71,7 @@ export function ConfirmDeliveryDialog({
       <AlertDialogTrigger asChild>
         <Button size="lg" className="gap-2">
           <Power className="h-5 w-5" />
-          Confirm Delivery & Deactivate
+          Confirm Delivery & Stop Tracking
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="sm:max-w-md">
@@ -103,9 +103,8 @@ export function ConfirmDeliveryDialog({
 
             <div className="space-y-4 py-4">
               <p className="text-sm text-muted-foreground">
-                By confirming delivery, you acknowledge that you have received this 
-                shipment. The tracking will be deactivated and the shipper will be 
-                notified.
+                By confirming delivery, you acknowledge that you have received this
+                shipment. Tracking will stop and the shipper will be notified.
               </p>
 
               <div className="space-y-2">

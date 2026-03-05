@@ -1,0 +1,36 @@
+TIP — Sensitivity Analysis,,,
+,,,
+7.1 Revenue Scenarios (Year 3),,,
+Scenario,Labels Sold,Revenue,Net Income
+Bear,"100,000",$2.55M,$440K
+Base,"200,000",$5.16M,$1.85M
+Bull,"400,000",$10M,$4.8M
+,,,
+7.2 Break-Even Analysis,,,
+Metric,Value,,
+Fixed Costs (Monthly),"$21,900",,
+Contribution Margin,$11.00,,
+Break-Even (Labels/Month),"2,000",,
+Break-Even (Annual Revenue),"$528,000",,
+,,,
+7.3 Key Risks & Mitigations,,,
+Risk,Impact,Probability,Mitigation
+Hardware defects,High,Medium,"Quality control, warranty reserve"
+Connectivity issues,High,Low,"Multi-carrier softSIM, offline storage"
+Slow customer adoption,High,Medium,"Pilot programs, case studies"
+Competitor entry,Medium,Medium,"Speed to market, relationships"
+Supply chain disruption,Medium,Low,"Multiple suppliers, inventory buffer"
+,,,
+7.4 Valuation Considerations,,,
+Company,Stage,Revenue,Valuation
+Tive,Series B,~$20M,$150M (7.5x)
+Roambee,Series C,~$30M,$200M (6.7x)
+Sensos,Seed,~$2M,$15M (7.5x)
+,,,
+Implied Seed Valuation,,,
+Method,Valuation,,
+Revenue Multiple (10x Year 2),$12.6M,,
+Comparable Discount (80%),$5M,,
+Target Pre-Money,$2.5-4M,,
+Seed Investment,$500K,,
+Dilution,12-20%,,

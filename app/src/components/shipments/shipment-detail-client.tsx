@@ -264,7 +264,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {isPolling && (
+          {isPolling && shipment.type !== 'LABEL_DISPATCH' && (
             <div className="flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
@@ -310,8 +310,8 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         </div>
       )}
 
-      {/* Current Location Hero Banner */}
-      {latestLocation && (
+      {/* Current Location Hero Banner — cargo tracking only */}
+      {latestLocation && shipment.type !== 'LABEL_DISPATCH' && (
         <div className="flex items-center gap-4 rounded-xl border bg-card px-5 py-4 shadow-sm">
           {currentGeo?.countryCode ? (
             <span className="text-4xl leading-none">{countryCodeToFlag(currentGeo.countryCode)}</span>
@@ -346,8 +346,8 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         </div>
       )}
 
-      {/* Journey progress bar */}
-      {journeyInfo && (
+      {/* Journey progress bar — cargo tracking only */}
+      {journeyInfo && shipment.type !== 'LABEL_DISPATCH' && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
@@ -391,63 +391,67 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         </Card>
       )}
 
-      {/* Live Map — full width, taller */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Live Location
-            {currentGeo?.countryCode && (
-              <span className="text-base font-normal text-muted-foreground">
-                {countryCodeToFlag(currentGeo.countryCode)} {currentGeo.country}
-              </span>
-            )}
-          </CardTitle>
-          <CardDescription>
-            {latestLocation
-              ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
-              : 'No location data yet'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ShipmentMap
-            locations={locationsWithDates.map((loc) => ({
-              id: loc.id,
-              latitude: loc.latitude,
-              longitude: loc.longitude,
-              recordedAt: loc.recordedAt,
-              batteryPct: loc.batteryPct,
-              accuracyM: loc.accuracyM,
-            }))}
-            originLat={shipment.originLat}
-            originLng={shipment.originLng}
-            originAddress={shipment.originAddress}
-            destinationLat={shipment.destinationLat}
-            destinationLng={shipment.destinationLng}
-            destinationAddress={shipment.destinationAddress}
-            height="450px"
-          />
-        </CardContent>
-      </Card>
+      {/* Live Map — cargo tracking only */}
+      {shipment.type !== 'LABEL_DISPATCH' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Live Location
+              {currentGeo?.countryCode && (
+                <span className="text-base font-normal text-muted-foreground">
+                  {countryCodeToFlag(currentGeo.countryCode)} {currentGeo.country}
+                </span>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {latestLocation
+                ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
+                : 'Acquiring GPS signal — first location typically appears within a few minutes'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ShipmentMap
+              locations={locationsWithDates.map((loc) => ({
+                id: loc.id,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                recordedAt: loc.recordedAt,
+                batteryPct: loc.batteryPct,
+                accuracyM: loc.accuracyM,
+              }))}
+              originLat={shipment.originLat}
+              originLng={shipment.originLng}
+              originAddress={shipment.originAddress}
+              destinationLat={shipment.destinationLat}
+              destinationLng={shipment.destinationLng}
+              destinationAddress={shipment.destinationAddress}
+              height="450px"
+            />
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main content */}
-        <div className="min-w-0 space-y-6 lg:col-span-2">
-          {/* Timeline */}
-          <Card className="overflow-hidden">
-            <CardHeader className="px-3 sm:px-6">
-              <CardTitle>Location History</CardTitle>
-              <CardDescription>
-                {shipment.locations.length} location updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <ShipmentTimeline locations={locationsWithDates} />
-            </CardContent>
-          </Card>
-        </div>
+      <div className={`grid gap-6 ${shipment.type === 'LABEL_DISPATCH' ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
+        {/* Main content — timeline for cargo only */}
+        {shipment.type !== 'LABEL_DISPATCH' && (
+          <div className="min-w-0 space-y-6 lg:col-span-2">
+            {/* Timeline */}
+            <Card className="overflow-hidden">
+              <CardHeader className="px-3 sm:px-6">
+                <CardTitle>Location History</CardTitle>
+                <CardDescription>
+                  {shipment.locations.length} location updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-3 sm:px-6">
+                <ShipmentTimeline locations={locationsWithDates} />
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className={`space-y-4 ${shipment.type === 'LABEL_DISPATCH' ? 'lg:col-span-2' : ''}`}>
           {/* Route Card */}
           <Card>
             <CardHeader>
@@ -543,28 +547,30 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                   </div>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Battery</p>
-                    <p
-                      className={`font-medium ${
-                        (shipment.label.batteryPct ?? 100) < 20 ? 'text-destructive' : ''
-                      }`}
-                    >
-                      {shipment.label.batteryPct !== null
-                        ? `${shipment.label.batteryPct}%`
-                        : 'Unknown'}
-                    </p>
-                  </div>
-                  <Battery
-                    className={`h-4 w-4 ${
-                      (shipment.label.batteryPct ?? 100) < 20
-                        ? 'text-destructive'
-                        : 'text-muted-foreground'
-                    }`}
-                  />
-                </div>
+                {shipment.label.batteryPct !== null && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Battery</p>
+                        <p
+                          className={`font-medium ${
+                            shipment.label.batteryPct < 20 ? 'text-destructive' : ''
+                          }`}
+                        >
+                          {shipment.label.batteryPct}%
+                        </p>
+                      </div>
+                      <Battery
+                        className={`h-4 w-4 ${
+                          shipment.label.batteryPct < 20
+                            ? 'text-destructive'
+                            : 'text-muted-foreground'
+                        }`}
+                      />
+                    </div>
+                  </>
+                )}
                 {shipment.label.activatedAt && (
                   <>
                     <Separator />
@@ -621,7 +627,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                 Share Tracking
               </CardTitle>
               <CardDescription>
-                Share this link with your consignee to let them track the shipment
+                Share this link with your recipient to let them track the shipment
               </CardDescription>
             </CardHeader>
             <CardContent>

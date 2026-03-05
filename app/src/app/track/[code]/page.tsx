@@ -38,6 +38,9 @@ export default async function PublicTrackingPage({ params }: PageProps) {
           batteryPct: true,
         },
       },
+      shipmentLabels: {
+        select: { labelId: true },
+      },
       locations: {
         orderBy: { recordedAt: 'desc' },
         take: 100,
@@ -74,8 +77,10 @@ export default async function PublicTrackingPage({ params }: PageProps) {
   // Serialize for client component (Dates → strings)
   const serializedData = {
     id: shipment.id,
+    type: shipment.type,
     name: shipment.name,
     status: shipment.status,
+    labelCount: shipment.shipmentLabels?.length ?? (shipment.label ? 1 : 0),
     originAddress: shipment.originAddress,
     originLat: shipment.originLat,
     originLng: shipment.originLng,

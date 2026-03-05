@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIP - Investor Materials Review</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <style>
+    .prose h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .prose h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #00FF00; }
+    .prose h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .prose p { margin-bottom: 0.75rem; }
+    .prose ul, .prose ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
+    .prose li { margin-bottom: 0.25rem; }
+    .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem; }
+    .prose th, .prose td { border: 1px solid #374151; padding: 0.5rem; text-align: left; }
+    .prose th { background: #1f2937; font-weight: 600; }
+    .prose blockquote { border-left: 3px solid #00FF00; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #9ca3af; }
+    .prose code { background: #1f2937; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.875rem; }
+    .prose pre { background: #1f2937; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; }
+    .prose pre code { background: none; padding: 0; }
+    .prose strong { color: #00FF00; }
+    .comment-highlight { animation: highlight 2s ease-out; }
+    @keyframes highlight { from { background-color: #fef08a; } to { background-color: transparent; } }
+    .slide-nav::-webkit-scrollbar { height: 6px; }
+    .slide-nav::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 bg-gray-800 border-b border-gray-700 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold text-white">TIP</h1>
+        <span class="text-sm text-gray-400">Investor Materials Review</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="commentCount" class="text-sm text-gray-400"></span>
+        <button onclick="exportReport()" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
+          Export Report
+        </button>
+        <button onclick="clearAllComments()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
+          Clear All
+        </button>
+      </div>
+    </div>
+    <!-- Document Tabs -->
+    <div class="max-w-7xl mx-auto px-4 pb-2">
+      <div class="flex gap-2">
+        <button onclick="switchDocument('deck')" id="tab-deck" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white">
+          Investor Deck
+        </button>
+        <button onclick="switchDocument('teaser')" id="tab-teaser" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600">
+          Teaser (1-pager)
+        </button>
+        <button onclick="switchDocument('business')" id="tab-business" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600">
+          Business Plan
+        </button>
+        <button onclick="switchDocument('financial')" id="tab-financial" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600">
+          Financial Model
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Slide Navigation -->
+  <nav class="fixed top-28 left-0 right-0 bg-gray-850 border-b border-gray-700 z-40 slide-nav overflow-x-auto" style="background: #1a1f2e;">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex gap-2" id="slideNav">
+      <!-- Populated dynamically -->
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="pt-44 pb-20 max-w-7xl mx-auto px-4">
+    <div id="slidesContainer" class="space-y-8">
+      <!-- Slides populated here -->
+    </div>
+  </main>
+
+  <!-- Comment Modal -->
+  <div id="commentModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-lg w-full mx-4 border border-gray-700">
+      <h3 class="text-lg font-semibold mb-2" id="modalTitle">Add Comment</h3>
+      <p class="text-sm text-gray-400 mb-4" id="modalSlideRef"></p>
+      <textarea id="commentInput" rows="4" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none resize-none" placeholder="Enter your feedback or task..."></textarea>
+      <div class="flex items-center gap-2 mt-4">
+        <select id="commentType" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+          <option value="feedback">💬 Feedback</option>
+          <option value="task">📋 Task</option>
+          <option value="question">❓ Question</option>
+          <option value="approved">✅ Approved</option>
+        </select>
+        <div class="flex-1"></div>
+        <button onclick="closeModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
+          Cancel
+        </button>
+        <button onclick="saveComment()" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Modal -->
+  <div id="reportModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-3xl w-full mx-4 border border-gray-700 max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Review Report</h3>
+        <button onclick="closeReportModal()" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+      <div class="flex-1 overflow-auto">
+        <pre id="reportContent" class="bg-gray-900 p-4 rounded-lg text-sm whitespace-pre-wrap"></pre>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <button onclick="copyReport()" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
+          Copy to Clipboard
+        </button>
+        <button onclick="downloadReport()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
+          Download .md
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Document content - slides parsed from markdown
+    const documents = {
+      deck: {
+        name: 'Investor Deck',
+        slides: []
+      },
+      teaser: {
+        name: 'Investor Teaser',
+        slides: []
+      },
+      business: {
+        name: 'Business Plan',
+        slides: []
+      },
+      financial: {
+        name: 'Financial Model',
+        slides: []
+      }
+    };
+
+    // Raw markdown content (will be loaded)
+    const rawContent = {
+      deck: `## Slide 1: Title
+
+# TIP
+
+### Track Any Cargo, Anywhere
+
+**$20 Smart Tracking Labels for the $18B Cargo Visibility Market**
+
+*Seed Round: $500K*
+
+---
+
+## Slide 2: The Problem
+
+### $15B Lost Annually to Cargo Blind Spots
+
+**The Pain:**
+
+1. **Consignee problem:** "Where is my cargo?" — Receivers have no visibility into shipment location or ETA during transit
+2. **Shipper problem:** Poor communication between shippers, forwarders, and consignees leads to delays, disputes, and lost trust
+3. **Environmental problem:** Inefficient routing and lack of data contribute to higher carbon footprint; companies face growing ESG reporting requirements
+
+**The Quote:**
+> "I ship $50K worth of electronics from China. My forwarder updates me every 3-4 days. If something goes wrong, I find out too late."
+> — Amazon FBA Seller
+
+---
+
+## Slide 3: The Solution
+
+### A $20 Tracking Label That Just Works
+
+| Before | After |
+|--------|-------|
+| Enterprise: $70-500 | $22 label |
+| Bulky device | 3.5mm thin |
+| Complex setup | Scan, peel, stick |
+| Carrier-dependent | 180+ countries |
+
+**How it works:**
+\`\`\`
+Buy → Peel & Stick → Track Anywhere → Confirm Delivery
+\`\`\`
+
+---
+
+## Slide 4: Product Demo
+
+### Simple as 1-2-3
+
+**1. Order labels online** — Ships to you in 3-5 days
+
+**2. Scan QR & attach** — Activates instantly, no app needed
+
+**3. Track everywhere** — Real-time map, alerts, shareable link
+
+**Live Demo:** [tip.live](https://tip.live) — request access for a guided walkthrough
+
+---
+
+## Slide 5: Market Opportunity
+
+### $18B Market, Underserved SMB Segment
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| **TAM** | $18B | MarketsandMarkets 2024 |
+| **SAM** | $1.8B | SMB segment (10% of TAM) |
+| **SOM Year 1** | $440K | 20,000 labels sold |
+| **SOM Year 3** | $5.16M | 200,000 labels |
+
+**Why Now:**
+- softSIM costs down 60-70% since 2020 (GSMA)
+- LTE Cat-1 coverage: 180+ countries
+- 47% of supply chain leaders prioritize visibility (Gartner 2023)
+
+---
+
+## Slide 6: Business Model
+
+### Hardware Sales with Expanding Margins
+
+| Metric | Year 1 | Year 3 |
+|--------|--------|--------|
+| ASP | $22.00 | $25.50 |
+| COGS/label | $11.00 | $9.50 |
+| **Gross Margin** | **50%** | **63%** |
+
+**Margin improvement drivers:**
+- Manufacturing volume: 20K → 200K labels
+- softSIM tiered pricing
+- Shipping charged separately
+
+**Unit Economics (Year 3):**
+- CAC: $88
+- LTV: $750+ (with repeat purchases)
+- LTV:CAC: **8.5x**
+
+---
+
+## Slide 7: Traction
+
+### Ready to Launch
+
+| Milestone | Status |
+|-----------|--------|
+| ✅ Working hardware | Production-ready prototype |
+| ✅ Platform MVP | Live at tip.live |
+| ✅ Global connectivity | Onomondo softSIM (180+ countries) |
+| ✅ Payments | Stripe integrated |
+| 🎯 First pilots | Q1 2026 |
+| 🎯 50 labels sold | Q2 2026 |
+
+---
+
+## Slide 8: Competitive Landscape
+
+### Low Price + Consumer Simplicity
+
+\`\`\`
+                    HIGH PRICE
+                        │
+     Sensitech ●        │        ● Controlant
+        $300            │            $400
+                        │
+     Roambee ●          │        ● Tive
+        $200            │          $150
+                        │
+    ────────────────────┼────────────────────
+    COMPLEX             │            SIMPLE
+                        │
+     Sensos ●           │        ★ TIP
+       €50              │            $22
+                        │        ● Reelables
+                        │            $25
+                    LOW PRICE
+\`\`\`
+
+**Direct Competitor: Reelables** — similar price, but:
+- We have 180+ country coverage vs ~100
+- We have 60-day battery vs 30-45 days
+- We focus on China→EU/US (different market)
+
+**Our Edge:** Best coverage + battery for international shipments
+
+---
+
+## Slide 9: Go-to-Market
+
+### Founder-Led → Scalable Channels
+
+**Phase 1 (Months 1-6):**
+- Founder network (China manufacturing)
+- Amazon seller communities
+- LinkedIn outreach
+- Content/SEO
+
+**Phase 2 (Months 7-18):**
+- Paid acquisition (Google, LinkedIn)
+- Freight forwarder partnerships
+- Cargo platform / freight forwarder SaaS integration
+- API integrations
+- Trade shows
+
+**Target:** 500+ customers, $440K revenue in Year 1
+
+---
+
+## Slide 10: Financial Projections
+
+### Path to $5.16M Revenue
+
+| Metric | Year 1 | Year 2 | Year 3 |
+|--------|--------|--------|--------|
+| **Revenue** | $440K | $1.26M | $5.16M |
+| **Labels Sold** | 20,000 | 50,000 | 200,000 |
+| **Customers** | 500+ | 2,000 | 8,000 |
+| **Gross Margin** | 50% | 61% | 63% |
+| **Net Income** | $(40K) | $270K | $2.0M |
+
+**Y1→Y2 growth drivers:** 4x paid acquisition budget ($120K vs $100K), repeat orders from Y1 base (40% retention), first case studies accelerating sales cycles
+
+**Break-even:** Q4 2026 (monthly), 2027 (annual)
+
+---
+
+## Slide 11: Team
+
+### Hardware + Software Founders
+
+**Andrii Tkachuk — CEO & Hardware** (Full-time, London)
+- 12 years electronics manufacturing in China
+- Founded UTEC (2018): hardware dev company, 8 employees, profitable
+- 15+ IoT products shipped to production
+- **Key asset:** 10+ year supplier relationships, 10+ year Shenzhen supplier relationships, direct manufacturing access
+
+**Denys Chumak — Product & Platform** (Part-time → Full-time)
+- 6 years product management + engineering
+- Previous: Product Lead at fintech startup ($2M ARR)
+- Built TIP platform (Next.js, PostgreSQL)
+- MBA candidate; leads business development
+
+**Anatoliy Standerchuk — Lead Developer**
+- Full-stack engineer with expertise in Next.js, React, and PostgreSQL
+- Responsible for platform architecture, API development, and DevOps
+- Previously built scalable B2B SaaS products
+
+**Why This Team:**
+- Hardware + software in-house (no outsourcing risk)
+- CEO on the ground in manufacturing hub
+- Proven ability to ship: prototype → platform in 8 months
+
+---
+
+## Slide 12: The Ask
+
+### $500K Seed Round
+
+**Use of Funds:**
+
+| Category | Amount | % |
+|----------|--------|---|
+| Sales & Marketing | $200K | 40% |
+| Manufacturing | $150K | 30% |
+| Engineering | $100K | 20% |
+| Operations | $50K | 10% |
+
+**Milestones:**
+- 20,000 labels sold
+- 500+ paying customers
+- $440K revenue
+- Series A ready in 12-18 months
+
+---
+
+## Slide 13: Why Invest Now
+
+### Timing is Perfect
+
+1. **Hardware ready** — No R&D risk, ready to manufacture
+2. **Platform live** — Customers can order today
+3. **Market timing** — softSIM costs down, LTE coverage up
+4. **First-mover** — No dominant player in disposable tracking
+5. **Scalable model** — 70%+ gross margin at scale
+
+**Risk Mitigation:**
+- Working prototype (de-risked hardware)
+- Founder network for first customers
+- Low burn, 12+ months runway
+
+---
+
+## Slide 14: Vision
+
+### The Future of Cargo Visibility
+
+**Year 1:** Disposable smart tracking labels with transport-mode detection and route intelligence for SMB shippers
+
+**Year 2:** Premium subscriptions, enterprise API, advanced AI-powered alerts
+
+**Year 3:** Predictive analytics, delay/deviation detection, niche products (pharma, defence)
+
+**Year 5:** Standard AI-driven tracking solution for global logistics
+
+> "Every package should be as trackable as a rideshare"
+
+---
+
+## Slide 15: Let's Talk
+
+### Contact
+
+**Andrii Tkachuk** — av@tip.live
+**Denys Chumak** — denys@tip.live
+
+**Website:** tip.live
+**Demo:** Available upon request
+
+---
+
+## Appendix A1: Product Specs
+
+| Spec | Value |
+|------|-------|
+| Dimensions | 10×15cm × 3.5mm |
+| Battery | 60+ days |
+| Connectivity | LTE Cat-1 (global softSIM) |
+| Location | GPS/GNSS (~15m) + cell tower fallback |
+| Update frequency | Configurable (30min-2hr) |
+| Offline storage | Stores data locally, syncs when connected |
+
+---
+
+## Appendix A2: Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Hardware** | Custom PCB, Quectel modem, u-blox GPS |
+| **Connectivity** | Onomondo softSIM |
+| **Backend** | Next.js, PostgreSQL, Prisma |
+| **Auth** | Clerk |
+| **Payments** | Stripe |
+| **Hosting** | Vercel / GCP |
+
+---
+
+## Appendix A3: Unit Economics Detail
+
+| Component | Year 1 | Year 3 |
+|-----------|--------|--------|
+| Hardware | $10.00 | $8.70 |
+| softSIM | $0.50 | $0.50 |
+| Packaging | $0.50 | $0.30 |
+| **COGS** | **$11.00** | **$9.50** |
+| ASP | $22.00 | $25.50 |
+| **Gross Profit** | **$11.00** | **$16.00** |
+| **Margin** | **50%** | **63%** |
+
+*Note: Shipping is charged separately to the customer.*
+
+---
+
+## Appendix A4: Competitor Comparison
+
+| Feature | TIP | Tive | Roambee | Reelables |
+|---------|------------|------|---------|-----------|
+| Price | $20-25 | $150+ | $200+ | $20-30 |
+| Form factor | 3.5mm | Bulky | Bulky | Thin |
+| Battery | 60+ days | 30-90 | 90+ | 30-45 |
+| Coverage | 180+ countries | 150+ | 150+ | ~100 |
+| Setup | QR scan | Enterprise | Enterprise | QR scan |
+| Target | SMB (international) | Enterprise | Enterprise | SMB (US domestic) |
+
+---
+
+## Appendix A4b: Why We Win vs Reelables
+
+**Reelables** is our most direct competitor. Here's our honest take:
+
+| Factor | Reelables | TIP | Winner |
+|--------|-----------|------------|--------|
+| Price | $20-30 | $20-25 | **TIP** (comparable) |
+| Battery | 30-45 days | 60+ days | **TIP** |
+| Coverage | ~100 countries | 180+ countries | **TIP** |
+| Intelligence | None | AI route detection | **TIP** |
+| Focus | US domestic | China→EU/US international | **Different markets** |
+| Funding | Seed stage | Seed stage | Tie |
+
+**Our Strategy:**
+1. **Don't compete head-on:** Focus on China export corridor (they focus US domestic)
+2. **Win on specs:** 60-day battery and 180+ coverage matter for international
+3. **Founder advantage:** CEO has 12 years in Shenzhen, direct access to shippers and suppliers
+4. **AI route intelligence:** Transport-mode detection and route reconstruction — Reelables offers basic GPS only
+5. **If they enter our market:** Compete on support, relationships, and COGS efficiency
+
+---
+
+## Appendix A5: Customer Segments
+
+| Segment | Pain Level | Volume/Mo | Willingness to Pay |
+|---------|------------|-----------|-------------------|
+| Amazon FBA | High | 10-100 | $20-30 |
+| E-commerce brands | High | 50-500 | $25-35 |
+| Art/antiques | Very High | 5-20 | $30-50 |
+| Electronics traders | High | 20-200 | $20-30 |
+| Freight forwarders | Medium | 100-1000 | $15-20 |
+| High value goods | Very High | 10-100 | $25-40 |
+| Manufacturing | High | 50-500 | $20-30 |
+| Supply chain/logistics | High | 100-1000 | $20-35 |
+| Pharma | Very High | 20-200 | $30-50 |
+| Time-sensitive goods | High | 10-100 | $25-40 |
+| Defence | Very High | 50-500 | $30-50 |
+
+---
+
+## Appendix A6: Risk Matrix
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Hardware defects | Medium | High | QA, warranty reserve |
+| Slow adoption | Medium | High | Pilots, case studies |
+| Competitor entry | Medium | Medium | Speed, relationships |
+| Supply chain | Low | High | Multiple suppliers |
+| Connectivity | Low | Medium | Multi-carrier, offline |
+
+---
+
+## Appendix A7: Milestones Timeline
+
+\`\`\`
+Q1 2026: MVP Launch
+├── Platform live
+├── First 10 customers
+└── Seed round close
+
+Q2 2026: Traction
+├── 50 customers
+├── 2,000 labels sold
+└── First case studies
+
+Q3 2026: Growth
+├── 100 customers
+├── Break-even monthly
+└── Partnership pilots
+
+Q4 2026: Scale
+├── 500+ customers
+├── $15K MRR
+└── Series A prep
+\`\`\``,
+
+      teaser: `## Section 1: The Problem
+
+**$15-25 billion** is lost annually to cargo theft, delays, and misrouted shipments globally.¹ Yet most tracking solutions cost $70-500 per device, require complex setup, and lock customers into carrier-specific platforms.
+
+**The result:** SMB shippers have limited visibility into their cargo—especially during flights, ocean transit, and handoffs between carriers. A 2023 Gartner survey found **47% of supply chain leaders** cite real-time visibility as their top investment priority.²
+
+*¹ BSI & TT Club Cargo Theft Report 2023; ² Gartner Supply Chain Survey 2023*
+
+---
+
+## Section 2: Our Solution
+
+**TIP** is a disposable smart tracking label that costs **$20-25**, works in **180+ countries**, and requires **zero technical setup**.
+
+| Feature | TIP | Traditional Trackers |
+|---------|------------|---------------------|
+| **Price** | $20-25 (disposable) | $70-500 (reusable) |
+| **Form Factor** | 10×15cm, 3.5mm thin | Bulky devices |
+| **Setup** | Scan QR, peel, stick | Complex onboarding |
+| **Coverage** | 180+ countries, flight/ocean | Carrier-dependent |
+| **Battery** | 60+ days | Varies |
+
+**How it works:** Buy → Peel & Stick → Track Anywhere
+
+---
+
+## Section 3: Market Opportunity
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| **TAM** | $18B | Global cargo tracking market (MarketsandMarkets 2024) |
+| **SAM** | $1.8B | SMB + mid-market segment (est. 10% of TAM) |
+| **SOM (Year 1)** | $440K | 20,000 labels × $22.00 ASP |
+| **SOM (Year 3)** | $5.16M | 200,000 labels with expanded geography |
+| **Growth Rate** | 11.8% CAGR | Cargo tracking CAGR 2024-2030 (MarketsandMarkets) |
+
+**Initial Target:** SMB businesses shipping high-value goods from China to UK/EU/US—a trade corridor generating 40%+ of global e-commerce cross-border volume.³
+
+*³ Statista Cross-Border E-commerce Report 2024*
+
+---
+
+## Section 4: Traction & Milestones
+
+| Status | Achievement |
+|--------|-------------|
+| ✅ | Working hardware prototype (production-ready, tested) |
+| ✅ | Live tracking platform (MVP complete, deployed) |
+| ✅ | softSIM connectivity contract signed (Onomondo, 180+ countries) |
+| ✅ | Payments integrated (Stripe) |
+| ✅ | CE/FCC certification pathway confirmed |
+| 🔄 | First 5 pilot customers onboarding (Q1 2026) |
+| 🎯 | 500+ paying customers, 20,000 labels (Year 1 target) |
+
+---
+
+## Section 5: Business Model
+
+**Revenue:** Label sales (one-time purchase)
+
+| Pack | Price | COGS | Gross Margin |
+|------|-------|------|--------------|
+| 1 Label | $25 | $11 | 56% |
+| 5 Labels | $110 ($22/ea) | $55 | 50% |
+| 10 Labels | $200 ($20/ea) | $110 | 45% |
+| **At Scale (Year 3)** | $25.50 | $9.50 | **63%** |
+
+**Note:** Year 1 blended gross margin is 50% due to low volume. Improves to 63% at 200K+ units via manufacturing scale. Shipping is charged separately to the customer.
+
+**Future Streams (Year 2+):**
+- Premium subscriptions ($10/mo for extended retention, analytics)
+- API access for enterprise integrations
+- White-label partnerships with freight forwarders
+
+---
+
+## Section 6: Competitive Landscape
+
+| Competitor | Price | Target | Our Advantage |
+|------------|-------|--------|---------------|
+| **Tive** | $150-300 | Enterprise | 85% cheaper, simpler setup |
+| **Roambee** | $200-400 | Enterprise | No contracts, no IT integration |
+| **Reelables** | $20-30 | SMB | **Direct competitor** — we differentiate on: 180+ country coverage vs ~100, 60-day battery vs 30-45, founder network in China export market |
+| **Sensos** | €30-80 | Mid-market | Lower price, disposable vs reusable |
+
+**Defensible Advantages:**
+1. **Hardware design:** Proprietary 3.5mm form factor with 60+ day battery (patent application in progress)
+2. **Manufacturing:** CEO with 12 years in Shenzhen and 10+ year supplier relationships
+3. **Go-to-market:** Direct access to China export ecosystem via founder network
+4. **Unit economics:** $9.50 COGS at scale vs estimated $10+ for competitors
+5. **AI route intelligence:** Transport-mode detection, route reconstruction — improving continuously
+
+---
+
+## Section 7: Team
+
+**Andrii Tkachuk** — CEO & Hardware Lead (Full-time)
+- 12 years in electronics manufacturing, with Shenzhen supplier network
+- Founded UTEC (2018) — hardware dev company, 8 employees, profitable
+- Led development of 15+ IoT products from prototype to mass production
+- Built TIP device: concept → working prototype in 8 months
+
+**Denys Chumak** — Product & Platform (Part-time → Full-time post-funding)
+- 6 years in product management and software development
+- Previously: Product Lead at fintech startup (B2B SaaS, $2M ARR)
+- Built TIP tracking platform end-to-end (Next.js, PostgreSQL)
+- MBA candidate, experienced in investor relations
+
+**Anatoliy Standerchuk** — Lead Developer
+- Full-stack engineer with expertise in Next.js, React, and PostgreSQL
+- Responsible for platform architecture, API development, and DevOps
+- Previously built scalable B2B SaaS products
+
+**Advisory (Informal):**
+- Manufacturing advisor: 20+ year veteran of Foxconn supply chain
+- Logistics advisor: Former DHL operations director (APAC)
+
+---
+
+## Section 8: The Ask
+
+**Raising:** $500K seed round (SAFE, standard terms)
+
+**Use of Funds:**
+| Category | Amount | Purpose |
+|----------|--------|---------|
+| Sales & Marketing | $200K (40%) | Customer acquisition, content, trade shows |
+| Manufacturing | $150K (30%) | Production batches |
+| Engineering | $100K (20%) | Platform features, mobile app prep |
+| Operations | $50K (10%) | Legal, compliance, admin |
+
+**12-Month Milestones:**
+- 20,000 labels sold to 500+ customers
+- $440K revenue, break-even monthly by Q4
+- 3+ case studies with measurable ROI
+- Platform ready for Series A scale
+
+**Series A Trigger (Month 18):** $50K MRR, 30K labels/year run-rate`,
+
+      business: `## Section 1: Executive Summary
+
+**TIP** is a disposable smart tracking label that provides reliable cargo visibility every 2 hours for $20-25 per shipment. Unlike traditional trackers costing $70-500, TIP is thin (3.5mm), works in 180+ countries with AI-powered route intelligence, and requires no technical setup—just scan, peel, and stick.
+
+**Problem:** Small and medium businesses shipping high-value goods internationally lack affordable, easy-to-use tracking solutions. Current options cost $70-500 per device and require complex enterprise integrations.
+
+**Solution:** A $20-25 smart tracking label that works globally (180+ countries), lasts 60+ days, and activates with a simple QR scan.
+
+**Market:** $18B global cargo tracking market growing at 11.8% CAGR.
+
+**Business Model:** Hardware sales with 50% gross margin Year 1, improving to 63% at scale.
+
+**Traction:** Production-ready prototype, live platform, softSIM connectivity secured.
+
+**Ask:** $500K seed round to fund initial production and go-to-market.
+
+---
+
+## Section 2: Problem Analysis
+
+### Market Pain Points
+
+1. **Cost barrier** (Source: Industry pricing analysis)
+   - Enterprise trackers: $70-500 per device
+   - Monthly fees: $10-50/device
+   - Minimum contracts: 100+ devices
+
+2. **Complexity barrier** (Source: BSI Cargo Theft Report 2023)
+   - Enterprise onboarding: 2-4 weeks
+   - IT integration required
+   - Training overhead
+
+3. **Coverage gaps** (Source: Gartner Supply Chain Survey 2023)
+   - Carrier-specific limitations
+   - No air-mode tracking
+   - 47% of supply chain leaders cite visibility as #1 priority
+
+### Target Customer Profile
+
+**Primary:** SMB businesses shipping $10K-500K annually
+- Amazon FBA sellers
+- E-commerce brands (direct-to-consumer)
+- Electronics traders
+- Art and antiques dealers
+- High value goods shippers
+- Manufacturing companies
+
+**Secondary:** Mid-market logistics
+- Freight forwarders (5-50 employees)
+- 3PL providers
+- Pharma and time-sensitive goods
+- Defence and government contractors
+- Supply chain/logistics companies
+
+---
+
+## Section 3: Solution Deep Dive
+
+### Product Specifications
+
+| Specification | Value |
+|---------------|-------|
+| Dimensions | 10×15cm × 3.5mm |
+| Battery life | 60+ days |
+| Location | GPS/GNSS (~15m) + cell tower fallback |
+| Connectivity | LTE Cat-1 (global softSIM) |
+| Coverage | 180+ countries |
+| Update frequency | 30min - 2hr (configurable) |
+
+### User Experience
+
+1. **Purchase** — Order online, delivered in 3-5 days
+2. **Activate** — Scan QR code with phone camera
+3. **Attach** — Peel backing, stick to package
+4. **Track** — View on web dashboard or shareable link
+5. **Receive** — Consignee confirms delivery via QR scan
+
+### Technology Stack
+
+| Component | Technology | Rationale |
+|-----------|------------|-----------|
+| Frontend | Next.js 14, React | Fast iteration, SEO |
+| Backend | PostgreSQL, Prisma | Reliability, spatial queries |
+| Auth | Clerk | Quick integration, secure |
+| Payments | Stripe | Industry standard |
+| Connectivity | Onomondo softSIM | 180+ countries, single contract |
+
+---
+
+## Section 4: Market Analysis
+
+### TAM/SAM/SOM
+
+| Metric | Value | Methodology |
+|--------|-------|-------------|
+| **TAM** | $18B | Global cargo tracking market (MarketsandMarkets 2024) |
+| **SAM** | $1.8B | SMB segment (est. 10% of TAM based on market segmentation) |
+| **SOM Year 1** | $440K | 20,000 labels × $22.00 ASP |
+| **SOM Year 3** | $5.16M | 200,000 labels, geographic expansion |
+
+### Market Trends
+
+1. **softSIM commoditization** — 60-70% cost reduction since 2020 (GSMA)
+2. **LTE Cat-1 expansion** — 180+ countries covered
+3. **Supply chain digitization** — 47% prioritize visibility (Gartner 2023)
+4. **E-commerce growth** — Cross-border e-commerce $2.1T by 2025 (Statista)
+
+---
+
+## Section 5: Competitive Analysis
+
+### Competitive Positioning Matrix
+
+| Company | Price | Target | Form Factor | Coverage |
+|---------|-------|--------|-------------|----------|
+| Tive | $150+ | Enterprise | Bulky | 150+ |
+| Roambee | $200+ | Enterprise | Bulky | 150+ |
+| Sensitech | $300+ | Enterprise | Bulky | 100+ |
+| Reelables | $20-30 | SMB | Thin | ~100 |
+| **TIP** | **$20-25** | **SMB** | **Thin** | **180+** |
+
+### Deep Dive: Reelables (Primary Competitor)
+
+Reelables is the most direct competitor with similar product positioning.
+
+| Factor | Reelables | TIP | Assessment |
+|--------|-----------|------------|------------|
+| Price | $20-30 | $20-25 | TIP advantage |
+| Battery | 30-45 days | 60+ days | TIP advantage |
+| Coverage | ~100 countries | 180+ countries | TIP advantage |
+| Intelligence | None | AI route detection | TIP advantage |
+| Target market | US domestic | International (China→EU/US) | Different focus |
+| Funding | Seed | Seed | Comparable |
+
+**Differentiation Strategy:**
+1. Focus on China export corridor (Reelables focuses US domestic)
+2. Superior specs for international: longer battery, wider coverage
+3. Founder advantage: CEO with 12 years in Shenzhen and direct supplier access
+
+**Competitive Response Plan:**
+- If Reelables enters international: compete on relationships, COGS efficiency
+- Build brand in China export community before they expand
+
+---
+
+## Section 6: Go-to-Market Strategy
+
+### Phase 1: Founder-Led Sales (Months 1-6)
+
+| Channel | Activity | Target |
+|---------|----------|--------|
+| Network | CEO's manufacturing contacts | 20 customers |
+| Communities | Amazon seller groups, forums | 30 customers |
+| Outbound | LinkedIn, cold email | 20 customers |
+| Content | Blog, SEO, case studies | 10 customers |
+
+### Phase 2: Scalable Channels (Months 7-18)
+
+| Channel | Investment | Expected CAC |
+|---------|------------|--------------|
+| Paid search | $15K | $75-100 |
+| LinkedIn ads | $10K | $100-150 |
+| Partnerships | $5K | $50-80 |
+| Trade shows | $10K | $60-90 |
+| Cargo platform / freight forwarder SaaS integration | $5K | $40-60 |
+
+---
+
+## Section 7: Financial Plan
+
+### Revenue Projections
+
+| Metric | Year 1 | Year 2 | Year 3 |
+|--------|--------|--------|--------|
+| Labels Sold | 20,000 | 50,000 | 200,000 |
+| ASP | $22.00 | $25.00 | $25.50 |
+| **Revenue** | **$440K** | **$1.26M** | **$5.16M** |
+| COGS | $220K | $495K | $1,900K |
+| **Gross Profit** | **$220K** | **$765K** | **$3,260K** |
+| **Gross Margin** | **50%** | **61%** | **63%** |
+
+### Operating Expenses
+
+| Category | Year 1 | Year 2 | Year 3 |
+|----------|--------|--------|--------|
+| Engineering | $75K | $150K | $300K |
+| Sales & Marketing | $100K | $200K | $400K |
+| Operations | $50K | $50K | $100K |
+| G&A | $22K | $50K | $140K |
+| **Total OpEx** | **$247K** | **$450K** | **$940K** |
+
+### Net Income
+
+| Year | Revenue | Gross Profit | OpEx | Net Income |
+|------|---------|--------------|------|------------|
+| 1 | $440K | $220K | $247K | **$(40K)** |
+| 2 | $1.26M | $765K | $450K | **$270K** |
+| 3 | $5.16M | $3,260K | $940K | **$2.0M** |
+
+---
+
+## Section 8: Team
+
+### Founders
+
+**Andrii Tkachuk — CEO & Hardware Lead**
+- 12 years electronics manufacturing, with Shenzhen supplier network
+- Founded UTEC (2018): hardware development company, 8 employees, profitable
+- 15+ IoT products from concept to mass production
+- Key relationships: Quectel, Onomondo, multiple Shenzhen suppliers
+- Commitment: Full-time
+
+**Denys Chumak — Product & Platform Lead**
+- 6 years product management and software development
+- Previous: Product Lead at fintech startup (B2B SaaS, $2M ARR)
+- Built TIP platform end-to-end
+- MBA candidate, experienced in investor relations
+- Commitment: Part-time → Full-time post-funding
+
+**Anatoliy Standerchuk — Lead Developer**
+- Full-stack engineer with expertise in Next.js, React, and PostgreSQL
+- Responsible for platform architecture, API development, and DevOps
+- Previously built scalable B2B SaaS products
+- Commitment: Full-time
+
+### Team Gaps & Mitigation
+
+| Gap | Timeline | Mitigation |
+|-----|----------|------------|
+| Full-time co-founder | Post-funding | Denys transitions to FT |
+| Sales hire | Month 6 | Founder-led until traction proven |
+| Customer success | Month 9 | Part-time contractor initially |
+
+### Advisory (Informal)
+
+- **Manufacturing:** 20+ year veteran of Foxconn supply chain
+- **Logistics:** Former DHL operations director (APAC)
+
+---
+
+## Section 9: Funding & Use of Proceeds
+
+### The Ask
+
+**Amount:** $500K
+**Instrument:** SAFE (standard terms)
+**Valuation cap:** $2.5-4M pre-money
+
+### Use of Funds
+
+| Category | Amount | % | Details |
+|----------|--------|---|---------|
+| Sales & Marketing | $200K | 40% | CAC, content, trade shows, community |
+| Manufacturing | $150K | 30% | Production batches |
+| Engineering | $100K | 20% | Platform features, co-founder salary |
+| Operations | $50K | 10% | Legal, compliance, admin |
+
+### Milestones
+
+| Milestone | Target | Timeline |
+|-----------|--------|----------|
+| Labels sold | 20,000 | Month 12 |
+| Customers | 500+ | Month 12 |
+| Revenue | $440K | Month 12 |
+| Break-even (monthly) | Yes | Q4 2026 |
+| Series A ready | Yes | Month 18 |`,
+
+      financial: `## Section 1: Executive Summary
+
+### 3-Year Financial Overview
+
+| Metric | Year 1 | Year 2 | Year 3 |
+|--------|--------|--------|--------|
+| **Revenue** | $440,000 | $1,256,000 | $5,154,000 |
+| **Gross Profit** | $220,000 | $761,600 | $3,247,020 |
+| **Gross Margin** | 50% | 61% | 63% |
+| **Net Income** | ($37,000) | $253,600 | $1,974,400 |
+| **Cash Position** | $463,000 | $716,600 | $2,691,000 |
+
+**Key Takeaways:**
+- Break-even: Q4 2026 (monthly), Year 2 (annual)
+- Gross margin improves from 50% to 63% via manufacturing scale
+- Year 3 net margin: 38%
+
+---
+
+## Section 2: Revenue Model
+
+### Pricing Structure
+
+| Pack | Units | Price/Label | Total Price |
+|------|-------|-------------|-------------|
+| Starter | 1 | $25.00 | $25 |
+| Team | 5 | $22.00 | $110 |
+| Volume | 10 | $20.00 | $200 |
+
+### Revenue Projections by Year
+
+**Year 1 ($440,000)**
+
+| Quarter | Labels | Revenue | Cumulative |
+|---------|--------|---------|------------|
+| Q1 | 1,500 | $33,000 | $33,000 |
+| Q2 | 3,500 | $77,000 | $110,000 |
+| Q3 | 6,500 | $143,000 | $253,000 |
+| Q4 | 8,500 | $187,000 | $440,000 |
+
+**Year 2 ($1,256,000)**
+
+| Quarter | Labels | Revenue | Cumulative |
+|---------|--------|---------|------------|
+| Q1 | 9,000 | $225,000 | $225,000 |
+| Q2 | 12,000 | $300,000 | $525,000 |
+| Q3 | 13,000 | $325,000 | $850,000 |
+| Q4 | 16,000 | $406,000 | $1,256,000 |
+
+**Year 3 ($5,154,000)**
+
+| Quarter | Labels | Revenue | Cumulative |
+|---------|--------|---------|------------|
+| Q1 | 36,000 | $918,000 | $918,000 |
+| Q2 | 44,000 | $1,122,000 | $2,040,000 |
+| Q3 | 56,000 | $1,428,000 | $3,468,000 |
+| Q4 | 64,000 | $1,686,000 | $5,154,000 |
+
+### Revenue Assumptions
+
+| Assumption | Value | Rationale |
+|------------|-------|-----------|
+| Year 1 customers | 500+ | Founder network + early adopters |
+| Avg labels/customer | 40 | Based on pilot feedback |
+| Year-over-year growth | 2.9x / 4.1x | Standard hardware startup trajectory |
+| ASP trend | Increasing | Premium features, enterprise tiers |
+
+---
+
+## Section 3: Cost of Goods Sold
+
+### Unit Economics by Year
+
+| Component | Year 1 | Year 2 | Year 3 |
+|-----------|--------|--------|--------|
+| Hardware | $10.00 | $9.00 | $8.70 |
+| softSIM (2-month) | $0.50 | $0.50 | $0.50 |
+| Packaging | $0.50 | $0.40 | $0.30 |
+| **Total COGS** | **$11.00** | **$9.90** | **$9.50** |
+
+*Note: Shipping is charged separately to the customer.*
+
+### COGS Reduction Rationale
+
+| Component | Reduction Driver | Source |
+|-----------|------------------|--------|
+| Hardware | Volume pricing (20K→200K) | Supplier quotes |
+| softSIM | Tiered Onomondo pricing | Contract terms |
+| Packaging | Volume, simplified design | Supplier quotes |
+
+### Gross Margin Analysis
+
+| Year | ASP | COGS | Gross Profit | Margin |
+|------|-----|------|--------------|--------|
+| 1 | $22.00 | $11.00 | $11.00 | 50% |
+| 2 | $25.00 | $9.90 | $15.10 | 61% |
+| 3 | $25.50 | $9.50 | $16.00 | 63% |
+
+---
+
+## Section 4: Operating Expenses
+
+### OpEx by Category
+
+| Category | Year 1 | Year 2 | Year 3 |
+|----------|--------|--------|--------|
+| **Engineering** | $75,000 | $150,000 | $300,000 |
+| **Sales & Marketing** | $100,000 | $200,000 | $400,000 |
+| **Operations** | $50,000 | $50,000 | $100,000 |
+| **G&A** | $22,000 | $50,000 | $140,000 |
+| **Total** | **$247,000** | **$450,000** | **$940,000** |
+
+### Personnel Plan
+
+| Role | Year 1 | Year 2 | Year 3 | Annual Cost |
+|------|--------|--------|--------|-------------|
+| CEO (Andrii) | 1.0 FTE | 1.0 FTE | 1.0 FTE | $60K |
+| Product (Denys) | 0.5→1.0 FTE | 1.0 FTE | 1.0 FTE | $80K |
+| Lead Dev (Anatoliy) | 1.0 FTE | 1.0 FTE | 1.0 FTE | $70K |
+| Engineer | — | 1.0 FTE | 2.0 FTE | $70K |
+| Sales | — | 1.0 FTE | 2.0 FTE | $60K + comm |
+| Operations | — | 0.5 FTE | 1.0 FTE | $50K |
+| **Total FTE** | **2.5** | **5.5** | **9.0** | — |
+
+### Marketing Spend Breakdown
+
+| Channel | Year 1 | Year 2 | Year 3 | CAC Target |
+|---------|--------|--------|--------|------------|
+| Paid Search | $30K | $40K | $120K | $75 |
+| LinkedIn | $25K | $30K | $80K | $100 |
+| Content/SEO | $20K | $20K | $60K | $50 |
+| Trade Shows | $15K | $20K | $50K | $80 |
+| Partnerships | $5K | $5K | $40K | $40 |
+| Brand | $5K | $5K | $40K | N/A |
+| **Total** | **$100K** | **$120K** | **$200K** | — |
+
+---
+
+## Section 5: Profitability Analysis
+
+### Income Statement Summary
+
+| Line Item | Year 1 | Year 2 | Year 3 |
+|-----------|--------|--------|--------|
+| Revenue | $440,000 | $1,256,000 | $5,154,000 |
+| COGS | $(220,000) | $(495,000) | $(1,900,000) |
+| **Gross Profit** | **$220,000** | **$761,000** | **$3,254,000** |
+| OpEx | $(247,000) | $(450,000) | $(940,000) |
+| **EBITDA** | **($30,000)** | **$330,000** | **$2,487,000** |
+| D&A | — | — | $(12,000) |
+| **Net Income** | **($37,000)** | **$253,600** | **$1,974,400** |
+
+### Break-Even Analysis
+
+| Metric | Value |
+|--------|-------|
+| Monthly break-even revenue | $20,583 |
+| Monthly break-even units | ~935 labels |
+| **Monthly break-even date** | **Q4 2026** |
+| **Annual break-even** | **Year 2** |
+
+---
+
+## Section 6: Cash Flow
+
+### Cash Flow Statement
+
+| Item | Year 1 | Year 2 | Year 3 |
+|------|--------|--------|--------|
+| **Beginning Cash** | $500,000 | $463,000 | $716,600 |
+| Net Income | ($37,000) | $253,600 | $1,974,400 |
+| Changes in WC | — | — | — |
+| **Ending Cash** | **$463,000** | **$716,600** | **$2,691,000** |
+
+### Runway Analysis
+
+| Scenario | Runway |
+|----------|--------|
+| Base case | 18+ months |
+| Conservative (-20% revenue) | 14 months |
+| Aggressive (+20% revenue) | 20+ months |
+
+---
+
+## Section 7: Key Metrics & KPIs
+
+### Unit Economics
+
+| Metric | Year 1 | Year 3 |
+|--------|--------|--------|
+| CAC | $120 | $88 |
+| LTV | $250 | $750+ |
+| LTV:CAC | 2.1x | 8.5x |
+| Payback (months) | 11 | 4 |
+
+### Growth Metrics
+
+| Metric | Year 1 | Year 2 | Year 3 |
+|--------|--------|--------|--------|
+| Customer growth | — | 300% | 300% |
+| Revenue growth | — | 186% | 310% |
+| Label volume growth | — | 150% | 300% |
+
+---
+
+## Section 8: Assumptions & Risks
+
+### Key Assumptions
+
+| Assumption | Value | Sensitivity |
+|------------|-------|-------------|
+| ASP | $22-25.50 | ±10% = ±$515K Y3 revenue |
+| COGS at scale | $9.50 | ±$1 = ±4% gross margin |
+| Customer acquisition | 500+ Y1 | ±20% = ±$88K Y1 revenue |
+| Repeat purchase rate | 2.5x/year | ±0.5x = ±15% LTV |
+
+### Risk Factors
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Slower adoption | Revenue miss | Lower burn, extend runway |
+| Higher COGS | Margin compression | Multiple suppliers, volume |
+| Competition | Price pressure | Differentiation, relationships |
+| Hardware issues | Returns, reputation | QA, warranty reserve |
+
+---
+
+## Section 9: Valuation & Investment
+
+### Valuation Framework
+
+| Metric | Value |
+|--------|-------|
+| **Projected Y3 Revenue** | $5.16M |
+| **Revenue Multiple** | 2.5x |
+| **Implied Valuation (Y3)** | $12.6M |
+| **Pre-Money Valuation** | $2.5-4M |
+| **Seed Round** | $500K |
+| **Dilution** | 12-20% |
+
+---
+
+## Section 10: Data Room References
+
+The following supporting documentation is available upon request:
+
+| Document | Description |
+|----------|-------------|
+| Hardware BOM | Detailed bill of materials with supplier quotes |
+| Onomondo Contract | softSIM connectivity agreement |
+| Prototype Test Results | Battery life, location accuracy validation |
+| Customer Interview Transcripts | Pain point validation research |
+| Platform Demo | Live walkthrough of tracking platform |
+| Manufacturing Timeline | Production schedule and milestones |`
+    };
+
+    // Parse markdown into slides
+    function parseSlides(markdown, docKey) {
+      const sections = markdown.split(/\n---\n/).filter(s => s.trim());
+      return sections.map((content, index) => {
+        const titleMatch = content.match(/^##\s+(.+)/m);
+        const title = titleMatch ? titleMatch[1].replace(/^(Slide \d+:|Section \d+:|Appendix [A-Z0-9]+:)\s*/, '') : `Section ${index + 1}`;
+        return {
+          id: `${docKey}-${index}`,
+          index: index + 1,
+          title: title.trim(),
+          content: content.trim()
+        };
+      });
+    }
+
+    // Initialize documents
+    Object.keys(rawContent).forEach(key => {
+      documents[key].slides = parseSlides(rawContent[key], key);
+    });
+
+    let currentDoc = 'deck';
+    let currentSlideId = null;
+    let comments = JSON.parse(localStorage.getItem('hyperlabel-comments') || '{}');
+
+    // Render functions
+    function renderSlideNav() {
+      const nav = document.getElementById('slideNav');
+      const slides = documents[currentDoc].slides;
+
+      nav.innerHTML = slides.map((slide, i) => {
+        const hasComments = comments[slide.id] && comments[slide.id].length > 0;
+        const commentCount = hasComments ? comments[slide.id].length : 0;
+        return `
+          <button onclick="scrollToSlide('${slide.id}')"
+                  class="slide-nav-btn flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap
+                         ${hasComments ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/30' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}">
+            ${i + 1}. ${slide.title.substring(0, 30)}${slide.title.length > 30 ? '...' : ''}
+            ${commentCount > 0 ? `<span class="ml-1 text-yellow-400">(${commentCount})</span>` : ''}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderSlides() {
+      const container = document.getElementById('slidesContainer');
+      const slides = documents[currentDoc].slides;
+
+      container.innerHTML = slides.map(slide => {
+        const slideComments = comments[slide.id] || [];
+        const typeIcons = { feedback: '💬', task: '📋', question: '❓', approved: '✅' };
+
+        return `
+          <div id="${slide.id}" class="slide-card bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 bg-gray-750 border-b border-gray-700" style="background: #1f2937;">
+              <div class="flex items-center gap-3">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold">${slide.index}</span>
+                <h2 class="text-lg font-semibold text-white">${slide.title}</h2>
+              </div>
+              <button onclick="openModal('${slide.id}', '${slide.title.replace(/'/g, "\\'")}')"
+                      class="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors">
+                + Add Comment
+              </button>
+            </div>
+
+            <div class="p-6 prose text-gray-200">
+              ${marked.parse(slide.content)}
+            </div>
+
+            ${slideComments.length > 0 ? `
+              <div class="px-6 pb-6">
+                <div class="border-t border-gray-700 pt-4">
+                  <h4 class="text-sm font-semibold text-gray-400 mb-3">Comments (${slideComments.length})</h4>
+                  <div class="space-y-2">
+                    ${slideComments.map((c, i) => `
+                      <div class="flex items-start gap-3 bg-gray-900/50 rounded-lg p-3 group">
+                        <span class="text-lg">${typeIcons[c.type] || '💬'}</span>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm text-gray-200">${c.text}</p>
+                          <p class="text-xs text-gray-500 mt-1">${new Date(c.timestamp).toLocaleString()}</p>
+                        </div>
+                        <button onclick="deleteComment('${slide.id}', ${i})"
+                                class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-opacity">
+                          ✕
+                        </button>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      updateCommentCount();
+    }
+
+    function updateCommentCount() {
+      const total = Object.values(comments).flat().length;
+      document.getElementById('commentCount').textContent = total > 0 ? `${total} comment${total !== 1 ? 's' : ''}` : '';
+    }
+
+    function switchDocument(docKey) {
+      currentDoc = docKey;
+
+      // Update tabs
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-green-500', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+      });
+      document.getElementById(`tab-${docKey}`).classList.remove('bg-gray-700', 'text-gray-300');
+      document.getElementById(`tab-${docKey}`).classList.add('bg-green-500', 'text-white');
+
+      renderSlideNav();
+      renderSlides();
+    }
+
+    function scrollToSlide(slideId) {
+      const el = document.getElementById(slideId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.add('comment-highlight');
+        setTimeout(() => el.classList.remove('comment-highlight'), 2000);
+      }
+    }
+
+    // Modal functions
+    function openModal(slideId, slideTitle) {
+      currentSlideId = slideId;
+      document.getElementById('modalTitle').textContent = 'Add Comment';
+      document.getElementById('modalSlideRef').textContent = `Slide: ${slideTitle}`;
+      document.getElementById('commentInput').value = '';
+      document.getElementById('commentType').value = 'feedback';
+      document.getElementById('commentModal').classList.remove('hidden');
+      document.getElementById('commentModal').classList.add('flex');
+      document.getElementById('commentInput').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('commentModal').classList.add('hidden');
+      document.getElementById('commentModal').classList.remove('flex');
+      currentSlideId = null;
+    }
+
+    function saveComment() {
+      const text = document.getElementById('commentInput').value.trim();
+      const type = document.getElementById('commentType').value;
+
+      if (!text || !currentSlideId) return;
+
+      if (!comments[currentSlideId]) {
+        comments[currentSlideId] = [];
+      }
+
+      comments[currentSlideId].push({
+        text,
+        type,
+        timestamp: new Date().toISOString()
+      });
+
+      localStorage.setItem('hyperlabel-comments', JSON.stringify(comments));
+      closeModal();
+      renderSlideNav();
+      renderSlides();
+      scrollToSlide(currentSlideId);
+    }
+
+    function deleteComment(slideId, index) {
+      if (comments[slideId]) {
+        comments[slideId].splice(index, 1);
+        if (comments[slideId].length === 0) {
+          delete comments[slideId];
+        }
+        localStorage.setItem('hyperlabel-comments', JSON.stringify(comments));
+        renderSlideNav();
+        renderSlides();
+      }
+    }
+
+    function clearAllComments() {
+      if (confirm('Clear all comments? This cannot be undone.')) {
+        comments = {};
+        localStorage.setItem('hyperlabel-comments', JSON.stringify(comments));
+        renderSlideNav();
+        renderSlides();
+      }
+    }
+
+    // Report functions
+    function generateReport() {
+      const typeLabels = { feedback: 'Feedback', task: 'Task', question: 'Question', approved: 'Approved' };
+      const typeIcons = { feedback: '💬', task: '📋', question: '❓', approved: '✅' };
+
+      let report = `# TIP Investor Materials - Review Report\n`;
+      report += `**Generated:** ${new Date().toLocaleString()}\n\n`;
+      report += `---\n\n`;
+
+      // Summary
+      const allComments = Object.values(comments).flat();
+      const byType = allComments.reduce((acc, c) => {
+        acc[c.type] = (acc[c.type] || 0) + 1;
+        return acc;
+      }, {});
+
+      report += `## Summary\n\n`;
+      report += `- **Total Comments:** ${allComments.length}\n`;
+      Object.entries(byType).forEach(([type, count]) => {
+        report += `- **${typeLabels[type]}:** ${count}\n`;
+      });
+      report += `\n---\n\n`;
+
+      // By document
+      Object.entries(documents).forEach(([docKey, doc]) => {
+        const docComments = doc.slides.filter(s => comments[s.id] && comments[s.id].length > 0);
+        if (docComments.length === 0) return;
+
+        report += `## ${doc.name}\n\n`;
+
+        docComments.forEach(slide => {
+          report += `### ${slide.index}. ${slide.title}\n\n`;
+          comments[slide.id].forEach(c => {
+            report += `${typeIcons[c.type]} **${typeLabels[c.type]}:** ${c.text}\n\n`;
+          });
+        });
+
+        report += `---\n\n`;
+      });
+
+      // Tasks summary
+      const tasks = allComments.filter(c => c.type === 'task');
+      if (tasks.length > 0) {
+        report += `## Action Items (Tasks Only)\n\n`;
+        let taskNum = 1;
+        Object.entries(documents).forEach(([docKey, doc]) => {
+          doc.slides.forEach(slide => {
+            const slideTasks = (comments[slide.id] || []).filter(c => c.type === 'task');
+            slideTasks.forEach(task => {
+              report += `${taskNum}. [ ] ${task.text} *(${doc.name} - ${slide.title})*\n`;
+              taskNum++;
+            });
+          });
+        });
+      }
+
+      return report;
+    }
+
+    function exportReport() {
+      const report = generateReport();
+      document.getElementById('reportContent').textContent = report;
+      document.getElementById('reportModal').classList.remove('hidden');
+      document.getElementById('reportModal').classList.add('flex');
+    }
+
+    function closeReportModal() {
+      document.getElementById('reportModal').classList.add('hidden');
+      document.getElementById('reportModal').classList.remove('flex');
+    }
+
+    function copyReport() {
+      const report = generateReport();
+      navigator.clipboard.writeText(report).then(() => {
+        alert('Report copied to clipboard!');
+      });
+    }
+
+    function downloadReport() {
+      const report = generateReport();
+      const blob = new Blob([report], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hyperlabel-review-${new Date().toISOString().split('T')[0]}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeReportModal();
+      }
+      if (e.key === 'Enter' && e.metaKey && currentSlideId) {
+        saveComment();
+      }
+    });
+
+    // Initialize
+    renderSlideNav();
+    renderSlides();
+  </script>
+</body>
+</html>

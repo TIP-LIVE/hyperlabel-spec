@@ -1,13 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Package,
-  Users,
-  ShoppingCart,
-  Radio,
-  LayoutDashboard,
   ArrowLeft,
-  Truck,
   LogOut,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,16 +10,8 @@ import { getCurrentUser } from '@/lib/auth'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { SignOutButton } from '@clerk/nextjs'
 import { AdminMobileSidebar } from '@/components/admin/admin-mobile-sidebar'
+import { AdminSidebarNav } from '@/components/admin/admin-sidebar-nav'
 import { ThemeToggle } from '@/components/theme-toggle'
-
-const adminNavigation = [
-  { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Labels', href: '/admin/labels', icon: Package },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Shipments', href: '/admin/shipments', icon: Truck },
-  { name: 'Devices', href: '/admin/devices', icon: Radio },
-]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
@@ -50,18 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col gap-1 p-4">
-          {adminNavigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
-            >
-              <item.icon className="h-5 w-5" />
-              {item.name}
-            </Link>
-          ))}
-        </nav>
+        <AdminSidebarNav />
 
         {/* Bottom actions */}
         <div className="absolute bottom-0 left-0 right-0 space-y-1 border-t border-gray-800 p-4">

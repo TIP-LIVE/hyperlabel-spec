@@ -11,6 +11,7 @@ import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radi
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
+import { createClerkClient } from '@clerk/backend'
 import { formatDistanceToNow } from 'date-fns'
 import type { Metadata } from 'next'
 
@@ -175,8 +176,17 @@ export default async function DashboardPage() {
     },
   ]
 
-  /** Short org ID for verification (assign to this org to see labels here) */
-  const shortOrgId = orgId && orgId.length > 20 ? '…' + orgId.slice(-12) : orgId ?? ''
+  // Resolve org name from Clerk
+  let orgName: string | null = null
+  if (orgId) {
+    try {
+      const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! })
+      const org = await clerk.organizations.getOrganization({ organizationId: orgId })
+      orgName = org.name
+    } catch {
+      // Fallback: don't show org name if Clerk fetch fails
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -196,9 +206,9 @@ export default async function DashboardPage() {
           </>
         }
         />
-        {orgId && (
-          <p className="mt-1 font-mono text-xs text-muted-foreground" title={orgId}>
-            Org ID: {shortOrgId}
+        {orgName && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {orgName}
           </p>
         )}
       </div>

@@ -23,7 +23,7 @@ export default function NewShipmentPage() {
         <CardHeader>
           <CardTitle>Shipment Details</CardTitle>
           <CardDescription>
-            Enter the destination and select a label to track your cargo
+            Configure your shipment details below
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -37,29 +37,25 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
     // Clerk not configured or not in org context
   }
 
-  const orgs = await db.order.findMany({
-    where: { orgId: { not: null } },
-    select: { orgId: true },
-    distinct: ['orgId'],
-  })
-  const knownOrgIds = orgs.map((o) => o.orgId).filter((id): id is string => id != null)
-
-  // Resolve org names from Clerk (use @clerk/backend directly — more reliable on Vercel)
+  // Fetch all organisations from Clerk
   const orgNames: Record<string, string> = {}
+  let knownOrgIds: string[] = []
   try {
     const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! })
-    const results = await Promise.allSettled(
-      knownOrgIds.map((id) => clerk.organizations.getOrganization({ organizationId: id }))
-    )
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        orgNames[result.value.id] = result.value.name
-      } else {
-        console.error('[AssignLabels] Clerk org fetch failed:', result.reason)
-      }
+    const { data: clerkOrgs } = await clerk.organizations.getOrganizationList({ limit: 100 })
+    for (const org of clerkOrgs) {
+      orgNames[org.id] = org.name
     }
+    knownOrgIds = clerkOrgs.map((org) => org.id)
   } catch (err) {
     console.error('[AssignLabels] Clerk client error:', err)
+    // Fallback: use orgs from orders
+    const orgs = await db.order.findMany({
+      where: { orgId: { not: null } },
+      select: { orgId: true },
+      distinct: ['orgId'],
+    })
+    knownOrgIds = orgs.map((o) => o.orgId).filter((id): id is string => id != null)
   }
 
   return (

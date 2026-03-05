@@ -4,7 +4,7 @@ import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView, Circle } from '@r
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { format, formatDistanceToNow } from 'date-fns'
-import { MapPin, LocateFixed } from 'lucide-react'
+import { MapPin, LocateFixed, Radio } from 'lucide-react'
 
 interface LocationPoint {
   id: string
@@ -159,21 +159,14 @@ export function TrackingMap({
     return defaultCenter
   }, [latestLocation, hasDestination, destinationLat, destinationLng, hasOrigin, originLat, originLng])
 
-  // Build the full route path: origin -> location points -> (destination is shown separately)
+  // Build the full route path from actual GPS data points (oldest → newest)
   const path = useMemo(() => {
-    const points: google.maps.LatLngLiteral[] = []
-
-    if (hasOrigin) {
-      points.push({ lat: originLat!, lng: originLng! })
-    }
-
     const reversed = [...locations].reverse()
-    reversed.forEach((loc) => {
-      points.push({ lat: loc.latitude, lng: loc.longitude })
-    })
+    return reversed.map((loc) => ({ lat: loc.latitude, lng: loc.longitude }))
+  }, [locations])
 
-    return points
-  }, [locations, hasOrigin, originLat, originLng])
+  // The oldest location is the actual starting point
+  const oldestLocation = locations.length > 0 ? locations[locations.length - 1] : null
 
   // Dashed line from current location to destination (remaining route)
   const remainingPath = useMemo(() => {
@@ -201,11 +194,8 @@ export function TrackingMap({
     (map: google.maps.Map) => {
       setMapRef(map)
 
-      if (locations.length > 0 || hasOrigin || hasDestination) {
+      if (locations.length > 0 || hasDestination) {
         const bounds = new google.maps.LatLngBounds()
-        if (hasOrigin) {
-          bounds.extend({ lat: originLat!, lng: originLng! })
-        }
         locations.forEach((loc) => {
           bounds.extend({ lat: loc.latitude, lng: loc.longitude })
         })
@@ -215,7 +205,7 @@ export function TrackingMap({
         map.fitBounds(bounds, 60)
       }
     },
-    [locations, hasOrigin, originLat, originLng, hasDestination, destinationLat, destinationLng]
+    [locations, hasDestination, destinationLat, destinationLng]
   )
 
   const onUnmount = useCallback(() => {
@@ -246,11 +236,11 @@ export function TrackingMap({
         className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-muted/50"
         style={{ height }}
       >
-        <MapPin className="h-8 w-8 text-muted-foreground/40" />
+        <Radio className="h-8 w-8 text-muted-foreground/40 animate-pulse" />
         <div className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">No location data available</p>
+          <p className="text-sm font-medium text-muted-foreground">Acquiring GPS signal</p>
           <p className="mt-1 text-xs text-muted-foreground/70">
-            Location updates will appear once the label starts transmitting
+            The tracking label is powering on and connecting. First location typically appears within a few minutes.
           </p>
         </div>
       </div>
@@ -264,11 +254,11 @@ export function TrackingMap({
         className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed bg-muted/50"
         style={{ height }}
       >
-        <MapPin className="h-8 w-8 text-muted-foreground/40" />
+        <Radio className="h-8 w-8 text-muted-foreground/40 animate-pulse" />
         <div className="text-center space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Waiting for location data</p>
+          <p className="text-sm font-medium text-muted-foreground">Acquiring GPS signal</p>
           <p className="text-xs text-muted-foreground/70">
-            The map will update automatically once the label starts transmitting
+            The label is connecting to the network. First location typically appears within a few minutes. This page updates automatically.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 rounded-lg bg-background/80 px-4 py-3 text-sm">
@@ -357,10 +347,10 @@ export function TrackingMap({
           />
         )}
 
-        {/* ── Origin marker ── */}
-        {mapRef && hasOrigin && (
+        {/* ── Start marker (first actual GPS data point) ── */}
+        {mapRef && oldestLocation && locations.length > 1 && (
           <OverlayView
-            position={{ lat: originLat!, lng: originLng! }}
+            position={{ lat: oldestLocation.latitude, lng: oldestLocation.longitude }}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
           >
             <div className="pointer-events-none flex flex-col items-center" style={{ transform: 'translate(-50%, -50%)' }}>
@@ -373,7 +363,7 @@ export function TrackingMap({
                   border: '2px solid rgba(255,255,255,0.9)',
                 }}
               >
-                {originAddress ? originAddress.split(',')[0] : 'Origin'}
+                Start
               </div>
               <div className="relative flex items-center justify-center" style={{ width: 18, height: 18 }}>
                 <div
@@ -638,10 +628,10 @@ export function TrackingMap({
       >
         {legendOpen ? (
           <div className="flex flex-col gap-1.5">
-            {hasOrigin && (
+            {oldestLocation && locations.length > 1 && (
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <span className="text-muted-foreground">Origin</span>
+                <span className="text-muted-foreground">Start</span>
               </div>
             )}
             <div className="flex items-center gap-2">

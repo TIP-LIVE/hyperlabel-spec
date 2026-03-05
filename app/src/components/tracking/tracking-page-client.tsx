@@ -44,8 +44,10 @@ interface LocationPoint {
 
 interface ShipmentData {
   id: string
+  type: 'CARGO_TRACKING' | 'LABEL_DISPATCH'
   name: string | null
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED'
+  labelCount: number
   originAddress: string | null
   originLat: number | null
   originLng: number | null
@@ -102,6 +104,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
   const StatusIcon = statusIcons[shipment.status] || Package
   const latestLocation = shipment.locations[0]
   const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
+  const isDispatch = shipment.type === 'LABEL_DISPATCH'
 
   // Journey progress calculation
   const journeyInfo = useMemo(() => {
@@ -149,7 +152,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
   // Simplified battery status for consignee
   const batteryStatus = useMemo(() => {
     const pct = shipment.label?.batteryPct ?? null
-    if (pct === null) return { label: 'Unknown', color: 'text-muted-foreground' }
+    if (pct === null) return { label: 'Pending', color: 'text-muted-foreground' }
     if (pct >= 50) return { label: 'Good', color: 'text-green-600 dark:text-green-400' }
     if (pct >= 20) return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' }
     return { label: 'Low', color: 'text-destructive' }
@@ -183,7 +186,9 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
 
       setShipment((prev) => ({
         ...prev,
+        type: updated.type ?? prev.type,
         status: updated.status,
+        labelCount: updated.labelCount ?? prev.labelCount,
         deliveredAt: updated.deliveredAt,
         label: updated.label,
         locations: mergeLocations(prev.locations, updated.locations),
@@ -256,7 +261,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             <Logo size="md" />
           </Link>
           <div className="flex items-center gap-2">
-            {isPolling && (
+            {isPolling && !isDispatch && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
@@ -302,7 +307,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {latestLocation && (
+            {latestLocation && !isDispatch && (
               <div className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
                 <Clock className="h-3.5 w-3.5" />
                 <span>
@@ -322,7 +327,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                 <Copy className="h-3.5 w-3.5" />
               )}
             </button>
-            {isPolling && (
+            {isPolling && !isDispatch && (
               <button
                 onClick={handleManualRefresh}
                 className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
@@ -340,8 +345,8 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
           </div>
         )}
 
-        {/* P0: Journey progress bar */}
-        {journeyInfo && (
+        {/* P0: Journey progress bar — cargo tracking only */}
+        {journeyInfo && !isDispatch && (
           <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
@@ -386,65 +391,67 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
           </Card>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Map */}
-          <div className="min-w-0 lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Live Location</CardTitle>
-                <CardDescription>
-                  {latestLocation
-                    ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
-                    : 'Waiting for location data...'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PublicTrackingMap
-                  locations={locationsWithDates.map((loc) => ({
-                    id: loc.id,
-                    latitude: loc.latitude,
-                    longitude: loc.longitude,
-                    recordedAt: loc.recordedAt,
-                    batteryPct: loc.batteryPct,
-                    accuracyM: loc.accuracyM,
-                  }))}
-                  destinationLat={shipment.destinationLat}
-                  destinationLng={shipment.destinationLng}
-                  destinationAddress={shipment.destinationAddress}
-                  height="400px"
-                />
-              </CardContent>
-            </Card>
+        <div className={`grid gap-6 ${isDispatch ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
+          {/* Map + Timeline — cargo tracking only */}
+          {!isDispatch && (
+            <div className="min-w-0 lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live Location</CardTitle>
+                  <CardDescription>
+                    {latestLocation
+                      ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
+                      : 'The tracking label is connecting. First location typically appears within a few minutes.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PublicTrackingMap
+                    locations={locationsWithDates.map((loc) => ({
+                      id: loc.id,
+                      latitude: loc.latitude,
+                      longitude: loc.longitude,
+                      recordedAt: loc.recordedAt,
+                      batteryPct: loc.batteryPct,
+                      accuracyM: loc.accuracyM,
+                    }))}
+                    destinationLat={shipment.destinationLat}
+                    destinationLng={shipment.destinationLng}
+                    destinationAddress={shipment.destinationAddress}
+                    height="400px"
+                  />
+                </CardContent>
+              </Card>
 
-            {/* Timeline */}
-            <Card className="mt-6 overflow-hidden">
-              <CardHeader className="px-3 sm:px-6">
-                <CardTitle>Location History</CardTitle>
-                <CardDescription>
-                  {shipment.locations.length} location updates
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6">
-                <PublicTimeline
-                  locations={locationsWithDates.map((loc) => ({
-                    id: loc.id,
-                    latitude: loc.latitude,
-                    longitude: loc.longitude,
-                    recordedAt: loc.recordedAt,
-                    accuracyM: loc.accuracyM,
-                    batteryPct: loc.batteryPct,
-                    isOfflineSync: loc.isOfflineSync ?? false,
-                    geocodedCity: loc.geocodedCity,
-                    geocodedCountry: loc.geocodedCountry,
-                    geocodedCountryCode: loc.geocodedCountryCode,
-                  }))}
-                />
-              </CardContent>
-            </Card>
-          </div>
+              {/* Timeline */}
+              <Card className="mt-6 overflow-hidden">
+                <CardHeader className="px-3 sm:px-6">
+                  <CardTitle>Location History</CardTitle>
+                  <CardDescription>
+                    {shipment.locations.length} location updates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-3 sm:px-6">
+                  <PublicTimeline
+                    locations={locationsWithDates.map((loc) => ({
+                      id: loc.id,
+                      latitude: loc.latitude,
+                      longitude: loc.longitude,
+                      recordedAt: loc.recordedAt,
+                      accuracyM: loc.accuracyM,
+                      batteryPct: loc.batteryPct,
+                      isOfflineSync: loc.isOfflineSync ?? false,
+                      geocodedCity: loc.geocodedCity,
+                      geocodedCountry: loc.geocodedCountry,
+                      geocodedCountryCode: loc.geocodedCountryCode,
+                    }))}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className={`space-y-6 ${isDispatch ? 'lg:col-span-2' : ''}`}>
             {/* Consignee Delivery Confirmation — only when actively tracking */}
             {isActive && (
               <Card className="border-2 border-dashed border-primary/50 bg-primary/5">
@@ -543,25 +550,36 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                         ? `Delivered ${format(new Date(shipment.deliveredAt), 'PPP')}`
                         : shipment.status === 'IN_TRANSIT'
                           ? 'On the way to destination'
-                          : 'Waiting for movement'}
+                          : shipment.status === 'CANCELLED'
+                            ? 'This shipment has been cancelled'
+                            : isDispatch
+                              ? 'Dispatch created — labels being shipped'
+                              : 'Label activated — acquiring first location'}
                     </p>
                   </div>
                 </div>
 
                 <Separator />
 
-                {/* P0: Simplified device info — no raw device ID, battery as Good/Fair/Low */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Tracker Battery</span>
-                  <div className="flex items-center gap-1.5">
-                    <Battery
-                      className={`h-4 w-4 ${batteryStatus.color}`}
-                    />
-                    <span className={`text-sm font-medium ${batteryStatus.color}`}>
-                      {batteryStatus.label}
-                    </span>
+                {/* Dispatch: show label count; Cargo: show battery */}
+                {isDispatch ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Labels</span>
+                    <span className="text-sm font-medium">{shipment.labelCount}</span>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Tracker Battery</span>
+                    <div className="flex items-center gap-1.5">
+                      <Battery
+                        className={`h-4 w-4 ${batteryStatus.color}`}
+                      />
+                      <span className={`text-sm font-medium ${batteryStatus.color}`}>
+                        {batteryStatus.label}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <Separator />
 

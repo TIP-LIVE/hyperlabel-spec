@@ -2,16 +2,24 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
+import { getFleetStats, getReportingHistory } from '@/lib/fleet-stats'
 import { formatDistanceToNow } from 'date-fns'
 import { AdminSearch } from '@/components/admin/admin-search'
-import { MapPin } from 'lucide-react'
+import { FleetStatsGrid } from '@/components/admin/fleet-stats-grid'
+import { BatteryDistribution } from '@/components/admin/battery-distribution'
+import { SignalQualityCard } from '@/components/admin/signal-quality-card'
+import { GeoDistributionTable } from '@/components/admin/geo-distribution-table'
+import { SimStatusPanel } from '@/components/admin/sim-status-panel'
+import { ReportingFrequencyChart } from '@/components/admin/charts/reporting-frequency-chart'
+import { getOnomonodoSims } from '@/lib/onomondo'
+import { MapPin, Satellite, Radio, ExternalLink } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Device Health',
-  description: 'Monitor active label devices',
+  title: 'Device Dashboard',
+  description: 'Fleet overview and device health monitoring',
 }
 
 // Helper to check if label has no signal (>24h since last ping)
@@ -43,14 +51,25 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
     ]
   }
 
-  // Health filter applied after data fetch (requires computed fields)
-  const [allActiveLabels, , healthCounts] = await Promise.all([
+  // Fetch fleet stats, reporting history, Onomondo SIMs, and device table data in parallel
+  const [fleetStats, reportingHistory, onomondoSims, allActiveLabels, healthCounts] = await Promise.all([
+    getFleetStats(),
+    getReportingHistory(),
+    getOnomonodoSims().catch(() => [] as Awaited<ReturnType<typeof getOnomonodoSims>>),
     db.label.findMany({
       where,
       include: {
         locations: {
           orderBy: { recordedAt: 'desc' as const },
           take: 1,
+          select: {
+            recordedAt: true,
+            latitude: true,
+            longitude: true,
+            source: true,
+            geocodedCity: true,
+            geocodedCountry: true,
+          },
         },
         shipments: {
           where: { status: 'IN_TRANSIT' },
@@ -60,17 +79,18 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
       },
       orderBy: { activatedAt: 'desc' },
     }),
-    db.label.count({ where }),
     Promise.all([
       db.label.count({ where: { status: 'ACTIVE' } }),
-      db.label.count({
-        where: { status: 'ACTIVE', batteryPct: { gte: 20 } },
-      }),
-      db.label.count({
-        where: { status: 'ACTIVE', batteryPct: { lt: 20, gt: 0 } },
-      }),
+      db.label.count({ where: { status: 'ACTIVE', batteryPct: { gte: 20 } } }),
+      db.label.count({ where: { status: 'ACTIVE', batteryPct: { lt: 20, gt: 0 } } }),
     ]),
   ])
+
+  // Build ICCID → Onomondo SIM ID map for direct links
+  const onomondoSimMap = new Map<string, string>()
+  for (const sim of onomondoSims) {
+    if (sim.iccid) onomondoSimMap.set(sim.iccid, sim.id)
+  }
 
   const referenceTime = new Date().getTime()
 
@@ -99,7 +119,6 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
   const paginatedLabels = filteredLabels.slice((page - 1) * perPage, page * perPage)
 
   const [allCount, healthyCount, lowBatteryCount] = healthCounts
-  // Approximate no-signal count
   const noSignalCount = labelsWithHealth.filter((l) => l.health === 'no_signal').length
 
   const healthTabs = [
@@ -114,12 +133,30 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Device Health</h1>
-        <p className="text-gray-400">Monitor active tracking labels</p>
+        <h1 className="text-2xl font-bold text-white">Device Dashboard</h1>
+        <p className="text-gray-400">Fleet overview and device health monitoring</p>
       </div>
 
-      {/* Health Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Fleet Overview Stats */}
+      <FleetStatsGrid stats={fleetStats} />
+
+      {/* Fleet Health: Battery Distribution + Signal Quality */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <BatteryDistribution battery={fleetStats.battery} />
+        <SignalQualityCard signal={fleetStats.signal} reporting={fleetStats.reporting} />
+      </div>
+
+      {/* Live SIM Status (Onomondo) */}
+      <SimStatusPanel />
+
+      {/* Geographic Distribution */}
+      <GeoDistributionTable geography={fleetStats.geography} />
+
+      {/* Reporting Frequency Chart */}
+      <ReportingFrequencyChart data={reportingHistory} />
+
+      {/* Health Filter Tabs */}
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         {healthTabs.map((tab) => (
           <Link
             key={tab.value}
@@ -164,7 +201,27 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
 
                   return (
                     <tr key={label.id} className="text-sm">
-                      <td className="py-3 font-mono text-white">{label.deviceId}</td>
+                      <td className="py-3">
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/admin/devices/${label.deviceId}`}
+                            className="font-mono text-primary hover:underline"
+                          >
+                            {label.deviceId}
+                          </Link>
+                          {label.iccid && onomondoSimMap.has(label.iccid) && (
+                            <a
+                              href={`https://app.onomondo.com/sims/${onomondoSimMap.get(label.iccid)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Open in Onomondo"
+                              className="text-gray-500 hover:text-purple-400 transition-colors"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 text-gray-300">
                         {label.shipments[0] ? (
                           <Link
@@ -188,24 +245,38 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                       </td>
                       <td className="py-3 text-gray-400">
                         {lastLocation ? (
-                          formatDistanceToNow(new Date(lastLocation.recordedAt), {
-                            addSuffix: true,
-                          })
+                          <span className="inline-flex items-center gap-1.5">
+                            {lastLocation.source === 'CELL_TOWER' ? (
+                              <Radio className="h-3 w-3 text-purple-400" title="Onomondo" />
+                            ) : (
+                              <Satellite className="h-3 w-3 text-blue-400" title="Device" />
+                            )}
+                            {formatDistanceToNow(new Date(lastLocation.recordedAt), {
+                              addSuffix: true,
+                            })}
+                          </span>
                         ) : (
                           <span className="text-gray-500">Never</span>
                         )}
                       </td>
                       <td className="py-3">
                         {lastLocation ? (
-                          <a
-                            href={`https://www.google.com/maps?q=${lastLocation.latitude},${lastLocation.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            <MapPin className="h-3 w-3" />
-                            {lastLocation.latitude.toFixed(4)}, {lastLocation.longitude.toFixed(4)}
-                          </a>
+                          <div className="flex flex-col">
+                            {lastLocation.geocodedCity && (
+                              <span className="text-xs text-gray-300">
+                                {lastLocation.geocodedCity}
+                              </span>
+                            )}
+                            <a
+                              href={`https://www.google.com/maps?q=${lastLocation.latitude},${lastLocation.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <MapPin className="h-3 w-3" />
+                              {lastLocation.latitude.toFixed(4)}, {lastLocation.longitude.toFixed(4)}
+                            </a>
+                          </div>
                         ) : (
                           <span className="text-gray-500">—</span>
                         )}

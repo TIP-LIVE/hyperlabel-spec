@@ -1,0 +1,24 @@
+TIP — Unit Economics,,,
+,,,
+3.1 Label Unit Economics,,,
+Metric,Year 1,Year 2,Year 3
+Average Selling Price (ASP),$22.00,$25.00,$25.50
+COGS per label,$11.00,$9.90,$9.50
+Gross Profit/Label,$11.00,$15.10,$16.00
+Gross Margin,50%,60%,63%
+,,,
+3.2 Customer Acquisition,,,
+Metric,Year 1,Year 2,Year 3
+Marketing Spend,"$100,000","$120,000","$200,000"
+New Customers,500,"1,500","6,000"
+CAC,$200,$80,$33
+Avg Order Value,$227,$300,$350
+LTV (1-time),$227,$300,$350
+LTV:CAC,1.1x,3.8x,10.6x
+,,,
+3.3 Customer Lifetime Value (with repeat),,,
+Metric,Conservative,Moderate,Optimistic
+Orders per customer/year,1.5,2.0,3.0
+Customer lifespan (years),2,3,4
+3-Year LTV,$750,"$1,500","$3,000"
+LTV:CAC (Year 3),22.7x,45.5x,90.9x

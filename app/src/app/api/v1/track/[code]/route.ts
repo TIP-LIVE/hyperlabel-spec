@@ -29,6 +29,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       where: { shareCode: code },
       select: {
         id: true,
+        type: true,
         name: true,
         status: true,
         shareEnabled: true,
@@ -45,6 +46,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
             deviceId: true,
             batteryPct: true,
           },
+        },
+        shipmentLabels: {
+          select: { labelId: true },
         },
         locations: {
           where: since
@@ -85,8 +89,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({
       shipment: {
         id: shipment.id,
+        type: shipment.type,
         name: shipment.name,
         status: shipment.status,
+        labelCount: shipment.shipmentLabels?.length ?? (shipment.label ? 1 : 0),
         originAddress: shipment.originAddress,
         originLat: shipment.originLat,
         originLng: shipment.originLng,

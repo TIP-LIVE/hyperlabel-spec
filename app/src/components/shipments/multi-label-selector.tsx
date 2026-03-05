@@ -103,7 +103,7 @@ export function MultiLabelSelector({ selectedIds, onChange }: MultiLabelSelector
       <div className="rounded-lg border border-dashed p-4 text-center">
         <Package className="mx-auto h-8 w-8 text-muted-foreground/50" />
         <p className="mt-2 text-sm text-muted-foreground">
-          No labels available for dispatch. Labels must be purchased and in SOLD or INVENTORY status.
+          No labels available for dispatch. Purchase labels first, or check that your labels aren&apos;t already in an active shipment.
         </p>
       </div>
     )

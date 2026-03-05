@@ -804,7 +804,9 @@ function LabelDispatchForm({
           disabled={loading || selectedLabelIds.length === 0}
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Dispatch ({selectedLabelIds.length} label{selectedLabelIds.length !== 1 ? 's' : ''})
+          {selectedLabelIds.length > 0
+            ? `Create Dispatch (${selectedLabelIds.length} label${selectedLabelIds.length !== 1 ? 's' : ''})`
+            : 'Create Dispatch'}
         </Button>
       </div>
     </form>
@@ -846,7 +848,7 @@ function RouteSection({
             <p className="text-sm text-destructive">{errors.originAddress.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Where the cargo is being shipped from. Start typing for suggestions.
+            Starting point for route tracking. Start typing for suggestions.
           </p>
         </div>
 
@@ -861,7 +863,7 @@ function RouteSection({
             <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Where the cargo is going. Used for delivery detection.
+            Destination for route tracking and delivery detection.
           </p>
         </div>
       </div>

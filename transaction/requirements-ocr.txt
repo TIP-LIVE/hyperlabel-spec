@@ -1,0 +1,4 @@
+# For analyze_transaction_screenshots.py (OCR)
+# Install system Tesseract first: brew install tesseract
+Pillow>=10.0.0
+pytesseract>=0.3.10
