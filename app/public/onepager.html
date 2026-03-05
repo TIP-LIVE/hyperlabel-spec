@@ -5,461 +5,294 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TIP — Track Any Cargo, Anywhere</title>
   <meta name="description" content="TIP: $20 disposable smart tracking labels for cargo. 180+ countries, 60+ day battery, zero setup.">
-
-  <!-- Open Graph -->
   <meta property="og:title" content="TIP — Track Any Cargo, Anywhere">
   <meta property="og:description" content="$20 disposable smart tracking labels for the $18B cargo visibility market. 180+ countries, 60+ day battery, zero setup.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tip.live/onepager.html">
-
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="TIP — Track Any Cargo, Anywhere">
   <meta name="twitter:description" content="$20 disposable smart tracking labels for the $18B cargo visibility market.">
-
-  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='sans-serif' font-weight='bold'>T</text></svg>">
-
-  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          colors: {
-            brand: {
-              green: '#00FF00',
-              dark: '#1a1f2e',
-              darker: '#111827',
-              card: '#1f2937',
-              border: '#374151',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
   <style>
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: #111827;
-      color: #e5e7eb;
-    }
-    .section-divider {
-      height: 1px;
-      background: linear-gradient(to right, transparent, #00FF00, transparent);
-      opacity: 0.3;
-    }
-    .stat-card {
-      background: #1f2937;
-      border: 1px solid #374151;
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { background: #1a1f2e; font-weight: 600; text-align: left; color: #9ca3af; }
-    th, td { border: 1px solid #374151; padding: 0.625rem 0.75rem; }
-    .tip-row { background: rgba(0, 255, 0, 0.08); }
-    .tip-row td { font-weight: 600; }
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #00FF00;
-      margin-bottom: 1.5rem;
-    }
-    .milestone-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-    }
-    .milestone-row:nth-child(odd) { background: rgba(31, 41, 55, 0.5); }
-    .fund-bar > div { padding: 0.5rem 0; text-align: center; font-size: 0.75rem; font-weight: 600; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f1117; color: #d1d5db; font-size: 11px; line-height: 1.4; overflow-x: hidden; }
+    .page { max-width: 1100px; margin: 0 auto; padding: 28px 32px 20px; overflow-x: hidden; }
 
+    /* Section headers */
+    .sh { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #00e600; margin-bottom: 6px; }
+
+    /* Divider */
+    .d { height: 1px; background: linear-gradient(to right, transparent, #00e600, transparent); opacity: 0.2; margin: 10px 0; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    th { background: #181c25; font-weight: 600; text-align: left; color: #9ca3af; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
+    th, td { border: 1px solid #252a35; padding: 3px 6px; }
+    .tip-row { background: rgba(0, 230, 0, 0.07); }
+    .tip-row td { font-weight: 600; color: #00e600; }
+
+    /* Cards */
+    .card { background: #181c25; border: 1px solid #252a35; border-radius: 6px; padding: 8px 10px; }
+
+    /* Green accent text */
+    .g { color: #00e600; }
+    .gw { color: #fff; font-weight: 600; }
+
+    /* Fund bar */
+    .fb > div { padding: 3px 0; text-align: center; font-size: 9px; font-weight: 700; }
+
+    /* Print */
     @media print {
-      body { background: white !important; color: #111 !important; }
-      .section-divider { background: #d1d5db !important; opacity: 1 !important; }
-      th { background: #f3f4f6 !important; color: #374151 !important; }
-      th, td { border-color: #d1d5db !important; color: #111 !important; }
-      .stat-card { background: #f9fafb !important; border-color: #d1d5db !important; }
-      .tip-row { background: rgba(5, 150, 105, 0.1) !important; }
-      .milestone-row:nth-child(odd) { background: #f9fafb !important; }
-      [class*="text-brand-green"], [class*="text-[#00FF00]"], .section-label { color: #059669 !important; }
-      [class*="text-gray-"] { color: #374151 !important; }
-      [class*="text-white"] { color: #111 !important; }
-      a { color: #059669 !important; }
-      .fund-bar > div { color: #111 !important; }
-      .no-print { display: none !important; }
-      * { break-inside: avoid; }
-      @page { margin: 1.5cm; size: A4; }
+      body { background: #fff !important; color: #222 !important; font-size: 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { padding: 0; max-width: 100%; }
+      .sh { color: #047857 !important; }
+      .g { color: #047857 !important; }
+      .gw { color: #111 !important; }
+      .card { background: #f8f9fa !important; border-color: #d1d5db !important; }
+      th { background: #f0f0f0 !important; color: #444 !important; }
+      th, td { border-color: #d1d5db !important; color: #222 !important; }
+      .tip-row { background: rgba(4, 120, 87, 0.08) !important; }
+      .tip-row td { color: #047857 !important; }
+      .d { background: #ccc !important; opacity: 1 !important; }
+      .fb > div { color: #111 !important; }
+      @page { margin: 10mm; size: A4; }
+    }
+
+    /* Mobile: allow scroll, just make it readable */
+    @media (max-width: 768px) {
+      body { font-size: 12px; }
+      .page { padding: 16px; max-width: 100%; }
+      .cols { display: block !important; }
+      .cols > div { margin-bottom: 12px; }
+      .hero-stats { grid-template-columns: repeat(3, 1fr) !important; }
+      .hdr-top { flex-wrap: wrap; gap: 4px; }
+      .hdr-top > div:last-child { font-size: 8px !important; }
+      .hero-row { flex-direction: column !important; }
+      .hero-row > div:first-child { min-width: 0 !important; }
+      table { font-size: 10px; }
     }
   </style>
 </head>
-<body class="antialiased overflow-x-hidden">
-  <main class="max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16 overflow-x-hidden">
+<body>
+<div class="page">
 
-    <!-- ===== 1. HERO ===== -->
-    <header class="mb-12 sm:mb-16">
-      <div class="flex items-center justify-between mb-10">
-        <div class="text-2xl font-extrabold text-white tracking-tight">TIP</div>
-        <div class="text-xs font-medium text-gray-500 border border-brand-border rounded-full px-3 py-1">Seed Round &middot; 2026</div>
+  <!-- ===== HEADER ===== -->
+  <div class="hdr-top" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <div>
+      <span style="font-size:24px; font-weight:900; color:#fff; letter-spacing:-0.02em;">TIP</span>
+      <span style="font-size:10px; color:#6b7280; margin-left:8px;">Seed Round &middot; 2026</span>
+    </div>
+    <div style="font-size:9px; color:#6b7280;">
+      <a href="mailto:av@tip.live" style="color:#00e600; text-decoration:none;">av@tip.live</a> &nbsp;&middot;&nbsp;
+      <a href="mailto:denys@tip.live" style="color:#00e600; text-decoration:none;">denys@tip.live</a> &nbsp;&middot;&nbsp;
+      <a href="https://tip.live" style="color:#00e600; text-decoration:none;">tip.live</a>
+    </div>
+  </div>
+
+  <!-- Title + Stats row -->
+  <div class="hero-row" style="display:flex; align-items:flex-end; gap:24px; margin-bottom:14px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:280px;">
+      <h1 style="font-size:28px; font-weight:900; color:#fff; line-height:1; letter-spacing:-0.03em; margin-bottom:6px;">Track Any Cargo, Anywhere</h1>
+      <p style="color:#9ca3af; font-size:12px; line-height:1.4;">Disposable $20 smart tracking labels. 180+ countries, 60-day battery, AI route intelligence. Scan QR, peel, stick &mdash; track from any device, no app needed.</p>
+    </div>
+    <div class="hero-stats" style="display:grid; grid-template-columns:repeat(3,80px); gap:8px; flex-shrink:0;">
+      <div class="card" style="text-align:center; padding:6px;">
+        <div style="font-size:20px; font-weight:800; color:#00e600;">$20</div>
+        <div style="font-size:8px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">per label</div>
       </div>
-
-      <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-[0.95] tracking-tight mb-4">
-        Track Any Cargo,<br>Anywhere
-      </h1>
-      <p class="text-lg sm:text-xl text-gray-400 max-w-2xl mb-10">
-        Disposable smart tracking labels for the $18B cargo visibility market. Buy online, scan QR to activate, peel and stick. Track from any device.
-      </p>
-
-      <div class="grid grid-cols-3 gap-3 sm:gap-4">
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#00FF00]">$20</div>
-          <div class="text-xs sm:text-sm text-gray-400 mt-1">per label</div>
-        </div>
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#00FF00]">180+</div>
-          <div class="text-xs sm:text-sm text-gray-400 mt-1">countries</div>
-        </div>
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#00FF00]">60+</div>
-          <div class="text-xs sm:text-sm text-gray-400 mt-1">day battery</div>
-        </div>
+      <div class="card" style="text-align:center; padding:6px;">
+        <div style="font-size:20px; font-weight:800; color:#00e600;">180+</div>
+        <div style="font-size:8px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">countries</div>
       </div>
-    </header>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 2. THE PROBLEM ===== -->
-    <section>
-      <div class="section-label">The Problem</div>
-      <p class="text-base sm:text-lg text-gray-300 mb-4">
-        <strong class="text-[#00FF00]">$15&ndash;25 billion</strong> is lost annually to cargo theft, delays, and misrouted shipments globally. Yet most tracking solutions cost <strong class="text-[#00FF00]">$70&ndash;500</strong> per device, require complex setup, and lock customers into carrier-specific platforms.
-      </p>
-      <p class="text-base sm:text-lg text-gray-300 mb-6">
-        The result: SMB shippers have limited visibility into their cargo&mdash;especially during flights, ocean transit, and handoffs between carriers.
-      </p>
-      <blockquote class="border-l-[3px] border-[#00FF00] pl-4 py-2 text-gray-400 italic mb-4">
-        47% of supply chain leaders cite real-time visibility as their #1 investment priority.
-      </blockquote>
-      <p class="text-xs text-gray-600">Sources: BSI &amp; TT Club Cargo Theft Report 2023; Gartner Supply Chain Survey 2023</p>
-    </section>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 3. OUR SOLUTION ===== -->
-    <section>
-      <div class="section-label">Our Solution</div>
-      <h2 class="text-xl sm:text-2xl font-bold text-white mb-6">A $20 Tracking Label That Just Works</h2>
-
-      <div class="overflow-x-auto max-w-full mb-8">
-        <table class="min-w-[480px]">
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th class="text-[#00FF00]">TIP</th>
-              <th>Enterprise Trackers</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="text-gray-400">Price</td><td class="font-semibold text-white">$20&ndash;25 (disposable)</td><td class="text-gray-400">$70&ndash;500 (reusable)</td></tr>
-            <tr><td class="text-gray-400">Form Factor</td><td class="font-semibold text-white">10&times;15cm, 3.5mm thin</td><td class="text-gray-400">Bulky devices</td></tr>
-            <tr><td class="text-gray-400">Setup</td><td class="font-semibold text-white">Scan QR, peel, stick</td><td class="text-gray-400">Complex onboarding</td></tr>
-            <tr><td class="text-gray-400">Coverage</td><td class="font-semibold text-white">180+ countries (land/sea/air)</td><td class="text-gray-400">Carrier-dependent</td></tr>
-            <tr><td class="text-gray-400">Battery</td><td class="font-semibold text-white">60+ days</td><td class="text-gray-400">Varies</td></tr>
-            <tr><td class="text-gray-400">Intelligence</td><td class="font-semibold text-white">AI route detection</td><td class="text-gray-400">Basic GPS</td></tr>
-          </tbody>
-        </table>
+      <div class="card" style="text-align:center; padding:6px;">
+        <div style="font-size:20px; font-weight:800; color:#00e600;">60+</div>
+        <div style="font-size:8px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">day battery</div>
       </div>
+    </div>
+  </div>
 
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">How It Works</h3>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="stat-card">
-          <div class="text-2xl font-extrabold text-[#00FF00] mb-1">01</div>
-          <div class="font-bold text-white mb-1">Buy Online</div>
-          <div class="text-sm text-gray-400">Order labels, delivered in 3&ndash;5 days</div>
+  <div class="d"></div>
+
+  <!-- ===== ROW 1: Problem + Solution + Market ===== -->
+  <div class="cols" style="display:grid; grid-template-columns:1fr 1.2fr 0.8fr; gap:16px; margin:10px 0;">
+
+    <!-- PROBLEM -->
+    <div>
+      <div class="sh">The Problem</div>
+      <p><span class="g" style="font-weight:700;">$15&ndash;25B</span> lost annually to cargo theft, delays, and misrouted shipments. Tracking solutions cost <span class="g" style="font-weight:700;">$70&ndash;500</span>/device with complex setup and carrier lock-in.</p>
+      <p style="margin-top:4px; font-style:italic; color:#6b7280; font-size:10px; border-left:2px solid #00e600; padding-left:6px;">47% of supply chain leaders cite visibility as #1 priority &mdash; Gartner 2023</p>
+    </div>
+
+    <!-- SOLUTION -->
+    <div>
+      <div class="sh">Solution &mdash; TIP vs Enterprise</div>
+      <table>
+        <thead><tr><th style="width:25%;">Feature</th><th style="color:#00e600;">TIP</th><th>Enterprise</th></tr></thead>
+        <tbody>
+          <tr><td style="color:#6b7280;">Price</td><td class="gw">$20&ndash;25</td><td style="color:#6b7280;">$70&ndash;500</td></tr>
+          <tr><td style="color:#6b7280;">Form</td><td class="gw">3.5mm thin label</td><td style="color:#6b7280;">Bulky device</td></tr>
+          <tr><td style="color:#6b7280;">Setup</td><td class="gw">Scan QR, stick</td><td style="color:#6b7280;">Weeks onboarding</td></tr>
+          <tr><td style="color:#6b7280;">Coverage</td><td class="gw">180+ countries</td><td style="color:#6b7280;">Carrier-dependent</td></tr>
+          <tr><td style="color:#6b7280;">Battery</td><td class="gw">60+ days</td><td style="color:#6b7280;">Varies</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- MARKET -->
+    <div>
+      <div class="sh">Market</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+        <div class="card" style="text-align:center; padding:5px;">
+          <div style="font-size:16px; font-weight:800; color:#00e600;">$18B</div>
+          <div style="font-size:8px; color:#6b7280;">TAM</div>
         </div>
-        <div class="stat-card">
-          <div class="text-2xl font-extrabold text-[#00FF00] mb-1">02</div>
-          <div class="font-bold text-white mb-1">Peel &amp; Stick</div>
-          <div class="text-sm text-gray-400">Scan QR to activate, attach to any package</div>
+        <div class="card" style="text-align:center; padding:5px;">
+          <div style="font-size:16px; font-weight:800; color:#00e600;">$1.8B</div>
+          <div style="font-size:8px; color:#6b7280;">SAM</div>
         </div>
-        <div class="stat-card">
-          <div class="text-2xl font-extrabold text-[#00FF00] mb-1">03</div>
-          <div class="font-bold text-white mb-1">Track Anywhere</div>
-          <div class="text-sm text-gray-400">Web dashboard or shareable link&mdash;no app needed</div>
+        <div class="card" style="text-align:center; padding:5px;">
+          <div style="font-size:14px; font-weight:800; color:#00e600;">$440K</div>
+          <div style="font-size:8px; color:#6b7280;">SOM Y1</div>
+        </div>
+        <div class="card" style="text-align:center; padding:5px;">
+          <div style="font-size:14px; font-weight:800; color:#00e600;">$5.16M</div>
+          <div style="font-size:8px; color:#6b7280;">SOM Y3</div>
         </div>
       </div>
-    </section>
+      <p style="font-size:9px; color:#6b7280;"><span class="g" style="font-weight:600;">11.8% CAGR</span> &mdash; MarketsandMarkets 2024</p>
+      <p style="font-size:9px; color:#6b7280; margin-top:2px;">Target: SMB shippers, China&rarr;EU/US corridor</p>
+    </div>
+  </div>
 
-    <div class="section-divider my-8 sm:my-12"></div>
+  <div class="d"></div>
 
-    <!-- ===== 4. MARKET OPPORTUNITY ===== -->
-    <section>
-      <div class="section-label">Market Opportunity</div>
+  <!-- ===== ROW 2: Traction + Business Model + Competitors ===== -->
+  <div class="cols" style="display:grid; grid-template-columns:0.8fr 1fr 1.2fr; gap:16px; margin:10px 0;">
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl font-extrabold text-[#00FF00]">$18B</div>
-          <div class="text-xs text-gray-400 mt-1">TAM</div>
+    <!-- TRACTION -->
+    <div>
+      <div class="sh">Traction</div>
+      <div style="display:flex; flex-direction:column; gap:2px; font-size:10px;">
+        <div>&#x2705; Hardware prototype &mdash; production-ready</div>
+        <div>&#x2705; Live platform at <a href="https://tip.live" style="color:#00e600;">tip.live</a></div>
+        <div>&#x2705; softSIM contract &mdash; Onomondo, 180+ countries</div>
+        <div>&#x2705; Stripe payments live</div>
+        <div>&#x2705; CE/FCC pathway confirmed</div>
+        <div style="color:#9ca3af;">&#x1F504; 5 pilot customers &mdash; Q1 2026</div>
+        <div style="color:#9ca3af;">&#x1F3AF; 500+ customers, 20K labels &mdash; Y1</div>
+      </div>
+    </div>
+
+    <!-- BUSINESS MODEL -->
+    <div>
+      <div class="sh">Business Model</div>
+      <p style="margin-bottom:4px;">Label sales (one-time purchase). No subscription required.</p>
+      <table style="margin-bottom:6px;">
+        <thead><tr><th>Pack</th><th>Price</th><th>COGS</th><th>Margin</th></tr></thead>
+        <tbody>
+          <tr><td>1 Label</td><td>$25</td><td style="color:#6b7280;">$11</td><td>56%</td></tr>
+          <tr><td>5 Labels</td><td>$22/ea</td><td style="color:#6b7280;">$11</td><td>50%</td></tr>
+          <tr><td>10 Labels</td><td>$20/ea</td><td style="color:#6b7280;">$11</td><td>45%</td></tr>
+          <tr class="tip-row"><td>At Scale Y3</td><td>$25.50</td><td style="color:#6b7280;">$9.50</td><td>63%</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:9px; color:#6b7280;">Future: Premium subs ($10/mo), API access, white-label partnerships</p>
+    </div>
+
+    <!-- COMPETITORS -->
+    <div>
+      <div class="sh">Competitive Landscape</div>
+      <table style="margin-bottom:6px;">
+        <thead><tr><th>Company</th><th>Price</th><th>Target</th><th>Coverage</th></tr></thead>
+        <tbody>
+          <tr><td>Tive</td><td style="color:#6b7280;">$150&ndash;300</td><td style="color:#6b7280;">Enterprise</td><td style="color:#6b7280;">150+</td></tr>
+          <tr><td>Roambee</td><td style="color:#6b7280;">$200&ndash;400</td><td style="color:#6b7280;">Enterprise</td><td style="color:#6b7280;">150+</td></tr>
+          <tr><td>Reelables</td><td style="color:#6b7280;">$20&ndash;30</td><td style="color:#6b7280;">SMB</td><td style="color:#6b7280;">~100</td></tr>
+          <tr class="tip-row"><td>TIP &#9733;</td><td>$20&ndash;25</td><td>SMB</td><td>180+</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:9px; color:#9ca3af;">
+        <span class="g" style="font-weight:600;">Defensible:</span>
+        Proprietary 3.5mm form factor (patent pending) &middot;
+        12-yr Shenzhen supplier relationships &middot;
+        $9.50 COGS at scale &middot;
+        AI route intelligence &middot;
+        China export corridor GTM
+      </div>
+    </div>
+  </div>
+
+  <div class="d"></div>
+
+  <!-- ===== ROW 3: Team + The Ask ===== -->
+  <div class="cols" style="display:grid; grid-template-columns:1.3fr 1fr; gap:16px; margin:10px 0;">
+
+    <!-- TEAM -->
+    <div>
+      <div class="sh">Team</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+        <div class="card">
+          <div style="font-weight:700; color:#fff; font-size:11px;">Andrii Tkachuk</div>
+          <div style="font-size:9px; color:#00e600; font-weight:600; margin-bottom:3px;">CEO &amp; Hardware &middot; FT</div>
+          <div style="font-size:9px; color:#9ca3af;">12 yrs electronics mfg, Shenzhen. Founded UTEC (8 employees, profitable). 15+ IoT products shipped.</div>
         </div>
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl font-extrabold text-[#00FF00]">$1.8B</div>
-          <div class="text-xs text-gray-400 mt-1">SAM (SMB segment)</div>
+        <div class="card">
+          <div style="font-weight:700; color:#fff; font-size:11px;">Denys Chumak</div>
+          <div style="font-size:9px; color:#00e600; font-weight:600; margin-bottom:3px;">Product &amp; Platform</div>
+          <div style="font-size:9px; color:#9ca3af;">6 yrs product &amp; eng. Ex-Product Lead fintech ($2M ARR). Built TIP platform E2E. MBA candidate.</div>
         </div>
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl font-extrabold text-[#00FF00]">$440K</div>
-          <div class="text-xs text-gray-400 mt-1">SOM Year 1</div>
-        </div>
-        <div class="stat-card text-center">
-          <div class="text-2xl sm:text-3xl font-extrabold text-[#00FF00]">$5.16M</div>
-          <div class="text-xs text-gray-400 mt-1">SOM Year 3</div>
+        <div class="card">
+          <div style="font-weight:700; color:#fff; font-size:11px;">Anatoliy Standerchuk</div>
+          <div style="font-size:9px; color:#00e600; font-weight:600; margin-bottom:3px;">Lead Developer &middot; FT</div>
+          <div style="font-size:9px; color:#9ca3af;">Full-stack (Next.js, React, PostgreSQL). Platform architecture, API, DevOps. Ex-B2B SaaS.</div>
         </div>
       </div>
+      <p style="font-size:9px; color:#6b7280; margin-top:4px;"><span style="color:#9ca3af; font-weight:600;">Advisory:</span> Foxconn supply chain veteran (20+ yrs) &middot; Former DHL APAC operations director</p>
+    </div>
 
-      <p class="text-sm text-gray-400 mb-4">
-        <strong class="text-[#00FF00]">11.8% CAGR</strong> (2024&ndash;2030) &mdash; MarketsandMarkets Global Cargo Tracking Report
-      </p>
-      <p class="text-sm text-gray-400">
-        <strong class="text-white">Initial target:</strong> SMB businesses shipping high-value goods from China to UK/EU/US&mdash;a corridor generating 40%+ of global cross-border e-commerce volume.
-      </p>
-    </section>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 5. TRACTION & MILESTONES ===== -->
-    <section>
-      <div class="section-label">Traction &amp; Milestones</div>
-
-      <div class="space-y-1">
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x2705;</span>
-          <span class="text-gray-200 flex-1">Working hardware prototype &mdash; production-ready, tested</span>
-        </div>
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x2705;</span>
-          <span class="text-gray-200 flex-1">Live tracking platform &mdash; MVP deployed at <a href="https://tip.live" class="text-[#00FF00] underline underline-offset-2">tip.live</a></span>
-        </div>
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x2705;</span>
-          <span class="text-gray-200 flex-1">softSIM connectivity contract signed &mdash; Onomondo, 180+ countries</span>
-        </div>
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x2705;</span>
-          <span class="text-gray-200 flex-1">Stripe payments integrated &mdash; checkout live</span>
-        </div>
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x2705;</span>
-          <span class="text-gray-200 flex-1">CE/FCC certification pathway confirmed</span>
-        </div>
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x1F504;</span>
-          <span class="text-gray-200 flex-1">First 5 pilot customers onboarding &mdash; Q1 2026</span>
-        </div>
-        <div class="milestone-row">
-          <span class="text-lg flex-shrink-0">&#x1F3AF;</span>
-          <span class="text-gray-200 flex-1">500+ paying customers, 20,000 labels &mdash; Year 1 target</span>
-        </div>
-      </div>
-    </section>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 6. BUSINESS MODEL ===== -->
-    <section>
-      <div class="section-label">Business Model</div>
-      <p class="text-base text-gray-300 mb-6">
-        <strong class="text-white">Primary revenue:</strong> Label sales (one-time purchase, no subscription required)
-      </p>
-
-      <div class="overflow-x-auto max-w-full mb-6">
-        <table class="min-w-[420px]">
-          <thead>
-            <tr><th>Pack</th><th>Price</th><th>COGS</th><th>Gross Margin</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="text-gray-300">1 Label</td><td class="text-white">$25</td><td class="text-gray-400">$11</td><td class="text-white">56%</td></tr>
-            <tr><td class="text-gray-300">5 Labels</td><td class="text-white">$110 ($22/ea)</td><td class="text-gray-400">$55</td><td class="text-white">50%</td></tr>
-            <tr><td class="text-gray-300">10 Labels</td><td class="text-white">$200 ($20/ea)</td><td class="text-gray-400">$110</td><td class="text-white">45%</td></tr>
-            <tr class="tip-row"><td class="text-[#00FF00]">At Scale (Y3)</td><td class="text-[#00FF00]">$25.50</td><td class="text-gray-400">$9.50</td><td class="text-[#00FF00]">63%</td></tr>
-          </tbody>
-        </table>
+    <!-- THE ASK -->
+    <div>
+      <div class="sh">The Ask</div>
+      <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:6px;">
+        <span style="font-size:28px; font-weight:900; color:#00e600;">$500K</span>
+        <span style="font-size:11px; color:#6b7280;">Seed &middot; SAFE</span>
       </div>
 
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="stat-card text-center">
-          <div class="text-3xl font-extrabold text-white">50%</div>
-          <div class="text-xs text-gray-400 mt-1">Gross Margin &mdash; Year 1</div>
-        </div>
-        <div class="stat-card text-center border-[#00FF00]/30">
-          <div class="text-3xl font-extrabold text-[#00FF00]">63%</div>
-          <div class="text-xs text-gray-400 mt-1">Gross Margin &mdash; Year 3</div>
-        </div>
+      <!-- Fund bar -->
+      <div class="fb" style="display:flex; border-radius:4px; overflow:hidden; margin-bottom:2px;">
+        <div style="width:40%; background:#00e600; color:#0f1117;">40%</div>
+        <div style="width:30%; background:#00c200; color:#0f1117;">30%</div>
+        <div style="width:20%; background:#009900; color:#fff;">20%</div>
+        <div style="width:10%; background:#006600; color:#fff;">10%</div>
+      </div>
+      <div style="display:flex; font-size:8px; color:#6b7280; margin-bottom:8px;">
+        <div style="width:40%;">Sales &amp; Mktg <span class="gw" style="font-size:8px;">$200K</span></div>
+        <div style="width:30%;">Manufacturing <span class="gw" style="font-size:8px;">$150K</span></div>
+        <div style="width:20%;">Engineering <span class="gw" style="font-size:8px;">$100K</span></div>
+        <div style="width:10%;">Ops <span class="gw" style="font-size:8px;">$50K</span></div>
       </div>
 
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Future Revenue Streams (Year 2+)</h3>
-      <ul class="space-y-1.5 text-sm text-gray-300">
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>Premium subscriptions ($10/mo for extended data retention, analytics)</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>API access for enterprise integrations</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>White-label partnerships with freight forwarders</li>
-      </ul>
-    </section>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 7. COMPETITIVE LANDSCAPE ===== -->
-    <section>
-      <div class="section-label">Competitive Landscape</div>
-
-      <div class="overflow-x-auto max-w-full mb-8">
-        <table class="min-w-[540px]">
-          <thead>
-            <tr><th>Company</th><th>Price</th><th>Target</th><th>Coverage</th><th>Our Advantage</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="text-gray-300 font-medium">Tive</td><td class="text-gray-400">$150&ndash;300</td><td class="text-gray-400">Enterprise</td><td class="text-gray-400">150+</td><td class="text-gray-300">85% cheaper, simpler setup</td></tr>
-            <tr><td class="text-gray-300 font-medium">Roambee</td><td class="text-gray-400">$200&ndash;400</td><td class="text-gray-400">Enterprise</td><td class="text-gray-400">150+</td><td class="text-gray-300">No contracts, no IT integration</td></tr>
-            <tr><td class="text-gray-300 font-medium">Reelables</td><td class="text-gray-400">$20&ndash;30</td><td class="text-gray-400">SMB</td><td class="text-gray-400">~100</td><td class="text-gray-300">Wider coverage, longer battery</td></tr>
-            <tr><td class="text-gray-300 font-medium">Sensos</td><td class="text-gray-400">&euro;30&ndash;80</td><td class="text-gray-400">Mid-market</td><td class="text-gray-400">&mdash;</td><td class="text-gray-300">Lower price, disposable</td></tr>
-            <tr class="tip-row"><td class="text-[#00FF00] font-bold">TIP &bigstar;</td><td class="text-[#00FF00]">$20&ndash;25</td><td class="text-[#00FF00]">SMB</td><td class="text-[#00FF00]">180+</td><td class="text-[#00FF00]">Full coverage, AI, $9.50 COGS</td></tr>
-          </tbody>
-        </table>
+      <div class="sh" style="margin-bottom:4px;">12-Month Milestones</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; font-size:10px; margin-bottom:6px;">
+        <div><span class="g">&bull;</span> 20K labels &rarr; 500+ customers</div>
+        <div><span class="g">&bull;</span> $440K revenue</div>
+        <div><span class="g">&bull;</span> Break-even monthly by Q4</div>
+        <div><span class="g">&bull;</span> 3+ ROI case studies</div>
       </div>
 
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Defensible Advantages</h3>
-      <ol class="space-y-2 text-sm text-gray-300">
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] font-bold flex-shrink-0">1.</span>Proprietary 3.5mm form factor with 60+ day battery (patent application in progress)</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] font-bold flex-shrink-0">2.</span>CEO with 12 years in Shenzhen and 10+ year supplier relationships</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] font-bold flex-shrink-0">3.</span>Direct access to China export ecosystem via founder network</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] font-bold flex-shrink-0">4.</span>$9.50 COGS at scale vs estimated $10+ for competitors</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] font-bold flex-shrink-0">5.</span>AI route intelligence: transport-mode detection, route reconstruction</li>
-      </ol>
-    </section>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 8. TEAM ===== -->
-    <section>
-      <div class="section-label">Team</div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div class="stat-card">
-          <div class="text-lg font-bold text-white">Andrii Tkachuk</div>
-          <div class="text-sm text-[#00FF00] font-semibold mb-3">CEO &amp; Hardware Lead &middot; Full-time</div>
-          <ul class="text-sm text-gray-300 space-y-1.5">
-            <li>12 years in electronics manufacturing, Shenzhen network</li>
-            <li>Founded UTEC (2018) &mdash; hardware dev company, 8 employees, profitable</li>
-            <li>15+ IoT products from prototype to mass production</li>
-            <li>Built TIP device: concept &rarr; working prototype in 8 months</li>
-          </ul>
-        </div>
-        <div class="stat-card">
-          <div class="text-lg font-bold text-white">Denys Chumak</div>
-          <div class="text-sm text-[#00FF00] font-semibold mb-3">Product &amp; Platform &middot; &rarr; Full-time post-funding</div>
-          <ul class="text-sm text-gray-300 space-y-1.5">
-            <li>6 years in product management and software development</li>
-            <li>Product Lead at fintech startup (B2B SaaS, $2M ARR)</li>
-            <li>Built TIP tracking platform end-to-end (Next.js, PostgreSQL)</li>
-            <li>MBA candidate, experienced in investor relations</li>
-          </ul>
-        </div>
+      <div class="card" style="display:inline-block; border-color:#00e60030;">
+        <span style="font-size:9px; font-weight:700; color:#00e600;">SERIES A TRIGGER (M18):</span>
+        <span style="font-size:10px; color:#d1d5db;">$50K MRR &middot; 30K labels/yr</span>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div class="stat-card">
-          <div class="text-lg font-bold text-white">Anatoliy Standerchuk</div>
-          <div class="text-sm text-[#00FF00] font-semibold mb-3">Lead Developer &middot; Full-time</div>
-          <ul class="text-sm text-gray-300 space-y-1.5">
-            <li>Full-stack engineer: Next.js, React, PostgreSQL</li>
-            <li>Platform architecture, API development, DevOps</li>
-            <li>Previously built scalable B2B SaaS products</li>
-          </ul>
-        </div>
-        <div class="stat-card flex items-center">
-          <div>
-            <div class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Advisory (Informal)</div>
-            <ul class="text-sm text-gray-300 space-y-1.5">
-              <li><strong class="text-white">Manufacturing:</strong> 20+ year veteran of Foxconn supply chain</li>
-              <li><strong class="text-white">Logistics:</strong> Former DHL operations director (APAC)</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
+  </div>
 
-    <div class="section-divider my-8 sm:my-12"></div>
+  <!-- Footer line -->
+  <div style="text-align:center; margin-top:8px; font-size:9px; color:#4b5563;">&copy; 2026 TIP &nbsp;&middot;&nbsp; <a href="https://tip.live" style="color:#00e600; text-decoration:none;">tip.live</a></div>
 
-    <!-- ===== 9. THE ASK ===== -->
-    <section>
-      <div class="section-label">The Ask</div>
-
-      <div class="mb-2">
-        <span class="text-4xl sm:text-5xl font-extrabold text-[#00FF00]">$500K</span>
-        <span class="text-lg text-gray-400 ml-2">Seed Round</span>
-      </div>
-      <p class="text-sm text-gray-400 mb-8">SAFE, standard terms</p>
-
-      <!-- Fund allocation bar -->
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Use of Funds</h3>
-      <div class="fund-bar flex rounded-lg overflow-hidden mb-2">
-        <div style="width:40%" class="bg-[#00FF00] text-brand-darker">40%</div>
-        <div style="width:30%" class="bg-[#00CC00] text-brand-darker">30%</div>
-        <div style="width:20%" class="bg-[#009900] text-white">20%</div>
-        <div style="width:10%" class="bg-[#006600] text-white">10%</div>
-      </div>
-      <div class="flex text-xs text-gray-400 mb-8">
-        <div style="width:40%" class="pr-1">Sales &amp; Marketing<br><span class="text-white font-medium">$200K</span></div>
-        <div style="width:30%" class="pr-1">Manufacturing<br><span class="text-white font-medium">$150K</span></div>
-        <div style="width:20%" class="pr-1">Engineering<br><span class="text-white font-medium">$100K</span></div>
-        <div style="width:10%">Operations<br><span class="text-white font-medium">$50K</span></div>
-      </div>
-
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">12-Month Milestones</h3>
-      <ul class="space-y-1.5 text-sm text-gray-300 mb-8">
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>20,000 labels sold to 500+ customers</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>$440K revenue, break-even monthly by Q4</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>3+ case studies with measurable ROI</li>
-        <li class="flex items-start gap-2"><span class="text-[#00FF00] mt-0.5">&bull;</span>Platform ready for Series A scale</li>
-      </ul>
-
-      <div class="stat-card border-[#00FF00]/30 inline-block">
-        <div class="text-xs font-semibold text-[#00FF00] uppercase tracking-wider mb-1">Series A Trigger (Month 18)</div>
-        <div class="text-sm text-gray-200">$50K MRR &middot; 30K labels/year run-rate</div>
-      </div>
-    </section>
-
-    <div class="section-divider my-8 sm:my-12"></div>
-
-    <!-- ===== 10. FOOTER / CONTACT ===== -->
-    <footer class="text-center py-8">
-      <div class="text-xl font-extrabold text-white mb-1">TIP</div>
-      <p class="text-sm text-gray-400 mb-6">Track Any Cargo, Anywhere</p>
-
-      <div class="space-y-2 mb-6">
-        <div class="text-sm">
-          <span class="text-gray-400">Andrii Tkachuk</span>
-          <a href="mailto:av@tip.live" class="text-[#00FF00] ml-2">av@tip.live</a>
-        </div>
-        <div class="text-sm">
-          <span class="text-gray-400">Denys Chumak</span>
-          <a href="mailto:denys@tip.live" class="text-[#00FF00] ml-2">denys@tip.live</a>
-        </div>
-      </div>
-
-      <a href="https://tip.live" class="text-sm text-[#00FF00] font-medium">tip.live</a>
-
-      <p class="text-xs text-gray-600 mt-8">&copy; 2026 TIP</p>
-    </footer>
-
-  </main>
+</div>
 </body>
 </html>
