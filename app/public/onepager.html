@@ -40,6 +40,10 @@
     /* Cards (inside cells) */
     .card { background: #1e2438; border: 1px solid #3a4255; border-radius: 6px; padding: 7px 10px; }
 
+    /* Footnote lines */
+    .note { font-size: 10.5px; color: #a8b1be; margin-top: 5px; }
+    .note b { color: #00e600; font-weight: 600; }
+
     /* Green accent text */
     .g { color: #00e600; }
     .gw { color: #fff; font-weight: 600; }
@@ -60,6 +64,8 @@
       th, td { border-color: #d1d5db !important; color: #222 !important; }
       .tip-row { background: rgba(4, 120, 87, 0.08) !important; }
       .tip-row td { color: #047857 !important; }
+      .note { color: #555 !important; }
+      .note b { color: #047857 !important; }
       .d { background: #ccc !important; opacity: 1 !important; }
       .fb > div { color: #111 !important; }
       @page { margin: 10mm; size: A4; }
@@ -127,7 +133,7 @@
     <div class="cell">
       <div class="sh">The Problem</div>
       <p><span class="g" style="font-weight:700;">$15&ndash;25B</span> lost annually to cargo theft, delays, and misrouted shipments. Trackers cost <span class="g" style="font-weight:700;">$70&ndash;500</span>/device with complex setup and carrier lock-in.</p>
-      <p style="margin-top:5px; font-style:italic; color:#a8b1be; font-size:11px; border-left:2px solid #00e600; padding-left:8px;">47% of supply chain leaders cite visibility as #1 priority &mdash; Gartner 2023</p>
+      <p class="note"><b>Gartner 2023:</b> 47% of supply chain leaders cite visibility as #1 priority</p>
     </div>
 
     <!-- SOLUTION -->
@@ -201,7 +207,7 @@
           <tr class="tip-row"><td>At Scale Y3</td><td>$25.50</td><td style="color:#a8b1be;">$9.50</td><td>63%</td></tr>
         </tbody>
       </table>
-      <p style="font-size:10.5px; color:#a8b1be;">Future: Premium subs ($10/mo), API access, white-label</p>
+      <p class="note"><b>Future:</b> Premium subs ($10/mo), API access, white-label</p>
     </div>
 
     <!-- COMPETITORS -->
@@ -216,13 +222,7 @@
           <tr class="tip-row"><td>TIP &#9733;</td><td>$20&ndash;25</td><td>SMB</td><td>180+</td></tr>
         </tbody>
       </table>
-      <div style="font-size:10.5px; color:#d0d6de;">
-        <span class="g" style="font-weight:600;">Defensible:</span>
-        Proprietary 3.5mm form factor (patent pending) &middot;
-        12-yr supplier relationships &middot;
-        $9.50 COGS at scale &middot;
-        AI route intelligence
-      </div>
+      <p class="note"><b>Defensible:</b> Proprietary 3.5mm form factor (patent pending) &middot; 12-yr supplier relationships &middot; $9.50 COGS at scale &middot; AI route intelligence</p>
     </div>
   </div>
 
@@ -251,7 +251,7 @@
           <div style="font-size:10.5px; color:#d0d6de;">Full-stack (Next.js, React, PostgreSQL). Platform architecture, API, DevOps.</div>
         </div>
       </div>
-      <p style="font-size:10px; color:#a8b1be; margin-top:4px;"><span style="color:#d0d6de; font-weight:600;">Advisory:</span> Foxconn supply chain veteran (20+ yrs) &middot; Former DHL APAC operations director</p>
+      <p class="note"><b>Advisory:</b> Foxconn supply chain veteran (20+ yrs) &middot; Former DHL APAC operations director</p>
     </div>
 
     <!-- THE ASK -->
@@ -284,10 +284,7 @@
         <div><span class="g">&bull;</span> 3+ ROI case studies</div>
       </div>
 
-      <div class="card" style="display:inline-block; border-color:#00e60030;">
-        <span style="font-size:10px; font-weight:700; color:#00e600;">SERIES A TRIGGER (M18):</span>
-        <span style="font-size:11px; color:#f0f2f5;">$50K MRR &middot; 30K labels/yr</span>
-      </div>
+      <p class="note"><b>Series A Trigger (M18):</b> $50K MRR &middot; 30K labels/yr</p>
     </div>
   </div>
 
