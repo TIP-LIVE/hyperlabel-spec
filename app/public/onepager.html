@@ -19,13 +19,13 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', system-ui, sans-serif; background: #0f1117; color: #f0f2f5; font-size: 12.5px; line-height: 1.45; overflow-x: hidden; }
-    .page { max-width: 1280px; margin: 0 auto; padding: 22px 40px 14px; overflow-x: hidden; }
+    .page { max-width: 1280px; margin: 0 auto; padding: 16px 40px 8px; overflow-x: hidden; }
 
     /* Section headers */
-    .sh { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #00e600; margin-bottom: 5px; }
+    .sh { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #00e600; margin-bottom: 4px; }
 
     /* Divider */
-    .d { height: 1px; background: linear-gradient(to right, transparent, #00e600, transparent); opacity: 0.35; margin: 8px 0; }
+    .d { height: 1px; background: linear-gradient(to right, transparent, #00e600, transparent); opacity: 0.35; margin: 5px 0; }
 
     /* Tables */
     table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
@@ -34,7 +34,10 @@
     .tip-row { background: rgba(0, 230, 0, 0.07); }
     .tip-row td { font-weight: 600; color: #00e600; }
 
-    /* Cards */
+    /* Grid cells — equal-height panels */
+    .cell { background: #151920; border: 1px solid #252d3d; border-radius: 8px; padding: 7px 12px; }
+
+    /* Cards (inside cells) */
     .card { background: #1e2438; border: 1px solid #3a4255; border-radius: 6px; padding: 7px 10px; }
 
     /* Green accent text */
@@ -51,7 +54,8 @@
       .sh { color: #047857 !important; }
       .g { color: #047857 !important; }
       .gw { color: #111 !important; }
-      .card { background: #f8f9fa !important; border-color: #d1d5db !important; }
+      .cell { background: #f9fafb !important; border-color: #e5e7eb !important; }
+      .card { background: #f0f1f3 !important; border-color: #d1d5db !important; }
       th { background: #f0f0f0 !important; color: #444 !important; }
       th, td { border-color: #d1d5db !important; color: #222 !important; }
       .tip-row { background: rgba(4, 120, 87, 0.08) !important; }
@@ -66,7 +70,7 @@
       body { font-size: 13px; }
       .page { padding: 16px; max-width: 100%; }
       .cols { display: block !important; }
-      .cols > div { margin-bottom: 12px; }
+      .cols > .cell { margin-bottom: 12px; }
       .hero-stats { grid-template-columns: repeat(3, 1fr) !important; }
       .hdr-top { flex-wrap: wrap; gap: 4px; }
       .hdr-top > div:last-child { font-size: 9px !important; }
@@ -80,7 +84,7 @@
 <div class="page">
 
   <!-- ===== HEADER ===== -->
-  <div class="hdr-top" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+  <div class="hdr-top" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
     <div>
       <span style="font-size:26px; font-weight:900; color:#fff; letter-spacing:-0.02em;">TIP</span>
       <span style="font-size:11px; color:#a8b1be; margin-left:8px;">Seed Round &middot; 2026</span>
@@ -93,7 +97,7 @@
   </div>
 
   <!-- Title + Stats row -->
-  <div class="hero-row" style="display:flex; align-items:flex-end; gap:24px; margin-bottom:8px; flex-wrap:wrap;">
+  <div class="hero-row" style="display:flex; align-items:flex-end; gap:24px; margin-bottom:5px; flex-wrap:wrap;">
     <div style="flex:1; min-width:300px;">
       <h1 style="font-size:30px; font-weight:900; color:#fff; line-height:1; letter-spacing:-0.03em; margin-bottom:6px;">Track Any Cargo, Anywhere</h1>
       <p style="color:#d0d6de; font-size:13px; line-height:1.45;">Disposable $20 smart tracking labels. 180+ countries, 60-day battery, AI route intelligence. Scan QR, peel, stick &mdash; track from any device.</p>
@@ -117,17 +121,17 @@
   <div class="d"></div>
 
   <!-- ===== ROW 1: Problem + Solution + Market ===== -->
-  <div class="cols" style="display:grid; grid-template-columns:1fr 1.2fr 0.8fr; gap:20px; margin:7px 0;">
+  <div class="cols" style="display:grid; grid-template-columns:1fr 1.2fr 0.8fr; gap:8px; margin:4px 0;">
 
     <!-- PROBLEM -->
-    <div>
+    <div class="cell">
       <div class="sh">The Problem</div>
       <p><span class="g" style="font-weight:700;">$15&ndash;25B</span> lost annually to cargo theft, delays, and misrouted shipments. Trackers cost <span class="g" style="font-weight:700;">$70&ndash;500</span>/device with complex setup and carrier lock-in.</p>
       <p style="margin-top:5px; font-style:italic; color:#a8b1be; font-size:11px; border-left:2px solid #00e600; padding-left:8px;">47% of supply chain leaders cite visibility as #1 priority &mdash; Gartner 2023</p>
     </div>
 
     <!-- SOLUTION -->
-    <div>
+    <div class="cell">
       <div class="sh">Solution &mdash; TIP vs Enterprise</div>
       <table>
         <thead><tr><th style="width:25%;">Feature</th><th style="color:#00e600;">TIP</th><th>Enterprise</th></tr></thead>
@@ -142,7 +146,7 @@
     </div>
 
     <!-- MARKET -->
-    <div>
+    <div class="cell">
       <div class="sh">Market</div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px;">
         <div class="card" style="text-align:center; padding:6px;">
@@ -169,10 +173,10 @@
   <div class="d"></div>
 
   <!-- ===== ROW 2: Traction + Business Model + Competitors ===== -->
-  <div class="cols" style="display:grid; grid-template-columns:0.8fr 1fr 1.2fr; gap:20px; margin:7px 0;">
+  <div class="cols" style="display:grid; grid-template-columns:0.8fr 1fr 1.2fr; gap:8px; margin:4px 0;">
 
     <!-- TRACTION -->
-    <div>
+    <div class="cell">
       <div class="sh">Traction</div>
       <div style="display:flex; flex-direction:column; gap:3px; font-size:11.5px;">
         <div>&#x2705; Hardware prototype &mdash; production-ready</div>
@@ -186,7 +190,7 @@
     </div>
 
     <!-- BUSINESS MODEL -->
-    <div>
+    <div class="cell">
       <div class="sh">Business Model</div>
       <p style="margin-bottom:5px;">Label sales (one-time purchase). No subscription required.</p>
       <table style="margin-bottom:6px;">
@@ -202,7 +206,7 @@
     </div>
 
     <!-- COMPETITORS -->
-    <div>
+    <div class="cell">
       <div class="sh">Competitive Landscape</div>
       <table style="margin-bottom:6px;">
         <thead><tr><th>Company</th><th>Price</th><th>Target</th><th>Coverage</th></tr></thead>
@@ -226,10 +230,10 @@
   <div class="d"></div>
 
   <!-- ===== ROW 3: Team + The Ask ===== -->
-  <div class="cols" style="display:grid; grid-template-columns:1.3fr 1fr; gap:20px; margin:7px 0;">
+  <div class="cols" style="display:grid; grid-template-columns:1.3fr 1fr; gap:8px; margin:4px 0;">
 
     <!-- TEAM -->
-    <div>
+    <div class="cell">
       <div class="sh">Team</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
         <div class="card">
@@ -252,7 +256,7 @@
     </div>
 
     <!-- THE ASK -->
-    <div>
+    <div class="cell">
       <div class="sh">The Ask</div>
       <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:6px;">
         <span style="font-size:30px; font-weight:900; color:#00e600;">$500K</span>
@@ -289,7 +293,7 @@
   </div>
 
   <!-- Footer line -->
-  <div style="text-align:center; margin-top:5px; font-size:10px; color:#8891a0;">&copy; 2026 TIP &nbsp;&middot;&nbsp; <a href="https://tip.live" style="color:#00e600; text-decoration:none;">tip.live</a></div>
+  <div style="text-align:center; margin-top:3px; font-size:10px; color:#8891a0;">&copy; 2026 TIP &nbsp;&middot;&nbsp; <a href="https://tip.live" style="color:#00e600; text-decoration:none;">tip.live</a></div>
 
 </div>
 </body>
