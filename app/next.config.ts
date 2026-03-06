@@ -19,6 +19,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: '/:path*.html',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, s-maxage=0, must-revalidate',
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'max-age=0',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {
