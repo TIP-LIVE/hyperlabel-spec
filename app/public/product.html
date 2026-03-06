@@ -85,8 +85,10 @@
       .hero-stats { grid-template-columns: repeat(3, 1fr) !important; }
       .hdr-top { flex-wrap: wrap; gap: 4px; }
       .hdr-top > div:last-child { font-size: 9px !important; }
-      .hero-row { flex-direction: column !important; }
+      .hero-row { flex-direction: column !important; align-items: center !important; text-align: center; }
       .hero-row > div:first-child { min-width: 0 !important; }
+      .hero-row img { max-height: 260px !important; }
+      .hero-stats { justify-content: center !important; }
       table { font-size: 11px; }
     }
   </style>
@@ -106,32 +108,35 @@
     </div>
   </div>
 
-  <!-- Title + Stats row -->
-  <div class="hero-row" style="display:flex; align-items:flex-end; gap:24px; margin-bottom:5px; flex-wrap:wrap;">
-    <div style="flex:1; min-width:300px;">
-      <h1 style="font-size:30px; font-weight:900; color:#fff; line-height:1; letter-spacing:-0.03em; margin-bottom:6px;">Track Any Cargo, Anywhere</h1>
-      <p style="color:#d0d6de; font-size:13px; line-height:1.45;">Disposable $20 smart tracking labels. 180+ countries, 60-day battery, AI route intelligence. Scan QR, peel, stick &mdash; track from any device.</p>
+  <!-- ===== HERO: Product Showcase ===== -->
+  <div class="hero-row" style="display:flex; align-items:center; gap:32px; margin-bottom:5px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:280px;">
+      <h1 style="font-size:42px; font-weight:900; color:#fff; line-height:1.05; letter-spacing:-0.03em; margin-bottom:8px;">TIP Tracking Label</h1>
+      <p style="color:#d0d6de; font-size:14px; line-height:1.5; margin-bottom:12px;">Disposable smart tracking label for any cargo. Scan QR, peel, stick &mdash; track live from any device. No app, no subscription.</p>
+      <div class="hero-stats" style="display:grid; grid-template-columns:repeat(3,90px); gap:10px;">
+        <div class="card" style="text-align:center; padding:8px 6px;">
+          <div style="font-size:22px; font-weight:800; color:#00e600;">$20</div>
+          <div style="font-size:9px; color:#a8b1be; text-transform:uppercase; letter-spacing:0.05em;">per label</div>
+        </div>
+        <div class="card" style="text-align:center; padding:8px 6px;">
+          <div style="font-size:22px; font-weight:800; color:#00e600;">180+</div>
+          <div style="font-size:9px; color:#a8b1be; text-transform:uppercase; letter-spacing:0.05em;">countries</div>
+        </div>
+        <div class="card" style="text-align:center; padding:8px 6px;">
+          <div style="font-size:22px; font-weight:800; color:#00e600;">60+</div>
+          <div style="font-size:9px; color:#a8b1be; text-transform:uppercase; letter-spacing:0.05em;">day battery</div>
+        </div>
+      </div>
     </div>
-    <div class="hero-stats" style="display:grid; grid-template-columns:repeat(3,90px); gap:10px; flex-shrink:0;">
-      <div class="card" style="text-align:center; padding:8px 6px;">
-        <div style="font-size:22px; font-weight:800; color:#00e600;">$20</div>
-        <div style="font-size:9px; color:#a8b1be; text-transform:uppercase; letter-spacing:0.05em;">per label</div>
-      </div>
-      <div class="card" style="text-align:center; padding:8px 6px;">
-        <div style="font-size:22px; font-weight:800; color:#00e600;">180+</div>
-        <div style="font-size:9px; color:#a8b1be; text-transform:uppercase; letter-spacing:0.05em;">countries</div>
-      </div>
-      <div class="card" style="text-align:center; padding:8px 6px;">
-        <div style="font-size:22px; font-weight:800; color:#00e600;">60+</div>
-        <div style="font-size:9px; color:#a8b1be; text-transform:uppercase; letter-spacing:0.05em;">day battery</div>
-      </div>
+    <div style="flex-shrink:0; text-align:center;">
+      <img src="/tip-label.png" alt="TIP Tracking Label" style="max-height:320px; width:auto; border-radius:12px; filter:drop-shadow(0 8px 32px rgba(0,230,0,0.15));">
     </div>
   </div>
 
   <div class="d"></div>
 
-  <!-- ===== ROW 1: Problem + Solution + Product Image ===== -->
-  <div class="cols" style="display:grid; grid-template-columns:1fr 1.2fr 0.8fr; gap:8px; margin:4px 0;">
+  <!-- ===== ROW 1: Problem + Solution ===== -->
+  <div class="cols" style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px; margin:4px 0;">
 
     <!-- PROBLEM -->
     <div class="cell">
@@ -154,9 +159,6 @@
         </tbody>
       </table>
     </div>
-
-    <!-- PRODUCT IMAGE -->
-    <div class="cell" style="padding:0; background:url(/tip-label.png) center/cover no-repeat; min-height:0;"></div>
   </div>
 
   <div class="d"></div>
