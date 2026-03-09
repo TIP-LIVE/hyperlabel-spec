@@ -1,13 +1,13 @@
 import { z } from 'zod'
 
-// Shared address fields
+// Shared address fields — lat/lng are nullable so "not set" stores as null, not 0
 const addressFields = {
   originAddress: z.string().default(''),
-  originLat: z.number().min(-90).max(90),
-  originLng: z.number().min(-180).max(180),
+  originLat: z.number().min(-90).max(90).nullable().optional(),
+  originLng: z.number().min(-180).max(180).nullable().optional(),
   destinationAddress: z.string().default(''),
-  destinationLat: z.number().min(-90).max(90),
-  destinationLng: z.number().min(-180).max(180),
+  destinationLat: z.number().min(-90).max(90).nullable().optional(),
+  destinationLng: z.number().min(-180).max(180).nullable().optional(),
 }
 
 /** Create a CARGO_TRACKING shipment (single label, track cargo) */

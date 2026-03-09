@@ -143,8 +143,8 @@ export function TrackingMap({
   }, [isDark, mapRef])
 
   const latestLocation = locations[0]
-  const hasOrigin = originLat != null && originLng != null
-  const hasDestination = destinationLat != null && destinationLng != null
+  const hasOrigin = originLat != null && originLng != null && !(originLat === 0 && originLng === 0)
+  const hasDestination = destinationLat != null && destinationLng != null && !(destinationLat === 0 && destinationLng === 0)
 
   const center = useMemo(() => {
     if (latestLocation) {

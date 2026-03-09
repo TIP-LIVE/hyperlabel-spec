@@ -39,11 +39,11 @@ const cargoFormSchema = z.object({
   name: z.string().min(1, 'Cargo name is required').max(200),
   labelId: z.string().min(1, 'Please select a label'),
   originAddress: z.string().default(''),
-  originLat: z.number().min(-90).max(90),
-  originLng: z.number().min(-180).max(180),
+  originLat: z.number().min(-90).max(90).nullable().optional(),
+  originLng: z.number().min(-180).max(180).nullable().optional(),
   destinationAddress: z.string().default(''),
-  destinationLat: z.number().min(-90).max(90),
-  destinationLng: z.number().min(-180).max(180),
+  destinationLat: z.number().min(-90).max(90).nullable().optional(),
+  destinationLng: z.number().min(-180).max(180).nullable().optional(),
   consigneeEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
   consigneePhone: z.string().max(30).optional().or(z.literal('')),
 })
@@ -53,11 +53,11 @@ type CargoFormData = {
   name: string
   labelId: string
   originAddress: string
-  originLat: number
-  originLng: number
+  originLat: number | null
+  originLng: number | null
   destinationAddress: string
-  destinationLat: number
-  destinationLng: number
+  destinationLat: number | null
+  destinationLng: number | null
   consigneeEmail?: string
   consigneePhone?: string
 }
@@ -65,21 +65,21 @@ type CargoFormData = {
 const dispatchFormSchema = z.object({
   name: z.string().min(1, 'Dispatch name is required').max(200),
   originAddress: z.string().default(''),
-  originLat: z.number().min(-90).max(90),
-  originLng: z.number().min(-180).max(180),
+  originLat: z.number().min(-90).max(90).nullable().optional(),
+  originLng: z.number().min(-180).max(180).nullable().optional(),
   destinationAddress: z.string().default(''),
-  destinationLat: z.number().min(-90).max(90),
-  destinationLng: z.number().min(-180).max(180),
+  destinationLat: z.number().min(-90).max(90).nullable().optional(),
+  destinationLng: z.number().min(-180).max(180).nullable().optional(),
 })
 
 type DispatchFormData = {
   name: string
   originAddress: string
-  originLat: number
-  originLng: number
+  originLat: number | null
+  originLng: number | null
   destinationAddress: string
-  destinationLat: number
-  destinationLng: number
+  destinationLat: number | null
+  destinationLng: number | null
 }
 
 type AvailableLabel = {
@@ -180,11 +180,11 @@ function CargoTrackingForm({
       name: '',
       labelId: '',
       originAddress: '',
-      originLat: 0,
-      originLng: 0,
+      originLat: null,
+      originLng: null,
       destinationAddress: '',
-      destinationLat: 0,
-      destinationLng: 0,
+      destinationLat: null,
+      destinationLng: null,
       consigneeEmail: '',
       consigneePhone: '',
     },
@@ -232,10 +232,8 @@ function CargoTrackingForm({
   const handleOriginSelect = useCallback(
     (address: string, lat: number, lng: number) => {
       setValue('originAddress', address)
-      if (lat !== 0 && lng !== 0) {
-        setValue('originLat', lat)
-        setValue('originLng', lng)
-      }
+      setValue('originLat', lat && lng ? lat : null)
+      setValue('originLng', lat && lng ? lng : null)
     },
     [setValue]
   )
@@ -243,10 +241,8 @@ function CargoTrackingForm({
   const handleDestinationSelect = useCallback(
     (address: string, lat: number, lng: number) => {
       setValue('destinationAddress', address)
-      if (lat !== 0 && lng !== 0) {
-        setValue('destinationLat', lat)
-        setValue('destinationLng', lng)
-      }
+      setValue('destinationLat', lat && lng ? lat : null)
+      setValue('destinationLng', lat && lng ? lng : null)
     },
     [setValue]
   )
@@ -684,21 +680,19 @@ function LabelDispatchForm({
     defaultValues: {
       name: '',
       originAddress: '',
-      originLat: 0,
-      originLng: 0,
+      originLat: null,
+      originLng: null,
       destinationAddress: '',
-      destinationLat: 0,
-      destinationLng: 0,
+      destinationLat: null,
+      destinationLng: null,
     },
   })
 
   const handleOriginSelect = useCallback(
     (address: string, lat: number, lng: number) => {
       setValue('originAddress', address)
-      if (lat !== 0 && lng !== 0) {
-        setValue('originLat', lat)
-        setValue('originLng', lng)
-      }
+      setValue('originLat', lat && lng ? lat : null)
+      setValue('originLng', lat && lng ? lng : null)
     },
     [setValue]
   )
@@ -706,10 +700,8 @@ function LabelDispatchForm({
   const handleDestinationSelect = useCallback(
     (address: string, lat: number, lng: number) => {
       setValue('destinationAddress', address)
-      if (lat !== 0 && lng !== 0) {
-        setValue('destinationLat', lat)
-        setValue('destinationLng', lng)
-      }
+      setValue('destinationLat', lat && lng ? lat : null)
+      setValue('destinationLng', lat && lng ? lng : null)
     },
     [setValue]
   )
@@ -868,11 +860,7 @@ function RouteSection({
         </div>
       </div>
 
-      {/* Hidden coordinate fields */}
-      <input type="hidden" {...register('originLat', { valueAsNumber: true })} />
-      <input type="hidden" {...register('originLng', { valueAsNumber: true })} />
-      <input type="hidden" {...register('destinationLat', { valueAsNumber: true })} />
-      <input type="hidden" {...register('destinationLng', { valueAsNumber: true })} />
+      {/* Hidden coordinate fields (managed via setValue, not DOM inputs) */}
     </>
   )
 }

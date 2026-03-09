@@ -35,11 +35,11 @@ export function EditShipmentDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState(currentName || '')
   const [origin, setOrigin] = useState(currentOrigin || '')
-  const [originLat, setOriginLat] = useState<number>(0)
-  const [originLng, setOriginLng] = useState<number>(0)
+  const [originLat, setOriginLat] = useState<number | null>(null)
+  const [originLng, setOriginLng] = useState<number | null>(null)
   const [destination, setDestination] = useState(currentDestination || '')
-  const [destLat, setDestLat] = useState<number>(0)
-  const [destLng, setDestLng] = useState<number>(0)
+  const [destLat, setDestLat] = useState<number | null>(null)
+  const [destLng, setDestLng] = useState<number | null>(null)
   const router = useRouter()
 
   function handleOriginSelect(address: string, lat: number, lng: number) {
@@ -63,18 +63,18 @@ export function EditShipmentDialog({
     setIsLoading(true)
 
     try {
-      const body: Record<string, string | number> = {}
+      const body: Record<string, string | number | null> = {}
       if (name !== currentName) body.name = name
       if (origin !== currentOrigin) {
         body.originAddress = origin
-        if (originLat !== 0 && originLng !== 0) {
+        if (originLat != null && originLng != null) {
           body.originLat = originLat
           body.originLng = originLng
         }
       }
       if (destination !== currentDestination) {
         body.destinationAddress = destination
-        if (destLat !== 0 && destLng !== 0) {
+        if (destLat != null && destLng != null) {
           body.destinationLat = destLat
           body.destinationLng = destLng
         }
