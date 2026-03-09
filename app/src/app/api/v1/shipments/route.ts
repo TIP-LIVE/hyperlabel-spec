@@ -196,6 +196,17 @@ async function createCargoTracking(
     },
   })
 
+  // Backfill pre-shipment location data from label activation period
+  await db.locationEvent.updateMany({
+    where: {
+      labelId: label.id,
+      shipmentId: null,
+    },
+    data: {
+      shipmentId: shipment.id,
+    },
+  })
+
   // Update label status to ACTIVE if it was SOLD
   if (label.status === 'SOLD') {
     await db.label.update({
