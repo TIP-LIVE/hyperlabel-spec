@@ -44,6 +44,26 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Backfill orphaned label locations that weren't linked at shipment creation.
+    // Run synchronously when no locations exist so the first page load shows data.
+    if (shipment.labelId) {
+      const backfilled = await db.locationEvent.updateMany({
+        where: { labelId: shipment.labelId, shipmentId: null },
+        data: { shipmentId: shipment.id },
+      })
+
+      if (backfilled.count > 0) {
+        console.info(`[Shipment GET] backfilled ${backfilled.count} orphaned locations for ${shipment.id}`)
+        // Re-fetch locations after backfill
+        const locations = await db.locationEvent.findMany({
+          where: { shipmentId: shipment.id },
+          orderBy: { recordedAt: 'desc' },
+          take: 100,
+        })
+        return NextResponse.json({ shipment: { ...shipment, locations } })
+      }
+    }
+
     return NextResponse.json({ shipment })
   } catch (error) {
     return handleApiError(error, 'fetching shipment')

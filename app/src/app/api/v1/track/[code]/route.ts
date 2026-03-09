@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         name: true,
         status: true,
         shareEnabled: true,
+        labelId: true,
         originAddress: true,
         originLat: true,
         originLng: true,
@@ -83,6 +84,30 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       const expiryDate = new Date(shipment.deliveredAt.getTime() + ninetyDaysMs)
       if (new Date() > expiryDate) {
         return NextResponse.json({ error: 'Tracking link has expired' }, { status: 410 })
+      }
+    }
+
+    // Backfill orphaned label locations that weren't linked at shipment creation
+    if (shipment.labelId && shipment.locations.length === 0) {
+      const backfilled = await db.locationEvent.updateMany({
+        where: { labelId: shipment.labelId, shipmentId: null },
+        data: { shipmentId: shipment.id },
+      })
+      if (backfilled.count > 0) {
+        shipment.locations = await db.locationEvent.findMany({
+          where: { shipmentId: shipment.id },
+          orderBy: { recordedAt: 'desc' },
+          take: 50,
+          select: {
+            id: true,
+            latitude: true,
+            longitude: true,
+            accuracyM: true,
+            batteryPct: true,
+            recordedAt: true,
+            isOfflineSync: true,
+          },
+        })
       }
     }
 

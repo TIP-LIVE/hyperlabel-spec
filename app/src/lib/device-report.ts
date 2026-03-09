@@ -222,6 +222,18 @@ export async function processLocationReport(
     },
   })
 
+  // Backfill any orphaned locations from this label that pre-date the shipment
+  if (activeShipment) {
+    db.locationEvent.updateMany({
+      where: { labelId: label.id, shipmentId: null, id: { not: locationEvent.id } },
+      data: { shipmentId: activeShipment.id },
+    }).then((r) => {
+      if (r.count > 0) {
+        console.info(`[Device report] backfilled ${r.count} orphaned locations for ${label.deviceId}`)
+      }
+    }).catch(() => {})
+  }
+
   // Reverse-geocode the location and persist on the record
   try {
     const geo = await reverseGeocode(effectiveLat, effectiveLng)
