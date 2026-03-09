@@ -22,6 +22,13 @@ export interface OnomonodoUsageEntry {
   network: { country: string; mcc: string; mnc: string }
 }
 
+export interface OnomonodoSimLocation {
+  lat: number
+  lng: number
+  accuracy: number
+  time: string
+}
+
 // ============================================
 // Helpers
 // ============================================
@@ -113,6 +120,36 @@ export async function getOnomonodoUsage(simId: string): Promise<OnomonodoUsageEn
   const result = Array.isArray(usage) ? usage : []
   setCache(cacheKey, result, 300_000)
   return result
+}
+
+/**
+ * Fetch the last known location for a SIM by its Onomondo ID.
+ * Requires Fleet package on the Onomondo plan.
+ * The location field is optional and only present if available.
+ * NOT cached — always returns the freshest data for polling use.
+ */
+export async function getSimLocation(
+  simId: string
+): Promise<OnomonodoSimLocation | null> {
+  const headers = getHeaders()
+  const res = await fetch(`${ONOMONDO_API_BASE}/sims/${simId}`, { headers })
+  if (!res.ok) {
+    console.warn(`[Onomondo] Failed to fetch SIM ${simId}: ${res.status}`)
+    return null
+  }
+
+  const data = await res.json()
+  const loc = data?.location
+  if (!loc || loc.lat == null || loc.lng == null) {
+    return null
+  }
+
+  return {
+    lat: typeof loc.lat === 'string' ? parseFloat(loc.lat) : loc.lat,
+    lng: typeof loc.lng === 'string' ? parseFloat(loc.lng) : loc.lng,
+    accuracy: loc.accuracy ?? 1000,
+    time: loc.time ?? data.last_online ?? new Date().toISOString(),
+  }
 }
 
 // ============================================

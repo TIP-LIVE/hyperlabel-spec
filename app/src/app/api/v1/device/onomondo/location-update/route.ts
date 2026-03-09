@@ -10,6 +10,7 @@ import {
   getClientIp,
   rateLimitResponse,
 } from '@/lib/rate-limit'
+import { resolveCellTowerLocation } from '@/lib/cell-geolocation'
 
 /**
  * POST /api/v1/device/onomondo/location-update
@@ -63,23 +64,56 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
-    // If lat/lng are null, acknowledge but skip — return 200 so Onomondo doesn't retry
-    if (data.location.lat === null || data.location.lng === null) {
-      return NextResponse.json({
-        success: true,
-        skipped: true,
-        reason: 'No coordinates in location update',
-      })
+    const mcc = parseInt(data.network.mcc, 10)
+    const mnc = parseInt(data.network.mnc, 10)
+    const lac = data.location.location_area_code
+    const cid = data.location.cell_id
+
+    let lat: number | null = null
+    let lng: number | null = null
+    let accuracy: number | undefined = data.location.accuracy ?? undefined
+
+    // Try Onomondo-provided coordinates first
+    if (data.location.lat !== null && data.location.lng !== null) {
+      const parsedLat = parseFloat(data.location.lat)
+      const parsedLng = parseFloat(data.location.lng)
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        lat = parsedLat
+        lng = parsedLng
+      }
     }
 
-    const lat = parseFloat(data.location.lat)
-    const lng = parseFloat(data.location.lng)
+    // Fallback: resolve cell tower coordinates via Google Geolocation API
+    if (lat === null || lng === null) {
+      if (lac !== null && !isNaN(mcc) && !isNaN(mnc)) {
+        const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
+        if (resolved) {
+          lat = resolved.lat
+          lng = resolved.lng
+          accuracy = resolved.accuracyM
+          console.info('[Onomondo location-update] resolved via cell tower geolocation', {
+            iccid: data.iccid,
+            cell: `${mcc}:${mnc}:${lac}:${cid}`,
+            lat,
+            lng,
+            accuracyM: accuracy,
+          })
+        }
+      }
+    }
 
-    if (isNaN(lat) || isNaN(lng)) {
+    // If still no coordinates, skip
+    if (lat === null || lng === null) {
+      console.info('[Onomondo location-update] skipped — no coordinates', {
+        iccid: data.iccid,
+        simLabel: data.sim_label,
+        cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
+        onomondoLatNull: data.location.lat === null,
+      })
       return NextResponse.json({
         success: true,
         skipped: true,
-        reason: 'Non-numeric coordinates',
+        reason: 'No coordinates available (Onomondo null + geolocation failed)',
       })
     }
 
@@ -88,7 +122,7 @@ export async function POST(req: NextRequest) {
       imei: data.imei,
       cellLatitude: lat,
       cellLongitude: lng,
-      accuracy: data.location.accuracy ?? undefined,
+      accuracy,
       recordedAt: data.time,
       source: 'CELL_TOWER',
     })
