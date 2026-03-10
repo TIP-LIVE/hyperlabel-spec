@@ -46,30 +46,42 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // On-demand sync: poll Onomondo for fresh location data (fire-and-forget)
+    // On-demand sync: poll Onomondo for fresh location data (awaited with timeout)
+    let didSync = false
     const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
     if (isActive && shipment.label?.iccid) {
-      syncLabelLocation(shipment.label).catch(() => {})
+      try {
+        didSync = await Promise.race([
+          syncLabelLocation(shipment.label),
+          new Promise<false>((resolve) => setTimeout(() => resolve(false), 5000)),
+        ])
+      } catch (err) {
+        console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
+      }
     }
 
     // Backfill orphaned label locations that weren't linked at shipment creation.
     // Run synchronously when no locations exist so the first page load shows data.
+    let needsRefetch = didSync
     if (shipment.labelId) {
       const backfilled = await db.locationEvent.updateMany({
         where: { labelId: shipment.labelId, shipmentId: null },
         data: { shipmentId: shipment.id },
       })
-
       if (backfilled.count > 0) {
         console.info(`[Shipment GET] backfilled ${backfilled.count} orphaned locations for ${shipment.id}`)
-        // Re-fetch locations after backfill
-        const locations = await db.locationEvent.findMany({
-          where: { shipmentId: shipment.id },
-          orderBy: { recordedAt: 'desc' },
-          take: 100,
-        })
-        return NextResponse.json({ shipment: { ...shipment, locations } })
+        needsRefetch = true
       }
+    }
+
+    // Re-fetch locations if sync or backfill added new data
+    if (needsRefetch) {
+      const locations = await db.locationEvent.findMany({
+        where: { shipmentId: shipment.id },
+        orderBy: { recordedAt: 'desc' },
+        take: 100,
+      })
+      return NextResponse.json({ shipment: { ...shipment, locations } })
     }
 
     return NextResponse.json({ shipment })

@@ -90,10 +90,36 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // On-demand sync: poll Onomondo for fresh location data (fire-and-forget)
+    // On-demand sync: poll Onomondo for fresh location data (awaited with timeout)
+    let didSync = false
     const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
     if (isActive && shipment.label?.iccid) {
-      syncLabelLocation(shipment.label).catch(() => {})
+      try {
+        didSync = await Promise.race([
+          syncLabelLocation(shipment.label),
+          new Promise<false>((resolve) => setTimeout(() => resolve(false), 5000)),
+        ])
+      } catch (err) {
+        console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
+      }
+    }
+
+    // Re-fetch locations if sync added new data
+    if (didSync) {
+      shipment.locations = await db.locationEvent.findMany({
+        where: { shipmentId: shipment.id },
+        orderBy: { recordedAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          latitude: true,
+          longitude: true,
+          accuracyM: true,
+          batteryPct: true,
+          recordedAt: true,
+          isOfflineSync: true,
+        },
+      })
     }
 
     // Backfill orphaned label locations that weren't linked at shipment creation
