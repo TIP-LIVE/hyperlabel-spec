@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
+import { syncLabelLocation } from '@/lib/sync-onomondo'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -23,6 +24,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           select: {
             id: true,
             deviceId: true,
+            iccid: true,
             batteryPct: true,
             status: true,
             firmwareVersion: true,
@@ -42,6 +44,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     if (!canAccessRecord(context, shipment)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // On-demand sync: poll Onomondo for fresh location data (fire-and-forget)
+    const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
+    if (isActive && shipment.label?.iccid) {
+      syncLabelLocation(shipment.label).catch(() => {})
     }
 
     // Backfill orphaned label locations that weren't linked at shipment creation.
