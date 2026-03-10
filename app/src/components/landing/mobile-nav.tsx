@@ -14,10 +14,10 @@ import { Menu } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 
 const navLinks = [
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#features', label: 'Features' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '/features', label: 'Features' },
+  { href: '/compare', label: 'Compare' },
+  { href: '/#pricing', label: 'Pricing' },
+  { href: '/#faq', label: 'FAQ' },
 ]
 
 export function MobileNav() {

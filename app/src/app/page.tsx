@@ -22,8 +22,9 @@ import {
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { LandingFAQ } from '@/components/landing/landing-faq'
-import { MobileNav } from '@/components/landing/mobile-nav'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { MarketingHeader } from '@/components/landing/marketing-header'
+import { MarketingCTA } from '@/components/landing/marketing-cta'
+import { MarketingFooter } from '@/components/landing/marketing-footer'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import type { Metadata } from 'next'
 
@@ -49,50 +50,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo size="lg" />
-          </Link>
-          <nav className="hidden items-center gap-8 md:flex">
-            <Link
-              href="#how-it-works"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              How it works
-            </Link>
-            <Link
-              href="#features"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Features
-            </Link>
-            <Link
-              href="#pricing"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="#faq"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              FAQ
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-              <Link href="/sign-in">Sign In</Link>
-            </Button>
-            <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
-              <Link href="/sign-up">Get Started</Link>
-            </Button>
-            <ThemeToggle />
-            <MobileNav />
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Hero — dark background, bold typography */}
       <section className="relative overflow-hidden border-b bg-black py-20 md:py-28">
@@ -445,53 +403,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t bg-primary py-16 md:py-20 text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold md:text-3xl">Ready to Track Door to Door?</h2>
-          <p className="mx-auto mt-3 max-w-lg opacity-90">
-            Get your first tracking label and follow your cargo from pickup to delivery.
-          </p>
-          <Button size="lg" variant="secondary" className="mt-8 h-12 rounded-full px-8 text-base font-semibold" asChild>
-            <Link href="/sign-up">Get Your First Label</Link>
-          </Button>
-        </div>
-      </section>
+      <MarketingCTA />
 
-      {/* Footer */}
-      <footer className="border-t bg-black py-8 text-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="h-2 w-2 rounded-full bg-red-500" />
-              <span className="font-medium">tip.live</span>
-            </div>
-            <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
-              <Link href="#features" className="hover:text-white">
-                Features
-              </Link>
-              <Link href="#pricing" className="hover:text-white">
-                Pricing
-              </Link>
-              <Link href="#faq" className="hover:text-white">
-                FAQ
-              </Link>
-              <Link href="#contact" className="hover:text-white">
-                Contact
-              </Link>
-              <Link href="/privacy" className="hover:text-white">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-white">
-                Terms
-              </Link>
-            </nav>
-          </div>
-          <p className="mt-8 text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} TIP. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   )
 }
