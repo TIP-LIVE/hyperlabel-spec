@@ -64,6 +64,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    console.info('[webhook:device-report] received', {
+      deviceId: validated.data.deviceId,
+      imei: validated.data.imei,
+      iccid: validated.data.iccid,
+      lat: validated.data.latitude,
+      lng: validated.data.longitude,
+    })
+
     // Delegate to shared processing logic
     const result = await processLocationReport(validated.data)
     return NextResponse.json(result)

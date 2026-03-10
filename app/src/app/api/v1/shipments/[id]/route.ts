@@ -127,6 +127,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       data: {
         ...validated.data,
         ...(validated.data.status === 'DELIVERED' && { deliveredAt: new Date() }),
+        ...(validated.data.status === 'IN_TRANSIT' && { deliveredAt: null }),
       },
       include: {
         label: {

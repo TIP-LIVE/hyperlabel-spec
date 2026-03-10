@@ -60,6 +60,15 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
+    console.info('[webhook:onomondo] received', {
+      iccid: data.iccid,
+      imei: data.imei,
+      lat: data.latitude,
+      lng: data.longitude,
+      battery: data.battery,
+      offlineQueue: data.offline_queue?.length ?? 0,
+    })
+
     // Process the main report
     const mainResult = await processLocationReport({
       iccid: data.iccid,

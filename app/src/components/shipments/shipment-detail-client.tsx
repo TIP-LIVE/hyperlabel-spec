@@ -293,6 +293,30 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                 currentDestination={shipment.destinationAddress}
               />
             )}
+            {shipment.status === 'DELIVERED' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/v1/shipments/${shipment.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ status: 'IN_TRANSIT' }),
+                    })
+                    if (!res.ok) throw new Error('Failed to reactivate')
+                    toast.success('Tracking reactivated')
+                    poll()
+                  } catch {
+                    toast.error('Failed to reactivate tracking')
+                  }
+                }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Reactivate Tracking
+              </Button>
+            )}
             <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />
             {isActive && (
               <CancelShipmentDialog

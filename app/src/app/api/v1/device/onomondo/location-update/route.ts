@@ -64,6 +64,14 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
+    console.info('[webhook:location-update] received', {
+      iccid: data.iccid,
+      imei: data.imei,
+      simLabel: data.sim_label,
+      lat: data.location.lat,
+      lng: data.location.lng,
+    })
+
     const mcc = parseInt(data.network.mcc, 10)
     const mnc = parseInt(data.network.mnc, 10)
     const lac = data.location.location_area_code

@@ -184,6 +184,16 @@ export async function processLocationReport(
   const activeShipment =
     label.shipments[0] || label.shipmentLabels[0]?.shipment
 
+  if (process.env.NODE_ENV !== 'test') {
+    console.info('[Device report] resolved', {
+      deviceId: label.deviceId,
+      labelId: label.id,
+      shipmentId: activeShipment?.id ?? null,
+      shipmentStatus: activeShipment?.status ?? null,
+      source: input.source ?? 'GPS',
+    })
+  }
+
   // Parse recorded timestamp or use current time
   const recordedAt = input.recordedAt ? new Date(input.recordedAt) : new Date()
   const receivedAt = new Date()

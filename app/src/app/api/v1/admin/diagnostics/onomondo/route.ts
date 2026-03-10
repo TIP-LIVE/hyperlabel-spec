@@ -104,10 +104,39 @@ export async function GET() {
       labelDiagnostics.push(diag)
     }
 
+    // Latest 10 location events across ALL labels (reveals if data IS arriving)
+    const recentEvents = await db.locationEvent.findMany({
+      orderBy: { receivedAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        labelId: true,
+        shipmentId: true,
+        source: true,
+        recordedAt: true,
+        receivedAt: true,
+        geocodedCity: true,
+        geocodedCountry: true,
+        label: { select: { deviceId: true } },
+      },
+    })
+
     return NextResponse.json({
       envVarsSet: envCheck,
       activeLabelsCount: activeLabels.length,
       labels: labelDiagnostics,
+      recentLocationEvents: recentEvents.map((e) => ({
+        id: e.id,
+        deviceId: e.label.deviceId,
+        shipmentId: e.shipmentId,
+        orphaned: e.shipmentId === null,
+        source: e.source,
+        recordedAt: e.recordedAt,
+        receivedAt: e.receivedAt,
+        location: e.geocodedCity
+          ? `${e.geocodedCity}, ${e.geocodedCountry}`
+          : null,
+      })),
     })
   } catch (error) {
     return handleApiError(error, 'running onomondo diagnostics')
