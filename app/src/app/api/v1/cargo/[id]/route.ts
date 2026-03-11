@@ -107,7 +107,31 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       })().catch(() => {})
     }
 
-    return NextResponse.json({ shipment: needsRefetch ? { ...shipment, locations: finalLocations } : shipment })
+    // Backfill origin/destination address from coordinates if missing
+    const addressUpdates: Record<string, string> = {}
+    const s = needsRefetch ? { ...shipment, locations: finalLocations } : shipment
+
+    if (s.originLat != null && s.originLng != null && !s.originAddress) {
+      const geo = await reverseGeocode(s.originLat, s.originLng)
+      if (geo) {
+        const addr = geo.city && geo.country ? `${geo.city}, ${geo.country}` : geo.city || geo.country
+        if (addr) addressUpdates.originAddress = addr
+      }
+    }
+    if (s.destinationLat != null && s.destinationLng != null && !s.destinationAddress) {
+      const geo = await reverseGeocode(s.destinationLat, s.destinationLng)
+      if (geo) {
+        const addr = geo.city && geo.country ? `${geo.city}, ${geo.country}` : geo.city || geo.country
+        if (addr) addressUpdates.destinationAddress = addr
+      }
+    }
+
+    if (Object.keys(addressUpdates).length > 0) {
+      await db.shipment.update({ where: { id: s.id }, data: addressUpdates })
+      Object.assign(s, addressUpdates)
+    }
+
+    return NextResponse.json({ shipment: s })
   } catch (error) {
     return handleApiError(error, 'fetching cargo shipment')
   }

@@ -149,6 +149,34 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
     return { totalDistance, distanceRemaining, progress }
   }, [shipment, latestLocation])
 
+  const originDisplay = useMemo(() => {
+    if (shipment.originAddress) {
+      return { label: shipment.originAddress, inferred: false }
+    }
+    if (shipment.originLat != null && shipment.originLng != null) {
+      return { label: `${shipment.originLat.toFixed(4)}, ${shipment.originLng.toFixed(4)}`, inferred: false }
+    }
+    if (shipment.locations.length > 0) {
+      const oldest = shipment.locations[shipment.locations.length - 1]
+      const geo = oldest.geocodedCity && oldest.geocodedCountry
+        ? `${oldest.geocodedCity}, ${oldest.geocodedCountry}`
+        : oldest.geocodedCity || oldest.geocodedCountry || null
+      if (geo) return { label: geo, inferred: true }
+      return { label: `${oldest.latitude.toFixed(4)}, ${oldest.longitude.toFixed(4)}`, inferred: true }
+    }
+    return { label: 'Not specified', inferred: false }
+  }, [shipment])
+
+  const destinationDisplay = useMemo(() => {
+    if (shipment.destinationAddress) {
+      return { label: shipment.destinationAddress, inferred: false }
+    }
+    if (shipment.destinationLat != null && shipment.destinationLng != null) {
+      return { label: `${shipment.destinationLat.toFixed(4)}, ${shipment.destinationLng.toFixed(4)}`, inferred: false }
+    }
+    return { label: 'Not specified', inferred: false }
+  }, [shipment])
+
   const mergeLocations = useCallback((existing: LocationPoint[], incoming: LocationPoint[]) => {
     const existingIds = new Set(existing.map((l) => l.id))
     const newOnes = incoming.filter((l) => !existingIds.has(l.id))
@@ -353,11 +381,11 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-              <span className="truncate max-w-[40%]" title={shipment.originAddress || 'Origin'}>
-                {shipment.originAddress || 'Origin'}
+              <span className="truncate max-w-[40%]" title={originDisplay.label}>
+                {originDisplay.label}
               </span>
-              <span className="truncate max-w-[40%] text-right" title={shipment.destinationAddress || 'Destination'}>
-                {shipment.destinationAddress || 'Destination'}
+              <span className="truncate max-w-[40%] text-right" title={destinationDisplay.label}>
+                {destinationDisplay.label}
               </span>
             </div>
             <div className="relative">
@@ -464,7 +492,10 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Origin</p>
-                  <p className="text-sm">{shipment.originAddress || 'Not specified'}</p>
+                  <p className="text-sm">{originDisplay.label}</p>
+                  {originDisplay.inferred && (
+                    <p className="text-xs text-muted-foreground/70 italic mt-0.5">First scan location</p>
+                  )}
                 </div>
               </div>
               {journeyInfo && (
@@ -481,7 +512,7 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Destination</p>
-                  <p className="text-sm">{shipment.destinationAddress || 'Not specified'}</p>
+                  <p className="text-sm">{destinationDisplay.label}</p>
                 </div>
               </div>
             </CardContent>
