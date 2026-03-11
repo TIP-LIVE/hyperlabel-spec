@@ -1,35 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CreateShipmentForm } from '@/components/shipments/create-shipment-form'
-import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: 'New Shipment',
-  description: 'Create a new shipment to track your cargo',
-}
-
-export default function NewShipmentPage() {
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">New Shipment</h1>
-        <p className="text-muted-foreground">
-          Create a new shipment to start tracking your cargo
-        </p>
-      </div>
-
-      {/* Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Shipment Details</CardTitle>
-          <CardDescription>
-            Configure your shipment details below
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CreateShipmentForm />
-        </CardContent>
-      </Card>
-    </div>
-  )
+// Redirect old /shipments/new to /cargo/new
+export default function NewShipmentRedirectPage() {
+  redirect('/cargo/new')
 }

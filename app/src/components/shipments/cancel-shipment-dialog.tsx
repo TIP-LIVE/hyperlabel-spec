@@ -20,9 +20,10 @@ import { useRouter } from 'next/navigation'
 interface CancelShipmentDialogProps {
   shipmentId: string
   shipmentName: string | null
+  apiBasePath?: string
 }
 
-export function CancelShipmentDialog({ shipmentId, shipmentName }: CancelShipmentDialogProps) {
+export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '/api/v1/shipments' }: CancelShipmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -31,7 +32,7 @@ export function CancelShipmentDialog({ shipmentId, shipmentName }: CancelShipmen
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/v1/shipments/${shipmentId}`, {
+      const response = await fetch(`${apiBasePath}/${shipmentId}`, {
         method: 'DELETE',
       })
 

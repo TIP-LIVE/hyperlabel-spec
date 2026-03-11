@@ -23,6 +23,7 @@ interface EditShipmentDialogProps {
   currentName: string | null
   currentOrigin: string | null
   currentDestination: string | null
+  apiBasePath?: string
 }
 
 export function EditShipmentDialog({
@@ -30,6 +31,7 @@ export function EditShipmentDialog({
   currentName,
   currentOrigin,
   currentDestination,
+  apiBasePath = '/api/v1/shipments',
 }: EditShipmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -85,7 +87,7 @@ export function EditShipmentDialog({
         return
       }
 
-      const response = await fetch(`/api/v1/shipments/${shipmentId}`, {
+      const response = await fetch(`${apiBasePath}/${shipmentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

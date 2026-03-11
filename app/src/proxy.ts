@@ -28,6 +28,8 @@ const isPublicRoute = createRouteMatcher([
 const isDashboardRouteRequiringOrg = createRouteMatcher([
   '/dashboard(.*)',
   '/shipments(.*)',
+  '/cargo(.*)',
+  '/dispatch(.*)',
   '/orders(.*)',
   '/address-book(.*)',
   '/buy(.*)',

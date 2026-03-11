@@ -1,0 +1,94 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Plus, Send, ShoppingCart } from 'lucide-react'
+import Link from 'next/link'
+import { db } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
+import { DispatchList } from '@/components/dispatch/dispatch-list'
+import { isClerkConfigured } from '@/lib/clerk-config'
+import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Label Dispatch',
+  description: 'Ship and track label dispatches',
+}
+
+interface DispatchPageProps {
+  searchParams: Promise<{ status?: string }>
+}
+
+export default async function DispatchPage({ searchParams }: DispatchPageProps) {
+  const { status: initialStatus } = await searchParams
+  const user = await getCurrentUser()
+  const { orgId } = await auth()
+
+  const where: Record<string, unknown> = { type: 'LABEL_DISPATCH' }
+  if (orgId) {
+    where.orgId = orgId
+  } else if (user) {
+    where.userId = user.id
+  }
+
+  let shipmentCount = 0
+  if (user) {
+    shipmentCount = await db.shipment.count({ where })
+  }
+
+  const showEmptyState = shipmentCount === 0 && isClerkConfigured()
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Label Dispatch"
+        description="Ship multiple labels from your warehouse to customer locations"
+        action={
+          <Button asChild>
+            <Link href="/dispatch/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Dispatch
+            </Link>
+          </Button>
+        }
+      />
+
+      {showEmptyState ? (
+        <EmptyState
+          icon={Send}
+          title="No dispatches yet"
+          description="Ship labels from your warehouse to customer locations. Buy labels first, then create a dispatch with destination details."
+          action={
+            <>
+              <Button variant="outline" asChild>
+                <Link href="/buy">
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Buy Labels
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/dispatch/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Dispatch
+                </Link>
+              </Button>
+            </>
+          }
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Label Dispatches</CardTitle>
+            <CardDescription>Track label shipments from warehouse to customers</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DispatchList initialStatus={initialStatus} />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
