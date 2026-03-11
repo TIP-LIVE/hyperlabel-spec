@@ -33,6 +33,9 @@ function createPrismaClient() {
 
   const pool = new Pool({
     connectionString,
+    max: 5,                      // Limit pool size for serverless
+    connectionTimeoutMillis: 5000, // Fail fast instead of hanging until Vercel timeout
+    idleTimeoutMillis: 30000,    // Keep idle connections a bit longer for warm starts
   })
 
   const adapter = new PrismaPg(pool)

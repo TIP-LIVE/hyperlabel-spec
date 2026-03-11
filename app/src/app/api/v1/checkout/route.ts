@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { stripe, LABEL_PRODUCTS, LabelPackType, isStripeConfigured } from '@/lib/stripe'
 import { requireOrgAuth } from '@/lib/auth'
 import { rateLimit, RATE_LIMIT_CHECKOUT, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
@@ -95,32 +96,31 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle Stripe-specific errors with useful messages
-    if (error && typeof error === 'object' && 'type' in error) {
-      const stripeError = error as { type: string; code?: string; message?: string }
-
-      if (stripeError.type === 'StripeAuthenticationError') {
+    if (error instanceof Stripe.errors.StripeError) {
+      if (error instanceof Stripe.errors.StripeAuthenticationError) {
         return NextResponse.json(
           { error: 'Payment system is temporarily unavailable. Please try again later.' },
           { status: 503 }
         )
       }
 
-      if (stripeError.type === 'StripeInvalidRequestError') {
+      if (error instanceof Stripe.errors.StripeInvalidRequestError) {
         return NextResponse.json(
-          { error: stripeError.message || 'Invalid payment request. Please try again.' },
+          { error: error.message || 'Invalid payment request. Please try again.' },
           { status: 400 }
         )
       }
 
       return NextResponse.json(
-        { error: 'Payment processing error. Please try again.' },
+        { error: `Stripe ${error.type}: ${error.message}` },
         { status: 502 }
       )
     }
 
-    // Return the step info in the error to help debug
+    // Non-Stripe error — include step and error details to help debug
+    const hasType = error && typeof error === 'object' && 'type' in error
     return NextResponse.json(
-      { error: `Checkout failed at step: ${step}. ${errorMsg}` },
+      { error: `[${step}] ${error instanceof Error ? error.constructor.name : typeof error}: ${errorMsg}${hasType ? ` (type=${(error as Record<string, unknown>).type})` : ''}` },
       { status: 500 }
     )
   }
