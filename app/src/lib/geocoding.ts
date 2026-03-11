@@ -31,7 +31,7 @@ export async function reverseGeocode(
 
   // 1. Check in-memory cache
   const cached = geocodeCache.get(key)
-  if (cached) return cached
+  if (cached && cached.area) return cached
 
   // 2. Check DB for a nearby already-geocoded record
   const roundedLat = parseFloat(lat.toFixed(3))
@@ -42,7 +42,7 @@ export async function reverseGeocode(
         latitude: { gte: roundedLat - 0.0005, lte: roundedLat + 0.0005 },
         longitude: { gte: roundedLng - 0.0005, lte: roundedLng + 0.0005 },
         geocodedCity: { not: null },
-        geocodedArea: { not: null },
+        geocodedArea: { gt: '' },
       },
       select: {
         geocodedCity: true,
