@@ -6,7 +6,6 @@ import { Plus, Package, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { auth } from '@clerk/nextjs/server'
 import { CargoList } from '@/components/cargo/cargo-list'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import type { Metadata } from 'next'
@@ -25,21 +24,22 @@ interface CargoPageProps {
 export default async function CargoPage({ searchParams }: CargoPageProps) {
   const { status: initialStatus } = await searchParams
   const user = await getCurrentUser()
-  const { orgId } = await auth()
 
-  const where: Record<string, unknown> = { type: 'CARGO_TRACKING' }
-  if (orgId) {
-    where.orgId = orgId
-  } else if (user) {
-    where.userId = user.id
-  }
-
-  let shipmentCount = 0
+  // Check if the user has ANY cargo shipments (across all orgs)
+  // to decide whether to show the onboarding empty state vs the list.
+  // The CargoList client component handles org-scoped filtering via the API.
+  let hasAnyCargo = false
   if (user) {
-    shipmentCount = await db.shipment.count({ where })
+    const count = await db.shipment.count({
+      where: {
+        type: 'CARGO_TRACKING',
+        userId: user.id,
+      },
+    })
+    hasAnyCargo = count > 0
   }
 
-  const showEmptyState = shipmentCount === 0 && isClerkConfigured()
+  const showEmptyState = !hasAnyCargo && isClerkConfigured()
 
   return (
     <div className="space-y-6">
