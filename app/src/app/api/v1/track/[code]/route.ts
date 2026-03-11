@@ -97,7 +97,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       try {
         didSync = await Promise.race([
           syncLabelLocation(shipment.label),
-          new Promise<false>((resolve) => setTimeout(() => resolve(false), 5000)),
+          new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
         ])
       } catch (err) {
         console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
