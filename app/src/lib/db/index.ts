@@ -1,6 +1,11 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+
+// Use fetch-based connections (HTTP) instead of WebSocket for maximum
+// compatibility in serverless environments — no persistent TCP connections.
+neonConfig.useSecureWebSocket = false
+neonConfig.fetchFunction = globalThis.fetch
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -11,34 +16,13 @@ function createPrismaClient() {
   // This allows the build to complete without a database connection
   if (!process.env.DATABASE_URL) {
     console.warn('DATABASE_URL not set, Prisma client will not connect to a database')
-    // Return a PrismaClient that will fail on actual queries but allows build
     return new PrismaClient()
   }
 
-  // Silence pg SSL warning: prefer/require/verify-ca are treated as verify-full in pg v9; set explicitly.
-  // For local dev without SSL use DATABASE_URL with ?sslmode=disable.
-  let connectionString = process.env.DATABASE_URL
-  const isLocalHost = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(connectionString)
-  if (!isLocalHost) {
-    if (!connectionString.includes('sslmode=')) {
-      const sep = connectionString.includes('?') ? '&' : '?'
-      connectionString = `${connectionString}${sep}sslmode=verify-full`
-    } else {
-      connectionString = connectionString.replace(
-        /sslmode=(?:prefer|require|verify-ca)/gi,
-        'sslmode=verify-full'
-      )
-    }
-  }
+  const connectionString = process.env.DATABASE_URL
 
-  const pool = new Pool({
-    connectionString,
-    max: 5,                      // Limit pool size for serverless
-    connectionTimeoutMillis: 5000, // Fail fast instead of hanging until Vercel timeout
-    idleTimeoutMillis: 30000,    // Keep idle connections a bit longer for warm starts
-  })
-
-  const adapter = new PrismaPg(pool)
+  const pool = new Pool({ connectionString })
+  const adapter = new PrismaNeon(pool)
 
   return new PrismaClient({
     adapter,
