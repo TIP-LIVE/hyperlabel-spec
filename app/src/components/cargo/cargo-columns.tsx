@@ -11,11 +11,127 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Share2, Truck, Battery } from 'lucide-react'
+import { MoreHorizontal, Eye, Share2, Truck, Battery, Trash2, Loader2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
+import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
+
+function CargoActionsCell({ shipment }: { shipment: CargoRow }) {
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter()
+  const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${shipment.shareCode}`
+
+  async function handleDelete() {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/v1/cargo/${shipment.id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to cancel cargo shipment')
+      }
+      toast.success('Cargo shipment cancelled')
+      setDeleteOpen(false)
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Something went wrong')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={`/cargo/${shipment.id}`}>
+              <Eye className="mr-2 h-4 w-4" />
+              View details
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              navigator.clipboard.writeText(trackingUrl)
+            }}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Copy tracking link
+          </DropdownMenuItem>
+          {shipment.status !== 'CANCELLED' && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Cargo Shipment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-medium text-foreground">
+                {shipment.name || 'this cargo shipment'}
+              </span>
+              ? This will cancel tracking and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
 
 export type CargoRow = {
   id: string
@@ -146,38 +262,6 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      const shipment = row.original
-      const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${shipment.shareCode}`
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href={`/cargo/${shipment.id}`}>
-                <Eye className="mr-2 h-4 w-4" />
-                View details
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(trackingUrl)
-              }}
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Copy tracking link
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
+    cell: ({ row }) => <CargoActionsCell shipment={row.original} />,
   },
 ]
