@@ -31,6 +31,18 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
             activatedAt: true,
           },
         },
+        shipmentLabels: {
+          include: {
+            label: {
+              select: {
+                id: true,
+                deviceId: true,
+                iccid: true,
+              },
+            },
+          },
+          take: 1,
+        },
         locations: {
           orderBy: { recordedAt: 'desc' },
           take: 100,
@@ -47,14 +59,32 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // On-demand sync: poll Onomondo for fresh location data (awaited with timeout)
+    // Check both direct label FK and many-to-many shipmentLabels
     let didSync = false
     const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
-    if (isActive && shipment.label?.iccid) {
+    const syncLabel = shipment.label?.iccid
+      ? shipment.label
+      : shipment.shipmentLabels?.[0]?.label?.iccid
+        ? shipment.shipmentLabels[0].label
+        : null
+
+    console.info('[shipment GET] sync check', {
+      shipmentId: id,
+      status: shipment.status,
+      isActive,
+      hasDirectLabel: !!shipment.label,
+      hasDirectIccid: !!shipment.label?.iccid,
+      hasShipmentLabels: (shipment.shipmentLabels?.length ?? 0) > 0,
+      syncLabelId: syncLabel?.deviceId ?? null,
+    })
+
+    if (isActive && syncLabel) {
       try {
         didSync = await Promise.race([
-          syncLabelLocation(shipment.label),
+          syncLabelLocation(syncLabel),
           new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
         ])
+        console.info('[shipment GET] sync result', { shipmentId: id, didSync })
       } catch (err) {
         console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
       }

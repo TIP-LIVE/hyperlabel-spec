@@ -52,7 +52,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           },
         },
         shipmentLabels: {
-          select: { labelId: true },
+          include: {
+            label: {
+              select: { id: true, deviceId: true, iccid: true },
+            },
+          },
+          take: 1,
         },
         locations: {
           where: since
@@ -91,12 +96,19 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // On-demand sync: poll Onomondo for fresh location data (awaited with timeout)
+    // Check both direct label FK and many-to-many shipmentLabels
     let didSync = false
     const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
-    if (isActive && shipment.label?.iccid) {
+    const syncLabel = shipment.label?.iccid
+      ? shipment.label
+      : shipment.shipmentLabels?.[0]?.label?.iccid
+        ? shipment.shipmentLabels[0].label
+        : null
+
+    if (isActive && syncLabel) {
       try {
         didSync = await Promise.race([
-          syncLabelLocation(shipment.label),
+          syncLabelLocation(syncLabel),
           new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
         ])
       } catch (err) {
