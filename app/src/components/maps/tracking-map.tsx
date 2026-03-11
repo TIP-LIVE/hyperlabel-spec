@@ -5,6 +5,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { format, formatDistanceToNow } from 'date-fns'
 import { MapPin, LocateFixed, Radio } from 'lucide-react'
+import { isNullIsland } from '@/lib/validations/device'
 
 interface LocationPoint {
   id: string
@@ -143,8 +144,8 @@ export function TrackingMap({
   }, [isDark, mapRef])
 
   const latestLocation = locations[0]
-  const hasOrigin = originLat != null && originLng != null && !(originLat === 0 && originLng === 0)
-  const hasDestination = destinationLat != null && destinationLng != null && !(destinationLat === 0 && destinationLng === 0)
+  const hasOrigin = originLat != null && originLng != null && !isNullIsland(originLat, originLng)
+  const hasDestination = destinationLat != null && destinationLng != null && !isNullIsland(destinationLat, destinationLng)
 
   const center = useMemo(() => {
     if (latestLocation) {

@@ -5,6 +5,7 @@ import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
 import { syncLabelLocation } from '@/lib/sync-onomondo'
 import { reverseGeocode } from '@/lib/geocoding'
+import { isNullIsland } from '@/lib/validations/device'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -84,11 +85,39 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       : shipment.locations
 
     const ungeocodedLocations = finalLocations.filter(
-      (loc) => loc.latitude && loc.longitude && (!loc.geocodedCity || !loc.geocodedArea)
+      (loc) => loc.latitude && loc.longitude && !isNullIsland(loc.latitude, loc.longitude) && (!loc.geocodedCity || !loc.geocodedArea)
     )
-    if (ungeocodedLocations.length > 0) {
+    // Await geocoding for the first few locations so the response includes geocoded names
+    const urgent = ungeocodedLocations.slice(0, 5)
+    const rest = ungeocodedLocations.slice(5)
+
+    for (const loc of urgent) {
+      try {
+        const geo = await reverseGeocode(loc.latitude, loc.longitude)
+        if (geo) {
+          await db.locationEvent.update({
+            where: { id: loc.id },
+            data: {
+              geocodedCity: geo.city,
+              geocodedArea: geo.area,
+              geocodedCountry: geo.country,
+              geocodedCountryCode: geo.countryCode,
+            },
+          })
+          Object.assign(loc, {
+            geocodedCity: geo.city,
+            geocodedArea: geo.area,
+            geocodedCountry: geo.country,
+            geocodedCountryCode: geo.countryCode,
+          })
+        }
+      } catch {}
+    }
+
+    // Fire-and-forget the rest
+    if (rest.length > 0) {
       ;(async () => {
-        for (const loc of ungeocodedLocations) {
+        for (const loc of rest) {
           try {
             const geo = await reverseGeocode(loc.latitude, loc.longitude)
             if (geo) {
@@ -111,14 +140,14 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const addressUpdates: Record<string, string> = {}
     const s = needsRefetch ? { ...shipment, locations: finalLocations } : shipment
 
-    if (s.originLat != null && s.originLng != null && !s.originAddress) {
+    if (s.originLat != null && s.originLng != null && !s.originAddress && !isNullIsland(s.originLat, s.originLng)) {
       const geo = await reverseGeocode(s.originLat, s.originLng)
       if (geo) {
         const addr = geo.city && geo.country ? `${geo.city}, ${geo.country}` : geo.city || geo.country
         if (addr) addressUpdates.originAddress = addr
       }
     }
-    if (s.destinationLat != null && s.destinationLng != null && !s.destinationAddress) {
+    if (s.destinationLat != null && s.destinationLng != null && !s.destinationAddress && !isNullIsland(s.destinationLat, s.destinationLng)) {
       const geo = await reverseGeocode(s.destinationLat, s.destinationLng)
       if (geo) {
         const addr = geo.city && geo.country ? `${geo.city}, ${geo.country}` : geo.city || geo.country

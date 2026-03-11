@@ -27,6 +27,7 @@ import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dia
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
 import { toast } from 'sonner'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
+import { isNullIsland } from '@/lib/validations/device'
 
 const POLL_INTERVAL_MS = 30_000
 
@@ -123,7 +124,9 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
   const journeyInfo = useMemo(() => {
     if (
       shipment.originLat == null || shipment.originLng == null ||
-      shipment.destinationLat == null || shipment.destinationLng == null
+      shipment.destinationLat == null || shipment.destinationLng == null ||
+      isNullIsland(shipment.originLat, shipment.originLng) ||
+      isNullIsland(shipment.destinationLat, shipment.destinationLng)
     ) return null
 
     const totalDistance = haversineKm(
@@ -153,7 +156,7 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
     if (shipment.originAddress) {
       return { label: shipment.originAddress, inferred: false }
     }
-    if (shipment.originLat != null && shipment.originLng != null) {
+    if (shipment.originLat != null && shipment.originLng != null && !isNullIsland(shipment.originLat, shipment.originLng)) {
       return { label: `${shipment.originLat.toFixed(4)}, ${shipment.originLng.toFixed(4)}`, inferred: false }
     }
     if (shipment.locations.length > 0) {
@@ -171,7 +174,7 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
     if (shipment.destinationAddress) {
       return { label: shipment.destinationAddress, inferred: false }
     }
-    if (shipment.destinationLat != null && shipment.destinationLng != null) {
+    if (shipment.destinationLat != null && shipment.destinationLng != null && !isNullIsland(shipment.destinationLat, shipment.destinationLng)) {
       return { label: `${shipment.destinationLat.toFixed(4)}, ${shipment.destinationLng.toFixed(4)}`, inferred: false }
     }
     return { label: 'Not specified', inferred: false }

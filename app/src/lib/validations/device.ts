@@ -42,12 +42,18 @@ export const deviceReportSchema = z.object({
 export type DeviceReportInput = z.infer<typeof deviceReportSchema>
 
 /**
+ * Check if coordinates are null island (0, 0).
+ */
+export function isNullIsland(lat: number, lng: number): boolean {
+  return lat === 0 && lng === 0
+}
+
+/**
  * Validate and clean location data.
  * Filters out invalid coordinates (0,0 null island, etc.)
  */
 export function validateLocation(lat: number, lng: number): boolean {
-  // Check for null island (0, 0)
-  if (lat === 0 && lng === 0) {
+  if (isNullIsland(lat, lng)) {
     return false
   }
 
