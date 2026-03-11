@@ -39,12 +39,12 @@ export default async function LabelsPage() {
     redirect('/sign-in')
   }
 
-  // B2B: org is top-level — all org members see same labels
-  const orderFilter: Record<string, unknown> = {}
-  if (orgId) {
-    orderFilter.orgId = orgId
-  } else if (user) {
-    orderFilter.userId = user.id
+  // Show labels from active org AND user's own records
+  const orderFilter: Record<string, unknown> = {
+    OR: [
+      ...(orgId ? [{ orgId }] : []),
+      ...(user ? [{ userId: user.id }] : []),
+    ],
   }
 
   const labels = user

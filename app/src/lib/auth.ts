@@ -114,6 +114,8 @@ export async function requireAdmin() {
 export async function requireOrgAuth(): Promise<AuthContext> {
   const { userId, orgId, orgRole } = await auth()
 
+  console.info('[auth] requireOrgAuth resolved', { userId, orgId, orgRole })
+
   if (!userId) {
     throw new Error('Unauthorized')
   }
@@ -177,7 +179,10 @@ export function orgScopedWhere(
   additionalFilters?: Record<string, unknown>
 ): Record<string, unknown> {
   return {
-    orgId: context.orgId,
+    OR: [
+      { orgId: context.orgId },
+      { userId: context.user.id },
+    ],
     ...additionalFilters,
   }
 }
