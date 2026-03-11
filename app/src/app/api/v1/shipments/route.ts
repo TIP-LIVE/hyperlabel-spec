@@ -88,9 +88,14 @@ export async function GET(req: NextRequest) {
       })
 
     if (activeLabels.length > 0) {
-      Promise.allSettled(
-        activeLabels.map((label) => syncLabelLocation(label as { id: string; iccid: string; deviceId: string }))
-      ).catch(() => {})
+      // Run serially to avoid exhausting the Neon DB connection pool
+      ;(async () => {
+        for (const label of activeLabels) {
+          try {
+            await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
+          } catch {}
+        }
+      })().catch(() => {})
     }
 
     return NextResponse.json({
