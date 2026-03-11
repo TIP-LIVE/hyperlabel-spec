@@ -1,6 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool } from '@neondatabase/serverless'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+
+// Use fetch-based connections (HTTP) instead of WebSocket for maximum
+// compatibility in serverless environments — no persistent TCP connections.
+neonConfig.useSecureWebSocket = false
+neonConfig.fetchFunction = globalThis.fetch
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
