@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { getOnomonodoSimByIccid, getSimLocation } from '@/lib/onomondo'
 
+// Diagnostic endpoint v2 — with ONOMONDO_API_KEY support
+
 /**
  * GET /api/v1/admin/diagnostics/onomondo
  *
