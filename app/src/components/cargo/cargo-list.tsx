@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface CargoListProps {
   initialStatus?: string
@@ -129,15 +135,25 @@ export function CargoList({ initialStatus }: CargoListProps) {
             </SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Syncing...' : 'Refresh Locations'}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="h-8 w-8"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span className="sr-only">Refresh locations</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{refreshing ? 'Syncing locations...' : 'Refresh locations'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <DataTable
         columns={cargoColumns}
