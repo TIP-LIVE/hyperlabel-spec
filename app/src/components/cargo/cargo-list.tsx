@@ -67,9 +67,12 @@ export function CargoList({ initialStatus }: CargoListProps) {
     }
   }, [])
 
-  // Initial fetch
+  // Initial fetch, then sync fresh locations
   useEffect(() => {
-    fetchShipments()
+    fetchShipments().then(() => {
+      setRefreshing(true)
+      fetchShipments(true).finally(() => setRefreshing(false))
+    })
   }, [fetchShipments])
 
   // Auto-poll every 60s when there are active shipments
