@@ -84,7 +84,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       : shipment.locations
 
     const ungeocodedLocations = finalLocations.filter(
-      (loc) => loc.latitude && loc.longitude && !loc.geocodedCity
+      (loc) => loc.latitude && loc.longitude && (!loc.geocodedCity || !loc.geocodedArea)
     )
     if (ungeocodedLocations.length > 0) {
       ;(async () => {

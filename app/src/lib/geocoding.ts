@@ -42,6 +42,7 @@ export async function reverseGeocode(
         latitude: { gte: roundedLat - 0.0005, lte: roundedLat + 0.0005 },
         longitude: { gte: roundedLng - 0.0005, lte: roundedLng + 0.0005 },
         geocodedCity: { not: null },
+        geocodedArea: { not: null },
       },
       select: {
         geocodedCity: true,
@@ -67,7 +68,7 @@ export async function reverseGeocode(
   // 3. Call Nominatim
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&accept-language=en`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14&accept-language=en`,
       {
         headers: {
           'User-Agent': 'TIP-Cargo-Tracking/1.0 (tip.live)',
@@ -93,6 +94,7 @@ export async function reverseGeocode(
       address.borough ||
       address.quarter ||
       address.city_district ||
+      address.aeroway ||
       ''
     const country = address.country || ''
     const countryCode = (address.country_code || '').toUpperCase()
