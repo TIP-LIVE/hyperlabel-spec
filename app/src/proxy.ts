@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   '/org-selection(.*)', // Org creation/selection page
   '/create-organization(.*)', // Org creation page
   '/track/(.*)', // Public tracking pages
+  '/claim/(.*)', // Public label claim pages (24h window)
   '/activate/(.*)', // Physical label QR scan
   '/privacy', // Privacy policy
   '/terms', // Terms of service

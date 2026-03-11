@@ -5,9 +5,11 @@ import {
   sendShipmentDeliveredNotification,
   sendConsigneeInTransitNotification,
   sendConsigneeDeliveredNotification,
+  sendLabelOrphanedNotification,
 } from '@/lib/notifications'
 import { format } from 'date-fns'
 import { syncSimLabelToOnomondo } from '@/lib/onomondo'
+import { generateShareCode } from '@/lib/utils/share-code'
 
 /** Input shape for the shared location report processing logic. */
 export interface LocationReportInput {
@@ -192,6 +194,43 @@ export async function processLocationReport(
       shipmentStatus: activeShipment?.status ?? null,
       source: input.source ?? 'GPS',
     })
+  }
+
+  // Detect orphaned device activity: label is reporting but has no shipment
+  // Generate a claim token so the shipper can create a shipment via a public link
+  if (!activeShipment && !label.claimToken && label.status === 'SOLD') {
+    const claimToken = generateShareCode()
+    const claimExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h window
+
+    await db.label.update({
+      where: { id: label.id },
+      data: {
+        status: 'ACTIVE',
+        activatedAt: new Date(),
+        claimToken,
+        claimExpiresAt,
+        firstUnlinkedReportAt: new Date(),
+      },
+    })
+
+    // Notify the label purchaser (fire-and-forget)
+    sendLabelOrphanedNotification({
+      labelId: label.id,
+      deviceId: label.deviceId,
+      claimToken,
+      latitude: effectiveLat,
+      longitude: effectiveLng,
+    }).catch((err) =>
+      console.error('Failed to send label orphaned notification:', err)
+    )
+
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Device report] orphaned activity detected, claim token generated', {
+        deviceId: label.deviceId,
+        claimToken,
+        claimExpiresAt: claimExpiresAt.toISOString(),
+      })
+    }
   }
 
   // Parse recorded timestamp or use current time

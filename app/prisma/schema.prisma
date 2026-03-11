@@ -87,9 +87,12 @@ model Label {
   status          LabelStatus @default(INVENTORY)
   batteryPct      Int?        @map("battery_pct")
   firmwareVersion String?     @map("firmware_version")
-  activatedAt     DateTime?   @map("activated_at")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  activatedAt           DateTime?   @map("activated_at")
+  claimToken            String?     @unique @map("claim_token")
+  claimExpiresAt        DateTime?   @map("claim_expires_at")
+  firstUnlinkedReportAt DateTime?   @map("first_unlinked_report_at")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
 
   // Relations (many-to-many with Order so a label can be in multiple orgs)
   orderLabels    OrderLabel[]

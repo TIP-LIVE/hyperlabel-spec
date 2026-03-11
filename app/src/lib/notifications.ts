@@ -2,6 +2,8 @@ import { render } from '@react-email/components'
 import { sendEmail, type EmailType } from './email'
 import { db } from './db'
 import LabelActivatedEmail from '@/emails/label-activated'
+import LabelOrphanedEmail from '@/emails/label-orphaned'
+import AutoShipmentCreatedEmail from '@/emails/auto-shipment-created'
 import LowBatteryEmail from '@/emails/low-battery'
 import NoSignalEmail from '@/emails/no-signal'
 import ShipmentDeliveredEmail from '@/emails/shipment-delivered'
@@ -697,5 +699,98 @@ export async function sendRoleChangedNotification(params: {
   await recordNotification(params.userId, 'role_changed', {
     newRole: params.newRole,
     changedBy: params.changedByName,
+  })
+}
+
+/**
+ * Send notification when a label is physically activated but has no shipment.
+ * Notifies the label purchaser with a public claim link.
+ */
+export async function sendLabelOrphanedNotification(params: {
+  labelId: string
+  deviceId: string
+  claimToken: string
+  latitude?: number
+  longitude?: number
+}): Promise<void> {
+  // Find the label purchaser via OrderLabel → Order
+  const orderLabel = await db.orderLabel.findFirst({
+    where: { labelId: params.labelId },
+    include: { order: { select: { userId: true } } },
+  })
+
+  if (!orderLabel) {
+    console.warn('[Notification] No order found for orphaned label:', params.deviceId)
+    return
+  }
+
+  const userId = orderLabel.order.userId
+  const { enabled, email } = await shouldSendNotification(userId, 'label_activated')
+  if (!enabled || !email) return
+
+  const claimUrl = `${APP_URL}/claim/${params.claimToken}`
+  const detectedAt = format(new Date(), 'PPpp')
+  const locationHint =
+    params.latitude !== undefined && params.longitude !== undefined
+      ? `${params.latitude.toFixed(4)}, ${params.longitude.toFixed(4)}`
+      : undefined
+
+  const html = await render(
+    LabelOrphanedEmail({
+      deviceId: params.deviceId,
+      claimUrl,
+      detectedAt,
+      expiresIn: '24 hours',
+      locationHint,
+    })
+  )
+
+  await sendEmail({
+    to: email,
+    subject: `⚠️ Label ${params.deviceId} activated without a shipment`,
+    html,
+  })
+
+  await recordNotification(userId, 'label_orphaned', {
+    deviceId: params.deviceId,
+    claimToken: params.claimToken,
+  })
+}
+
+/**
+ * Send notification when a shipment is auto-created after the 24h claim window expires.
+ */
+export async function sendAutoShipmentCreatedNotification(params: {
+  userId: string
+  deviceId: string
+  shipmentName: string
+  shareCode: string
+  locationCount: number
+}): Promise<void> {
+  const { enabled, email } = await shouldSendNotification(params.userId, 'label_activated')
+  if (!enabled || !email) return
+
+  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const createdAt = format(new Date(), 'PPpp')
+
+  const html = await render(
+    AutoShipmentCreatedEmail({
+      deviceId: params.deviceId,
+      shipmentName: params.shipmentName,
+      trackingUrl,
+      createdAt,
+      locationCount: params.locationCount,
+    })
+  )
+
+  await sendEmail({
+    to: email,
+    subject: `📦 Shipment auto-created for label ${params.deviceId}`,
+    html,
+  })
+
+  await recordNotification(params.userId, 'auto_shipment_created', {
+    deviceId: params.deviceId,
+    shipmentName: params.shipmentName,
   })
 }
