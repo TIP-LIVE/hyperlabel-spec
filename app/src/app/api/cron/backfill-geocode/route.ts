@@ -53,6 +53,13 @@ export async function GET(req: NextRequest) {
         address.municipality ||
         address.county ||
         ''
+      const area =
+        address.suburb ||
+        address.neighbourhood ||
+        address.borough ||
+        address.quarter ||
+        address.city_district ||
+        ''
       const country = address.country || ''
       const countryCode = (address.country_code || '').toUpperCase()
 
@@ -68,6 +75,7 @@ export async function GET(req: NextRequest) {
         },
         data: {
           geocodedCity: city || country,
+          geocodedArea: area || null,
           geocodedCountry: country,
           geocodedCountryCode: countryCode,
         },

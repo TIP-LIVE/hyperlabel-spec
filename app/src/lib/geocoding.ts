@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 
 export interface GeocodedResult {
   city: string
+  area: string        // Suburb/neighbourhood-level for detail view
   country: string
   countryCode: string
 }
@@ -44,6 +45,7 @@ export async function reverseGeocode(
       },
       select: {
         geocodedCity: true,
+        geocodedArea: true,
         geocodedCountry: true,
         geocodedCountryCode: true,
       },
@@ -51,6 +53,7 @@ export async function reverseGeocode(
     if (existing?.geocodedCity) {
       const result: GeocodedResult = {
         city: existing.geocodedCity,
+        area: existing.geocodedArea || '',
         country: existing.geocodedCountry || '',
         countryCode: existing.geocodedCountryCode || '',
       }
@@ -84,11 +87,18 @@ export async function reverseGeocode(
       address.municipality ||
       address.county ||
       ''
+    const area =
+      address.suburb ||
+      address.neighbourhood ||
+      address.borough ||
+      address.quarter ||
+      address.city_district ||
+      ''
     const country = address.country || ''
     const countryCode = (address.country_code || '').toUpperCase()
 
     if (city || country) {
-      const result: GeocodedResult = { city: city || country, country, countryCode }
+      const result: GeocodedResult = { city: city || country, area, country, countryCode }
       geocodeCache.set(key, result)
       return result
     }
@@ -98,6 +108,7 @@ export async function reverseGeocode(
       const parts = data.display_name.split(', ')
       const result: GeocodedResult = {
         city: parts[0] || '',
+        area: '',
         country: parts[parts.length - 1] || '',
         countryCode,
       }

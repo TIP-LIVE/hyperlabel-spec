@@ -156,6 +156,7 @@ model LocationEvent {
 
   // Reverse-geocoded address (populated server-side at ingest)
   geocodedCity        String?  @map("geocoded_city")
+  geocodedArea        String?  @map("geocoded_area")       // Suburb/neighbourhood for detail view
   geocodedCountry     String?  @map("geocoded_country")
   geocodedCountryCode String?  @map("geocoded_country_code")
 

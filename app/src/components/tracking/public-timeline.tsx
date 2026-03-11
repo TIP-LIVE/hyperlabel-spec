@@ -16,6 +16,7 @@ interface LocationEvent {
   recordedAt: Date
   isOfflineSync: boolean
   geocodedCity: string | null
+  geocodedArea: string | null
   geocodedCountry: string | null
   geocodedCountryCode: string | null
 }
@@ -72,6 +73,14 @@ function locationDisplayName(location: LocationEvent): string {
   return `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
 }
 
+/** More precise display name for expanded detail rows (suburb/area level) */
+function detailLocationDisplayName(location: LocationEvent): string {
+  if (location.geocodedArea && location.geocodedCountry) {
+    return `${location.geocodedArea}, ${location.geocodedCountry}`
+  }
+  return locationDisplayName(location)
+}
+
 export function PublicTimeline({ locations }: PublicTimelineProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
@@ -101,7 +110,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
     )
   }
 
-  function renderLocationRow(location: LocationEvent) {
+  function renderLocationRow(location: LocationEvent, useDetailName = false) {
     return (
       <div className="flex-1 space-y-1">
         <div className="flex items-center gap-2">
@@ -110,7 +119,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
             {location.geocodedCountryCode && (
               <span className="mr-1">{countryCodeToFlag(location.geocodedCountryCode)}</span>
             )}
-            {locationDisplayName(location)}
+            {useDetailName ? detailLocationDisplayName(location) : locationDisplayName(location)}
           </span>
           {location.isOfflineSync && (
             <span className="rounded bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 text-xs text-yellow-800 dark:text-yellow-200">
@@ -207,7 +216,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
                 <div className="mt-2 space-y-2 sm:space-y-3 border-l-2 border-dashed border-muted-foreground/20 ml-[11px] sm:ml-[15px] pl-6 sm:pl-8">
                   {group.events.map((location) => (
                     <div key={location.id} className="min-h-[36px] sm:min-h-[40px]">
-                      {renderLocationRow(location)}
+                      {renderLocationRow(location, true)}
                     </div>
                   ))}
                 </div>

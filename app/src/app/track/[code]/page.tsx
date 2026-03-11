@@ -100,6 +100,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
       accuracyM: loc.accuracyM,
       isOfflineSync: loc.isOfflineSync,
       geocodedCity: loc.geocodedCity,
+      geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
     })),

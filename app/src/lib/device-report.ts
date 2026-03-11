@@ -252,6 +252,7 @@ export async function processLocationReport(
         where: { id: locationEvent.id },
         data: {
           geocodedCity: geo.city,
+          geocodedArea: geo.area,
           geocodedCountry: geo.country,
           geocodedCountryCode: geo.countryCode,
         },

@@ -101,6 +101,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
       accuracyM: loc.accuracyM,
       isOfflineSync: loc.isOfflineSync,
       geocodedCity: loc.geocodedCity,
+      geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
     })),

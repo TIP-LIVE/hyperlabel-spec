@@ -96,6 +96,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
                 where: { id: loc.id },
                 data: {
                   geocodedCity: geo.city,
+                  geocodedArea: geo.area,
                   geocodedCountry: geo.country,
                   geocodedCountryCode: geo.countryCode,
                 },

@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
               longitude: true,
               recordedAt: true,
               geocodedCity: true,
+              geocodedArea: true,
               geocodedCountry: true,
               geocodedCountryCode: true,
             },
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest) {
                 where: { id: loc.id },
                 data: {
                   geocodedCity: geo.city,
+                  geocodedArea: geo.area,
                   geocodedCountry: geo.country,
                   geocodedCountryCode: geo.countryCode,
                 },
