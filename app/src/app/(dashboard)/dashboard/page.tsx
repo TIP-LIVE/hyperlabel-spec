@@ -43,18 +43,19 @@ export default async function DashboardPage() {
   }
 
   // B2B: org is top-level — all org members see same shipments and labels
-  const where: Record<string, unknown> = {}
-  if (orgId) {
-    where.orgId = orgId
-  } else if (user) {
-    where.userId = user.id
+  // Use OR to match both org-level and user-level records (some data predates org setup)
+  const where: Record<string, unknown> = {
+    OR: [
+      ...(orgId ? [{ orgId }] : []),
+      ...(user ? [{ userId: user.id }] : []),
+    ],
   }
 
-  const orderFilter: Record<string, unknown> = {}
-  if (orgId) {
-    orderFilter.orgId = orgId
-  } else if (user) {
-    orderFilter.userId = user.id
+  const orderFilter: Record<string, unknown> = {
+    OR: [
+      ...(orgId ? [{ orgId }] : []),
+      ...(user ? [{ userId: user.id }] : []),
+    ],
   }
 
   if (process.env.NODE_ENV !== 'test') {
