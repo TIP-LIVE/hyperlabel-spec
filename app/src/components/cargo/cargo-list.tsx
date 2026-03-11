@@ -21,6 +21,7 @@ interface CargoListProps {
 export function CargoList({ initialStatus }: CargoListProps) {
   const [allShipments, setAllShipments] = useState<CargoRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>(
     initialStatus && ['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(initialStatus)
@@ -28,12 +29,13 @@ export function CargoList({ initialStatus }: CargoListProps) {
       : 'all'
   )
 
-  const fetchShipments = async () => {
-    setLoading(true)
+  const fetchShipments = async (sync = false) => {
+    if (!sync) setLoading(true)
     setError(null)
 
     try {
-      const res = await fetch('/api/v1/cargo')
+      const url = sync ? '/api/v1/cargo?sync=true' : '/api/v1/cargo'
+      const res = await fetch(url)
 
       if (!res.ok) {
         throw new Error(`Failed to load cargo shipments (${res.status})`)
@@ -56,6 +58,15 @@ export function CargoList({ initialStatus }: CargoListProps) {
   useEffect(() => {
     fetchShipments()
   }, [])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await fetchShipments(true)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const statusCounts = useMemo(() => {
     return allShipments.reduce<Record<string, number>>(
@@ -118,6 +129,15 @@ export function CargoList({ initialStatus }: CargoListProps) {
             </SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Syncing...' : 'Refresh Locations'}
+        </Button>
       </div>
       <DataTable
         columns={cargoColumns}

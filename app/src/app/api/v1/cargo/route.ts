@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
+    const sync = searchParams.get('sync') === 'true'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
@@ -60,19 +61,50 @@ export async function GET(req: NextRequest) {
       db.shipment.count({ where }),
     ])
 
-    // Proactive background sync for active labels
+    // Proactive sync for active labels
     const activeLabels = shipments
       .filter((s) => s.status === 'PENDING' || s.status === 'IN_TRANSIT')
       .flatMap((s) => (s.label?.iccid ? [s.label] : []))
 
     if (activeLabels.length > 0) {
-      ;(async () => {
+      const doSync = async () => {
         for (const label of activeLabels) {
           try {
             await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
           } catch {}
         }
-      })().catch(() => {})
+      }
+
+      if (sync) {
+        // Await sync with a 15s timeout, then re-fetch locations
+        await Promise.race([doSync(), new Promise((r) => setTimeout(r, 15_000))])
+        // Re-fetch latest locations after sync
+        const refreshed = await db.shipment.findMany({
+          where,
+          include: {
+            label: {
+              select: { id: true, deviceId: true, iccid: true, batteryPct: true, status: true },
+            },
+            locations: {
+              orderBy: { recordedAt: 'desc' },
+              take: 1,
+              select: {
+                id: true, latitude: true, longitude: true, recordedAt: true,
+                geocodedCity: true, geocodedArea: true, geocodedCountry: true, geocodedCountryCode: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+          skip: offset,
+        })
+        return NextResponse.json({
+          shipments: refreshed,
+          pagination: { total, limit, offset, hasMore: offset + refreshed.length < total },
+        })
+      } else {
+        doSync().catch(() => {})
+      }
     }
 
     // Backfill geocoding for locations that have coordinates but no geocoded data
