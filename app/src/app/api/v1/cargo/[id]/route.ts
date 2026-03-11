@@ -4,6 +4,7 @@ import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
 import { syncLabelLocation } from '@/lib/sync-onomondo'
+import { reverseGeocode } from '@/lib/geocoding'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -73,16 +74,39 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       }
     }
 
-    if (needsRefetch) {
-      const locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id },
-        orderBy: { recordedAt: 'desc' },
-        take: 100,
-      })
-      return NextResponse.json({ shipment: { ...shipment, locations } })
+    // Backfill geocoding for locations missing geocoded data
+    const finalLocations = needsRefetch
+      ? (await db.locationEvent.findMany({
+          where: { shipmentId: shipment.id },
+          orderBy: { recordedAt: 'desc' },
+          take: 100,
+        }))
+      : shipment.locations
+
+    const ungeocodedLocations = finalLocations.filter(
+      (loc) => loc.latitude && loc.longitude && !loc.geocodedCity
+    )
+    if (ungeocodedLocations.length > 0) {
+      ;(async () => {
+        for (const loc of ungeocodedLocations) {
+          try {
+            const geo = await reverseGeocode(loc.latitude, loc.longitude)
+            if (geo) {
+              await db.locationEvent.update({
+                where: { id: loc.id },
+                data: {
+                  geocodedCity: geo.city,
+                  geocodedCountry: geo.country,
+                  geocodedCountryCode: geo.countryCode,
+                },
+              })
+            }
+          } catch {}
+        }
+      })().catch(() => {})
     }
 
-    return NextResponse.json({ shipment })
+    return NextResponse.json({ shipment: needsRefetch ? { ...shipment, locations: finalLocations } : shipment })
   } catch (error) {
     return handleApiError(error, 'fetching cargo shipment')
   }

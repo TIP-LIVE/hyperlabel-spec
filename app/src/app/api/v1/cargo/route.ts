@@ -6,6 +6,7 @@ import { createCargoShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
 import { syncLabelLocation } from '@/lib/sync-onomondo'
+import { reverseGeocode } from '@/lib/geocoding'
 
 /**
  * GET /api/v1/cargo - List cargo tracking shipments
@@ -68,6 +69,31 @@ export async function GET(req: NextRequest) {
         for (const label of activeLabels) {
           try {
             await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
+          } catch {}
+        }
+      })().catch(() => {})
+    }
+
+    // Backfill geocoding for locations that have coordinates but no geocoded data
+    const ungeocodedLocations = shipments
+      .flatMap((s) => s.locations)
+      .filter((loc) => loc.latitude && loc.longitude && !loc.geocodedCity)
+
+    if (ungeocodedLocations.length > 0) {
+      ;(async () => {
+        for (const loc of ungeocodedLocations) {
+          try {
+            const geo = await reverseGeocode(loc.latitude, loc.longitude)
+            if (geo) {
+              await db.locationEvent.update({
+                where: { id: loc.id },
+                data: {
+                  geocodedCity: geo.city,
+                  geocodedCountry: geo.country,
+                  geocodedCountryCode: geo.countryCode,
+                },
+              })
+            }
           } catch {}
         }
       })().catch(() => {})
