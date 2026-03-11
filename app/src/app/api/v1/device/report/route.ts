@@ -29,14 +29,17 @@ export async function POST(req: NextRequest) {
       `device:${apiKey || getClientIp(req)}`,
       RATE_LIMIT_DEVICE
     )
-    if (!rl.success) return rateLimitResponse(rl)
+    if (!rl.success) {
+      console.warn('[webhook:device-report] rate limited', { key: apiKey ? '***' : 'none', remaining: rl.remaining })
+      return rateLimitResponse(rl)
+    }
 
     // Verify API key (simple auth for device endpoints)
     const expectedKey = process.env.DEVICE_API_KEY
 
     if (expectedKey && apiKey !== expectedKey) {
       if (process.env.NODE_ENV !== 'test') {
-        console.warn('[Device report] 401 Invalid API key', {
+        console.warn('[webhook:device-report] 401 Invalid API key', {
           hasKey: !!apiKey,
         })
       }
@@ -46,7 +49,8 @@ export async function POST(req: NextRequest) {
     let body: unknown
     try {
       body = await req.json()
-    } catch {
+    } catch (err) {
+      console.warn('[webhook:device-report] invalid JSON body', { error: String(err) })
       return NextResponse.json(
         {
           error: 'Invalid JSON',
@@ -58,6 +62,7 @@ export async function POST(req: NextRequest) {
     const validated = deviceReportSchema.safeParse(body)
 
     if (!validated.success) {
+      console.warn('[webhook:device-report] validation failed', { errors: validated.error.flatten() })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }

@@ -16,6 +16,7 @@ const CRON_SECRET = process.env.CRON_SECRET
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
+    console.warn('[sync-onomondo] cron 401: missing or invalid CRON_SECRET')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -37,6 +38,10 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    console.info(`[sync-onomondo] cron started: ${activeLabels.length} active labels`, {
+      labels: activeLabels.map((l) => l.deviceId),
+    })
+
     let synced = 0
     let skipped = 0
     let failed = 0
@@ -49,10 +54,13 @@ export async function GET(req: NextRequest) {
         } else {
           skipped++
         }
-      } catch {
+      } catch (err) {
         failed++
+        console.error(`[sync-onomondo] cron: label ${label.deviceId} failed:`, err)
       }
     }
+
+    console.info(`[sync-onomondo] cron finished: synced=${synced} skipped=${skipped} failed=${failed}`)
 
     return NextResponse.json({
       success: true,

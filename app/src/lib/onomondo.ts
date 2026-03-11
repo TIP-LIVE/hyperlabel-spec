@@ -141,7 +141,17 @@ export async function getSimLocation(
   const data = await res.json()
   const loc = data?.location
   if (!loc || loc.lat == null || loc.lng == null) {
+    console.warn(`[Onomondo] SIM ${simId} has no location data`, {
+      hasLocation: !!loc,
+      online: data?.online ?? null,
+      lastOnline: data?.last_online ?? null,
+    })
     return null
+  }
+
+  const timeSource = loc.time ? 'location.time' : data.last_online ? 'last_online' : 'now'
+  if (timeSource !== 'location.time') {
+    console.warn(`[Onomondo] SIM ${simId} location time fallback to ${timeSource}`)
   }
 
   return {

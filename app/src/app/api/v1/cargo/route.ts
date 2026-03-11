@@ -71,13 +71,22 @@ export async function GET(req: NextRequest) {
         for (const label of activeLabels) {
           try {
             await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
-          } catch {}
+          } catch (err) {
+            console.warn(`[cargo] sync failed for ${label.deviceId}:`, err)
+          }
         }
       }
 
       if (sync) {
+        console.info(`[cargo] sync=true requested, syncing ${activeLabels.length} labels`)
+        const start = Date.now()
         // Await sync with a 15s timeout, then re-fetch locations
-        await Promise.race([doSync(), new Promise((r) => setTimeout(r, 15_000))])
+        let timedOut = false
+        await Promise.race([
+          doSync(),
+          new Promise((r) => setTimeout(() => { timedOut = true; r(undefined) }, 15_000)),
+        ])
+        console.info(`[cargo] sync completed in ${Date.now() - start}ms${timedOut ? ' (TIMED OUT)' : ''}`)
         // Re-fetch latest locations after sync
         const refreshed = await db.shipment.findMany({
           where,
@@ -103,7 +112,7 @@ export async function GET(req: NextRequest) {
           pagination: { total, limit, offset, hasMore: offset + refreshed.length < total },
         })
       } else {
-        doSync().catch(() => {})
+        doSync().catch((err) => console.warn('[cargo] background sync error:', err))
       }
     }
 
@@ -128,9 +137,11 @@ export async function GET(req: NextRequest) {
                 },
               })
             }
-          } catch {}
+          } catch (err) {
+            console.warn(`[cargo] geocoding backfill failed for location ${loc.id}:`, err)
+          }
         }
-      })().catch(() => {})
+      })().catch((err) => console.warn('[cargo] geocoding backfill error:', err))
     }
 
     return NextResponse.json({

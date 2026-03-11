@@ -26,11 +26,15 @@ export async function syncLabelLocation(label: {
   iccid: string | null
   deviceId: string
 }): Promise<boolean> {
-  if (!label.iccid) return false
+  if (!label.iccid) {
+    console.info(`[sync-onomondo] skip ${label.deviceId}: no ICCID`)
+    return false
+  }
 
   // Throttle: skip if we already attempted recently
   const lastAttempt = syncThrottle.get(label.id)
   if (lastAttempt && Date.now() - lastAttempt < THROTTLE_MS) {
+    console.info(`[sync-onomondo] throttled ${label.deviceId}: last attempt ${Math.round((Date.now() - lastAttempt) / 1000)}s ago`)
     return false
   }
   syncThrottle.set(label.id, Date.now())
@@ -43,7 +47,10 @@ export async function syncLabelLocation(label: {
     }
 
     const loc = await getSimLocation(sim.id)
-    if (!loc) return false
+    if (!loc) {
+      console.warn(`[sync-onomondo] no location from Onomondo for ${label.deviceId} (SIM ${sim.id})`)
+      return false
+    }
 
     // Dedup: skip if Onomondo timestamp is not newer than our latest event
     const latest = await db.locationEvent.findFirst({
@@ -57,6 +64,8 @@ export async function syncLabelLocation(label: {
       latest &&
       onomondoTime.getTime() - latest.recordedAt.getTime() < DEDUP_WINDOW_MS
     ) {
+      const gapMin = Math.round((onomondoTime.getTime() - latest.recordedAt.getTime()) / 60_000)
+      console.info(`[sync-onomondo] dedup skip ${label.deviceId}: onomondo=${onomondoTime.toISOString()} latest=${latest.recordedAt.toISOString()} gap=${gapMin}min (need >${Math.round(DEDUP_WINDOW_MS / 60_000)}min)`)
       return false
     }
 

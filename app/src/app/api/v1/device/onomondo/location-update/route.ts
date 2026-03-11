@@ -30,7 +30,10 @@ export async function POST(req: NextRequest) {
       `onomondo-location:${apiKey || getClientIp(req)}`,
       RATE_LIMIT_DEVICE
     )
-    if (!rl.success) return rateLimitResponse(rl)
+    if (!rl.success) {
+      console.warn('[webhook:location-update] rate limited', { key: apiKey ? '***' : 'none', remaining: rl.remaining })
+      return rateLimitResponse(rl)
+    }
 
     // Verify API key
     const expectedKey =
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
       process.env.ONOMONDO_CONNECTOR_API_KEY ||
       process.env.DEVICE_API_KEY
     if (expectedKey && apiKey !== expectedKey) {
-      console.warn('[Onomondo location-update] 401 Invalid API key', {
+      console.warn('[webhook:location-update] 401 Invalid API key', {
         hasKey: !!apiKey,
       })
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
@@ -47,7 +50,8 @@ export async function POST(req: NextRequest) {
     let body: unknown
     try {
       body = await req.json()
-    } catch {
+    } catch (err) {
+      console.warn('[webhook:location-update] invalid JSON body', { error: String(err) })
       return NextResponse.json(
         { error: 'Invalid JSON', details: 'Request body must be valid JSON' },
         { status: 400 }
@@ -56,6 +60,7 @@ export async function POST(req: NextRequest) {
 
     const validated = onomondoLocationUpdateSchema.safeParse(body)
     if (!validated.success) {
+      console.warn('[webhook:location-update] validation failed', { errors: validated.error.flatten() })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }

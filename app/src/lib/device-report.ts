@@ -280,7 +280,9 @@ export async function processLocationReport(
       if (r.count > 0) {
         console.info(`[Device report] backfilled ${r.count} orphaned locations for ${label.deviceId}`)
       }
-    }).catch(() => {})
+    }).catch((err) => {
+      console.warn(`[Device report] backfill failed for ${label.deviceId}:`, err)
+    })
   }
 
   // Reverse-geocode the location and persist on the record
@@ -316,6 +318,7 @@ export async function processLocationReport(
       where: { id: activeShipment.id },
       data: { status: 'IN_TRANSIT' },
     })
+    console.info(`[Device report] shipment ${activeShipment.id} status: PENDING → IN_TRANSIT (${label.deviceId})`)
 
     if (activeShipment.consigneeEmail) {
       sendConsigneeInTransitNotification({
@@ -382,6 +385,7 @@ export async function processLocationReport(
           where: { id: activeShipment.id },
           data: { status: 'DELIVERED', deliveredAt: new Date() },
         })
+        console.info(`[Device report] shipment ${activeShipment.id} status: IN_TRANSIT → DELIVERED (${label.deviceId}, distance=${Math.round(distance)}m)`)
 
         sendShipmentDeliveredNotification({
           userId: activeShipment.userId,
