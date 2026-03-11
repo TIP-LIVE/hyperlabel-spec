@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { DataTable } from '@/components/data-table/data-table'
 import { cargoColumns, CargoRow } from './cargo-columns'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -24,6 +24,8 @@ interface CargoListProps {
   initialStatus?: string
 }
 
+const POLL_INTERVAL_MS = 60_000 // Auto-refresh every 60 seconds
+
 export function CargoList({ initialStatus }: CargoListProps) {
   const [allShipments, setAllShipments] = useState<CargoRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,9 +36,12 @@ export function CargoList({ initialStatus }: CargoListProps) {
       ? initialStatus
       : 'all'
   )
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const fetchShipments = async (sync = false) => {
-    if (!sync) setLoading(true)
+  const initialLoadDone = useRef(false)
+
+  const fetchShipments = useCallback(async (sync = false) => {
+    if (!initialLoadDone.current) setLoading(true)
     setError(null)
 
     try {
@@ -55,15 +60,31 @@ export function CargoList({ initialStatus }: CargoListProps) {
       setAllShipments(shipments)
     } catch (err) {
       console.error('Failed to fetch cargo shipments:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load cargo shipments')
+      if (!initialLoadDone.current) setError(err instanceof Error ? err.message : 'Failed to load cargo shipments')
     } finally {
       setLoading(false)
+      initialLoadDone.current = true
     }
-  }
+  }, [])
 
+  // Initial fetch
   useEffect(() => {
     fetchShipments()
-  }, [])
+  }, [fetchShipments])
+
+  // Auto-poll every 60s when there are active shipments
+  const hasActiveShipments = useMemo(
+    () => allShipments.some((s) => s.status === 'PENDING' || s.status === 'IN_TRANSIT'),
+    [allShipments]
+  )
+
+  useEffect(() => {
+    if (!hasActiveShipments) return
+    pollRef.current = setInterval(() => fetchShipments(), POLL_INTERVAL_MS)
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [hasActiveShipments, fetchShipments])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -104,7 +125,7 @@ export function CargoList({ initialStatus }: CargoListProps) {
         <AlertCircle className="mb-4 h-10 w-10 text-destructive" />
         <h3 className="text-lg font-semibold">Failed to load cargo shipments</h3>
         <p className="mt-1 text-sm text-muted-foreground">{error}</p>
-        <Button onClick={fetchShipments} variant="outline" className="mt-4">
+        <Button onClick={() => fetchShipments()} variant="outline" className="mt-4">
           <RefreshCw className="mr-2 h-4 w-4" />
           Try Again
         </Button>
