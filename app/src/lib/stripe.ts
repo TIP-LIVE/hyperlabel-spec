@@ -7,6 +7,8 @@ function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY || ''
   // Use placeholder when missing so build/SSR (e.g. no env in CI) doesn't throw at module load
   const keyToUse = key || 'sk_test_build_placeholder'
+  const isReal = key && !key.includes('placeholder')
+  console.log(`[stripe] Initializing Stripe client: key_prefix="${keyToUse.slice(0, 7)}..." is_live=${keyToUse.startsWith('sk_live')} is_configured=${isReal} region=${process.env.VERCEL_REGION ?? 'local'}`)
   _stripe = new Stripe(keyToUse, {
     typescript: true,
     maxNetworkRetries: 3,

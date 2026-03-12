@@ -101,7 +101,9 @@ export async function POST(req: NextRequest) {
       console.error(`[checkout] Stripe error detail: type=${error.type} code=${stripeErr.code ?? 'n/a'} statusCode=${stripeErr.statusCode ?? 'n/a'} message=${error.message}`)
 
       if (error instanceof Stripe.errors.StripeConnectionError) {
-        console.error(`[checkout] StripeConnectionError — Stripe API unreachable from this region. Check status.stripe.com`)
+        const keyPrefix = (process.env.STRIPE_SECRET_KEY || '').slice(0, 7)
+        console.error(`[checkout] StripeConnectionError — Stripe API unreachable. key_prefix="${keyPrefix}..." retries=3 timeout=30s region=${process.env.VERCEL_REGION ?? process.env.AWS_REGION ?? 'unknown'}`)
+        console.error(`[checkout] Check https://status.stripe.com — if recurring, consider increasing timeout or adding retry`)
         return NextResponse.json(
           { error: 'Could not connect to payment provider. Please try again in a moment.' },
           { status: 502 }
