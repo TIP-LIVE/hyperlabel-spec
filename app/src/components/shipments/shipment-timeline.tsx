@@ -79,6 +79,11 @@ function locationDisplayName(location: LocationEvent): string {
 
 /** More precise display name for expanded detail rows (suburb/area level) */
 function detailLocationDisplayName(location: LocationEvent): string {
+  if (location.geocodedArea && location.geocodedCity && location.geocodedCountry) {
+    return location.geocodedArea === location.geocodedCity
+      ? `${location.geocodedCity}, ${location.geocodedCountry}`
+      : `${location.geocodedArea}, ${location.geocodedCity}`
+  }
   if (location.geocodedArea && location.geocodedCountry) {
     return `${location.geocodedArea}, ${location.geocodedCountry}`
   }

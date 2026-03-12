@@ -107,6 +107,36 @@ export async function GET(req: NextRequest) {
           take: limit,
           skip: offset,
         })
+        // Backfill geocoding for freshly synced locations
+        const ungeocodedRefreshed = refreshed
+          .flatMap((s) => s.locations)
+          .filter((loc) => loc.latitude && loc.longitude && !loc.geocodedCity)
+        if (ungeocodedRefreshed.length > 0) {
+          await Promise.all(
+            ungeocodedRefreshed.map(async (loc) => {
+              try {
+                const geo = await reverseGeocode(loc.latitude, loc.longitude)
+                if (geo) {
+                  await db.locationEvent.update({
+                    where: { id: loc.id },
+                    data: {
+                      geocodedCity: geo.city,
+                      geocodedArea: geo.area,
+                      geocodedCountry: geo.country,
+                      geocodedCountryCode: geo.countryCode,
+                    },
+                  })
+                  loc.geocodedCity = geo.city
+                  loc.geocodedArea = geo.area
+                  loc.geocodedCountry = geo.country
+                  loc.geocodedCountryCode = geo.countryCode
+                }
+              } catch (err) {
+                console.warn(`[cargo] geocoding backfill failed for location ${loc.id}:`, err)
+              }
+            })
+          )
+        }
         return NextResponse.json({
           shipments: refreshed,
           pagination: { total, limit, offset, hasMore: offset + refreshed.length < total },
@@ -117,13 +147,14 @@ export async function GET(req: NextRequest) {
     }
 
     // Backfill geocoding for locations that have coordinates but no geocoded data
+    // Await so the response includes geocoded names instead of raw coordinates
     const ungeocodedLocations = shipments
       .flatMap((s) => s.locations)
       .filter((loc) => loc.latitude && loc.longitude && !loc.geocodedCity)
 
     if (ungeocodedLocations.length > 0) {
-      ;(async () => {
-        for (const loc of ungeocodedLocations) {
+      await Promise.all(
+        ungeocodedLocations.map(async (loc) => {
           try {
             const geo = await reverseGeocode(loc.latitude, loc.longitude)
             if (geo) {
@@ -136,12 +167,17 @@ export async function GET(req: NextRequest) {
                   geocodedCountryCode: geo.countryCode,
                 },
               })
+              // Update the in-memory object so the response includes geocoded data
+              loc.geocodedCity = geo.city
+              loc.geocodedArea = geo.area
+              loc.geocodedCountry = geo.country
+              loc.geocodedCountryCode = geo.countryCode
             }
           } catch (err) {
             console.warn(`[cargo] geocoding backfill failed for location ${loc.id}:`, err)
           }
-        }
-      })().catch((err) => console.warn('[cargo] geocoding backfill error:', err))
+        })
+      )
     }
 
     return NextResponse.json({
