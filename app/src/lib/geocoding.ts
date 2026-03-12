@@ -65,18 +65,24 @@ export async function reverseGeocode(
     // DB lookup failure shouldn't block geocoding
   }
 
-  // 3. Call Nominatim
+  // 3. Call Nominatim (with retry for transient failures)
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14&accept-language=en`,
-      {
-        headers: {
-          'User-Agent': 'TIP-Cargo-Tracking/1.0 (tip.live)',
-        },
-      }
-    )
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14&accept-language=en`
+    const fetchOpts = { headers: { 'User-Agent': 'TIP-Cargo-Tracking/1.0 (tip.live)' } }
+    const BACKOFF_MS = [1500, 3000]
 
-    if (!res.ok) return null
+    let res: Response | null = null
+    for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
+      res = await fetch(url, fetchOpts)
+      if (res.ok) break
+      // Only retry on 429 (rate limit) or 5xx (server error)
+      if (res.status !== 429 && res.status < 500) return null
+      if (attempt < BACKOFF_MS.length) {
+        await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt]))
+      }
+    }
+
+    if (!res || !res.ok) return null
 
     const data = await res.json()
     const address = data.address || {}
