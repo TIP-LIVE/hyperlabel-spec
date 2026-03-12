@@ -3,6 +3,7 @@ import { onomondoLocationUpdateSchema } from '@/lib/validations/device'
 import {
   processLocationReport,
   LocationReportError,
+  shouldSkipDuplicateLocation,
 } from '@/lib/device-report'
 import {
   rateLimit,
@@ -127,6 +128,27 @@ export async function POST(req: NextRequest) {
         success: true,
         skipped: true,
         reason: 'No coordinates available (Onomondo null + geolocation failed)',
+      })
+    }
+
+    // Dedup: skip if a recent event already exists nearby for this label
+    const shouldSkip = await shouldSkipDuplicateLocation({
+      iccid: data.iccid,
+      latitude: lat,
+      longitude: lng,
+      source: 'CELL_TOWER',
+    })
+
+    if (shouldSkip) {
+      console.info('[webhook:location-update] dedup skip', {
+        iccid: data.iccid,
+        lat,
+        lng,
+      })
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: 'Duplicate location within threshold',
       })
     }
 
