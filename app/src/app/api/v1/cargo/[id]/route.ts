@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { db } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
@@ -87,9 +88,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const ungeocodedLocations = finalLocations.filter(
       (loc) => loc.latitude && loc.longitude && !isNullIsland(loc.latitude, loc.longitude) && (!loc.geocodedCity || !loc.geocodedArea)
     )
-    // Await geocoding for the first few locations so the response includes geocoded names
-    const urgent = ungeocodedLocations.slice(0, 5)
-    const rest = ungeocodedLocations.slice(5)
+    // Await geocoding for the first batch so the response includes geocoded names
+    const urgent = ungeocodedLocations.slice(0, 10)
+    const rest = ungeocodedLocations.slice(10)
 
     for (const loc of urgent) {
       try {
@@ -114,9 +115,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       } catch {}
     }
 
-    // Fire-and-forget the rest
+    // Use after() so background geocoding survives after response is sent on Vercel
     if (rest.length > 0) {
-      ;(async () => {
+      after(async () => {
         for (const loc of rest) {
           try {
             const geo = await reverseGeocode(loc.latitude, loc.longitude)
@@ -133,7 +134,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
             }
           } catch {}
         }
-      })().catch(() => {})
+      })
     }
 
     // Backfill origin/destination address from coordinates if missing
