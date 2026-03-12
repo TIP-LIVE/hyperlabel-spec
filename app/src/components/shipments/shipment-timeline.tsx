@@ -134,7 +134,6 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
         </div>
         <p className="text-xs text-muted-foreground">
           {format(new Date(location.recordedAt), 'PPp')}
-          {location.accuracyM && ` · ±${location.accuracyM}m`}
           {location.batteryPct !== null && ` · ${location.batteryPct}% battery`}
         </p>
       </div>
