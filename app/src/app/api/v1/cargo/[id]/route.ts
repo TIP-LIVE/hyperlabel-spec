@@ -36,7 +36,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         },
         locations: {
           orderBy: { recordedAt: 'desc' },
-          take: 100,
         },
       },
     })
@@ -81,7 +80,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       ? (await db.locationEvent.findMany({
           where: { shipmentId: shipment.id },
           orderBy: { recordedAt: 'desc' },
-          take: 100,
         }))
       : shipment.locations
 
