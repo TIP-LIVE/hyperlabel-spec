@@ -11,7 +11,7 @@ const CRON_SECRET = process.env.CRON_SECRET
  * Runs daily to catch any records where geocoding failed at ingest time
  * (Nominatim rate limits, transient errors, etc.).
  *
- * Processes up to 50 records per run with 1.1s delay between requests
+ * Processes up to 200 records per run with 1.1s delay between requests
  * to respect Nominatim's 1 req/sec policy.
  */
 export async function GET(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         longitude: true,
       },
       orderBy: { recordedAt: 'desc' },
-      take: 50,
+      take: 200,
     })
 
     let geocoded = 0
