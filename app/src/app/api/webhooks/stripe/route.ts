@@ -5,6 +5,9 @@ import { db } from '@/lib/db'
 import { sendOrderConfirmedNotification, sendLowInventoryAlert } from '@/lib/notifications'
 import Stripe from 'stripe'
 
+/** Pin to US East — same region as checkout route for consistent Stripe connectivity */
+export const preferredRegion = 'iad1'
+
 /**
  * POST /api/webhooks/stripe
  *

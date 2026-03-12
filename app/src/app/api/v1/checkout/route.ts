@@ -9,6 +9,9 @@ const checkoutSchema = z.object({
   packType: z.enum(['starter', 'team', 'volume']),
 })
 
+/** Pin to US East (iad1) — closest to Stripe's API servers, reduces connection timeouts */
+export const preferredRegion = 'iad1'
+
 /** Number of application-level retries for Stripe session creation (on top of SDK's own retries) */
 const STRIPE_APP_RETRIES = 2
 
