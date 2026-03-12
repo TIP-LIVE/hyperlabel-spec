@@ -73,10 +73,22 @@ interface CargoData {
   locations: LocationPoint[]
 }
 
+interface OldestLocationInfo {
+  id: string
+  latitude: number
+  longitude: number
+  recordedAt: string
+  geocodedCity: string | null
+  geocodedArea: string | null
+  geocodedCountry: string | null
+  geocodedCountryCode: string | null
+}
+
 interface CargoDetailClientProps {
   initialData: CargoData
   trackingUrl: string
   initialTotalLocations?: number
+  initialOldestLocation?: OldestLocationInfo | null
 }
 
 const statusConfig = {
@@ -98,7 +110,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocations }: CargoDetailClientProps) {
+export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocations, initialOldestLocation }: CargoDetailClientProps) {
   const [shipment, setShipment] = useState<CargoData>(initialData)
   const [isPolling] = useState(true)
   const [pollError, setPollError] = useState(false)
@@ -162,8 +174,10 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
     if (shipment.originLat != null && shipment.originLng != null && !isNullIsland(shipment.originLat, shipment.originLng)) {
       return { label: `${shipment.originLat.toFixed(4)}, ${shipment.originLng.toFixed(4)}`, inferred: false }
     }
-    if (shipment.locations.length > 0) {
-      const oldest = shipment.locations[shipment.locations.length - 1]
+    // Use the actual oldest location (from full dataset) rather than the
+    // oldest in the currently-loaded page, so origin stays stable during pagination
+    const oldest = initialOldestLocation ?? (shipment.locations.length > 0 ? shipment.locations[shipment.locations.length - 1] : null)
+    if (oldest) {
       const geo = oldest.geocodedCity && oldest.geocodedCountry
         ? `${oldest.geocodedCity}, ${oldest.geocodedCountry}`
         : oldest.geocodedCity || oldest.geocodedCountry || null
@@ -171,7 +185,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
       return { label: `${oldest.latitude.toFixed(4)}, ${oldest.longitude.toFixed(4)}`, inferred: true }
     }
     return { label: 'Not specified', inferred: false }
-  }, [shipment])
+  }, [shipment, initialOldestLocation])
 
   const destinationDisplay = useMemo(() => {
     if (shipment.destinationAddress) {

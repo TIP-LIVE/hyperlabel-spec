@@ -61,6 +61,11 @@ export default async function CargoDetailPage({ params }: PageProps) {
     where: { shipmentId: shipment.id },
   })
 
+  const oldestLocation = await db.locationEvent.findFirst({
+    where: { shipmentId: shipment.id },
+    orderBy: { recordedAt: 'asc' },
+  })
+
   // Check access: org membership + ownership
   const { orgId } = await auth()
   if (user && user.role !== 'admin') {
@@ -109,5 +114,16 @@ export default async function CargoDetailPage({ params }: PageProps) {
     })),
   }
 
-  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} initialTotalLocations={totalLocations} />
+  const serializedOldestLocation = oldestLocation ? {
+    id: oldestLocation.id,
+    latitude: oldestLocation.latitude,
+    longitude: oldestLocation.longitude,
+    recordedAt: oldestLocation.recordedAt.toISOString(),
+    geocodedCity: oldestLocation.geocodedCity,
+    geocodedArea: oldestLocation.geocodedArea,
+    geocodedCountry: oldestLocation.geocodedCountry,
+    geocodedCountryCode: oldestLocation.geocodedCountryCode,
+  } : null
+
+  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} initialTotalLocations={totalLocations} initialOldestLocation={serializedOldestLocation} />
 }

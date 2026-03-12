@@ -95,6 +95,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       where: { shipmentId: shipment.id },
     })
 
+    // Fetch the actual oldest location so the frontend can infer origin
+    // independently of which page of locations is currently loaded
+    const oldestLocation = await db.locationEvent.findFirst({
+      where: { shipmentId: shipment.id },
+      orderBy: { recordedAt: 'asc' },
+    })
+
     const ungeocodedLocations = finalLocations.filter(
       (loc) => loc.latitude && loc.longitude && !isNullIsland(loc.latitude, loc.longitude) && (!loc.geocodedCity || !loc.geocodedArea)
     )
@@ -175,6 +182,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       shipment: s,
       totalLocations,
       hasMoreLocations: offset + finalLocations.length < totalLocations,
+      oldestLocation,
     })
   } catch (error) {
     return handleApiError(error, 'fetching cargo shipment')
