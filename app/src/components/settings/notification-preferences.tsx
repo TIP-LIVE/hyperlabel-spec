@@ -13,6 +13,8 @@ interface Preferences {
   notifyNoSignal: boolean
   notifyDelivered: boolean
   notifyOrderShipped: boolean
+  notifyShipmentStuck: boolean
+  notifyReminders: boolean
 }
 
 const preferenceLabels = {
@@ -35,6 +37,14 @@ const preferenceLabels = {
   notifyOrderShipped: {
     label: 'Order Shipped',
     description: 'When your label order ships',
+  },
+  notifyShipmentStuck: {
+    label: 'Shipment Stuck',
+    description: 'When a shipment hasn\'t moved in 24+ hours',
+  },
+  notifyReminders: {
+    label: 'Reminders',
+    description: 'Unused labels and pending shipment reminders',
   },
 }
 

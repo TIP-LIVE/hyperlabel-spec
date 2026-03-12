@@ -10,6 +10,8 @@ const preferencesSchema = z.object({
   notifyNoSignal: z.boolean().optional(),
   notifyDelivered: z.boolean().optional(),
   notifyOrderShipped: z.boolean().optional(),
+  notifyShipmentStuck: z.boolean().optional(),
+  notifyReminders: z.boolean().optional(),
 })
 
 /**
@@ -28,6 +30,8 @@ export async function GET() {
         notifyNoSignal: true,
         notifyDelivered: true,
         notifyOrderShipped: true,
+        notifyShipmentStuck: true,
+        notifyReminders: true,
       },
     })
 
@@ -64,6 +68,8 @@ export async function PATCH(req: NextRequest) {
         notifyNoSignal: true,
         notifyDelivered: true,
         notifyOrderShipped: true,
+        notifyShipmentStuck: true,
+        notifyReminders: true,
       },
     })
 

@@ -67,6 +67,8 @@ model User {
   notifyNoSignal       Boolean @default(true) @map("notify_no_signal")
   notifyDelivered      Boolean @default(true) @map("notify_delivered")
   notifyOrderShipped   Boolean @default(true) @map("notify_order_shipped")
+  notifyShipmentStuck  Boolean @default(true) @map("notify_shipment_stuck")
+  notifyReminders      Boolean @default(true) @map("notify_reminders")
 
   // Relations
   orders         Order[]
@@ -117,8 +119,9 @@ model Shipment {
   status             ShipmentStatus @default(PENDING)
   shareCode          String         @unique @map("share_code") // Public tracking URL code
   shareEnabled       Boolean        @default(true) @map("share_enabled")
-  consigneeEmail     String?        @map("consignee_email") // Recipient's email for status updates
-  consigneePhone     String?        @map("consignee_phone") // Recipient's phone number
+  consigneeEmail          String?  @map("consignee_email") // Recipient's email for status updates
+  consigneePhone          String?  @map("consignee_phone") // Recipient's phone number
+  consigneeUnsubscribed   Boolean  @default(false) @map("consignee_unsubscribed") // Consignee opted out of emails
   photoUrls          String[]       @map("photo_urls") // Cargo photos
   createdAt          DateTime       @default(now()) @map("created_at")
   updatedAt          DateTime       @updatedAt @map("updated_at")

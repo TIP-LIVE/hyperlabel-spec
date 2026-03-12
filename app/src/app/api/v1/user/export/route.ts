@@ -38,6 +38,8 @@ export async function GET(req: NextRequest) {
           notifyNoSignal: true,
           notifyDelivered: true,
           notifyOrderShipped: true,
+          notifyShipmentStuck: true,
+          notifyReminders: true,
         },
       }),
       db.shipment.findMany({

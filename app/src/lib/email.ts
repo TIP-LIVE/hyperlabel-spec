@@ -20,6 +20,8 @@ export type EmailType =
   | 'no_signal'
   | 'shipment_delivered'
   | 'order_shipped'
+  | 'shipment_stuck'
+  | 'reminders'
 
 // Send email wrapper with error handling
 export async function sendEmail({
