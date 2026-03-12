@@ -57,6 +57,10 @@ export default async function CargoDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  const totalLocations = await db.locationEvent.count({
+    where: { shipmentId: shipment.id },
+  })
+
   // Check access: org membership + ownership
   const { orgId } = await auth()
   if (user && user.role !== 'admin') {
@@ -105,5 +109,5 @@ export default async function CargoDetailPage({ params }: PageProps) {
     })),
   }
 
-  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} />
+  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} initialTotalLocations={totalLocations} />
 }

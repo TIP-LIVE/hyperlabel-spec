@@ -76,6 +76,7 @@ interface CargoData {
 interface CargoDetailClientProps {
   initialData: CargoData
   trackingUrl: string
+  initialTotalLocations?: number
 }
 
 const statusConfig = {
@@ -97,11 +98,13 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClientProps) {
+export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocations }: CargoDetailClientProps) {
   const [shipment, setShipment] = useState<CargoData>(initialData)
   const [isPolling] = useState(true)
   const [pollError, setPollError] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [totalLocations, setTotalLocations] = useState(initialTotalLocations ?? initialData.locations.length)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const statusInfo = statusConfig[shipment.status]
   const StatusIcon = statusInfo.icon
@@ -191,11 +194,12 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
 
   const poll = useCallback(async () => {
     try {
-      const res = await fetch(`/api/v1/cargo/${shipment.id}`)
+      const res = await fetch(`/api/v1/cargo/${shipment.id}?limit=100`)
       if (!res.ok) return
 
       const data = await res.json()
       const updated = data.shipment
+      if (data.totalLocations != null) setTotalLocations(data.totalLocations)
 
       setShipment((prev) => ({
         ...prev,
@@ -226,6 +230,33 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
       setPollError(true)
     }
   }, [shipment.id, mergeLocations])
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true)
+    try {
+      const res = await fetch(`/api/v1/cargo/${shipment.id}?limit=100&offset=${shipment.locations.length}`)
+      if (!res.ok) return
+
+      const data = await res.json()
+      const older = data.shipment.locations as LocationPoint[]
+      if (data.totalLocations != null) setTotalLocations(data.totalLocations)
+
+      setShipment((prev) => ({
+        ...prev,
+        locations: mergeLocations(
+          prev.locations,
+          older.map((l: LocationPoint & { recordedAt: string | Date }) => ({
+            ...l,
+            recordedAt: typeof l.recordedAt === 'string' ? l.recordedAt : new Date(l.recordedAt).toISOString(),
+          }))
+        ),
+      }))
+    } catch {
+      toast.error('Failed to load older locations')
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [shipment.id, shipment.locations.length, mergeLocations])
 
   const shouldPoll = isActive && isPolling
 
@@ -469,11 +500,31 @@ export function CargoDetailClient({ initialData, trackingUrl }: CargoDetailClien
             <CardHeader className="px-3 sm:px-6">
               <CardTitle>Location History</CardTitle>
               <CardDescription>
-                {shipment.locations.length} location updates
+                {totalLocations > shipment.locations.length
+                  ? `Showing ${shipment.locations.length} of ${totalLocations} location updates`
+                  : `${shipment.locations.length} location updates`}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
               <ShipmentTimeline locations={locationsWithDates} />
+              {shipment.locations.length < totalLocations && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="gap-2"
+                  >
+                    {loadingMore ? (
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Clock className="h-3.5 w-3.5" />
+                    )}
+                    {loadingMore ? 'Loading...' : `Load older locations (${totalLocations - shipment.locations.length} more)`}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

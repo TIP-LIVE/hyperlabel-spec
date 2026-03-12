@@ -20,6 +20,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const context = await requireOrgAuth()
 
+    const searchParams = req.nextUrl.searchParams
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 500)
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
+
     const shipment = await db.shipment.findUnique({
       where: { id },
       include: {
@@ -36,6 +40,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         },
         locations: {
           orderBy: { recordedAt: 'desc' },
+          take: limit,
+          skip: offset,
         },
       },
     })
@@ -80,8 +86,14 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       ? (await db.locationEvent.findMany({
           where: { shipmentId: shipment.id },
           orderBy: { recordedAt: 'desc' },
+          take: limit,
+          skip: offset,
         }))
       : shipment.locations
+
+    const totalLocations = await db.locationEvent.count({
+      where: { shipmentId: shipment.id },
+    })
 
     const ungeocodedLocations = finalLocations.filter(
       (loc) => loc.latitude && loc.longitude && !isNullIsland(loc.latitude, loc.longitude) && (!loc.geocodedCity || !loc.geocodedArea)
@@ -159,7 +171,11 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       Object.assign(s, addressUpdates)
     }
 
-    return NextResponse.json({ shipment: s })
+    return NextResponse.json({
+      shipment: s,
+      totalLocations,
+      hasMoreLocations: offset + finalLocations.length < totalLocations,
+    })
   } catch (error) {
     return handleApiError(error, 'fetching cargo shipment')
   }
