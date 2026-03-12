@@ -7,7 +7,11 @@ function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY || ''
   // Use placeholder when missing so build/SSR (e.g. no env in CI) doesn't throw at module load
   const keyToUse = key || 'sk_test_build_placeholder'
-  _stripe = new Stripe(keyToUse, { typescript: true })
+  _stripe = new Stripe(keyToUse, {
+    typescript: true,
+    maxNetworkRetries: 3,
+    timeout: 30_000,
+  })
   return _stripe
 }
 
