@@ -1,7 +1,7 @@
 # TIP Product Specification
 
-**Version:** 1.7  
-**Last Updated:** January 26, 2026  
+**Version:** 2.0
+**Last Updated:** March 12, 2026
 **Status:** MVP Definition  
 **Document Owner:** Denys Chumak (Product Manager)
 
@@ -12,15 +12,16 @@
 1. [Executive Summary](#1-executive-summary)
 2. [Vision & Strategy](#2-vision--strategy)
 3. [Target Users & Personas](#3-target-users--personas)
-4. [Hardware Specification](#4-hardware-specification)
-5. [Platform & Features](#5-platform--features)
-6. [Technical Architecture](#6-technical-architecture)
-7. [Business Model](#7-business-model)
-8. [Security & Compliance](#8-security--compliance)
-9. [Operations & Launch](#9-operations--launch)
-10. [Team & Budget](#10-team--budget)
-11. [Roadmap](#11-roadmap)
-12. [Appendix](#12-appendix)
+4. [Use Cases](#4-use-cases)
+5. [Hardware Specification](#5-hardware-specification)
+6. [Platform & Features](#6-platform--features)
+7. [Technical Architecture](#7-technical-architecture)
+8. [Business Model](#8-business-model)
+9. [Security & Compliance](#9-security--compliance)
+10. [Operations & Launch](#10-operations--launch)
+11. [Team & Budget](#11-team--budget)
+12. [Roadmap](#12-roadmap)
+13. [Appendix](#13-appendix)
 
 ---
 
@@ -150,7 +151,7 @@
 
 **Important:** For bulk orders (e.g., 10 labels), shipper must scan each label separately to create 10 shipments.
 
-**Physical QR is universal:** The QR code on the label (`tip.live/activate/HL-XXXXXX`) works for everyone — shipper during setup (via in-app scanner) and consignee/carrier/warehouse worker during transit (opens tracking page directly). See §4.8 Physical Label Design.
+**Physical QR is universal:** The QR code on the label (`tip.live/activate/HL-XXXXXX`) works for everyone — shipper during setup (via in-app scanner) and consignee/carrier/warehouse worker during transit (opens tracking page directly). See §5.8 Physical Label Design.
 
 ### 3.2 Primary Persona: Consignee (Buyer/Receiver)
 
@@ -218,9 +219,1151 @@
 
 ---
 
-## 4. Hardware Specification
+## 4. Use Cases
 
-### 4.1 Physical Specifications
+This section defines every interaction each persona has with the TIP platform, organized by persona and feature area. Use case IDs follow the pattern `UC-{PERSONA}-{NUMBER}` where persona codes are:
+
+- **CON** — Consignee (Buyer/Receiver)
+- **SHP** — Shipper (Forwarder)
+- **CAR** — Carrier
+- **ADM** — TIP Service Team (Admin)
+- **PUB** — Public / Anonymous User
+
+---
+
+### 4.1 Consignee (Buyer/Receiver) Use Cases
+
+#### 4.1.1 Purchasing & Orders
+
+##### UC-CON-01: Purchase Label Pack
+
+**Description:** Consignee selects a label pack (starter/team/volume) and completes payment through Stripe Checkout.
+
+**Preconditions:**
+- User has a TIP account and is signed in
+- User belongs to an organization
+- Stripe is configured and operational
+
+**Basic Flow:**
+1. Consignee navigates to the Buy page (`/buy`)
+2. Consignee selects a pack type (starter, team, or volume)
+3. System creates a Stripe Checkout session with the selected pack
+4. Consignee is redirected to Stripe Checkout
+5. Consignee enters payment details and completes purchase
+6. Stripe webhook fires on successful payment
+7. System creates an Order (status: PAID) and assigns labels (status: SOLD) to the consignee's organization
+8. System sends `order_confirmed` email notification to the consignee
+9. Consignee is redirected back to the platform with confirmation
+
+**Alternative Flows:**
+- **A1 — Payment fails:** Stripe displays error; no order is created. Consignee can retry.
+- **A2 — Rate limited:** If consignee exceeds 10 checkout requests/minute, system returns 429. Consignee must wait.
+- **A3 — Stripe unavailable:** System returns a service unavailable error with retry guidance.
+
+---
+
+##### UC-CON-02: View Order History
+
+**Description:** Consignee views a list of all past and current orders with their statuses and assigned labels.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to the Orders page (`/orders`)
+2. System displays paginated list of orders with status, date, pack type, and label count
+3. Consignee can filter by status (PENDING, PAID, SHIPPED, DELIVERED, CANCELLED)
+
+---
+
+##### UC-CON-03: View Order Detail
+
+**Description:** Consignee views the details of a specific order, including assigned label IDs and shipping status.
+
+**Preconditions:**
+- Order exists and belongs to the consignee's organization
+
+**Basic Flow:**
+1. Consignee clicks on an order from the order list
+2. System displays order details: status, creation date, pack type, total amount, and list of assigned labels with their device IDs and statuses
+
+---
+
+#### 4.1.2 Cargo Tracking
+
+##### UC-CON-04: View Dashboard
+
+**Description:** Consignee views the dashboard with summary statistics across all shipments, labels, and orders.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to the Dashboard (`/dashboard`)
+2. System displays stats: active shipments count, labels in inventory, recent activity, delivery rate
+
+---
+
+##### UC-CON-05: List Cargo Shipments
+
+**Description:** Consignee views all cargo tracking shipments with current status and last known location.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to the Cargo page (`/cargo`)
+2. System displays a paginated table of CARGO_TRACKING shipments
+3. Each row shows: shipment name, label device ID, status, last location, last update time
+4. Consignee can filter by status (PENDING, IN_TRANSIT, DELIVERED, CANCELLED)
+
+**Alternative Flows:**
+- **A1 — Sync requested:** System can trigger a live location sync from Onomondo for the listed shipments.
+
+---
+
+##### UC-CON-06: View Cargo Shipment Detail
+
+**Description:** Consignee views full details of a specific cargo shipment including map, location history, and route timeline.
+
+**Preconditions:**
+- Shipment exists and belongs to the consignee's organization
+
+**Basic Flow:**
+1. Consignee navigates to shipment detail page (`/cargo/{id}`)
+2. System displays: shipment name, status, origin/destination addresses, label info (device ID, battery level)
+3. System renders map with location markers showing the cargo route
+4. System shows reverse-geocoded location history (city, country) with timestamps
+5. Consignee can load additional location history via pagination ("Load more")
+
+---
+
+##### UC-CON-07: Create Cargo Shipment
+
+**Description:** Consignee creates a new cargo tracking shipment by linking an available label and setting origin/destination.
+
+**Preconditions:**
+- Organization has at least one label in SOLD status (available for use)
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee navigates to "New Cargo" page (`/cargo/new`)
+2. Consignee enters: shipment name, selects a label (from available labels), origin address, destination address
+3. Optionally uploads cargo photos (up to 5)
+4. Optionally enters consignee email/phone for notifications
+5. System validates inputs, creates shipment (status: PENDING or IN_TRANSIT), generates a share code
+6. System triggers location sync from Onomondo
+7. System sends `label_activated` notification to the label owner
+8. If consignee email provided, system sends `tracking_link_shared` notification
+
+**Alternative Flows:**
+- **A1 — No available labels:** System shows empty state, directing consignee to purchase more labels.
+- **A2 — AI address normalization:** System can use AI to normalize entered addresses for geocoding accuracy.
+
+---
+
+##### UC-CON-08: Update Cargo Shipment
+
+**Description:** Consignee edits an existing cargo shipment's details (name, destination, consignee info).
+
+**Preconditions:**
+- Shipment exists, belongs to user's organization, and is not in CANCELLED or DELIVERED status
+
+**Basic Flow:**
+1. Consignee opens shipment detail page
+2. Consignee edits fields: name, destination address, consignee email/phone, photos
+3. System validates and saves changes
+4. If destination changed, system re-geocodes the new address
+
+---
+
+##### UC-CON-09: Delete Cargo Shipment
+
+**Description:** Consignee deletes a cargo shipment, releasing the associated label back to available inventory.
+
+**Preconditions:**
+- Shipment exists and belongs to user's organization
+
+**Basic Flow:**
+1. Consignee opens shipment detail page
+2. Consignee clicks delete and confirms via dialog
+3. System marks shipment as CANCELLED, unlinks the label, returns label to SOLD status
+4. System deletes associated location events if applicable
+
+---
+
+##### UC-CON-10: Share Tracking Link
+
+**Description:** Consignee shares the public tracking link for a shipment with third parties (forwarders, receivers, partners).
+
+**Preconditions:**
+- Shipment exists and has a generated share code
+
+**Basic Flow:**
+1. Consignee opens shipment detail page
+2. Consignee copies the public tracking URL (`tip.live/track/{shareCode}`)
+3. Consignee shares the URL via email, messaging, or other channels
+4. Recipients can view tracking without authentication
+
+---
+
+#### 4.1.3 Delivery Confirmation
+
+##### UC-CON-11: Confirm Delivery
+
+**Description:** Consignee confirms that cargo has been delivered, updating shipment status and deactivating tracking.
+
+**Preconditions:**
+- Shipment is in IN_TRANSIT status
+- User is authenticated (Clerk auth required)
+
+**Basic Flow:**
+1. Consignee navigates to the public tracking page (`/track/{code}`)
+2. Consignee clicks "Confirm Delivery" button
+3. System prompts for optional consignee name and notes
+4. System updates shipment status to DELIVERED, records delivery timestamp
+5. System sends `delivered` notification to the shipment owner
+6. If consignee email is on file, system sends consignee-specific delivery notification
+
+**Alternative Flows:**
+- **A1 — Already delivered:** System shows delivery is already confirmed with timestamp.
+- **A2 — Not authenticated:** System prompts user to sign in before confirming.
+
+---
+
+#### 4.1.4 Dispatch (Label Shipping)
+
+##### UC-CON-12: List Label Dispatch Shipments
+
+**Description:** Consignee views all LABEL_DISPATCH type shipments — these track the physical delivery of purchased labels from TIP to the shipper.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to Dispatch page (`/dispatch`)
+2. System displays list of LABEL_DISPATCH shipments with status, labels included, and last location
+
+---
+
+##### UC-CON-13: View Dispatch Shipment Detail
+
+**Description:** Consignee views details of a specific label dispatch shipment.
+
+**Preconditions:**
+- Dispatch shipment exists and belongs to user's organization
+
+**Basic Flow:**
+1. Consignee clicks on a dispatch shipment
+2. System shows: included labels (with device IDs, battery %, status), origin/destination, map with current location, location history
+
+---
+
+##### UC-CON-14: Create Dispatch Shipment
+
+**Description:** Consignee creates a dispatch shipment to track the physical delivery of labels to a forwarder/shipper.
+
+**Preconditions:**
+- Organization has available labels
+
+**Basic Flow:**
+1. Consignee navigates to "New Dispatch" (`/dispatch/new`)
+2. Consignee selects labels to include, enters destination address
+3. System creates LABEL_DISPATCH shipment, generates share code
+4. System syncs label locations from Onomondo
+
+---
+
+#### 4.1.5 Labels
+
+##### UC-CON-15: View Labels Inventory
+
+**Description:** Consignee views all labels assigned to their organization, with status and battery information.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to Labels page (`/labels`)
+2. System displays list of labels with: device ID, status (INVENTORY/SOLD/ACTIVE/DEPLETED), battery %, linked shipment (if any)
+
+---
+
+##### UC-CON-16: Register Label to Organization
+
+**Description:** Consignee registers a label (by device ID) to their organization, typically when receiving a label not yet linked to their account.
+
+**Preconditions:**
+- Label exists in system with INVENTORY status
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee enters a device ID on the labels page or via the register endpoint
+2. System validates the device ID exists and is in INVENTORY status
+3. System assigns the label to the user's organization, updates status to SOLD
+4. Label appears in the consignee's label inventory
+
+**Alternative Flows:**
+- **A1 — Label already assigned:** System returns error indicating label belongs to another organization.
+- **A2 — Multi-org labels enabled:** If org setting `allowLabelsInMultipleOrgs` is true, label can be shared across organizations.
+
+---
+
+#### 4.1.6 Address Book
+
+##### UC-CON-17: List Saved Addresses
+
+**Description:** Consignee views all saved addresses for their organization.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to Address Book page (`/address-book`)
+2. System displays list of saved addresses with: label/name, full address, country, default flag
+
+---
+
+##### UC-CON-18: Create Saved Address
+
+**Description:** Consignee saves a new address to the organization's address book for reuse in shipments.
+
+**Preconditions:**
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee clicks "Add Address" on the address book page
+2. Consignee enters: label/name, street address, city, state/province, postal code, country
+3. System validates and saves the address, scoped to the organization
+
+**Alternative Flows:**
+- **A1 — Auto-saved from checkout:** Stripe webhook can auto-save shipping addresses from checkout to the address book.
+
+---
+
+##### UC-CON-19: Update Saved Address
+
+**Description:** Consignee edits an existing saved address.
+
+**Preconditions:**
+- Address exists and belongs to user's organization
+
+**Basic Flow:**
+1. Consignee selects an address from the address book
+2. Consignee edits fields and saves
+3. System validates and updates the address
+
+---
+
+##### UC-CON-20: Delete Saved Address
+
+**Description:** Consignee removes an address from the address book.
+
+**Preconditions:**
+- Address exists and belongs to user's organization
+
+**Basic Flow:**
+1. Consignee clicks delete on an address entry
+2. System confirms deletion and removes the address
+
+---
+
+##### UC-CON-21: Set Default Address
+
+**Description:** Consignee marks an address as the default for their organization, used to pre-fill forms.
+
+**Preconditions:**
+- Address exists and belongs to user's organization
+
+**Basic Flow:**
+1. Consignee clicks "Set as Default" on an address
+2. System clears the default flag on any previously default address
+3. System sets the selected address as the new default
+
+---
+
+#### 4.1.7 Notification & Email Preferences
+
+##### UC-CON-22: View Notification Preferences
+
+**Description:** Consignee views their current email notification toggle settings.
+
+**Preconditions:**
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee navigates to Settings page (`/settings`)
+2. System displays 7 notification toggles: label activated, low battery, no signal, delivered, order shipped, shipment stuck, reminders
+
+---
+
+##### UC-CON-23: Update Notification Preferences
+
+**Description:** Consignee enables or disables specific email notification types.
+
+**Preconditions:**
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee toggles individual notification categories on/off
+2. System saves updated preferences immediately
+3. Future emails of disabled types are suppressed for this user
+
+---
+
+##### UC-CON-24: Unsubscribe from Tracking Emails
+
+**Description:** Consignee or third-party recipient unsubscribes from tracking notifications for a specific shipment via an unsubscribe link in the email.
+
+**Preconditions:**
+- User has received a tracking email with an unsubscribe link
+- Share code in the URL is valid
+
+**Basic Flow:**
+1. User clicks unsubscribe link in a tracking email
+2. Browser opens the unsubscribe page (`/track/{code}/unsubscribe`)
+3. System confirms unsubscription and suppresses future emails for that share code/recipient
+
+---
+
+#### 4.1.8 Account Management
+
+##### UC-CON-25: View Profile
+
+**Description:** Consignee views their account profile information.
+
+**Preconditions:**
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee navigates to Settings page
+2. System displays user profile: name, email, organization, role
+
+---
+
+##### UC-CON-26: Export Personal Data (GDPR)
+
+**Description:** Consignee exports all their personal data as required by GDPR data portability rights.
+
+**Preconditions:**
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee navigates to Settings and clicks "Export Data"
+2. System compiles all user data (profile, shipments, orders, addresses, preferences)
+3. System returns data as a downloadable file (JSON/CSV)
+
+---
+
+##### UC-CON-27: Delete Account (GDPR)
+
+**Description:** Consignee permanently deletes their account and all associated personal data.
+
+**Preconditions:**
+- User is authenticated
+
+**Basic Flow:**
+1. Consignee navigates to Settings and clicks "Delete Account"
+2. System prompts for confirmation
+3. System deletes user record and all personally identifiable data
+4. System signs the user out
+
+**Alternative Flows:**
+- **A1 — Active shipments exist:** System may warn that active shipments will lose their owner association.
+
+---
+
+#### 4.1.9 Organization Management
+
+##### UC-CON-28: View Organization Settings
+
+**Description:** Consignee views organization-level configuration.
+
+**Preconditions:**
+- User is authenticated and belongs to an organization
+
+**Basic Flow:**
+1. Consignee navigates to Organization Settings (`/settings/organization`)
+2. System displays org settings including: `allowLabelsInMultipleOrgs` toggle
+
+---
+
+##### UC-CON-29: Update Organization Settings
+
+**Description:** Organization admin updates org-level configuration.
+
+**Preconditions:**
+- User has `org:admin` role in their organization
+
+**Basic Flow:**
+1. Org admin navigates to Organization Settings
+2. Admin toggles settings (e.g., multi-org labels flag)
+3. System validates admin role and saves changes
+
+**Alternative Flows:**
+- **A1 — Insufficient permissions:** Non-admin users can view but not edit settings. System returns 403 on update attempt.
+
+---
+
+### 4.2 Shipper (Forwarder) Use Cases
+
+> **Note:** Shippers share the same dashboard interface as consignees. The distinction is in the typical workflow — shippers focus on activation, shipment creation, and label management rather than purchasing. All consignee use cases (UC-CON-04 through UC-CON-29) are also available to shippers within their organization.
+
+#### 4.2.1 Label Activation & Shipment Creation
+
+##### UC-SHP-01: Scan QR to Create Shipment
+
+**Description:** Shipper scans the physical QR code on a received label to initiate the shipment creation process.
+
+**Preconditions:**
+- Shipper has physical label(s) in hand
+- Label status is SOLD (purchased but not yet activated)
+- Shipper is authenticated
+
+**Basic Flow:**
+1. Shipper scans QR code on label (`tip.live/activate/{deviceId}`)
+2. System looks up the label by device ID
+3. If label is SOLD and belongs to shipper's org, system redirects to shipment creation page
+4. Shipper enters: shipment name, origin address, destination address
+5. Shipper optionally uploads cargo photos (up to 5, analyzed by AI for description)
+6. Shipper optionally enters consignee email/phone
+7. Shipper submits — system creates CARGO_TRACKING shipment, activates label (ACTIVE status)
+8. System generates share code, sends `label_activated` notification
+
+**Alternative Flows:**
+- **A1 — Label has active shipment:** System redirects to the existing tracking page (`/track/{shareCode}`).
+- **A2 — Label is INVENTORY (not purchased):** System displays "Label Not Yet Activated" message.
+- **A3 — Label is DEPLETED:** System displays "Battery Depleted" message.
+- **A4 — QR damaged — manual entry:** Shipper uses manual device ID entry in the app's scanner.
+
+---
+
+##### UC-SHP-02: Activate Label via Device Endpoint
+
+**Description:** Shipper activates a label programmatically through the device activation API.
+
+**Preconditions:**
+- Label exists in the system
+- Device ID is known
+
+**Basic Flow:**
+1. Shipper sends activation request with device ID
+2. System validates device ID, checks label status
+3. System activates the label, syncs initial location from Onomondo
+4. System returns activation confirmation with label status
+
+---
+
+##### UC-SHP-03: Create Cargo Shipment with Photos
+
+**Description:** Shipper creates a cargo shipment and attaches photos of the cargo for documentation.
+
+**Preconditions:**
+- Available label exists in organization
+- Shipper is authenticated
+
+**Basic Flow:**
+1. Shipper navigates to "New Cargo" page
+2. Shipper fills in shipment details (name, origin, destination, label selection)
+3. Shipper uploads up to 5 cargo photos
+4. System uploads photos to storage, returns URLs
+5. Optionally, shipper triggers AI photo analysis to auto-generate cargo description
+6. System creates shipment with photo URLs attached
+
+---
+
+##### UC-SHP-04: Upload Cargo Photo
+
+**Description:** Shipper uploads a photo of cargo for a shipment.
+
+**Preconditions:**
+- Shipper is authenticated
+
+**Basic Flow:**
+1. Shipper selects photo file(s) from device
+2. System uploads file(s) to storage via `/api/v1/upload`
+3. System returns the file URL(s)
+4. URLs are attached to the shipment record
+
+---
+
+##### UC-SHP-05: AI Photo Analysis
+
+**Description:** Shipper uses AI to analyze an uploaded cargo photo and generate a description.
+
+**Preconditions:**
+- Photo has been uploaded and URL is available
+
+**Basic Flow:**
+1. Shipper triggers "Analyze Photo" on an uploaded image
+2. System sends image to AI analysis endpoint (`/api/v1/ai/analyze-photo`)
+3. AI returns a description of the cargo contents
+4. Description is suggested as the shipment name or notes
+
+---
+
+##### UC-SHP-06: AI Address Normalization
+
+**Description:** Shipper uses AI to normalize a free-text address into a structured, geocode-friendly format.
+
+**Preconditions:**
+- Shipper has entered an address
+
+**Basic Flow:**
+1. Shipper enters a free-text address (e.g., "warehouse 5 near pudong airport shanghai")
+2. System sends to AI normalization endpoint (`/api/v1/ai/normalize-address`)
+3. AI returns structured address components
+4. System populates address fields with normalized values
+
+---
+
+#### 4.2.2 Shipment Management
+
+##### UC-SHP-07: List All Shipments (Generic)
+
+**Description:** Shipper views all shipments (both CARGO_TRACKING and LABEL_DISPATCH) in a unified list.
+
+**Preconditions:**
+- Shipper is authenticated
+
+**Basic Flow:**
+1. Shipper navigates to Shipments page (`/shipments`)
+2. System displays paginated list of all shipment types
+3. Each entry shows: name, type, status, label(s), last location, last update
+
+---
+
+##### UC-SHP-08: View Shipment Detail (Generic)
+
+**Description:** Shipper views full details of any shipment type.
+
+**Preconditions:**
+- Shipment belongs to shipper's organization
+
+**Basic Flow:**
+1. Shipper clicks a shipment from the list
+2. System displays: full details, map with route, location history with timestamps
+
+---
+
+##### UC-SHP-09: Update Shipment
+
+**Description:** Shipper updates a shipment's details (name, addresses, consignee info).
+
+**Preconditions:**
+- Shipment exists and belongs to shipper's organization
+- Shipment is not CANCELLED
+
+**Basic Flow:**
+1. Shipper opens shipment detail page
+2. Shipper edits fields
+3. System validates and saves changes
+
+---
+
+##### UC-SHP-10: Create Dispatch Shipment (Label Delivery)
+
+**Description:** Shipper creates a LABEL_DISPATCH shipment to track labels being shipped from one location to another.
+
+**Preconditions:**
+- Organization has available labels
+- Shipper is authenticated
+
+**Basic Flow:**
+1. Shipper navigates to "New Dispatch" page
+2. Shipper selects one or more labels to include
+3. Shipper enters origin and destination addresses
+4. System creates LABEL_DISPATCH shipment linking the selected labels
+5. System generates share code for tracking the label delivery
+
+---
+
+#### 4.2.3 Address Management
+
+> Shippers share the same address book functionality as consignees (UC-CON-17 through UC-CON-21). Addresses are scoped to the organization and available to all members.
+
+---
+
+### 4.3 Carrier Use Cases
+
+#### 4.3.1 Transit Scanning
+
+##### UC-CAR-01: Scan QR During Transit
+
+**Description:** Carrier (warehouse worker, driver, handler) scans the QR code on a label during transit to check shipment status.
+
+**Preconditions:**
+- Physical label is attached to cargo
+- Label has an associated shipment
+
+**Basic Flow:**
+1. Carrier scans QR code on the physical label with a phone camera
+2. Browser opens `tip.live/activate/{deviceId}`
+3. System detects label has an active shipment
+4. System redirects to the public tracking page (`/track/{shareCode}`)
+5. Carrier views current location, status, and route history — no authentication required
+
+**Alternative Flows:**
+- **A1 — Label has no active shipment:** System displays status message appropriate to label state (SOLD, INVENTORY, DEPLETED).
+- **A2 — QR code damaged:** Carrier can manually type the printed URL (`tip.live/activate/HL-XXXXXX`) into a browser.
+
+---
+
+##### UC-CAR-02: Scan QR on Label Without Shipment
+
+**Description:** Carrier scans a label that has not yet been assigned to a shipment.
+
+**Preconditions:**
+- Label exists but has no active shipment
+
+**Basic Flow:**
+1. Carrier scans QR code
+2. System looks up label by device ID
+3. System displays appropriate status page: "Waiting for Shipment" (SOLD), "Not Yet Activated" (INVENTORY), or "Battery Depleted" (DEPLETED)
+
+---
+
+### 4.4 Public / Anonymous User Use Cases
+
+#### 4.4.1 Public Tracking
+
+##### UC-PUB-01: View Public Tracking Page
+
+**Description:** Any person with a tracking link views real-time shipment location and route history without authentication.
+
+**Preconditions:**
+- Valid share code exists
+- Shipment is in PENDING, IN_TRANSIT, or DELIVERED status
+
+**Basic Flow:**
+1. User opens tracking URL (`tip.live/track/{shareCode}`)
+2. System fetches shipment data: status, origin, destination, current location
+3. System renders map with route and current position marker
+4. System displays location history timeline with reverse-geocoded city/country names
+5. User can see: status badge, battery level, last update time
+6. Page auto-refreshes location data periodically
+
+**Alternative Flows:**
+- **A1 — Shipment delivered:** Page shows delivered status with delivery confirmation timestamp and consignee name (if provided).
+- **A2 — Invalid share code:** System displays "Shipment not found" error.
+- **A3 — Sharing disabled by owner:** System displays message that tracking is not available.
+
+---
+
+##### UC-PUB-02: Confirm Delivery from Tracking Page
+
+**Description:** Authenticated user confirms delivery directly from the public tracking page.
+
+**Preconditions:**
+- Shipment is in IN_TRANSIT status
+- User is authenticated via Clerk
+
+**Basic Flow:**
+1. User views the tracking page
+2. User clicks "Confirm Delivery" button (visible only to authenticated users)
+3. System prompts for optional consignee name and delivery notes
+4. User confirms
+5. System updates shipment to DELIVERED, records timestamp
+6. System sends delivery notifications to owner and consignee
+
+---
+
+#### 4.4.2 Orphaned Label Claim
+
+##### UC-PUB-03: View Orphaned Label Claim Page
+
+**Description:** When a device begins reporting location data before a shipment has been created (orphaned label), the system generates a claim token with a 24-hour window. Anyone with the claim link can view the label info.
+
+**Preconditions:**
+- Label has reported location data but has no linked shipment
+- System has generated a claim token (`claimToken`) and expiration (`claimExpiresAt`)
+- Claim has not expired (within 24 hours)
+
+**Basic Flow:**
+1. User opens the claim URL (`tip.live/claim/{token}`)
+2. System validates the token and checks expiration
+3. System displays: device ID, battery level, number of location reports, time since first report
+4. User sees a form to create a shipment from this orphaned label
+
+**Alternative Flows:**
+- **A1 — Token expired:** System displays "Claim window has expired" message.
+- **A2 — Already claimed:** System displays "This label has already been assigned to a shipment."
+
+---
+
+##### UC-PUB-04: Claim Orphaned Label (Create Shipment)
+
+**Description:** User creates a shipment from an orphaned label within the 24-hour claim window.
+
+**Preconditions:**
+- Valid, non-expired claim token
+- Label has no active shipment
+
+**Basic Flow:**
+1. User fills in the claim form: cargo name (required), origin address, destination address
+2. Optionally provides: consignee email, consignee phone, cargo photos (up to 5)
+3. User submits the form
+4. System creates a CARGO_TRACKING shipment, generates share code
+5. System links the orphaned label to the new shipment
+6. System sends `auto_shipment_created` notification if consignee email provided
+7. System sends `label_activated` notification to the label's owner (if any)
+
+**Alternative Flows:**
+- **A1 — Claim token expired between page load and submission:** System returns error; user must contact support.
+
+---
+
+#### 4.4.3 Email Unsubscribe
+
+##### UC-PUB-05: Unsubscribe from Shipment Emails
+
+**Description:** Email recipient unsubscribes from future notifications for a specific shipment.
+
+**Preconditions:**
+- User has received a tracking-related email with an unsubscribe link
+
+**Basic Flow:**
+1. User clicks unsubscribe link in email footer
+2. Browser opens unsubscribe page (`/track/{code}/unsubscribe`)
+3. System confirms the unsubscription
+4. Future emails for that shipment/recipient combination are suppressed
+
+---
+
+### 4.5 TIP Service Team (Admin) Use Cases
+
+#### 4.5.1 Label Inventory Management
+
+##### UC-ADM-01: View Label Inventory
+
+**Description:** Admin views all labels in the system across all organizations, with status, battery, and assignment info.
+
+**Preconditions:**
+- User has admin role
+
+**Basic Flow:**
+1. Admin navigates to Admin > Labels (`/admin/labels`)
+2. System displays all labels: device ID, IMEI, ICCID, status, battery %, assigned org, linked shipment
+
+---
+
+##### UC-ADM-02: Add Labels to Inventory
+
+**Description:** Admin registers new physical labels into the system by entering device IDs and optional hardware identifiers.
+
+**Preconditions:**
+- User has admin role
+- Device IDs are unique (not already in system)
+
+**Basic Flow:**
+1. Admin navigates to Admin > Labels > Add (`/admin/labels/add`)
+2. Admin enters label data: device ID (required), IMEI (optional), ICCID (optional) — supports batch entry
+3. System validates for duplicates
+4. System creates label records with INVENTORY status
+
+**Alternative Flows:**
+- **A1 — Duplicate device IDs:** System rejects the batch and reports which device IDs already exist.
+
+---
+
+##### UC-ADM-03: Register Labels (Assign to Organization)
+
+**Description:** Admin assigns inventory labels to a specific organization/order, changing status from INVENTORY to SOLD.
+
+**Preconditions:**
+- Labels exist in INVENTORY status
+- Target organization/order exists
+
+**Basic Flow:**
+1. Admin navigates to Admin > Labels > Assign (`/admin/labels/assign`)
+2. Admin selects labels and target organization/order
+3. System updates label status to SOLD and links to the organization
+
+---
+
+#### 4.5.2 Order Fulfillment
+
+##### UC-ADM-04: View All Orders
+
+**Description:** Admin views all orders across all organizations.
+
+**Preconditions:**
+- User has admin role
+
+**Basic Flow:**
+1. Admin navigates to Admin > Orders (`/admin/orders`)
+2. System displays all orders: order ID, customer, status, pack type, creation date, label count
+
+---
+
+##### UC-ADM-05: View Order Detail (Admin)
+
+**Description:** Admin views full details of a specific order including customer info and assigned labels.
+
+**Preconditions:**
+- User has admin role
+
+**Basic Flow:**
+1. Admin clicks on an order
+2. System displays: customer info, order status, assigned labels with device IDs, shipping info
+
+---
+
+##### UC-ADM-06: Ship Order
+
+**Description:** Admin marks an order as shipped after physically dispatching the labels to the customer.
+
+**Preconditions:**
+- Order is in PAID status
+- Labels have been assigned to the order
+
+**Basic Flow:**
+1. Admin opens the order detail page
+2. Admin clicks "Ship Order" (`/api/v1/admin/orders/{id}/ship`)
+3. System updates order status to SHIPPED
+4. System sends `order_shipped` email notification to the customer
+
+**Alternative Flows:**
+- **A1 — Labels not yet assigned:** Admin must first assign labels (UC-ADM-03) before shipping.
+
+---
+
+#### 4.5.3 User Management
+
+##### UC-ADM-07: View All Users
+
+**Description:** Admin views all registered users in the system.
+
+**Preconditions:**
+- User has admin role
+
+**Basic Flow:**
+1. Admin navigates to Admin > Users (`/admin/users`)
+2. System displays all users: name, email, organization, role, creation date
+
+---
+
+##### UC-ADM-08: Change User Role
+
+**Description:** Admin changes a user's role within their organization.
+
+**Preconditions:**
+- User has admin role
+- Target user exists
+
+**Basic Flow:**
+1. Admin selects a user from the user list
+2. Admin changes the user's role (e.g., member to org:admin or vice versa)
+3. System updates the role via `/api/v1/admin/users/{id}/role`
+4. System sends `role_changed` email notification to the affected user
+
+---
+
+#### 4.5.4 Shipment Management (Admin)
+
+##### UC-ADM-09: View All Shipments (Admin)
+
+**Description:** Admin views all shipments across all organizations for support and diagnostics.
+
+**Preconditions:**
+- User has admin role
+
+**Basic Flow:**
+1. Admin navigates to Admin > Shipments (`/admin/shipments`)
+2. System displays all shipments: ID, name, type, status, owner org, label, last location
+
+---
+
+#### 4.5.5 Device & SIM Management
+
+##### UC-ADM-10: View Device Details
+
+**Description:** Admin views detailed device information including IMEI, ICCID, firmware, connectivity status, and raw location data.
+
+**Preconditions:**
+- User has admin role
+
+**Basic Flow:**
+1. Admin navigates to Admin > Devices (`/admin/devices`)
+2. Admin selects a specific device (`/admin/devices/{deviceId}`)
+3. System displays: device ID, IMEI, ICCID, battery level, connectivity status, last report time, raw location data
+
+---
+
+##### UC-ADM-11: Manage SIM Cards
+
+**Description:** Admin views and manages SIM card data from the Onomondo platform.
+
+**Preconditions:**
+- User has admin role
+- Onomondo integration is configured
+
+**Basic Flow:**
+1. Admin navigates to Admin > Devices and views SIM data
+2. System fetches SIM information from Onomondo via `/api/v1/admin/devices/sims`
+3. Admin can view SIM status, data usage, connectivity info
+
+---
+
+##### UC-ADM-12: Run Onomondo Diagnostics
+
+**Description:** Admin runs diagnostic checks against the Onomondo platform to troubleshoot device connectivity issues.
+
+**Preconditions:**
+- User has admin role
+- Onomondo integration is configured
+
+**Basic Flow:**
+1. Admin navigates to diagnostic tools
+2. Admin triggers diagnostics via `/api/v1/admin/diagnostics/onomondo`
+3. System queries Onomondo API for device health, connectivity status, data session info
+4. System returns diagnostic results for review
+
+---
+
+### 4.6 System / Automated Use Cases
+
+These use cases are triggered by the system rather than by direct user interaction.
+
+##### UC-SYS-01: Device Location Report
+
+**Description:** A TIP label device periodically reports its GPS/cell tower location to the platform.
+
+**Preconditions:**
+- Device is activated (battery tab pulled)
+- Device has cellular connectivity
+
+**Basic Flow:**
+1. Device transmits location data (lat/lng, timestamp, battery level) to Onomondo
+2. Onomondo forwards data to TIP via webhook (`/api/v1/device/onomondo/location-update`)
+3. System creates a LocationEvent record linked to the label/shipment
+4. System triggers reverse geocoding (Nominatim) to resolve city/country from coordinates
+5. If label has no linked shipment (orphaned), system generates a claim token with 24-hour expiry and sends `label_orphaned` notification
+
+**Alternative Flows:**
+- **A1 — Geocoding fails:** System retries with exponential backoff (3 attempts, 1.5s/3s delays). Location is saved without geocoded data.
+- **A2 — Device reports via direct API:** Legacy devices may report directly to `/api/v1/device/report`.
+
+---
+
+##### UC-SYS-02: Low Battery Alert
+
+**Description:** System detects a label's battery has dropped below threshold and notifies the owner.
+
+**Preconditions:**
+- Label is in ACTIVE status
+- Battery level drops below 20% or 10%
+
+**Basic Flow:**
+1. Device reports battery level in location update
+2. System detects battery below threshold
+3. System sends `low_battery` email notification to the label owner (if `notifyLowBattery` preference is enabled)
+
+---
+
+##### UC-SYS-03: No Signal Alert
+
+**Description:** System detects that a device has not reported for an extended period (>24 hours).
+
+**Preconditions:**
+- Label is in ACTIVE status
+- Last location report is older than 24 hours
+
+**Basic Flow:**
+1. Scheduled job checks for devices that have not reported recently
+2. System identifies labels with no report for >24 hours
+3. System sends `no_signal` email notification to owner (if `notifyNoSignal` is enabled)
+
+---
+
+##### UC-SYS-04: Shipment Stuck Alert
+
+**Description:** System detects a shipment has not moved significantly for an extended period.
+
+**Preconditions:**
+- Shipment is in IN_TRANSIT status
+- Location has not changed by more than 500m for >24 hours
+
+**Basic Flow:**
+1. Scheduled job analyzes location history for active shipments
+2. System identifies shipments with no significant movement
+3. System sends `shipment_stuck` email notification to owner (if `notifyShipmentStuck` is enabled)
+
+---
+
+##### UC-SYS-05: Pending Shipment Reminder
+
+**Description:** System sends reminder emails for shipments that have been in PENDING status without activation.
+
+**Preconditions:**
+- Shipment has been in PENDING status for a configurable period
+
+**Basic Flow:**
+1. Scheduled job identifies stale PENDING shipments
+2. System sends `pending_shipment_reminder` email to the shipment owner
+
+---
+
+##### UC-SYS-06: Unused Labels Reminder
+
+**Description:** System reminds users about labels that have been purchased but not used.
+
+**Preconditions:**
+- Labels in SOLD status have not been linked to any shipment for a configurable period
+
+**Basic Flow:**
+1. Scheduled job identifies unused labels
+2. System sends `unused_labels_reminder` email to the label owner
+
+---
+
+##### UC-SYS-07: Low Inventory Alert (Admin)
+
+**Description:** System alerts admin when label inventory drops below a threshold.
+
+**Preconditions:**
+- Number of INVENTORY labels drops below configured threshold
+
+**Basic Flow:**
+1. Scheduled job or trigger checks inventory count
+2. System sends `low_inventory` email notification to admin users
+
+---
+
+##### UC-SYS-08: Stripe Webhook — Order Fulfillment
+
+**Description:** System processes Stripe payment webhooks to create orders and assign labels.
+
+**Preconditions:**
+- Stripe Checkout session completed successfully
+
+**Basic Flow:**
+1. Stripe sends `checkout.session.completed` webhook
+2. System creates Order record (status: PAID)
+3. System assigns available labels from inventory to the order (INVENTORY -> SOLD)
+4. System sends `order_confirmed` email notification
+5. If shipping address provided, system auto-saves it to the organization's address book
+
+---
+
+##### UC-SYS-09: In-Transit Notification
+
+**Description:** System sends a notification when a shipment status changes to IN_TRANSIT.
+
+**Preconditions:**
+- Shipment transitions from PENDING to IN_TRANSIT (first location received after activation)
+
+**Basic Flow:**
+1. Device reports first location after shipment creation
+2. System updates shipment status to IN_TRANSIT
+3. System sends `in_transit` email notification to the shipment owner
+4. If consignee email is set, system sends tracking link notification to consignee
+
+---
+
+## 5. Hardware Specification
+
+### 5.1 Physical Specifications
 
 | Attribute | Specification |
 |-----------|---------------|
@@ -230,7 +1373,7 @@
 | **Placement** | Inside or outside packaging |
 | **Visibility** | Optional (visible = deterrent effect) |
 
-### 4.2 Connectivity
+### 5.2 Connectivity
 
 | Attribute | Specification |
 |-----------|---------------|
@@ -254,7 +1397,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 
 **Dashboard:** [app.onomondo.com](https://app.onomondo.com)
 
-### 4.3 Sensors & Data
+### 5.3 Sensors & Data
 
 **MVP Sensors:**
 | Sensor | Data | Update Frequency |
@@ -278,7 +1421,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | Shock/Tilt | Damage detection |
 | Light exposure | Tamper detection |
 
-### 4.4 Battery & Lifecycle
+### 5.4 Battery & Lifecycle
 
 | Attribute | Specification |
 |-----------|---------------|
@@ -298,7 +1441,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | 60 min | ~40 days | Faster updates |
 | 30 min | ~20 days | High-frequency tracking |
 
-### 4.5 Data Transmission
+### 5.5 Data Transmission
 
 | Scenario | Behavior |
 |----------|----------|
@@ -310,7 +1453,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 
 **Key Feature:** Offline data storage eliminates "black holes" during flights and ocean transit.
 
-### 4.6 Full User Journey & Activation
+### 5.6 Full User Journey & Activation
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -359,7 +1502,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 
 **Key Insight:** The Consignee (buyer) may not know the shipper's exact address. They share a link so the shipper can enter their own origin address. This triggers label shipment to the shipper.
 
-### 4.7 Label SKUs
+### 5.7 Label SKUs
 
 **MVP:** Single SKU (standard label)
 
@@ -370,7 +1513,7 @@ Onomondo provides the eSIM connectivity layer with the following capabilities:
 | Extended | + 90-day battery | Long ocean voyages |
 | Compact | Smaller form factor | Small packages |
 
-### 4.8 Physical Label Design
+### 5.8 Physical Label Design
 
 #### Layout
 
@@ -435,9 +1578,9 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 
 ---
 
-## 5. Platform & Features
+## 6. Platform & Features
 
-### 5.1 Platform Architecture Overview
+### 6.1 Platform Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -467,9 +1610,9 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Web Applications
+### 6.2 Web Applications
 
-#### 5.2.1 Landing Page (Public)
+#### 6.2.1 Landing Page (Public)
 
 **Purpose:** Marketing site with purchase CTA
 
@@ -482,7 +1625,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 | FAQ | Common questions | MVP |
 | Contact | Email, support info | MVP |
 
-#### 5.2.2 Customer Portal (All Users)
+#### 6.2.2 Customer Portal (All Users)
 
 **Purpose:** Tracking dashboard for customers
 
@@ -497,7 +1640,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 | **Order Labels** | Purchase additional labels | MVP |
 | **Billing History** | View past orders | MVP |
 
-#### 5.2.3 Admin Panel (Internal)
+#### 6.2.3 Admin Panel (Internal)
 
 **Purpose:** Internal operations tool for TIP team
 
@@ -510,9 +1653,9 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 | **Support Tools** | Look up shipments, resolve issues | MVP |
 | **Analytics** | Usage metrics, health dashboard | Post-MVP |
 
-### 5.3 Tracking Features
+### 6.3 Tracking Features
 
-#### 5.3.1 Live Tracking View
+#### 6.3.1 Live Tracking View
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -543,7 +1686,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 5.3.2 Public Tracking Page (Shared Link)
+#### 6.3.2 Public Tracking Page (Shared Link)
 
 **URL Format:** `https://track.tip.live/s/{tracking_code}`
 
@@ -563,7 +1706,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 - Owner can disable/enable sharing
 - Link expires after 90 days post-delivery
 
-### 5.4 Map & Visualization
+### 6.4 Map & Visualization
 
 | Attribute | Decision |
 |-----------|----------|
@@ -572,7 +1715,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 | **Update Method** | Polling/auto-refresh every 60 seconds (MVP) |
 | **Future** | WebSocket for true real-time |
 
-### 5.5 Notifications
+### 6.5 Notifications
 
 #### MVP Notification Channels
 
@@ -598,7 +1741,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 - Delay/deviation alerts (predictive)
 - Geofence alerts
 
-### 5.6 Data Retention
+### 6.6 Data Retention
 
 | Data Type | Retention Period | Tier |
 |-----------|------------------|------|
@@ -609,9 +1752,9 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 
 ---
 
-## 6. Technical Architecture
+## 7. Technical Architecture
 
-### 6.1 Technology Stack
+### 7.1 Technology Stack
 
 | Layer | Technology | Rationale |
 |-------|------------|-----------|
@@ -626,7 +1769,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 | **Cloud** | GCP | Aligns with Google Credits goal |
 | **CI/CD** | GitHub Actions | Integrated with repo |
 
-### 6.2 System Architecture (Hybrid Approach)
+### 7.2 System Architecture (Hybrid Approach)
 
 **Architecture Decision:** Hybrid approach — use existing device API (label.utec.ua) for tracking data, build new backend for business logic.
 
@@ -687,7 +1830,7 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 | User auth | Clerk (new platform) |
 | Device linking | API call to label.utec.ua `/devices/link` |
 
-### 6.3 Existing Device API (label.utec.ua)
+### 7.3 Existing Device API (label.utec.ua)
 
 **Documentation:** [label.utec.ua/api/docs](https://label.utec.ua/api/docs)
 
@@ -715,7 +1858,7 @@ The existing backend provides device tracking functionality:
 - accelerometer, magnitude: Movement data
 ```
 
-### 6.4 Device Communication
+### 7.4 Device Communication
 
 Device data flows through the existing system:
 
@@ -744,7 +1887,7 @@ Device data flows through the existing system:
 - **Hardware Team (Andrii):** Device firmware, label.utec.ua backend, device ingestion
 - **Platform (Denys):** TIP frontend + backend, integrates with existing API
 
-### 6.4 Data Quality & Cleaning
+### 7.4 Data Quality & Cleaning
 
 To ensure users see accurate, clean tracking data, the platform applies the following data processing:
 
@@ -765,7 +1908,7 @@ To ensure users see accurate, clean tracking data, the platform applies the foll
 5. **Store** — Save cleaned data to database
 6. **Display** — Show user clean, accurate tracking history
 
-### 6.5 API Design
+### 7.5 API Design
 
 #### Public API Endpoints (MVP)
 
@@ -799,7 +1942,7 @@ This is the GPS tracking API provided by the hardware team for device communicat
 |--------|----------|-------------|
 | `GET` | `/api/v1/public/track/{code}` | Public tracking page data |
 
-### 6.6 Database Schema (Simplified)
+### 7.6 Database Schema (Simplified)
 
 ```sql
 -- Users (managed by Clerk, reference only)
@@ -863,7 +2006,7 @@ orders (
 )
 ```
 
-### 6.7 Scalability
+### 7.7 Scalability
 
 | Metric | MVP Target | Design For |
 |--------|------------|------------|
@@ -877,7 +2020,7 @@ orders (
 - TimescaleDB for location time-series (future)
 - CDN for static assets
 
-### 6.8 Data Residency
+### 7.8 Data Residency
 
 | Requirement | MVP Approach |
 |-------------|--------------|
@@ -885,7 +2028,7 @@ orders (
 | GDPR Compliance | Required for EU customers |
 | Multi-region | Post-MVP for enterprise |
 
-### 6.9 Uptime & SLA
+### 7.9 Uptime & SLA
 
 | Tier | Target | Notes |
 |------|--------|-------|
@@ -894,9 +2037,9 @@ orders (
 
 ---
 
-## 7. Business Model
+## 8. Business Model
 
-### 7.1 Revenue Model
+### 8.1 Revenue Model
 
 **MVP:** Label sales only (one-time purchase)
 
@@ -908,7 +2051,7 @@ orders (
 | White-label licensing | B2B partnerships | Year 2+ |
 | Data insights | Aggregated, anonymized | Year 2+ |
 
-### 7.2 Pricing
+### 8.2 Pricing
 
 #### Label Pricing (MVP)
 
@@ -933,7 +2076,7 @@ orders (
 
 *Note: Label delivery shipping costs are included in the price for MVP markets (CN/UK/EU/US).*
 
-### 7.3 Payment Processing
+### 8.3 Payment Processing
 
 | Attribute | Specification |
 |-----------|---------------|
@@ -942,7 +2085,7 @@ orders (
 | Currencies | USD + GBP (MVP), multi-currency (future) |
 | Invoicing | Post-MVP for enterprise |
 
-### 7.4 Refund Policy
+### 8.4 Refund Policy
 
 | Scenario | Policy |
 |----------|--------|
@@ -953,9 +2096,9 @@ orders (
 
 ---
 
-## 8. Security & Compliance
+## 9. Security & Compliance
 
-### 8.1 Data Classification
+### 9.1 Data Classification
 
 | Data Type | Sensitivity | Handling |
 |-----------|-------------|----------|
@@ -969,7 +2112,7 @@ orders (
 - Cargo declared value
 - Customs documentation
 
-### 8.2 Access Control
+### 9.2 Access Control
 
 | Role | Access Level |
 |------|--------------|
@@ -981,7 +2124,7 @@ orders (
 - Owner can enable/disable shared link
 - Shared links expire 90 days after delivery
 
-### 8.3 Compliance Requirements
+### 9.3 Compliance Requirements
 
 #### MVP Compliance
 
@@ -999,7 +2142,7 @@ orders (
 | SOC 2 | Future for enterprise |
 | ISO 27001 | Future consideration |
 
-### 8.4 Audit & Logging
+### 9.4 Audit & Logging
 
 | Requirement | Implementation |
 |-------------|----------------|
@@ -1008,7 +2151,7 @@ orders (
 | Admin actions | Full audit trail |
 | Exports | Available for dispute resolution |
 
-### 8.5 Data Deletion (GDPR)
+### 9.5 Data Deletion (GDPR)
 
 | Request | Action |
 |---------|--------|
@@ -1018,9 +2161,9 @@ orders (
 
 ---
 
-## 9. Operations & Launch
+## 10. Operations & Launch
 
-### 9.1 Geography & Coverage
+### 10.1 Geography & Coverage
 
 #### Label Delivery Regions (Where We Ship Labels TO)
 
@@ -1051,7 +2194,7 @@ orders (
 | **Inventory warehouse** | China (primary), UK (future for EU), US (future for Americas) |
 | **Typical cargo origin** | China (initial focus) |
 
-### 9.2 Label Fulfillment
+### 10.2 Label Fulfillment
 
 | Stage | Responsibility |
 |-------|---------------|
@@ -1089,7 +2232,7 @@ orders (
 4. Shipper enters destination for THIS shipment
 5. Repeat for each label (bulk order = multiple scans)
 
-### 9.3 Pilot Customers
+### 10.3 Pilot Customers
 
 **Status:** TBD - To be identified through user interviews
 
@@ -1099,7 +2242,7 @@ orders (
 - Companies in Andrii's network
 - Willing to provide feedback
 
-### 9.4 Support Model
+### 10.4 Support Model
 
 #### MVP Support
 
@@ -1117,7 +2260,7 @@ orders (
 | Phone | Enterprise tier only |
 | Dedicated CSM | Enterprise tier only |
 
-### 9.5 Onboarding
+### 10.5 Onboarding
 
 | Element | Description |
 |---------|-------------|
@@ -1126,7 +2269,7 @@ orders (
 | Documentation | Online help center |
 | Onboarding calls | Not included in MVP |
 
-### 9.6 Testing Strategy
+### 10.6 Testing Strategy
 
 | Test Type | Description |
 |-----------|-------------|
@@ -1137,7 +2280,7 @@ orders (
 | Load testing | Simulated device data |
 | Beta program | Early users before public launch |
 
-### 9.7 Go-Live Checklist
+### 10.7 Go-Live Checklist
 
 **Must Work Before Launch:**
 
@@ -1155,9 +2298,9 @@ orders (
 
 ---
 
-## 10. Team & Budget
+## 11. Team & Budget
 
-### 10.1 Team Structure
+### 11.1 Team Structure
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1181,7 +2324,7 @@ orders (
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 10.2 Roles & Responsibilities
+### 11.2 Roles & Responsibilities
 
 #### Andrii Tkachuk - Founder
 - Hardware device development
@@ -1220,7 +2363,7 @@ orders (
 **Arrangement:**
 - Part-time engagement
 
-### 10.3 Team Allocation
+### 11.3 Team Allocation
 
 | Category | Owner |
 |----------|-------|
@@ -1230,9 +2373,9 @@ orders (
 | **Services** | Website hosting, domain, etc. |
 | **Research** | User interviews (recruitment, gifts) |
 
-### 10.4 Deliverables (3-Month MVP)
+### 11.4 Deliverables (3-Month MVP)
 
-#### 10.4.1 Platform Development (Denys)
+#### 11.4.1 Platform Development (Denys)
 
 | Deliverable | Description |
 |-------------|-------------|
@@ -1245,7 +2388,7 @@ orders (
 | CI/CD | Automated deployment |
 | SLA Definition | Service level agreement |
 
-#### 10.4.2 Business & Investor Materials (Denys)
+#### 11.4.2 Business & Investor Materials (Denys)
 
 | Deliverable | Description |
 |-------------|-------------|
@@ -1254,7 +2397,7 @@ orders (
 | **Financial Model** | 3-year projections: revenue, costs, unit economics |
 | **Business Plan** | Market analysis, go-to-market strategy, competitive positioning |
 
-#### 10.4.3 User Research - 80 Hours (Denys)
+#### 11.4.3 User Research - 80 Hours (Denys)
 
 | Phase | Hours | Activities |
 |-------|-------|------------|
@@ -1270,7 +2413,7 @@ orders (
 | Forwarder | 4-6 | Workflow integration, activation experience |
 | Logistics/Shipper | 2-3 | Industry validation, partnership potential |
 
-#### 10.4.4 Design Deliverables (Andrii Pavlov)
+#### 11.4.4 Design Deliverables (Andrii Pavlov)
 
 | Deliverable | Description |
 |-------------|-------------|
@@ -1282,9 +2425,9 @@ orders (
 
 ---
 
-## 11. Roadmap
+## 12. Roadmap
 
-### 11.0 Immediate Priorities (January 2026)
+### 12.0 Immediate Priorities (January 2026)
 
 | Priority | Task | Owner | Deadline | Notes |
 |----------|------|-------|----------|-------|
@@ -1313,7 +2456,7 @@ orders (
 
 **Target Schemes:** Innovate UK, potentially DASA (Defence) for logistics/supply chain
 
-### 11.1 MVP Scope (3 Months)
+### 12.1 MVP Scope (3 Months)
 
 #### Included in MVP
 
@@ -1340,7 +2483,7 @@ orders (
 | Cold chain sensors | Hardware v2 |
 | TMS/ERP integrations | Post-MVP |
 
-### 11.2 User Jobs Mapping
+### 12.2 User Jobs Mapping
 
 | User Job | Who | MVP | Post-MVP |
 |----------|-----|-----|----------|
@@ -1366,7 +2509,7 @@ orders (
 | Track route deviations | — | | ✅ |
 | Expected delivery date | — | | ✅ |
 
-### 11.3 Delivery Stages
+### 12.3 Delivery Stages
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -1390,7 +2533,7 @@ orders (
 └───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴───────────┴─────────────────────────────┘
 ```
 
-### 11.4 Post-MVP Roadmap
+### 12.4 Post-MVP Roadmap
 
 | Phase | Timeline | Key Features |
 |-------|----------|--------------|
@@ -1402,7 +2545,7 @@ orders (
 
 ---
 
-### 11.5 Full Delivery Roadmap (3-Month MVP)
+### 12.5 Full Delivery Roadmap (3-Month MVP)
 
 **Start Date:** January 26, 2026  
 **End Date:** March 31, 2026  
@@ -5492,7 +6635,7 @@ Project: TIP MVP
 
 ---
 
-### 11.6 Technical Deep-Dive & AI-Ready Prompts
+### 12.6 Technical Deep-Dive & AI-Ready Prompts
 
 **Purpose:** Detailed task specifications optimized for AI-assisted development (Cursor + Claude/GPT)  
 **Architecture:** Modern, scalable, Google Cloud-first where beneficial  
@@ -6710,7 +7853,7 @@ export const ErrorCodes = {
 
 ---
 
-### 11.7 Future Hardware Evolution
+### 12.7 Future Hardware Evolution
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
@@ -6722,9 +7865,9 @@ export const ErrorCodes = {
 
 ---
 
-## 12. Appendix
+## 13. Appendix
 
-### 12.1 Tools & Services
+### 13.1 Tools & Services
 
 | Tool | Purpose |
 |------|---------|
@@ -6735,7 +7878,7 @@ export const ErrorCodes = {
 | Slack/Discord | Team communication |
 | OpenAI/Gemini | LLM for development assistance |
 
-### 12.2 Glossary
+### 13.2 Glossary
 
 | Term | Definition |
 |------|------------|
@@ -6749,7 +7892,7 @@ export const ErrorCodes = {
 | **Cell Tower Location** | Approximate location based on connected cell tower |
 | **PostGIS** | PostgreSQL extension for geospatial data |
 
-### 12.3 Reference Links
+### 13.3 Reference Links
 
 **Competitors:**
 - [Tive](https://tive.com)
@@ -6772,7 +7915,7 @@ export const ErrorCodes = {
 **Hardware & Device:**
 - [GPS Tracking API Documentation](https://label.utec.ua/api/docs)
 
-### 12.4 Open Questions
+### 13.4 Open Questions
 
 | Question | Owner | Status | Answer/Notes |
 |----------|-------|--------|--------------|
@@ -6798,7 +7941,7 @@ export const ErrorCodes = {
 | QR scan at shipper warehouse? | Denys | ✅ Resolved | **MANDATORY** — creates Shipment record, links label to specific cargo. Required for bulk orders (10 labels = 10 scans). |
 | Label-to-Order linking? | Denys | ✅ Resolved | **At TIP fulfillment** — warehouse scans label barcode when shipping to shipper, links Label ID to Order. |
 
-### 12.5 Document History
+### 13.5 Document History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
@@ -6811,7 +7954,8 @@ export const ErrorCodes = {
 | 1.6 | 2026-01-26 | Denys Chumak | **Two-stage linking**: Fulfillment links Label→Order, QR Scan creates Shipment (Label→Shipment). QR scan now MANDATORY to support bulk orders (10 labels = 10 shipments). |
 | 1.7 | 2026-01-27 | Denys Chumak | **Andrii meeting answers**: Battery formula (2mAh/transmission, 30min=20days), GPS cold start (1-2min), UTEC fulfillment, inventory locations (CN/UK/US), no sleep mode after activation, carrier tracking before activation. Open: lost detection logic, post-delivery transmission. |
 | 1.8 | 2026-01-27 | Denys Chumak | **Post-delivery transmission**: Label continues transmitting until battery dies — no automatic deactivation. |
-| 1.9 | 2026-02-07 | Denys Chumak | **Physical label design spec** (§4.8): Added label layout, QR code content (`tip.live/activate/{deviceId}`), `/activate` route behavior for all label states, rationale for printing device ID visibly. Updated key flow (§3.1) to reflect universal QR scanning. |
+| 1.9 | 2026-02-07 | Denys Chumak | **Physical label design spec** (§5.8): Added label layout, QR code content (`tip.live/activate/{deviceId}`), `/activate` route behavior for all label states, rationale for printing device ID visibly. Updated key flow (§3.1) to reflect universal QR scanning. |
+| 2.0 | 2026-03-12 | Denys Chumak | **Comprehensive Use Cases section** (§4): Added 48 use cases covering all CRUD operations organized by persona — Consignee (29), Shipper (10), Carrier (2), Public/Anonymous (5), Admin (12), System/Automated (9). Each includes ID, description, preconditions, basic flow, and alternative flows. Renumbered sections 4-12 to 5-13. |
 
 ---
 
