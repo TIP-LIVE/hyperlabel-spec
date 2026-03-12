@@ -1263,15 +1263,15 @@ These use cases are triggered by the system rather than by direct user interacti
 
 ##### UC-SYS-03: No Signal Alert
 
-**Description:** System detects that a device has not reported for an extended period (>24 hours).
+**Description:** System detects that a device has not reported for an extended period (>48 hours).
 
 **Preconditions:**
 - Label is in ACTIVE status
-- Last location report is older than 24 hours
+- Last location report is older than 48 hours
 
 **Basic Flow:**
 1. Scheduled job checks for devices that have not reported recently
-2. System identifies labels with no report for >24 hours
+2. System identifies labels with no report for >48 hours
 3. System sends `no_signal` email notification to owner (if `notifyNoSignal` is enabled)
 
 ---
@@ -1282,7 +1282,7 @@ These use cases are triggered by the system rather than by direct user interacti
 
 **Preconditions:**
 - Shipment is in IN_TRANSIT status
-- Location has not changed by more than 500m for >24 hours
+- Location has not changed by more than 500m for >48 hours
 
 **Basic Flow:**
 1. Scheduled job analyzes location history for active shipments
@@ -1730,9 +1730,9 @@ This means **anyone** (consignee, warehouse worker, carrier) can scan the physic
 |-------|---------|------------|------|
 | Label Activated | Label begins transmitting | Owner | Free |
 | Low Battery | Battery drops below 20%, 10% | Owner | Free |
-| Extended No-Signal | No transmission for >24 hours | Owner | Free |
+| Extended No-Signal | No transmission for >48 hours | Owner | Free |
 | Shipment Delivered | Geofence detection: location within 100m of destination for 30+ min | Owner | Premium |
-| Shipment is Stuck | No location change >500m for 24+ hours (configurable) | Owner | Premium |
+| Shipment is Stuck | No location change >500m for 48+ hours (configurable) | Owner | Premium |
 
 #### Post-MVP Notifications
 

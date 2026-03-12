@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
@@ -18,11 +19,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { orgId } = await auth()
     const { searchParams } = new URL(req.url)
     const format = searchParams.get('format') || 'json'
 
     // Fetch all user data
-    const [userData, shipments, orders, notifications, labels] = await Promise.all([
+    const [userData, shipments, orders, notifications, labels, savedAddresses] = await Promise.all([
       db.user.findUnique({
         where: { id: user.id },
         select: {
@@ -91,6 +93,13 @@ export async function GET(req: NextRequest) {
           createdAt: true,
         },
       }),
+      // Saved addresses for user's organization
+      orgId
+        ? db.savedAddress.findMany({
+            where: { orgId },
+            orderBy: { createdAt: 'desc' },
+          })
+        : Promise.resolve([]),
     ])
 
     // CSV format — flattened shipments with location events
@@ -181,6 +190,27 @@ export async function GET(req: NextRequest) {
         )
       }
 
+      csvLines.push('')
+      csvLines.push('--- SAVED ADDRESSES ---')
+      csvLines.push('Address ID,Label,Name,Line 1,Line 2,City,State,Postal Code,Country,Default,Created')
+      for (const a of savedAddresses) {
+        csvLines.push(
+          [
+            a.id,
+            escapeCsv(a.label),
+            escapeCsv(a.name),
+            escapeCsv(a.line1),
+            escapeCsv(a.line2 || ''),
+            escapeCsv(a.city),
+            escapeCsv(a.state || ''),
+            a.postalCode,
+            a.country,
+            a.isDefault,
+            a.createdAt.toISOString(),
+          ].join(',')
+        )
+      }
+
       const csvContent = csvLines.join('\n')
       return new NextResponse(csvContent, {
         status: 200,
@@ -239,6 +269,19 @@ export async function GET(req: NextRequest) {
         message: n.message,
         read: n.read,
         sentAt: n.sentAt,
+      })),
+      savedAddresses: savedAddresses.map((a) => ({
+        id: a.id,
+        label: a.label,
+        name: a.name,
+        line1: a.line1,
+        line2: a.line2,
+        city: a.city,
+        state: a.state,
+        postalCode: a.postalCode,
+        country: a.country,
+        isDefault: a.isDefault,
+        createdAt: a.createdAt,
       })),
     }
 

@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createTestRequest, parseResponse } from '@/test/helpers/api'
 
 // Mock dependencies
+vi.mock('@clerk/nextjs/server', () => ({
+  auth: vi.fn().mockResolvedValue({ userId: 'user-001', orgId: 'org-001' }),
+}))
+
+vi.mock('@/lib/auth', () => ({
+  getCurrentUser: vi.fn(),
+}))
+
 vi.mock('@/lib/db', () => ({
   db: {
     shipment: {
@@ -11,13 +19,30 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
+vi.mock('@/lib/notifications', () => ({
+  sendShipmentDeliveredNotification: vi.fn().mockResolvedValue(undefined),
+  sendConsigneeDeliveredNotification: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+}))
+
 import { POST } from '../[code]/confirm-delivery/route'
 import { db } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 
 const mockedDb = vi.mocked(db)
+const mockedGetCurrentUser = vi.mocked(getCurrentUser)
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Default: authenticated user who is the shipment owner
+  mockedGetCurrentUser.mockResolvedValue({
+    id: 'user-001',
+    email: 'shipper@tip.live',
+    role: 'member',
+  } as never)
 })
 
 describe('POST /api/v1/track/[code]/confirm-delivery', () => {
@@ -35,6 +60,7 @@ describe('POST /api/v1/track/[code]/confirm-delivery', () => {
     destinationAddress: '456 Destination Ave',
     deliveredAt: null,
     userId: 'user-001',
+    orgId: 'org-001',
     label: {
       id: 'label-001',
       deviceId: 'TIP-001',
@@ -54,6 +80,19 @@ describe('POST /api/v1/track/[code]/confirm-delivery', () => {
       },
     ],
   }
+
+  it('returns 401 when not authenticated', async () => {
+    mockedGetCurrentUser.mockResolvedValue(null as never)
+
+    const req = createTestRequest('/api/v1/track/abc123/confirm-delivery', {
+      method: 'POST',
+    })
+    const res = await POST(req, makeParams('abc123'))
+    const { status, body } = await parseResponse(res)
+
+    expect(status).toBe(401)
+    expect((body as { error: string }).error).toBe('Authentication required')
+  })
 
   it('returns 404 for non-existent share code', async () => {
     mockedDb.shipment.findUnique.mockResolvedValue(null as never)
@@ -82,6 +121,27 @@ describe('POST /api/v1/track/[code]/confirm-delivery', () => {
 
     expect(status).toBe(403)
     expect((body as { error: string }).error).toBe('Tracking link is disabled')
+  })
+
+  it('returns 403 when user is not owner, same org, or consignee', async () => {
+    mockedGetCurrentUser.mockResolvedValue({
+      id: 'other-user',
+      email: 'other@example.com',
+      role: 'member',
+    } as never)
+    const { auth } = await import('@clerk/nextjs/server')
+    vi.mocked(auth).mockResolvedValueOnce({ userId: 'other-user', orgId: 'other-org' } as never)
+
+    mockedDb.shipment.findUnique.mockResolvedValue(mockShipment as never)
+
+    const req = createTestRequest('/api/v1/track/abc123/confirm-delivery', {
+      method: 'POST',
+    })
+    const res = await POST(req, makeParams('abc123'))
+    const { status, body } = await parseResponse(res)
+
+    expect(status).toBe(403)
+    expect((body as { error: string }).error).toBe('You do not have permission to confirm delivery for this shipment')
   })
 
   it('returns 400 when already delivered', async () => {

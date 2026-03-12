@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 import { sendShipmentDeliveredNotification, sendConsigneeDeliveredNotification } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
 import { format } from 'date-fns'
@@ -10,12 +12,21 @@ interface RouteParams {
 
 /**
  * POST /api/v1/track/[code]/confirm-delivery
- * 
- * Public API for consignee to confirm delivery and deactivate tracking.
- * No auth required - accessed via QR code scan.
+ *
+ * Consignee confirms delivery and deactivates tracking.
+ * Requires Clerk authentication + ownership check.
  */
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
+    const { orgId: clerkOrgId } = await auth()
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { code } = await params
 
     // Optional: Get confirmation details from body
@@ -57,6 +68,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (!shipment.shareEnabled) {
       return NextResponse.json(
         { error: 'Tracking link is disabled' },
+        { status: 403 }
+      )
+    }
+
+    // Authorization: user must be shipment owner, same org, or matching consignee
+    const isOwner = shipment.userId === user.id
+    const isSameOrg = shipment.orgId && clerkOrgId && shipment.orgId === clerkOrgId
+    const isConsignee = shipment.consigneeEmail && shipment.consigneeEmail.toLowerCase() === user.email.toLowerCase()
+    const isAdmin = user.role === 'admin'
+
+    if (!isOwner && !isSameOrg && !isConsignee && !isAdmin) {
+      return NextResponse.json(
+        { error: 'You do not have permission to confirm delivery for this shipment' },
         { status: 403 }
       )
     }

@@ -177,47 +177,59 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const originAddress = data.originAddress?.trim() || null
     const destinationAddress = data.destinationAddress?.trim() || null
 
-    // Create shipment
-    const shipment = await db.shipment.create({
-      data: {
-        type: 'CARGO_TRACKING',
-        name: data.name,
-        originAddress,
-        originLat: data.originLat ?? null,
-        originLng: data.originLng ?? null,
-        destinationAddress,
-        destinationLat: data.destinationLat ?? null,
-        destinationLng: data.destinationLng ?? null,
-        shareCode,
-        userId: ownerId,
-        orgId,
-        labelId: label.id,
-        status: 'PENDING',
-        consigneeEmail: data.consigneeEmail || null,
-        consigneePhone: data.consigneePhone || null,
-        photoUrls: data.photoUrls || [],
-      },
+    // Use a transaction to prevent race conditions:
+    // Clear the claim token first (atomic guard), then create shipment.
+    // If two requests race, only one will match the WHERE clause.
+    const shipment = await db.$transaction(async (tx) => {
+      // Atomically clear claim token — only succeeds if token still matches
+      const updated = await tx.label.updateMany({
+        where: { id: label.id, claimToken: token },
+        data: { claimToken: null, claimExpiresAt: null },
+      })
+
+      if (updated.count === 0) {
+        throw new Error('CLAIM_ALREADY_TAKEN')
+      }
+
+      // Create shipment
+      const newShipment = await tx.shipment.create({
+        data: {
+          type: 'CARGO_TRACKING',
+          name: data.name,
+          originAddress,
+          originLat: data.originLat ?? null,
+          originLng: data.originLng ?? null,
+          destinationAddress,
+          destinationLat: data.destinationLat ?? null,
+          destinationLng: data.destinationLng ?? null,
+          shareCode,
+          userId: ownerId,
+          orgId,
+          labelId: label.id,
+          status: 'PENDING',
+          consigneeEmail: data.consigneeEmail || null,
+          consigneePhone: data.consigneePhone || null,
+          photoUrls: data.photoUrls || [],
+        },
+      })
+
+      // Backfill orphaned location events
+      await tx.locationEvent.updateMany({
+        where: { labelId: label.id, shipmentId: null },
+        data: { shipmentId: newShipment.id },
+      })
+
+      return newShipment
+    }).catch((err) => {
+      if (err.message === 'CLAIM_ALREADY_TAKEN') return null
+      throw err
     })
 
-    // Backfill orphaned location events
-    await db.locationEvent.updateMany({
-      where: {
-        labelId: label.id,
-        shipmentId: null,
-      },
-      data: {
-        shipmentId: shipment.id,
-      },
-    })
-
-    // Clear claim token on label
-    await db.label.update({
-      where: { id: label.id },
-      data: {
-        claimToken: null,
-        claimExpiresAt: null,
-      },
-    })
+    if (!shipment) {
+      return NextResponse.json({
+        error: 'This label has already been claimed',
+      }, { status: 409 })
+    }
 
     // Send label activated notification to owner (fire and forget)
     sendLabelActivatedNotification({

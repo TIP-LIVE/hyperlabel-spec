@@ -34,6 +34,9 @@ vi.mock('@/lib/db', () => {
       findMany: vi.fn().mockResolvedValue([]),
       createMany: vi.fn(),
     },
+    locationEvent: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     $transaction: vi.fn(),
   }
   return { db: mockDb }
@@ -42,6 +45,17 @@ vi.mock('@/lib/db', () => {
 // Mock share code generation
 vi.mock('@/lib/utils/share-code', () => ({
   generateShareCode: vi.fn().mockReturnValue('ABC12345'),
+}))
+
+// Mock notifications
+vi.mock('@/lib/notifications', () => ({
+  sendLabelActivatedNotification: vi.fn().mockResolvedValue(undefined),
+  sendConsigneeTrackingNotification: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Mock sync
+vi.mock('@/lib/sync-onomondo', () => ({
+  syncLabelLocation: vi.fn().mockResolvedValue(false),
 }))
 
 import { GET, POST } from '../route'

@@ -109,11 +109,33 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Prevent updates to delivered or cancelled shipments
+    if (existing.status === 'DELIVERED' || existing.status === 'CANCELLED') {
+      return NextResponse.json(
+        { error: `Cannot update a ${existing.status.toLowerCase()} shipment` },
+        { status: 400 }
+      )
+    }
+
+    // Validate status transitions if status is being changed
+    if (validated.data.status) {
+      const allowedTransitions: Record<string, string[]> = {
+        PENDING: ['IN_TRANSIT', 'CANCELLED'],
+        IN_TRANSIT: ['CANCELLED'],
+      }
+      const allowed = allowedTransitions[existing.status] || []
+      if (!allowed.includes(validated.data.status)) {
+        return NextResponse.json(
+          { error: `Cannot transition from ${existing.status} to ${validated.data.status}. Use the confirm-delivery endpoint to mark as delivered.` },
+          { status: 400 }
+        )
+      }
+    }
+
     const shipment = await db.shipment.update({
       where: { id },
       data: {
         ...validated.data,
-        ...(validated.data.status === 'DELIVERED' && { deliveredAt: new Date() }),
         ...(validated.data.status === 'IN_TRANSIT' && { deliveredAt: null }),
       },
       include: {
@@ -149,6 +171,20 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     if (!canAccessRecord(context, existing)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Prevent cancelling already delivered or cancelled shipments
+    if (existing.status === 'DELIVERED') {
+      return NextResponse.json(
+        { error: 'Cannot cancel a delivered shipment' },
+        { status: 400 }
+      )
+    }
+    if (existing.status === 'CANCELLED') {
+      return NextResponse.json(
+        { error: 'Shipment is already cancelled' },
+        { status: 400 }
+      )
     }
 
     await db.shipment.update({

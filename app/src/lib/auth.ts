@@ -192,13 +192,14 @@ export function orgScopedWhere(
  * B2B: any member of the same org can access org data.
  * Returns true if:
  * - User is platform admin (user.role === 'admin'), or
- * - Record belongs to the user's current org (record.orgId === context.orgId)
+ * - Record belongs to the user's current org (record.orgId === context.orgId), or
+ * - Record has no org and belongs to the user (record.userId === context.user.id)
  */
 export function canAccessRecord(
   context: AuthContext,
   record: { userId: string; orgId?: string | null }
 ): boolean {
   if (context.user.role === 'admin') return true
-  if (record.orgId && record.orgId !== context.orgId) return false
-  return true
+  if (record.orgId) return record.orgId === context.orgId
+  return record.userId === context.user.id
 }

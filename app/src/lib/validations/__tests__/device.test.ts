@@ -203,16 +203,15 @@ describe('validateLocation', () => {
     expect(validateLocation(0, 0)).toBe(false)
   })
 
-  it('returns false for default London placeholder', () => {
-    expect(validateLocation(51.5074, -0.1278)).toBe(false)
+  it('returns true for London coordinates (no longer rejected)', () => {
+    expect(validateLocation(51.5074, -0.1278)).toBe(true)
   })
 
-  it('returns false for coordinates very close to London placeholder', () => {
-    expect(validateLocation(51.50745, -0.12785)).toBe(false)
+  it('returns true for coordinates near London', () => {
+    expect(validateLocation(51.50745, -0.12785)).toBe(true)
   })
 
-  it('returns true for London coordinates outside the rejection threshold', () => {
-    // 0.0001 degree ~ 11 m, so 0.001 away is well outside
+  it('returns true for London coordinates further out', () => {
     expect(validateLocation(51.508, -0.128)).toBe(true)
   })
 
