@@ -245,7 +245,7 @@ export async function processLocationReport(
   // Generate a claim token so the shipper can create a shipment via a public link
   if (!activeShipment && !label.claimToken && label.status === 'SOLD') {
     const claimToken = generateShareCode()
-    const claimExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h window
+    const claimExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h window
 
     await db.label.update({
       where: { id: label.id },

@@ -1,25 +1,48 @@
 import { render } from '@react-email/components'
-import { sendEmail, type EmailType } from './email'
+import { isEmailConfigured, sendEmail, type EmailType } from './email'
 import { db } from './db'
+import { reverseGeocode } from './geocoding'
 import LabelActivatedEmail from '@/emails/label-activated'
 import LabelOrphanedEmail from '@/emails/label-orphaned'
 import AutoShipmentCreatedEmail from '@/emails/auto-shipment-created'
 import LowBatteryEmail from '@/emails/low-battery'
 import NoSignalEmail from '@/emails/no-signal'
 import ShipmentDeliveredEmail from '@/emails/shipment-delivered'
+import ShipmentStuckEmail from '@/emails/shipment-stuck'
 import OrderShippedEmail from '@/emails/order-shipped'
 import OrderConfirmedEmail from '@/emails/order-confirmed'
 import LowInventoryEmail from '@/emails/low-inventory'
 import RoleChangedEmail from '@/emails/role-changed'
+import UnusedLabelsReminderEmail from '@/emails/unused-labels-reminder'
+import PendingShipmentReminderEmail from '@/emails/pending-shipment-reminder'
+import ConsigneeTrackingEmail from '@/emails/consignee-tracking'
+import ConsigneeInTransitEmail from '@/emails/consignee-in-transit'
+import ConsigneeDeliveredEmail from '@/emails/consignee-delivered'
 import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
+
+// Format coordinates into a human-readable location string
+async function formatLocation(lat: number, lng: number): Promise<string> {
+  try {
+    const geo = await reverseGeocode(lat, lng)
+    if (geo) {
+      const parts = [geo.area, geo.city, geo.country].filter(Boolean)
+      if (parts.length > 0) return parts.join(', ')
+    }
+  } catch {
+    // Fall through to coordinate fallback
+  }
+  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+}
 
 // Check if user has enabled a specific notification type
 async function shouldSendNotification(
   userId: string,
   emailType: EmailType
 ): Promise<{ enabled: boolean; email: string | null }> {
+  if (!isEmailConfigured()) return { enabled: false, email: null }
+
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
@@ -29,6 +52,8 @@ async function shouldSendNotification(
       notifyNoSignal: true,
       notifyDelivered: true,
       notifyOrderShipped: true,
+      notifyShipmentStuck: true,
+      notifyReminders: true,
     },
   })
 
@@ -42,6 +67,8 @@ async function shouldSendNotification(
     no_signal: user.notifyNoSignal,
     shipment_delivered: user.notifyDelivered,
     order_shipped: user.notifyOrderShipped,
+    shipment_stuck: user.notifyShipmentStuck,
+    reminders: user.notifyReminders,
   }
 
   return { enabled: prefMap[emailType], email: user.email }
@@ -161,7 +188,7 @@ export async function sendNoSignalNotification(params: {
       deviceId: params.deviceId,
       lastSeenAt: format(params.lastSeenAt, 'PPpp'),
       lastLocation: params.lastLocation
-        ? `${params.lastLocation.lat.toFixed(4)}, ${params.lastLocation.lng.toFixed(4)}`
+        ? await formatLocation(params.lastLocation.lat, params.lastLocation.lng)
         : undefined,
       trackingUrl,
     })
@@ -264,6 +291,8 @@ export async function sendOrderConfirmedNotification(params: {
   quantity: number
   totalAmount: string
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
   // Order confirmation always sends — no preference toggle needed
   const user = await db.user.findUnique({
     where: { id: params.userId },
@@ -306,68 +335,43 @@ export async function sendShareLinkReminderNotification(params: {
   shipmentName?: string
   shareCode?: string
 }): Promise<void> {
+  const { enabled, email } = await shouldSendNotification(params.userId, 'reminders')
+  if (!enabled || !email) return
+
   const user = await db.user.findUnique({
     where: { id: params.userId },
-    select: { email: true, firstName: true },
+    select: { firstName: true },
   })
 
-  if (!user?.email) return
-
-  const name = user.firstName || 'there'
-  const newShipmentUrl = `${APP_URL}/shipments/new`
+  const name = user?.firstName || 'there'
 
   let subject: string
-  let body: string
+  let html: string
 
   if (params.reminderType === 'unused_labels') {
     subject = `📋 You have ${params.labelCount} unused tracking label${params.labelCount === 1 ? '' : 's'}`
-    body = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="font-size: 24px; color: #0f172a;">Hi ${name},</h1>
-        <p style="font-size: 16px; line-height: 24px; color: #334155;">
-          You have <strong>${params.labelCount} tracking label${params.labelCount === 1 ? '' : 's'}</strong>
-          that ${params.labelCount === 1 ? "hasn't" : "haven't"} been used yet.
-        </p>
-        <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 24px 0;">
-          <p style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin: 0 0 8px;">Labels ready to use</p>
-          ${params.deviceIds.map((id) => `<p style="font-size: 14px; color: #0f172a; margin: 4px 0; font-family: monospace;">${id}</p>`).join('')}
-        </div>
-        <p style="font-size: 16px; line-height: 24px; color: #334155;">
-          Create a shipment to start tracking your cargo door-to-door.
-        </p>
-        <div style="margin: 32px 0; text-align: center;">
-          <a href="${newShipmentUrl}" style="background-color: #2563eb; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 24px; display: inline-block;">Create a Shipment</a>
-        </div>
-        <p style="font-size: 14px; color: #64748b;">Powered by <a href="https://tip.live" style="color: #556cd6;">TIP</a></p>
-      </div>
-    `
+    const newShipmentUrl = `${APP_URL}/shipments/new`
+    html = await render(
+      UnusedLabelsReminderEmail({
+        userName: name,
+        labelCount: params.labelCount || 0,
+        deviceIds: params.deviceIds,
+        newShipmentUrl,
+      })
+    )
   } else {
     const trackingUrl = params.shareCode ? `${APP_URL}/track/${params.shareCode}` : `${APP_URL}/dashboard`
     subject = `⏳ Your shipment "${params.shipmentName}" is still pending`
-    body = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="font-size: 24px; color: #0f172a;">Hi ${name},</h1>
-        <p style="font-size: 16px; line-height: 24px; color: #334155;">
-          Your shipment <strong>"${params.shipmentName}"</strong> was created but hasn't started moving yet.
-        </p>
-        <div style="background-color: #fef3c7; border-radius: 8px; padding: 16px; margin: 24px 0;">
-          <p style="font-size: 14px; color: #92400e; margin: 0;">
-            💡 <strong>Tip:</strong> Peel the backing off your label and stick it on your cargo.
-            Once it starts transmitting, the shipment will automatically switch to "In Transit".
-          </p>
-        </div>
-        <p style="font-size: 16px; line-height: 24px; color: #334155;">
-          Share this tracking link with the recipient so they can follow the delivery:
-        </p>
-        <div style="margin: 24px 0; text-align: center;">
-          <a href="${trackingUrl}" style="background-color: #2563eb; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 24px; display: inline-block;">View Tracking</a>
-        </div>
-        <p style="font-size: 14px; color: #64748b;">Powered by <a href="https://tip.live" style="color: #556cd6;">TIP</a></p>
-      </div>
-    `
+    html = await render(
+      PendingShipmentReminderEmail({
+        userName: name,
+        shipmentName: params.shipmentName || 'Unknown',
+        trackingUrl,
+      })
+    )
   }
 
-  await sendEmail({ to: user.email, subject, html: body })
+  await sendEmail({ to: email, subject, html })
 
   await recordNotification(params.userId, params.reminderType === 'unused_labels' ? 'unused_label_reminder' : 'pending_shipment_reminder', {
     reminderType: params.reminderType,
@@ -388,50 +392,23 @@ export async function sendShipmentStuckNotification(params: {
   lastLocation: { lat: number; lng: number }
   stuckSinceHours: number
 }): Promise<void> {
-  const user = await db.user.findUnique({
-    where: { id: params.userId },
-    select: { email: true, firstName: true },
-  })
-
-  if (!user?.email) return
+  const { enabled, email } = await shouldSendNotification(params.userId, 'shipment_stuck')
+  if (!enabled || !email) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
-  const name = user.firstName || 'there'
 
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h1 style="font-size: 24px; color: #0f172a;">Hi ${name},</h1>
-      <p style="font-size: 16px; line-height: 24px; color: #334155;">
-        Your shipment <strong>"${params.shipmentName}"</strong> appears to be stuck —
-        the tracking label hasn't moved significantly in the last <strong>${params.stuckSinceHours} hours</strong>.
-      </p>
-      <div style="background-color: #fef2f2; border-radius: 8px; padding: 16px; margin: 24px 0;">
-        <p style="font-size: 12px; font-weight: 600; color: #991b1b; text-transform: uppercase; margin: 0 0 4px;">Last known position</p>
-        <p style="font-size: 14px; color: #0f172a; margin: 0;">
-          ${params.lastLocation.lat.toFixed(4)}, ${params.lastLocation.lng.toFixed(4)}
-        </p>
-        <p style="font-size: 12px; font-weight: 600; color: #991b1b; text-transform: uppercase; margin: 12px 0 4px;">Device</p>
-        <p style="font-size: 14px; color: #0f172a; margin: 0; font-family: monospace;">
-          ${params.deviceId}
-        </p>
-      </div>
-      <p style="font-size: 16px; line-height: 24px; color: #334155;">
-        This could mean:
-      </p>
-      <ul style="font-size: 14px; line-height: 24px; color: #334155; padding-left: 20px;">
-        <li>The cargo is waiting at a warehouse or port</li>
-        <li>The shipment is delayed or held by customs</li>
-        <li>There may be an issue with delivery</li>
-      </ul>
-      <div style="margin: 32px 0; text-align: center;">
-        <a href="${trackingUrl}" style="background-color: #2563eb; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 24px; display: inline-block;">View Tracking</a>
-      </div>
-      <p style="font-size: 14px; color: #64748b;">Powered by <a href="https://tip.live" style="color: #556cd6;">TIP</a></p>
-    </div>
-  `
+  const html = await render(
+    ShipmentStuckEmail({
+      shipmentName: params.shipmentName,
+      deviceId: params.deviceId,
+      stuckSinceHours: params.stuckSinceHours,
+      lastLocation: await formatLocation(params.lastLocation.lat, params.lastLocation.lng),
+      trackingUrl,
+    })
+  )
 
   await sendEmail({
-    to: user.email,
+    to: email,
     subject: `⚠️ Shipment Stuck: "${params.shipmentName}" hasn't moved in ${params.stuckSinceHours}h`,
     html,
   })
@@ -456,44 +433,21 @@ export async function sendConsigneeTrackingNotification(params: {
   originAddress?: string | null
   destinationAddress?: string | null
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
 
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="text-align: center; padding: 24px 0;">
-        <h1 style="font-size: 24px; font-weight: bold; color: #0f172a; margin: 0 0 8px;">📦 Shipment on its way!</h1>
-        <p style="color: #64748b; margin: 0;">${params.senderName} is tracking a shipment for you</p>
-      </div>
-
-      <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
-        <p style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin: 0 0 4px;">Shipment</p>
-        <p style="font-size: 16px; color: #0f172a; margin: 0 0 16px;">${params.shipmentName}</p>
-        ${params.originAddress ? `
-        <p style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin: 0 0 4px;">From</p>
-        <p style="font-size: 16px; color: #0f172a; margin: 0 0 16px;">${params.originAddress}</p>
-        ` : ''}
-        ${params.destinationAddress ? `
-        <p style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin: 0 0 4px;">To</p>
-        <p style="font-size: 16px; color: #0f172a; margin: 0;">${params.destinationAddress}</p>
-        ` : ''}
-      </div>
-
-      <p style="font-size: 16px; line-height: 24px; color: #334155;">
-        You can track this shipment in real-time using the link below. When it arrives, click <strong>"Confirm Delivery"</strong> to notify the sender and deactivate tracking.
-      </p>
-
-      <div style="margin: 32px 0; text-align: center;">
-        <a href="${trackingUrl}" style="background-color: #2563eb; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 24px; display: inline-block;">Track My Shipment</a>
-      </div>
-
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 32px;">
-        <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-          You received this email because ${params.senderName} shared a tracking link with you via
-          <a href="https://tip.live" style="color: #556cd6;">TIP</a> — door-to-door cargo tracking.
-        </p>
-      </div>
-    </div>
-  `
+  const html = await render(
+    ConsigneeTrackingEmail({
+      senderName: params.senderName,
+      shipmentName: params.shipmentName,
+      originAddress: params.originAddress,
+      destinationAddress: params.destinationAddress,
+      trackingUrl,
+      unsubscribeUrl,
+    })
+  )
 
   await sendEmail({
     to: params.consigneeEmail,
@@ -512,44 +466,27 @@ export async function sendConsigneeInTransitNotification(params: {
   originAddress?: string | null
   destinationAddress?: string | null
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  // Check if consignee has unsubscribed
+  const shipment = await db.shipment.findUnique({
+    where: { shareCode: params.shareCode },
+    select: { consigneeUnsubscribed: true },
+  })
+  if (shipment?.consigneeUnsubscribed) return
+
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
 
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="text-align: center; padding: 24px 0;">
-        <h1 style="font-size: 24px; font-weight: bold; color: #0f172a; margin: 0 0 8px;">🚛 Your shipment is moving!</h1>
-        <p style="color: #64748b; margin: 0;">The tracking label is now transmitting — your shipment is in transit</p>
-      </div>
-
-      <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 24px 0;">
-        <p style="font-size: 12px; font-weight: 600; color: #3b82f6; text-transform: uppercase; margin: 0 0 4px;">Shipment</p>
-        <p style="font-size: 16px; color: #0f172a; margin: 0 0 16px; font-weight: 600;">${params.shipmentName}</p>
-        ${params.originAddress && params.destinationAddress ? `
-        <p style="font-size: 14px; color: #334155; margin: 0;">
-          ${params.originAddress} → ${params.destinationAddress}
-        </p>
-        ` : params.destinationAddress ? `
-        <p style="font-size: 14px; color: #334155; margin: 0;">
-          Heading to: ${params.destinationAddress}
-        </p>
-        ` : ''}
-      </div>
-
-      <p style="font-size: 16px; line-height: 24px; color: #334155;">
-        Follow the shipment in real-time on the tracking page. You'll receive another email when it arrives near the destination.
-      </p>
-
-      <div style="margin: 32px 0; text-align: center;">
-        <a href="${trackingUrl}" style="background-color: #2563eb; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 24px; display: inline-block;">Track Live</a>
-      </div>
-
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 32px;">
-        <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-          Powered by <a href="https://tip.live" style="color: #556cd6;">TIP</a> — door-to-door cargo tracking.
-        </p>
-      </div>
-    </div>
-  `
+  const html = await render(
+    ConsigneeInTransitEmail({
+      shipmentName: params.shipmentName,
+      originAddress: params.originAddress,
+      destinationAddress: params.destinationAddress,
+      trackingUrl,
+      unsubscribeUrl,
+    })
+  )
 
   await sendEmail({
     to: params.consigneeEmail,
@@ -568,41 +505,27 @@ export async function sendConsigneeDeliveredNotification(params: {
   destinationAddress?: string | null
   deliveredAt: string
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  // Check if consignee has unsubscribed
+  const shipment = await db.shipment.findUnique({
+    where: { shareCode: params.shareCode },
+    select: { consigneeUnsubscribed: true },
+  })
+  if (shipment?.consigneeUnsubscribed) return
+
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
 
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="text-align: center; padding: 24px 0;">
-        <h1 style="font-size: 24px; font-weight: bold; color: #0f172a; margin: 0 0 8px;">✅ Shipment Delivered!</h1>
-        <p style="color: #64748b; margin: 0;">Your shipment has been marked as delivered</p>
-      </div>
-
-      <div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 24px 0;">
-        <p style="font-size: 12px; font-weight: 600; color: #16a34a; text-transform: uppercase; margin: 0 0 4px;">Shipment</p>
-        <p style="font-size: 16px; color: #0f172a; margin: 0 0 16px; font-weight: 600;">${params.shipmentName}</p>
-        ${params.destinationAddress ? `
-        <p style="font-size: 12px; font-weight: 600; color: #16a34a; text-transform: uppercase; margin: 0 0 4px;">Delivered to</p>
-        <p style="font-size: 14px; color: #334155; margin: 0 0 16px;">${params.destinationAddress}</p>
-        ` : ''}
-        <p style="font-size: 12px; font-weight: 600; color: #16a34a; text-transform: uppercase; margin: 0 0 4px;">Delivered at</p>
-        <p style="font-size: 14px; color: #334155; margin: 0;">${params.deliveredAt}</p>
-      </div>
-
-      <p style="font-size: 16px; line-height: 24px; color: #334155;">
-        Tracking has been deactivated. You can still view the complete journey history for the next 90 days.
-      </p>
-
-      <div style="margin: 32px 0; text-align: center;">
-        <a href="${trackingUrl}" style="background-color: #16a34a; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 24px; display: inline-block;">View Journey</a>
-      </div>
-
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 32px;">
-        <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-          Powered by <a href="https://tip.live" style="color: #556cd6;">TIP</a> — door-to-door cargo tracking.
-        </p>
-      </div>
-    </div>
-  `
+  const html = await render(
+    ConsigneeDeliveredEmail({
+      shipmentName: params.shipmentName,
+      destinationAddress: params.destinationAddress,
+      deliveredAt: params.deliveredAt,
+      trackingUrl,
+      unsubscribeUrl,
+    })
+  )
 
   await sendEmail({
     to: params.consigneeEmail,
@@ -622,10 +545,12 @@ export async function sendLowInventoryAlert(params: {
   orderId: string
   orderUserEmail: string
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
   // Find all platform admins
   const admins = await db.user.findMany({
     where: { role: 'admin' },
-    select: { email: true },
+    select: { email: true, id: true },
   })
 
   if (admins.length === 0) {
@@ -656,6 +581,15 @@ export async function sendLowInventoryAlert(params: {
     subject: `🚨 Low Inventory: ${shortfall} label${shortfall !== 1 ? 's' : ''} short — order ${params.orderId.slice(-8).toUpperCase()} needs attention`,
     html,
   })
+
+  // Record for the first admin as audit trail
+  await recordNotification(admins[0].id, 'low_inventory', {
+    availableLabels: params.availableLabels,
+    requestedQuantity: params.requestedQuantity,
+    assignedQuantity: params.assignedQuantity,
+    orderId: params.orderId,
+    orderUserEmail: params.orderUserEmail,
+  })
 }
 
 /**
@@ -667,6 +601,8 @@ export async function sendRoleChangedNotification(params: {
   newRole: 'admin' | 'user'
   changedByName: string
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
   const user = await db.user.findUnique({
     where: { id: params.userId },
     select: { email: true, firstName: true },
@@ -713,6 +649,8 @@ export async function sendLabelOrphanedNotification(params: {
   latitude?: number
   longitude?: number
 }): Promise<void> {
+  if (!isEmailConfigured()) return
+
   // Find the label purchaser via OrderLabel → Order
   const orderLabel = await db.orderLabel.findFirst({
     where: { labelId: params.labelId },
@@ -732,7 +670,7 @@ export async function sendLabelOrphanedNotification(params: {
   const detectedAt = format(new Date(), 'PPpp')
   const locationHint =
     params.latitude !== undefined && params.longitude !== undefined
-      ? `${params.latitude.toFixed(4)}, ${params.longitude.toFixed(4)}`
+      ? await formatLocation(params.latitude, params.longitude)
       : undefined
 
   const html = await render(
@@ -740,7 +678,7 @@ export async function sendLabelOrphanedNotification(params: {
       deviceId: params.deviceId,
       claimUrl,
       detectedAt,
-      expiresIn: '24 hours',
+      expiresIn: '48 hours',
       locationHint,
     })
   )
@@ -758,7 +696,7 @@ export async function sendLabelOrphanedNotification(params: {
 }
 
 /**
- * Send notification when a shipment is auto-created after the 24h claim window expires.
+ * Send notification when a shipment is auto-created after the 48h claim window expires.
  */
 export async function sendAutoShipmentCreatedNotification(params: {
   userId: string

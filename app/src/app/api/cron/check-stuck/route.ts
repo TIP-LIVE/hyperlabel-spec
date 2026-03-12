@@ -5,13 +5,13 @@ import { sendShipmentStuckNotification } from '@/lib/notifications'
 // Cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET
 
-// Movement threshold: must move at least 500 meters in 24 hours to not be "stuck"
+// Movement threshold: must move at least 500 meters in 48 hours to not be "stuck"
 const MOVEMENT_THRESHOLD_M = 500
 
 /**
  * GET /api/cron/check-stuck
  * Cron job to detect shipments that appear stuck — the device is reporting
- * location but the position hasn't changed significantly in 24+ hours.
+ * location but the position hasn't changed significantly in 48+ hours.
  * This is different from "no signal" (which means no reports at all).
  */
 export async function GET(req: NextRequest) {
@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
     // Find in-transit shipments with recent location data
     const shipments = await db.shipment.findMany({
@@ -32,10 +32,10 @@ export async function GET(req: NextRequest) {
         labelId: { not: null },
         label: {
           status: 'ACTIVE',
-          // Must have at least some locations in last 24h (otherwise "no signal" handles it)
+          // Must have at least some locations in last 48h (otherwise "no signal" handles it)
           locations: {
             some: {
-              recordedAt: { gte: twentyFourHoursAgo },
+              recordedAt: { gte: fortyEightHoursAgo },
             },
           },
         },
@@ -60,9 +60,9 @@ export async function GET(req: NextRequest) {
       const locations = shipment.label.locations
       if (locations.length < 3) continue // Need enough data points
 
-      // Get the locations from the last 24h
+      // Get the locations from the last 48h
       const recentLocations = locations.filter(
-        (l) => l.recordedAt.getTime() >= twentyFourHoursAgo.getTime()
+        (l) => l.recordedAt.getTime() >= fortyEightHoursAgo.getTime()
       )
 
       if (recentLocations.length < 2) continue
@@ -83,12 +83,12 @@ export async function GET(req: NextRequest) {
 
       // If max movement is less than threshold, shipment is stuck
       if (maxDistance < MOVEMENT_THRESHOLD_M) {
-        // Check if we already sent a stuck notification in the last 24h
+        // Check if we already sent a stuck notification in the last 48h
         const recentNotification = await db.notification.findFirst({
           where: {
             userId: shipment.userId,
             type: 'shipment_stuck',
-            sentAt: { gte: oneDayAgo },
+            sentAt: { gte: twoDaysAgo },
             message: { contains: shipment.id },
           },
         })

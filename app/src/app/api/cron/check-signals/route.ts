@@ -7,7 +7,7 @@ const CRON_SECRET = process.env.CRON_SECRET
 
 /**
  * GET /api/cron/check-signals
- * Cron job to check for labels that haven't reported in 24h
+ * Cron job to check for labels that haven't reported in 48h
  * Should be called via Vercel Cron or external cron service
  */
 export async function GET(req: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
     // Find active labels with shipments that haven't reported recently
     const shipmentsWithSilentLabels = await db.shipment.findMany({
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
           status: 'ACTIVE',
           locations: {
             none: {
-              recordedAt: { gte: twentyFourHoursAgo },
+              recordedAt: { gte: fortyEightHoursAgo },
             },
           },
         },
@@ -54,12 +54,12 @@ export async function GET(req: NextRequest) {
       if (!shipment.label) continue
       const lastLocation = shipment.label.locations[0]
 
-      // Check if we already sent a no-signal notification in the last 24h
+      // Check if we already sent a no-signal notification in the last 48h
       const recentNotification = await db.notification.findFirst({
         where: {
           userId: shipment.userId,
           type: 'no_signal',
-          sentAt: { gte: twentyFourHoursAgo },
+          sentAt: { gte: fortyEightHoursAgo },
           message: { contains: shipment.id },
         },
       })

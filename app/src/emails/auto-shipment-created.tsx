@@ -22,7 +22,7 @@ export function AutoShipmentCreatedEmail({
       <Heading style={heading}>Shipment Auto-Created</Heading>
       <Text style={paragraph}>
         Your tracking label <strong>{deviceId}</strong> has been reporting location data for
-        over 24 hours without a shipment. We've automatically created one for you.
+        over 48 hours without a shipment. We've automatically created one for you.
       </Text>
 
       <Section style={detailsBox}>
