@@ -9,6 +9,9 @@ const checkoutSchema = z.object({
   packType: z.enum(['starter', 'team', 'volume']),
 })
 
+/** Number of application-level retries for Stripe session creation (on top of SDK's own retries) */
+const STRIPE_APP_RETRIES = 2
+
 /**
  * POST /api/v1/checkout
  *
@@ -62,8 +65,8 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
 
     step = 'stripe-create-session'
-    // Create Stripe Checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Create Stripe Checkout session with retry on connection errors
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
       ...(user.email ? { customer_email: user.email } : {}),
@@ -82,11 +85,27 @@ export async function POST(req: NextRequest) {
       },
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/checkout/cancel`,
-    })
+    }
+
+    let session: Stripe.Checkout.Session
+    for (let attempt = 1; attempt <= STRIPE_APP_RETRIES; attempt++) {
+      try {
+        session = await stripe.checkout.sessions.create(sessionParams)
+        break
+      } catch (retryErr) {
+        const isConnection = retryErr instanceof Stripe.errors.StripeConnectionError
+        if (isConnection && attempt < STRIPE_APP_RETRIES) {
+          console.warn(`[checkout] StripeConnectionError on attempt ${attempt}/${STRIPE_APP_RETRIES}, retrying in ${attempt}s...`)
+          await new Promise((r) => setTimeout(r, attempt * 1000))
+          continue
+        }
+        throw retryErr
+      }
+    }
 
     return NextResponse.json({
-      sessionId: session.id,
-      url: session.url,
+      sessionId: session!.id,
+      url: session!.url,
     })
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
@@ -102,7 +121,7 @@ export async function POST(req: NextRequest) {
 
       if (error instanceof Stripe.errors.StripeConnectionError) {
         const keyPrefix = (process.env.STRIPE_SECRET_KEY || '').slice(0, 7)
-        console.error(`[checkout] StripeConnectionError — Stripe API unreachable. key_prefix="${keyPrefix}..." retries=3 timeout=30s region=${process.env.VERCEL_REGION ?? process.env.AWS_REGION ?? 'unknown'}`)
+        console.error(`[checkout] StripeConnectionError — Stripe API unreachable after ${STRIPE_APP_RETRIES} attempts. key_prefix="${keyPrefix}..." sdk_retries=5 timeout=45s region=${process.env.VERCEL_REGION ?? process.env.AWS_REGION ?? 'unknown'}`)
         console.error(`[checkout] Check https://status.stripe.com — if recurring, consider increasing timeout or adding retry`)
         return NextResponse.json(
           { error: 'Could not connect to payment provider. Please try again in a moment.' },

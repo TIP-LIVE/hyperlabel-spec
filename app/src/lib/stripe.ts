@@ -11,8 +11,8 @@ function getStripe(): Stripe {
   console.log(`[stripe] Initializing Stripe client: key_prefix="${keyToUse.slice(0, 7)}..." is_live=${keyToUse.startsWith('sk_live')} is_configured=${isReal} region=${process.env.VERCEL_REGION ?? 'local'}`)
   _stripe = new Stripe(keyToUse, {
     typescript: true,
-    maxNetworkRetries: 3,
-    timeout: 30_000,
+    maxNetworkRetries: 5,
+    timeout: 45_000,
   })
   return _stripe
 }
