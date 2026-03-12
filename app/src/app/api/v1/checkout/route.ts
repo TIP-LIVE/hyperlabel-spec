@@ -97,7 +97,19 @@ export async function POST(req: NextRequest) {
 
     // Handle Stripe-specific errors with useful messages
     if (error instanceof Stripe.errors.StripeError) {
+      const stripeErr = error as Stripe.errors.StripeError & { code?: string; statusCode?: number }
+      console.error(`[checkout] Stripe error detail: type=${error.type} code=${stripeErr.code ?? 'n/a'} statusCode=${stripeErr.statusCode ?? 'n/a'} message=${error.message}`)
+
+      if (error instanceof Stripe.errors.StripeConnectionError) {
+        console.error(`[checkout] StripeConnectionError — Stripe API unreachable from this region. Check status.stripe.com`)
+        return NextResponse.json(
+          { error: 'Could not connect to payment provider. Please try again in a moment.' },
+          { status: 502 }
+        )
+      }
+
       if (error instanceof Stripe.errors.StripeAuthenticationError) {
+        console.error(`[checkout] StripeAuthenticationError — STRIPE_SECRET_KEY may be invalid or expired`)
         return NextResponse.json(
           { error: 'Payment system is temporarily unavailable. Please try again later.' },
           { status: 503 }
