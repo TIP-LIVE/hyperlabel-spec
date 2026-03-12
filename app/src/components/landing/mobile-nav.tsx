@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -22,6 +23,7 @@ const navLinks = [
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
+  const { isLoaded, isSignedIn } = useAuth()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -49,16 +51,26 @@ export function MobileNav() {
             </Link>
           ))}
           <div className="mt-4 flex flex-col gap-3">
-            <Button variant="outline" asChild>
-              <Link href="/sign-in" onClick={() => setOpen(false)}>
-                Sign In
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/sign-up" onClick={() => setOpen(false)}>
-                Get Started
-              </Link>
-            </Button>
+            {isLoaded && isSignedIn ? (
+              <Button asChild>
+                <Link href="/dashboard" onClick={() => setOpen(false)}>
+                  Dashboard
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/sign-in" onClick={() => setOpen(false)}>
+                    Sign In
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/sign-up" onClick={() => setOpen(false)}>
+                    Get Started
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </nav>
       </SheetContent>

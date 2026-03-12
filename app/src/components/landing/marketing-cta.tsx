@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 
 export function MarketingCTA() {
@@ -9,9 +10,16 @@ export function MarketingCTA() {
         <p className="mx-auto mt-3 max-w-lg opacity-90">
           Get your first tracking label and follow your cargo from pickup to delivery.
         </p>
-        <Button size="lg" variant="secondary" className="mt-8 h-12 rounded-full px-8 text-base font-semibold" asChild>
-          <Link href="/sign-up">Get Your First Label</Link>
-        </Button>
+        <SignedOut>
+          <Button size="lg" variant="secondary" className="mt-8 h-12 rounded-full px-8 text-base font-semibold" asChild>
+            <Link href="/sign-up">Get Your First Label</Link>
+          </Button>
+        </SignedOut>
+        <SignedIn>
+          <Button size="lg" variant="secondary" className="mt-8 h-12 rounded-full px-8 text-base font-semibold" asChild>
+            <Link href="/dashboard">Go to Dashboard</Link>
+          </Button>
+        </SignedIn>
       </div>
     </section>
   )

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { MobileNav } from '@/components/landing/mobile-nav'
@@ -30,12 +31,19 @@ export function MarketingHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-            <Link href="/sign-in">Sign In</Link>
-          </Button>
-          <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
-            <Link href="/sign-up">Get Started</Link>
-          </Button>
+          <SignedOut>
+            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
+              <Link href="/sign-up">Get Started</Link>
+            </Button>
+          </SignedOut>
+          <SignedIn>
+            <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          </SignedIn>
           <ThemeToggle />
           <MobileNav />
         </div>

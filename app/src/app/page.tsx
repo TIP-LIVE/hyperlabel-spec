@@ -1,5 +1,3 @@
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,7 +23,6 @@ import { LandingFAQ } from '@/components/landing/landing-faq'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingCTA } from '@/components/landing/marketing-cta'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
-import { isClerkConfigured } from '@/lib/clerk-config'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -39,15 +36,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function HomePage() {
-  // Only check auth if Clerk is configured
-  if (isClerkConfigured()) {
-    const { userId } = await auth()
-    if (userId) {
-      redirect('/dashboard')
-    }
-  }
-
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <MarketingHeader />
