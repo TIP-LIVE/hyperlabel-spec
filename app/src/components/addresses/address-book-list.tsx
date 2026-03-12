@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search, Plus, Loader2 } from 'lucide-react'
+import { Search, Plus, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { AddressCard, type SavedAddressData } from '@/components/addresses/address-card'
 import { AddressFormDialog } from '@/components/addresses/address-form-dialog'
 import type { SavedAddressInput } from '@/lib/validations/address'
@@ -11,6 +11,7 @@ import type { SavedAddressInput } from '@/lib/validations/address'
 export function AddressBookList() {
   const [addresses, setAddresses] = useState<SavedAddressData[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAddress, setEditingAddress] = useState<
@@ -18,6 +19,7 @@ export function AddressBookList() {
   >(undefined)
 
   const fetchAddresses = useCallback(async (q = '') => {
+    setError(null)
     try {
       const url = q
         ? `/api/v1/addresses?q=${encodeURIComponent(q)}`
@@ -26,9 +28,11 @@ export function AddressBookList() {
       if (res.ok) {
         const data = await res.json()
         setAddresses(data.addresses)
+      } else {
+        setError('Failed to load addresses')
       }
     } catch {
-      // silently fail; user sees empty state
+      setError('Failed to load addresses. Please check your connection.')
     } finally {
       setLoading(false)
     }
@@ -75,6 +79,20 @@ export function AddressBookList() {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+        <AlertCircle className="mb-4 h-10 w-10 text-destructive" />
+        <h3 className="text-lg font-semibold">Failed to load addresses</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+        <Button onClick={() => fetchAddresses()} variant="outline" className="mt-4">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Try Again
+        </Button>
       </div>
     )
   }

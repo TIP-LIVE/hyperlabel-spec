@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ export function ConfirmDeliveryDialog({
   shipmentName,
   onDeliveryConfirmed,
 }: ConfirmDeliveryDialogProps) {
+  const { isSignedIn } = useAuth()
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
@@ -66,6 +68,23 @@ export function ConfirmDeliveryDialog({
     }
   }
 
+  // If not signed in, redirect to sign-in with return URL
+  if (!isSignedIn) {
+    return (
+      <Button
+        size="lg"
+        className="gap-2"
+        onClick={() => {
+          const returnUrl = window.location.pathname
+          window.location.href = `/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`
+        }}
+      >
+        <Power className="h-5 w-5" />
+        Sign in to Confirm Delivery
+      </Button>
+    )
+  }
+
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
@@ -84,6 +103,16 @@ export function ConfirmDeliveryDialog({
             <p className="mt-2 text-muted-foreground">
               The shipper has been notified. Tracking will now stop.
             </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => {
+                onDeliveryConfirmed?.()
+                setOpen(false)
+              }}
+            >
+              Done
+            </Button>
           </div>
         ) : (
           <>

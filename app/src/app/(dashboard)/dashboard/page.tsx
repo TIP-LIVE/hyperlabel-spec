@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { AddExistingLabelsButton } from '@/components/dashboard/add-existing-labels-dialog'
 import { shipmentStatusConfig } from '@/lib/status-config'
-import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle } from 'lucide-react'
+import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle, AlertCircle } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
@@ -70,6 +70,7 @@ export default async function DashboardPage() {
   let totalLabels = 0
   let deliveredThisMonth = 0
   let lowBatteryLabels = 0
+  let dbError = false
   let recentShipments: Array<{
     id: string
     name: string | null
@@ -142,7 +143,7 @@ export default async function DashboardPage() {
     if (process.env.NODE_ENV !== 'test') {
       console.error('[Dashboard] query error:', err instanceof Error ? err.message : String(err))
     }
-    // Database unreachable or query error — render dashboard with empty data
+    dbError = true
   }
 
   const stats = [
@@ -213,6 +214,15 @@ export default async function DashboardPage() {
           </p>
         )}
       </div>
+
+      {dbError && (
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+          <p className="text-sm text-destructive">
+            Could not load dashboard data. Some stats may be outdated. Please refresh the page to try again.
+          </p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

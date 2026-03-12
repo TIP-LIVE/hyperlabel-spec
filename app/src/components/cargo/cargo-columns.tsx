@@ -13,6 +13,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Eye, Share2, Truck, Battery, Trash2, Loader2 } from 'lucide-react'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -213,15 +219,25 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
         )
       }
 
+      const locationText = `${loc.geocodedCity}${loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}`
       return (
-        <div className="flex items-center gap-2 max-w-[200px]">
-          {loc.geocodedCountryCode && (
-            <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
-          )}
-          <span className="text-sm truncate">
-            {loc.geocodedCity}{loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}
-          </span>
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2 max-w-[200px]">
+                {loc.geocodedCountryCode && (
+                  <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
+                )}
+                <span className="text-sm truncate">
+                  {locationText}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{locationText}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )
     },
   },
