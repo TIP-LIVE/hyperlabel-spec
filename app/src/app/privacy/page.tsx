@@ -83,7 +83,7 @@ export default function PrivacyPage() {
               <li><strong>Stripe</strong> — Payment processing</li>
               <li><strong>Resend</strong> — Transactional email delivery</li>
               <li><strong>Google Maps</strong> — Map rendering and geocoding</li>
-              <li><strong>Onomondo</strong> — eSIM connectivity and cell tower location</li>
+              <li><strong>Connectivity provider</strong> — eSIM connectivity and cell tower location</li>
               <li><strong>Vercel</strong> — Application hosting</li>
             </ul>
             <p className="mt-2 text-muted-foreground">

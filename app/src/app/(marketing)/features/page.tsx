@@ -48,7 +48,7 @@ export default function FeaturesPage() {
         icon={Smartphone}
         title="No Scanners Required"
         subtitle="Your phone is the only tool you need"
-        description="TIP uses LTE Cat-1 cellular connectivity to transmit location data directly to the cloud. To activate, simply scan the QR code printed on the label with any smartphone camera — no barcode scanners, RFID readers, Bluetooth gateways, or dedicated infrastructure required. The label connects to cellular networks in 180+ countries via an embedded Onomondo softSIM."
+        description="TIP uses LTE Cat-1 cellular connectivity to transmit location data directly to the cloud. To activate, simply scan the QR code printed on the label with any smartphone camera — no barcode scanners, RFID readers, Bluetooth gateways, or dedicated infrastructure required. The label connects to cellular networks in 180+ countries via an embedded softSIM."
         specs={[
           { label: 'Connectivity', value: 'LTE Cat-1' },
           { label: 'Activation', value: 'QR code' },
@@ -64,7 +64,7 @@ export default function FeaturesPage() {
         icon={Tag}
         title="No Subscription Fees"
         subtitle="One price, everything included"
-        description="Every TIP label is a one-time purchase starting from $20. The price includes 60+ days of cellular connectivity via the embedded Onomondo softSIM, full platform access for tracking and management, shareable public tracking links, email notifications, and AI-powered route intelligence. No monthly fees, no data plans, no per-message charges, no hidden costs."
+        description="Every TIP label is a one-time purchase starting from $20. The price includes 60+ days of cellular connectivity via the embedded softSIM, full platform access for tracking and management, shareable public tracking links, email notifications, and AI-powered route intelligence. No monthly fees, no data plans, no per-message charges, no hidden costs."
         specs={[
           { label: 'Starting price', value: 'From $20' },
           { label: 'Connectivity', value: 'Included' },
