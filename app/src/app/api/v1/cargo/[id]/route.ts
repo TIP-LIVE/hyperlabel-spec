@@ -4,7 +4,6 @@ import { db } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
-import { syncLabelLocation } from '@/lib/sync-onomondo'
 import { reverseGeocode } from '@/lib/geocoding'
 import { isNullIsland } from '@/lib/validations/device'
 
@@ -54,23 +53,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // On-demand sync
-    let didSync = false
-    const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
-
-    if (isActive && shipment.label?.iccid) {
-      try {
-        didSync = await Promise.race([
-          syncLabelLocation(shipment.label),
-          new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
-        ])
-      } catch (err) {
-        console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
-      }
-    }
-
     // Backfill orphaned label locations
-    let needsRefetch = didSync
+    let needsRefetch = false
     if (shipment.labelId) {
       const backfilled = await db.locationEvent.updateMany({
         where: { labelId: shipment.labelId, shipmentId: null },

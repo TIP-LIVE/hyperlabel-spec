@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +29,6 @@ import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
 import { toast } from 'sonner'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
-const POLL_INTERVAL_MS = 30_000 // 30 seconds for shipper (faster than consignee)
 
 interface LocationPoint {
   id: string
@@ -102,9 +101,6 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 
 export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetailClientProps) {
   const [shipment, setShipment] = useState<ShipmentData>(initialData)
-  const [isPolling] = useState(true)
-  const [pollError, setPollError] = useState(false)
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const statusInfo = statusConfig[shipment.status]
   const StatusIcon = statusInfo.icon
@@ -155,69 +151,6 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
     return { totalDistance, distanceRemaining, progress }
   }, [shipment, latestLocation])
 
-  // Merge locations
-  const mergeLocations = useCallback((existing: LocationPoint[], incoming: LocationPoint[]) => {
-    const existingIds = new Set(existing.map((l) => l.id))
-    const newOnes = incoming.filter((l) => !existingIds.has(l.id))
-    if (newOnes.length === 0) return existing
-    return [...newOnes, ...existing].sort(
-      (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
-    )
-  }, [])
-
-  // Poll for updates
-  const poll = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/shipments/${shipment.id}`)
-      if (!res.ok) return
-
-      const data = await res.json()
-      const updated = data.shipment
-
-      setShipment((prev) => ({
-        ...prev,
-        name: updated.name,
-        status: updated.status,
-        deliveredAt: updated.deliveredAt,
-        originAddress: updated.originAddress,
-        originLat: updated.originLat,
-        originLng: updated.originLng,
-        destinationAddress: updated.destinationAddress,
-        destinationLat: updated.destinationLat,
-        destinationLng: updated.destinationLng,
-        label: updated.label ? {
-          ...prev.label,
-          ...updated.label,
-        } : prev.label,
-        locations: mergeLocations(
-          prev.locations,
-          updated.locations.map((l: LocationPoint & { recordedAt: string | Date }) => ({
-            ...l,
-            recordedAt: typeof l.recordedAt === 'string' ? l.recordedAt : new Date(l.recordedAt).toISOString(),
-          }))
-        ),
-      }))
-
-      setPollError(false)
-    } catch {
-      setPollError(true)
-    }
-  }, [shipment.id, mergeLocations])
-
-  // Derive polling state from shipment status instead of calling setState in effect
-  const shouldPoll = isActive && isPolling
-
-  useEffect(() => {
-    if (!shouldPoll) return
-
-    pollingRef.current = setInterval(poll, POLL_INTERVAL_MS)
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
-    }
-  }, [shouldPoll, poll])
-
-  const handleManualRefresh = useCallback(() => { poll() }, [poll])
-
   const OFFLINE_SYNC_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
 
   const locationsWithDates = shipment.locations.map((l) => {
@@ -264,22 +197,6 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {isPolling && shipment.type !== 'LABEL_DISPATCH' && (
-            <div className="flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-              </span>
-              Live
-              <button
-                onClick={handleManualRefresh}
-                className="ml-1 rounded-full p-0.5 transition-colors hover:bg-accent"
-                title="Refresh now"
-              >
-                <RefreshCw className="h-3 w-3" />
-              </button>
-            </div>
-          )}
           <Badge variant={statusInfo.variant} className="gap-1 px-3 py-1">
             <StatusIcon className="h-3 w-3" />
             {statusInfo.label}
@@ -307,7 +224,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                     })
                     if (!res.ok) throw new Error('Failed to reactivate')
                     toast.success('Tracking reactivated')
-                    poll()
+                    window.location.reload()
                   } catch {
                     toast.error('Failed to reactivate tracking')
                   }
@@ -327,12 +244,6 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
           </div>
         </div>
       </div>
-
-      {pollError && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
-          Having trouble connecting. Data will refresh automatically.
-        </div>
-      )}
 
       {/* Current Location Hero Banner — cargo tracking only */}
       {latestLocation && shipment.type !== 'LABEL_DISPATCH' && (
@@ -415,12 +326,12 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
         </Card>
       )}
 
-      {/* Live Map — cargo tracking only */}
+      {/* Map — cargo tracking only */}
       {shipment.type !== 'LABEL_DISPATCH' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Live Location
+              Location
               {currentGeo?.countryCode && (
                 <span className="text-base font-normal text-muted-foreground">
                   {countryCodeToFlag(currentGeo.countryCode)} {currentGeo.country}

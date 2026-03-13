@@ -53,10 +53,6 @@ vi.mock('@/lib/notifications', () => ({
   sendConsigneeTrackingNotification: vi.fn().mockResolvedValue(undefined),
 }))
 
-// Mock sync
-vi.mock('@/lib/sync-onomondo', () => ({
-  syncLabelLocation: vi.fn().mockResolvedValue(false),
-}))
 
 import { GET, POST } from '../route'
 import { db } from '@/lib/db'

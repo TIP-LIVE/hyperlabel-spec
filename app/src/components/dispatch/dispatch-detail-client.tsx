@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import {
   ArrowLeft,
   Battery,
-  Clock,
   Package,
   Share2,
   Truck,
@@ -24,7 +23,6 @@ import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dia
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
 import { toast } from 'sonner'
 
-const POLL_INTERVAL_MS = 30_000
 
 interface LocationPoint {
   id: string
@@ -79,65 +77,12 @@ const statusConfig = {
 }
 
 export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetailClientProps) {
-  const [shipment, setShipment] = useState<DispatchData>(initialData)
-  const [pollError, setPollError] = useState(false)
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [shipment] = useState<DispatchData>(initialData)
 
   const statusInfo = statusConfig[shipment.status]
   const StatusIcon = statusInfo.icon
   const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
   const labelCount = shipment.shipmentLabels?.length || 0
-
-  const mergeLocations = useCallback((existing: LocationPoint[], incoming: LocationPoint[]) => {
-    const existingIds = new Set(existing.map((l) => l.id))
-    const newOnes = incoming.filter((l) => !existingIds.has(l.id))
-    if (newOnes.length === 0) return existing
-    return [...newOnes, ...existing].sort(
-      (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
-    )
-  }, [])
-
-  const poll = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/dispatch/${shipment.id}`)
-      if (!res.ok) return
-
-      const data = await res.json()
-      const updated = data.shipment
-
-      setShipment((prev) => ({
-        ...prev,
-        name: updated.name,
-        status: updated.status,
-        deliveredAt: updated.deliveredAt,
-        originAddress: updated.originAddress,
-        destinationAddress: updated.destinationAddress,
-        shipmentLabels: updated.shipmentLabels?.map((sl: { label: LabelInfo }) => sl.label) ?? prev.shipmentLabels,
-        locations: mergeLocations(
-          prev.locations,
-          (updated.locations || []).map((l: LocationPoint & { recordedAt: string | Date }) => ({
-            ...l,
-            recordedAt: typeof l.recordedAt === 'string' ? l.recordedAt : new Date(l.recordedAt).toISOString(),
-          }))
-        ),
-      }))
-
-      setPollError(false)
-    } catch {
-      setPollError(true)
-    }
-  }, [shipment.id, mergeLocations])
-
-  useEffect(() => {
-    if (!isActive) return
-
-    pollingRef.current = setInterval(poll, POLL_INTERVAL_MS)
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
-    }
-  }, [isActive, poll])
-
-  const handleManualRefresh = useCallback(() => { poll() }, [poll])
 
   return (
     <div className="space-y-6 min-w-0 overflow-x-hidden">
@@ -165,22 +110,6 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {isActive && (
-            <div className="flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-              </span>
-              Live
-              <button
-                onClick={handleManualRefresh}
-                className="ml-1 rounded-full p-0.5 transition-colors hover:bg-accent"
-                title="Refresh now"
-              >
-                <RefreshCw className="h-3 w-3" />
-              </button>
-            </div>
-          )}
           <Badge variant={statusInfo.variant} className="gap-1 px-3 py-1">
             <StatusIcon className="h-3 w-3" />
             {statusInfo.label}
@@ -209,7 +138,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
                     })
                     if (!res.ok) throw new Error('Failed to reactivate')
                     toast.success('Tracking reactivated')
-                    poll()
+                    window.location.reload()
                   } catch {
                     toast.error('Failed to reactivate tracking')
                   }
@@ -230,12 +159,6 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
           </div>
         </div>
       </div>
-
-      {pollError && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
-          Having trouble connecting. Data will refresh automatically.
-        </div>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Dispatched Labels */}

@@ -1385,17 +1385,103 @@ These use cases are triggered by the system rather than by direct user interacti
 
 #### Onomondo Integration
 
-Onomondo provides the eSIM connectivity layer with the following capabilities:
+Onomondo provides the eSIM connectivity layer. The platform connects to Onomondo via REST API (`https://api.onomondo.com`) using API key authentication.
+
+**Dashboard:** [app.onomondo.com](https://app.onomondo.com)
+
+##### Capabilities
 
 | Feature | Use Case |
 |---------|----------|
 | **SIM Management** | Activate/deactivate SIMs, monitor fleet |
 | **Webhooks** | Real-time notifications when device comes online/offline |
 | **API Access** | Programmatic SIM status, data usage monitoring |
-| **Cell Tower Location** | Backup location data when GPS unavailable |
+| **Cell Tower Location** | Backup location data when GPS unavailable (~150–500 m accuracy) |
 | **Data Usage Tracking** | Monitor per-device data consumption |
+| **HTTPS Connector** | Forward device-originated HTTP payloads to TIP backend |
+| **Location Update Webhook** | Push cell-tower change events to TIP backend |
 
-**Dashboard:** [app.onomondo.com](https://app.onomondo.com)
+##### Data Flows
+
+There are three ways location data reaches the platform from Onomondo:
+
+**Flow 1 — HTTPS Connector (device → Onomondo → TIP)**
+
+The device sends an HTTP POST with GPS data to Onomondo. Onomondo's HTTPS Connector forwards the payload to `POST /api/v1/device/onomondo`.
+
+Payload includes:
+- `iccid`, `imei` — device identifiers
+- `latitude`, `longitude` — GPS coordinates from the device
+- `onomondo_latitude`, `onomondo_longitude` — cell-tower backup coordinates (optional)
+- `battery` (0–100), `signal_strength` (optional)
+- `timestamp` — when the device recorded the reading
+- `offline_queue[]` — array of buffered historical readings (timestamp, lat/lng, battery) collected while the device was offline; each entry becomes a separate `LocationEvent`
+
+**Flow 2 — Location Update Webhook (cell tower change → TIP)**
+
+When the device attaches to a different cell tower, Onomondo pushes a webhook to `POST /api/v1/device/onomondo/location-update`.
+
+Payload includes:
+- `iccid`, `imei`, `sim_id`, `sim_label`
+- `location.lat`, `location.lng`, `location.accuracy` — cell-tower coordinates (can be `null`)
+- `location.cell_id`, `location.location_area_code` — raw cell identifiers
+- `network.name`, `network.country`, `network.mcc`, `network.mnc` — carrier info
+- `network_type` — radio technology (2G/3G/4G/5G)
+- `time`, `session_id`, `ipv4`
+
+If Onomondo returns `null` coordinates, the platform falls back to the **Google Geolocation API** using the cell tower identifiers (MCC, MNC, LAC, CID).
+
+**Flow 3 — Polling (cron job)**
+
+A daily cron (`GET /api/cron/sync-onomondo-locations`) iterates over all labels with an ICCID that have active shipments and polls `GET /sims/{simId}` for the latest cell-tower location. Throttling (2-minute gap) and deduplication (5-minute minimum gap from the most recent event) prevent duplicate records.
+
+##### Data Sent TO Onomondo
+
+The platform writes only one piece of data back to Onomondo: the **device ID as the SIM label** via `PATCH /sims/{simId}` with `{ label: deviceId }`. This keeps the Onomondo dashboard human-readable. The sync is fire-and-forget and is triggered when a label is activated or via the batch script `scripts/sync-onomondo-labels.ts`.
+
+##### Data Read FROM Onomondo
+
+| API Call | Endpoint | Data Returned | Cache TTL |
+|----------|----------|---------------|-----------|
+| List SIMs | `GET /sims?limit=1000` | id, iccid, label, online status, activation date | 60 s |
+| Find SIM by ICCID | `GET /sims/find?search={iccid}` | Same as above for a single SIM | 60 s |
+| SIM Location | `GET /sims/{simId}` | lat, lng, accuracy (metres), timestamp | None (always fresh) |
+| Data Usage | `GET /usage/{simId}` | Array of usage entries: time, bytes, network type, carrier | 5 min |
+
+##### Authentication & Security
+
+Three environment variables control access:
+
+| Variable | Purpose |
+|----------|---------|
+| `ONOMONDO_API_KEY` | Authenticates outbound calls to the Onomondo Management API |
+| `ONOMONDO_CONNECTOR_API_KEY` | Validates inbound HTTPS Connector payloads (falls back to `DEVICE_API_KEY`) |
+| `ONOMONDO_WEBHOOK_API_KEY` | Validates inbound Location Update webhooks (falls back to `ONOMONDO_CONNECTOR_API_KEY` → `DEVICE_API_KEY`) |
+
+All inbound webhook endpoints are **rate-limited to 120 requests/minute** per API key and validate the key via `X-API-Key` header or `?key=` query parameter.
+
+##### Admin Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v1/admin/devices/sims` | Live SIM status + data usage for all active labels |
+| `GET /api/v1/admin/diagnostics/onomondo` | Health check: env vars, SIM lookup, location freshness, sync readiness |
+
+##### Database Mapping
+
+Inbound data from all three flows is processed by `processLocationReport()` and stored as `LocationEvent` records:
+
+| LocationEvent Field | Source |
+|---------------------|--------|
+| `latitude`, `longitude` | Device GPS (Flow 1) or cell tower (Flow 2/3) |
+| `source` | `GPS` or `CELL_TOWER` |
+| `cellLatitude`, `cellLongitude` | Onomondo cell-tower backup coordinates |
+| `batteryPct` | Device battery level |
+| `accuracyM` | Location accuracy in metres |
+| `recordedAt` | Timestamp from the device/Onomondo |
+| `isOfflineSync` | `true` for offline queue entries |
+| `labelId` | Resolved via ICCID/IMEI → Label lookup |
+| `shipmentId` | Resolved via active shipment for the label |
 
 ### 5.3 Sensors & Data
 

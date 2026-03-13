@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +12,6 @@ import {
   Truck,
   CheckCircle,
   Clock,
-  RefreshCw,
   Copy,
   Check,
   PartyPopper,
@@ -27,7 +26,6 @@ import { toast } from 'sonner'
 import { Logo } from '@/components/ui/logo'
 import { shipmentStatusConfig } from '@/lib/status-config'
 
-const POLL_INTERVAL_MS = 60_000 // 60 seconds
 
 interface LocationPoint {
   id: string
@@ -96,10 +94,7 @@ function haversineKm(
 
 export function TrackingPageClient({ code, initialData }: TrackingPageClientProps) {
   const [shipment, setShipment] = useState<ShipmentData>(initialData)
-  const [isPolling] = useState(true)
-  const [pollError, setPollError] = useState(false)
   const [copied, setCopied] = useState(false)
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const statusInfo = shipmentStatusConfig[shipment.status]
   const StatusIcon = statusIcons[shipment.status] || Package
@@ -159,63 +154,6 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
     return { label: 'Low', color: 'text-destructive' }
   }, [shipment.label?.batteryPct])
 
-  // Merge new locations into the existing set (dedup by id)
-  const mergeLocations = useCallback((existing: LocationPoint[], incoming: LocationPoint[]) => {
-    const existingIds = new Set(existing.map((l) => l.id))
-    const newOnes = incoming.filter((l) => !existingIds.has(l.id))
-    if (newOnes.length === 0) return existing
-    return [...newOnes, ...existing].sort(
-      (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
-    )
-  }, [])
-
-  // Poll for updates
-  const poll = useCallback(async () => {
-    try {
-      const since = latestLocation
-        ? new Date(latestLocation.recordedAt).toISOString()
-        : undefined
-      const url = since
-        ? `/api/v1/track/${code}?since=${encodeURIComponent(since)}`
-        : `/api/v1/track/${code}`
-
-      const res = await fetch(url)
-      if (!res.ok) return
-
-      const data = await res.json()
-      const updated = data.shipment as ShipmentData
-
-      setShipment((prev) => ({
-        ...prev,
-        type: updated.type ?? prev.type,
-        status: updated.status,
-        labelCount: updated.labelCount ?? prev.labelCount,
-        deliveredAt: updated.deliveredAt,
-        label: updated.label,
-        locations: mergeLocations(prev.locations, updated.locations),
-      }))
-
-      setPollError(false)
-    } catch {
-      setPollError(true)
-    }
-  }, [code, latestLocation, mergeLocations])
-
-  // Derive polling state — avoid setState in effect body
-  const isTerminal = shipment.status === 'DELIVERED' || shipment.status === 'CANCELLED'
-  const shouldPoll = isPolling && !isTerminal
-
-  // Set up polling interval
-  useEffect(() => {
-    if (!shouldPoll) return
-
-    pollingRef.current = setInterval(poll, POLL_INTERVAL_MS)
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
-    }
-  }, [shouldPoll, poll])
-
   // P0: Instant delivery state update — optimistic update
   const handleDeliveryConfirmed = useCallback(() => {
     setShipment((prev) => ({
@@ -223,16 +161,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
       status: 'DELIVERED' as const,
       deliveredAt: new Date().toISOString(),
     }))
-    // Also poll after a brief delay to get server-confirmed data
-    setTimeout(() => {
-      poll()
-    }, 2000)
-  }, [poll])
-
-  // Manual refresh
-  const handleManualRefresh = useCallback(() => {
-    poll()
-  }, [poll])
+  }, [])
 
   // P1: Share/copy tracking link
   const handleCopyLink = useCallback(async () => {
@@ -262,15 +191,6 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             <Logo size="md" />
           </Link>
           <div className="flex items-center gap-2">
-            {isPolling && !isDispatch && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                </span>
-                Live
-              </div>
-            )}
             <Badge variant={statusInfo.variant} className="gap-1">
               <StatusIcon className="h-3 w-3" />
               {statusInfo.label}
@@ -328,23 +248,8 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                 <Copy className="h-3.5 w-3.5" />
               )}
             </button>
-            {isPolling && !isDispatch && (
-              <button
-                onClick={handleManualRefresh}
-                className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-                title="Refresh now"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-              </button>
-            )}
           </div>
         </div>
-
-        {pollError && (
-          <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
-            Having trouble connecting. Data will refresh automatically.
-          </div>
-        )}
 
         {/* P0: Journey progress bar — cargo tracking only */}
         {journeyInfo && !isDispatch && (
@@ -398,7 +303,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             <div className="min-w-0 lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Live Location</CardTitle>
+                  <CardTitle>Location</CardTitle>
                   <CardDescription>
                     {latestLocation
                       ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`

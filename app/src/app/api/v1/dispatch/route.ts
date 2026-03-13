@@ -4,7 +4,6 @@ import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createDispatchShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
-import { syncLabelLocation } from '@/lib/sync-onomondo'
 import { reverseGeocode } from '@/lib/geocoding'
 
 /**
@@ -61,25 +60,6 @@ export async function GET(req: NextRequest) {
       }),
       db.shipment.count({ where }),
     ])
-
-    // Proactive background sync for active dispatch labels
-    const activeLabels = shipments
-      .filter((s) => s.status === 'PENDING' || s.status === 'IN_TRANSIT')
-      .flatMap((s) =>
-        s.shipmentLabels
-          ?.map((sl) => sl.label)
-          .filter((l) => l?.iccid) ?? []
-      )
-
-    if (activeLabels.length > 0) {
-      ;(async () => {
-        for (const label of activeLabels) {
-          try {
-            await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
-          } catch {}
-        }
-      })().catch(() => {})
-    }
 
     // Backfill geocoding for locations that have coordinates but no geocoded data
     const ungeocodedLocations = shipments

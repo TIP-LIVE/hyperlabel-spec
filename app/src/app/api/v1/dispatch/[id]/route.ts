@@ -3,7 +3,6 @@ import { db } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
-import { syncLabelLocation } from '@/lib/sync-onomondo'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -48,31 +47,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     if (!canAccessRecord(context, shipment)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // On-demand sync for first label with ICCID
-    let didSync = false
-    const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
-    const syncLabel = shipment.shipmentLabels?.find((sl) => sl.label?.iccid)?.label
-
-    if (isActive && syncLabel) {
-      try {
-        didSync = await Promise.race([
-          syncLabelLocation(syncLabel),
-          new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
-        ])
-      } catch (err) {
-        console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
-      }
-    }
-
-    if (didSync) {
-      const locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id },
-        orderBy: { recordedAt: 'desc' },
-        take: 100,
-      })
-      return NextResponse.json({ shipment: { ...shipment, locations } })
     }
 
     return NextResponse.json({ shipment })

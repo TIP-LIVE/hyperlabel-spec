@@ -5,7 +5,6 @@ import { handleApiError } from '@/lib/api-utils'
 import { createCargoShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
-import { syncLabelLocation } from '@/lib/sync-onomondo'
 import { reverseGeocode } from '@/lib/geocoding'
 
 /**
@@ -17,7 +16,6 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
-    const sync = searchParams.get('sync') === 'true'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
@@ -60,91 +58,6 @@ export async function GET(req: NextRequest) {
       }),
       db.shipment.count({ where }),
     ])
-
-    // Proactive sync for active labels
-    const activeLabels = shipments
-      .filter((s) => s.status === 'PENDING' || s.status === 'IN_TRANSIT')
-      .flatMap((s) => (s.label?.iccid ? [s.label] : []))
-
-    if (activeLabels.length > 0) {
-      const doSync = async () => {
-        for (const label of activeLabels) {
-          try {
-            await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
-          } catch (err) {
-            console.warn(`[cargo] sync failed for ${label.deviceId}:`, err)
-          }
-        }
-      }
-
-      if (sync) {
-        console.info(`[cargo] sync=true requested, syncing ${activeLabels.length} labels`)
-        const start = Date.now()
-        // Await sync with a 15s timeout, then re-fetch locations
-        let timedOut = false
-        await Promise.race([
-          doSync(),
-          new Promise((r) => setTimeout(() => { timedOut = true; r(undefined) }, 15_000)),
-        ])
-        console.info(`[cargo] sync completed in ${Date.now() - start}ms${timedOut ? ' (TIMED OUT)' : ''}`)
-        // Re-fetch latest locations after sync
-        const refreshed = await db.shipment.findMany({
-          where,
-          include: {
-            label: {
-              select: { id: true, deviceId: true, iccid: true, batteryPct: true, status: true },
-            },
-            locations: {
-              orderBy: { recordedAt: 'desc' },
-              take: 1,
-              select: {
-                id: true, latitude: true, longitude: true, recordedAt: true,
-                geocodedCity: true, geocodedArea: true, geocodedCountry: true, geocodedCountryCode: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: limit,
-          skip: offset,
-        })
-        // Backfill geocoding for freshly synced locations
-        const ungeocodedRefreshed = refreshed
-          .flatMap((s) => s.locations)
-          .filter((loc) => loc.latitude && loc.longitude && !loc.geocodedCity)
-        if (ungeocodedRefreshed.length > 0) {
-          await Promise.all(
-            ungeocodedRefreshed.map(async (loc) => {
-              try {
-                const geo = await reverseGeocode(loc.latitude, loc.longitude)
-                if (geo) {
-                  await db.locationEvent.update({
-                    where: { id: loc.id },
-                    data: {
-                      geocodedCity: geo.city,
-                      geocodedArea: geo.area,
-                      geocodedCountry: geo.country,
-                      geocodedCountryCode: geo.countryCode,
-                    },
-                  })
-                  loc.geocodedCity = geo.city
-                  loc.geocodedArea = geo.area
-                  loc.geocodedCountry = geo.country
-                  loc.geocodedCountryCode = geo.countryCode
-                }
-              } catch (err) {
-                console.warn(`[cargo] geocoding backfill failed for location ${loc.id}:`, err)
-              }
-            })
-          )
-        }
-        return NextResponse.json({
-          shipments: refreshed,
-          pagination: { total, limit, offset, hasMore: offset + refreshed.length < total },
-        })
-      } else {
-        doSync().catch((err) => console.warn('[cargo] background sync error:', err))
-      }
-    }
 
     // Backfill geocoding for locations that have coordinates but no geocoded data
     // Await so the response includes geocoded names instead of raw coordinates

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { rateLimit, RATE_LIMIT_PUBLIC, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
-import { syncLabelLocation } from '@/lib/sync-onomondo'
 
 interface RouteParams {
   params: Promise<{ code: string }>
@@ -93,45 +92,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       if (new Date() > expiryDate) {
         return NextResponse.json({ error: 'Tracking link has expired' }, { status: 410 })
       }
-    }
-
-    // On-demand sync: poll Onomondo for fresh location data (awaited with timeout)
-    // Check both direct label FK and many-to-many shipmentLabels
-    let didSync = false
-    const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
-    const syncLabel = shipment.label?.iccid
-      ? shipment.label
-      : shipment.shipmentLabels?.[0]?.label?.iccid
-        ? shipment.shipmentLabels[0].label
-        : null
-
-    if (isActive && syncLabel) {
-      try {
-        didSync = await Promise.race([
-          syncLabelLocation(syncLabel),
-          new Promise<false>((resolve) => setTimeout(() => resolve(false), 15000)),
-        ])
-      } catch (err) {
-        console.warn('[on-demand sync] failed:', err instanceof Error ? err.message : err)
-      }
-    }
-
-    // Re-fetch locations if sync added new data
-    if (didSync) {
-      shipment.locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id },
-        orderBy: { recordedAt: 'desc' },
-        take: 50,
-        select: {
-          id: true,
-          latitude: true,
-          longitude: true,
-          accuracyM: true,
-          batteryPct: true,
-          recordedAt: true,
-          isOfflineSync: true,
-        },
-      })
     }
 
     // Backfill orphaned label locations that weren't linked at shipment creation

@@ -36,10 +36,6 @@
       "schedule": "0 3 * * 0"
     },
     {
-      "path": "/api/cron/sync-onomondo-locations",
-      "schedule": "0 12 * * *"
-    },
-    {
       "path": "/api/cron/check-unclaimed-labels",
       "schedule": "0 11 * * *"
     },

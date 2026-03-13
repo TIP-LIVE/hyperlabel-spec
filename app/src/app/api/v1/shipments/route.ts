@@ -5,7 +5,6 @@ import { handleApiError } from '@/lib/api-utils'
 import { createShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
-import { syncLabelLocation } from '@/lib/sync-onomondo'
 
 /**
  * GET /api/v1/shipments - List user's shipments
@@ -74,29 +73,6 @@ export async function GET(req: NextRequest) {
       }),
       db.shipment.count({ where }),
     ])
-
-    // Proactive background sync: poll Onomondo for all active labels so data
-    // is fresh by the time the user clicks into a specific shipment.
-    // Fire-and-forget — never blocks the list response.
-    const activeLabels = shipments
-      .filter((s) => s.status === 'PENDING' || s.status === 'IN_TRANSIT')
-      .flatMap((s) => {
-        if (s.label?.iccid) return [s.label]
-        return s.shipmentLabels
-          ?.map((sl) => sl.label)
-          .filter((l) => l?.iccid) ?? []
-      })
-
-    if (activeLabels.length > 0) {
-      // Run serially to avoid exhausting the Neon DB connection pool
-      ;(async () => {
-        for (const label of activeLabels) {
-          try {
-            await syncLabelLocation(label as { id: string; iccid: string; deviceId: string })
-          } catch {}
-        }
-      })().catch(() => {})
-    }
 
     return NextResponse.json({
       shipments,
