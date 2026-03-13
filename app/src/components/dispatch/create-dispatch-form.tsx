@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Loader2, Navigation } from 'lucide-react'
+import { FieldInfo } from '@/components/ui/field-info'
 import { AddressInput } from '@/components/ui/address-input'
 import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
 
@@ -118,16 +119,16 @@ export function CreateDispatchForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Dispatch Name */}
       <div className="space-y-2">
-        <Label htmlFor="dispatch-name">Dispatch Name</Label>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="dispatch-name">Dispatch Name</Label>
+          <FieldInfo text="A name to identify this label dispatch on your dashboard." />
+        </div>
         <Input
           id="dispatch-name"
           placeholder="e.g., Labels for Berlin Warehouse"
           {...register('name')}
         />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-        <p className="text-xs text-muted-foreground">
-          A name to identify this label dispatch on your dashboard.
-        </p>
       </div>
 
       {/* Multi-Label Selector */}
@@ -147,7 +148,10 @@ export function CreateDispatchForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="origin">Origin Address (optional)</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="origin">Origin Address (optional)</Label>
+            <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
+          </div>
           <AddressInput
             id="origin"
             placeholder="e.g., 45 Warehouse Rd, London, UK"
@@ -156,13 +160,13 @@ export function CreateDispatchForm() {
           {errors.originAddress && (
             <p className="text-sm text-destructive">{errors.originAddress.message}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Starting point for route tracking. Start typing for suggestions.
-          </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="destination">Destination Address (optional)</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="destination">Destination Address (optional)</Label>
+            <FieldInfo text="Destination for route tracking and delivery detection." />
+          </div>
           <AddressInput
             id="destination"
             placeholder="e.g., 123 Main St, Berlin, Germany"
@@ -171,9 +175,6 @@ export function CreateDispatchForm() {
           {errors.destinationAddress && (
             <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Destination for route tracking and delivery detection.
-          </p>
         </div>
       </div>
 

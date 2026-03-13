@@ -16,7 +16,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
@@ -153,25 +152,23 @@ export function DispatchList({ initialStatus }: DispatchListProps) {
             </SelectItem>
           </SelectContent>
         </Select>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="h-8 w-8"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span className="sr-only">Refresh dispatches</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{refreshing ? 'Refreshing...' : 'Refresh dispatches'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="h-8 w-8"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="sr-only">Refresh dispatches</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{refreshing ? 'Refreshing...' : 'Refresh dispatches'}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
       <DataTable
         columns={dispatchColumns}

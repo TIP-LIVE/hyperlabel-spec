@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ThemeAwareClerkProvider } from '@/components/clerk-provider'
 import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
 const inter = Inter({
@@ -70,7 +71,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ThemeAwareClerkProvider>{children}</ThemeAwareClerkProvider>
+          <TooltipProvider delayDuration={300}>
+            <ThemeAwareClerkProvider>{children}</ThemeAwareClerkProvider>
+          </TooltipProvider>
           <Toaster position="top-right" />
         </ThemeProvider>
       </body>

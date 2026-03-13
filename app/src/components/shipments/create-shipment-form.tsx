@@ -32,6 +32,7 @@ import {
   Send,
 } from 'lucide-react'
 import { AddressInput } from '@/components/ui/address-input'
+import { FieldInfo } from '@/components/ui/field-info'
 import { QrScanner } from '@/components/shipments/qr-scanner'
 import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
 
@@ -405,12 +406,12 @@ function CargoTrackingForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Cargo Name / ID */}
       <div className="space-y-2">
-        <Label htmlFor="name">Cargo Name / ID</Label>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="name">Cargo Name / ID</Label>
+          <FieldInfo text="Include cargo reference or invoice number to identify shipments on your dashboard." />
+        </div>
         <Input id="name" placeholder="e.g., Electronics — INV-2024-001" {...register('name')} />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-        <p className="text-xs text-muted-foreground">
-          Include cargo reference or invoice number to identify shipments on your dashboard.
-        </p>
       </div>
 
       {/* Label Selection */}
@@ -474,7 +475,10 @@ function CargoTrackingForm({
           Notify Consignee
         </div>
         <div className="space-y-2">
-          <Label htmlFor="consigneeEmail">Consignee Email</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="consigneeEmail">Consignee Email</Label>
+            <FieldInfo text="Optional — we'll send them a real-time tracking link so they can follow the delivery." />
+          </div>
           <Input
             id="consigneeEmail"
             type="email"
@@ -484,22 +488,18 @@ function CargoTrackingForm({
           {errors.consigneeEmail && (
             <p className="text-sm text-destructive">{errors.consigneeEmail.message}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Optional — we&apos;ll send them a real-time tracking link so they can follow the
-            delivery.
-          </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="consigneePhone">Consignee Phone</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="consigneePhone">Consignee Phone</Label>
+            <FieldInfo text="Optional phone number for the recipient." />
+          </div>
           <Input
             id="consigneePhone"
             type="tel"
             placeholder="+44 7700 900000"
             {...register('consigneePhone')}
           />
-          <p className="text-xs text-muted-foreground">
-            Optional phone number for the recipient.
-          </p>
         </div>
       </div>
 
@@ -507,6 +507,10 @@ function CargoTrackingForm({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Label>Cargo Photos</Label>
+          <FieldInfo
+            text="Document your cargo before shipping. AI will automatically analyze the photo for cargo type, label visibility, and hazards."
+            maxWidth={320}
+          />
           <span className="text-xs text-muted-foreground">(optional, max 5)</span>
         </div>
 
@@ -626,10 +630,6 @@ function CargoTrackingForm({
           className="hidden"
         />
 
-        <p className="text-xs text-muted-foreground">
-          Document your cargo before shipping. AI will automatically analyze the photo for cargo
-          type, label visibility, and hazards.
-        </p>
       </div>
 
       {/* Submit */}
@@ -751,16 +751,16 @@ function LabelDispatchForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Dispatch Name */}
       <div className="space-y-2">
-        <Label htmlFor="dispatch-name">Dispatch Name</Label>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="dispatch-name">Dispatch Name</Label>
+          <FieldInfo text="A name to identify this label dispatch on your dashboard." />
+        </div>
         <Input
           id="dispatch-name"
           placeholder="e.g., Labels for Berlin Warehouse"
           {...register('name')}
         />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-        <p className="text-xs text-muted-foreground">
-          A name to identify this label dispatch on your dashboard.
-        </p>
       </div>
 
       {/* Multi-Label Selector */}
@@ -830,7 +830,10 @@ function RouteSection({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="origin">Origin Address (optional)</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="origin">Origin Address (optional)</Label>
+            <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
+          </div>
           <AddressInput
             id="origin"
             placeholder="e.g., 45 Warehouse Rd, London, UK"
@@ -839,13 +842,13 @@ function RouteSection({
           {errors.originAddress && (
             <p className="text-sm text-destructive">{errors.originAddress.message}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Starting point for route tracking. Start typing for suggestions.
-          </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="destination">Destination Address (optional)</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="destination">Destination Address (optional)</Label>
+            <FieldInfo text="Destination for route tracking and delivery detection." />
+          </div>
           <AddressInput
             id="destination"
             placeholder="e.g., 123 Main St, Berlin, Germany"
@@ -854,9 +857,6 @@ function RouteSection({
           {errors.destinationAddress && (
             <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Destination for route tracking and delivery detection.
-          </p>
         </div>
       </div>
 

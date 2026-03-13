@@ -15,12 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { FieldInfo } from '@/components/ui/field-info'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -33,7 +28,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Eye,
-  Info,
+
 } from 'lucide-react'
 import { AddressInput } from '@/components/ui/address-input'
 import { QrScanner } from '@/components/shipments/qr-scanner'
@@ -91,23 +86,6 @@ type CargoAnalysis = {
   summary: string
 }
 
-function FieldInfo({ text }: { text: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-muted-foreground"
-        >
-          <Info className="h-3.5 w-3.5" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[240px]">
-        <p>{text}</p>
-      </TooltipContent>
-    </Tooltip>
-  )
-}
 
 function SectionCard({
   icon: Icon,
@@ -372,7 +350,6 @@ export function CreateCargoForm() {
   const firstAnalysis = photos.find((p) => p.analysis)?.analysis
 
   return (
-    <TooltipProvider delayDuration={300}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Cargo Essentials */}
         <SectionCard icon={Package} title="Cargo Essentials">
@@ -639,6 +616,5 @@ export function CreateCargoForm() {
           </Button>
         </div>
       </form>
-    </TooltipProvider>
   )
 }

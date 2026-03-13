@@ -15,7 +15,6 @@ import { MoreHorizontal, Eye, Share2, Send, Trash2, Loader2 } from 'lucide-react
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
@@ -234,23 +233,21 @@ export const dispatchColumns: ColumnDef<DispatchRow>[] = [
 
       const locationText = `${loc.geocodedCity}${loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}`
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 max-w-[200px]">
-                {loc.geocodedCountryCode && (
-                  <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
-                )}
-                <span className="text-sm truncate">
-                  {locationText}
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{locationText}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 max-w-[200px]">
+              {loc.geocodedCountryCode && (
+                <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
+              )}
+              <span className="text-sm truncate">
+                {locationText}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{locationText}</p>
+          </TooltipContent>
+        </Tooltip>
       )
     },
   },

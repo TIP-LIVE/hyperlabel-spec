@@ -17,6 +17,7 @@ import { Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { AddressInput } from '@/components/ui/address-input'
+import { FieldInfo } from '@/components/ui/field-info'
 
 interface EditShipmentDialogProps {
   shipmentId: string
@@ -137,7 +138,10 @@ export function EditShipmentDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-origin">Origin Address</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="edit-origin">Origin Address</Label>
+              <FieldInfo text="Where the cargo is being shipped from." />
+            </div>
             <AddressInput
               id="edit-origin"
               defaultValue={currentOrigin || ''}
@@ -145,13 +149,13 @@ export function EditShipmentDialog({
               disabled={isLoading}
               onAddressSelect={handleOriginSelect}
             />
-            <p className="text-xs text-muted-foreground">
-              Where the cargo is being shipped from.
-            </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-destination">Destination Address</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="edit-destination">Destination Address</Label>
+              <FieldInfo text="Select an address from suggestions to update the map pin location." />
+            </div>
             <AddressInput
               id="edit-destination"
               defaultValue={currentDestination || ''}
@@ -159,9 +163,6 @@ export function EditShipmentDialog({
               disabled={isLoading}
               onAddressSelect={handleAddressSelect}
             />
-            <p className="text-xs text-muted-foreground">
-              Select an address from suggestions to update the map pin location.
-            </p>
           </div>
         </div>
 
