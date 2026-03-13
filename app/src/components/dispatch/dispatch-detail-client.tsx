@@ -114,6 +114,54 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
             <StatusIcon className="h-3 w-3" />
             {statusInfo.label}
           </Badge>
+          {shipment.status === 'PENDING' && (
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-1.5"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/v1/dispatch/${shipment.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'IN_TRANSIT' }),
+                  })
+                  if (!res.ok) throw new Error('Failed to update status')
+                  toast.success('Dispatch marked as in transit')
+                  window.location.reload()
+                } catch {
+                  toast.error('Failed to update status')
+                }
+              }}
+            >
+              <Truck className="h-3.5 w-3.5" />
+              Mark as In Transit
+            </Button>
+          )}
+          {shipment.status === 'IN_TRANSIT' && (
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-1.5 bg-green-600 hover:bg-green-700"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/v1/track/${shipment.shareCode}/confirm-delivery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                  })
+                  if (!res.ok) throw new Error('Failed to confirm delivery')
+                  toast.success('Dispatch marked as delivered')
+                  window.location.reload()
+                } catch {
+                  toast.error('Failed to confirm delivery')
+                }
+              }}
+            >
+              <CheckCircle className="h-3.5 w-3.5" />
+              Mark as Delivered
+            </Button>
+          )}
           <div className="flex items-center gap-1.5">
             {isActive && (
               <EditShipmentDialog

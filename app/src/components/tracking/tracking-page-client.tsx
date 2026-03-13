@@ -358,8 +358,8 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
 
           {/* Sidebar */}
           <div className={`space-y-6 ${isDispatch ? 'lg:col-span-2' : ''}`}>
-            {/* Consignee Delivery Confirmation — only when actively tracking */}
-            {isActive && (
+            {/* Consignee Delivery Confirmation — only when in transit (not pending) */}
+            {shipment.status === 'IN_TRANSIT' && (
               <Card className="border-2 border-dashed border-primary/50 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -381,47 +381,51 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
               </Card>
             )}
 
-            {/* P1: Route Card — origin + destination */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Navigation className="h-4 w-4" />
-                  Route
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {shipment.originAddress && (
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+            {/* P1: Route Card — origin + destination (hidden when both empty) */}
+            {(shipment.originAddress || shipment.destinationAddress) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Navigation className="h-4 w-4" />
+                    Route
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {shipment.originAddress && (
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                        <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">From</p>
+                        <p className="text-sm">{shipment.originAddress}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">From</p>
-                      <p className="text-sm">{shipment.originAddress}</p>
+                  )}
+                  {shipment.originAddress && shipment.destinationAddress && (
+                    <div className="flex items-center gap-3 pl-2">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
+                      {journeyInfo && (
+                        <span className="text-xs text-muted-foreground">
+                          {Math.round(journeyInfo.totalDistance)} km
+                        </span>
+                      )}
                     </div>
-                  </div>
-                )}
-                {shipment.originAddress && shipment.destinationAddress && (
-                  <div className="flex items-center gap-3 pl-2">
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
-                    {journeyInfo && (
-                      <span className="text-xs text-muted-foreground">
-                        {Math.round(journeyInfo.totalDistance)} km
-                      </span>
-                    )}
-                  </div>
-                )}
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                    <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">To</p>
-                    <p className="text-sm">{shipment.destinationAddress || 'Not specified'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  )}
+                  {shipment.destinationAddress && (
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                        <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">To</p>
+                        <p className="text-sm">{shipment.destinationAddress}</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Status Card */}
             <Card>
