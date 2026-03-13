@@ -150,6 +150,7 @@ export type CargoRow = {
     deviceId: string
     batteryPct: number | null
     status: string
+    lastSeenAt: string | null
   } | null
   latestLocation: {
     id: string
@@ -262,13 +263,13 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
     id: 'lastUpdate',
     header: 'Last Update',
     cell: ({ row }) => {
-      const loc = row.original.latestLocation
-      if (!loc) {
+      const timestamp = row.original.label?.lastSeenAt || row.original.latestLocation?.recordedAt
+      if (!timestamp) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
+          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
         </span>
       )
     },

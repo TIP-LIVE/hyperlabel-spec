@@ -349,13 +349,14 @@ export async function processLocationReport(
     console.warn('[Device report] geocoding failed:', err)
   }
 
-  // Update label battery if provided
-  if (input.battery !== undefined) {
-    await db.label.update({
-      where: { id: label.id },
-      data: { batteryPct: input.battery },
-    })
-  }
+  // Update label: lastSeenAt always, battery if provided
+  await db.label.update({
+    where: { id: label.id },
+    data: {
+      lastSeenAt: new Date(),
+      ...(input.battery !== undefined && { batteryPct: input.battery }),
+    },
+  })
 
   // If shipment is PENDING and we received first location, update to IN_TRANSIT
   if (activeShipment && activeShipment.status === 'PENDING') {

@@ -12,6 +12,7 @@ import {
   rateLimitResponse,
 } from '@/lib/rate-limit'
 import { resolveCellTowerLocation } from '@/lib/cell-geolocation'
+import { db } from '@/lib/db'
 
 /**
  * POST /api/v1/device/onomondo/location-update
@@ -140,6 +141,11 @@ export async function POST(req: NextRequest) {
     })
 
     if (shouldSkip) {
+      // Device is online but location is duplicate — still record the heartbeat
+      await db.label.update({
+        where: { iccid: data.iccid },
+        data: { lastSeenAt: new Date() },
+      })
       console.info('[webhook:location-update] dedup skip', {
         iccid: data.iccid,
         lat,
