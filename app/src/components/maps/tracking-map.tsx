@@ -591,28 +591,15 @@ export function TrackingMap({
                     }}
                   >
                     <div
-                      className="flex items-center justify-center rounded-full shadow-lg"
+                      className="rounded-full shadow-lg"
                       style={{
-                        minWidth: 28,
-                        height: 28,
-                        padding: '0 8px',
+                        width: 14,
+                        height: 14,
                         backgroundColor: isDark ? '#d97706' : '#f59e0b',
                         border: '2.5px solid rgba(255,255,255,0.95)',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                       }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: '#fff',
-                          lineHeight: 1,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {formatDwell(seg.dwellMinutes)}
-                      </span>
-                    </div>
+                    />
                   </div>
                 </OverlayView>
               ) : (
