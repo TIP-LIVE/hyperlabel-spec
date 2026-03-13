@@ -171,7 +171,73 @@ function clusterLocations(points: LocationPoint[]): Segment[] {
   // Finalize last cluster
   segments.push(finalizeCluster(clusterPoints, centroidLat, centroidLng))
 
-  return segments
+  return mergeNearbyClusters(segments)
+}
+
+// Merge stop clusters whose centroids are within CLUSTER_RADIUS_KM of each other.
+// When the device revisits the same place (A → B → A), the sequential algorithm
+// produces separate clusters. This pass collapses them into a single stop with
+// the summed dwell time, keeping only one marker per physical location.
+function mergeNearbyClusters(segments: Segment[]): Segment[] {
+  const stops = segments.filter((s): s is StopCluster => s.type === 'stop')
+  const merged = new Set<number>() // indices into `stops` that were absorbed
+
+  // For each pair of stops, merge if centroids are close
+  for (let i = 0; i < stops.length; i++) {
+    if (merged.has(i)) continue
+    for (let j = i + 1; j < stops.length; j++) {
+      if (merged.has(j)) continue
+      const dist = haversineKm(
+        stops[i].centroidLat, stops[i].centroidLng,
+        stops[j].centroidLat, stops[j].centroidLng,
+      )
+      if (dist <= CLUSTER_RADIUS_KM) {
+        // Absorb j into i
+        const allPoints = [...stops[i].points, ...stops[j].points]
+        const n = allPoints.length
+        stops[i] = {
+          type: 'stop',
+          centroidLat: allPoints.reduce((s, p) => s + p.latitude, 0) / n,
+          centroidLng: allPoints.reduce((s, p) => s + p.longitude, 0) / n,
+          points: allPoints,
+          arrivalTime: stops[i].arrivalTime < stops[j].arrivalTime ? stops[i].arrivalTime : stops[j].arrivalTime,
+          departureTime: stops[i].departureTime > stops[j].departureTime ? stops[i].departureTime : stops[j].departureTime,
+          dwellMinutes: stops[i].dwellMinutes + stops[j].dwellMinutes,
+        }
+        merged.add(j)
+      }
+    }
+  }
+
+  // Collect surviving stops by their original index in `segments`
+  const survivingStops = new Map<StopCluster, StopCluster>()
+  let stopIdx = 0
+  for (const seg of segments) {
+    if (seg.type === 'stop') {
+      if (!merged.has(stopIdx)) {
+        survivingStops.set(seg, stops[stopIdx])
+      }
+      stopIdx++
+    }
+  }
+
+  // Rebuild segment list preserving transit order, replacing/removing stops
+  const result: Segment[] = []
+  const emitted = new Set<StopCluster>()
+  for (const seg of segments) {
+    if (seg.type === 'transit') {
+      result.push(seg)
+    } else if (survivingStops.has(seg)) {
+      const merged = survivingStops.get(seg)!
+      if (!emitted.has(merged)) {
+        result.push(merged)
+        emitted.add(merged)
+      }
+    }
+    // Absorbed stops are dropped
+  }
+
+  return result
 }
 
 function finalizeCluster(points: LocationPoint[], centroidLat: number, centroidLng: number): Segment {
