@@ -2,10 +2,10 @@
 
 import { Info } from 'lucide-react'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 interface FieldInfoProps {
   text: string
@@ -19,18 +19,22 @@ export function FieldInfo({
   maxWidth = 240,
 }: FieldInfoProps) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <button
           type="button"
           className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-muted-foreground"
         >
           <Info className="h-3.5 w-3.5" />
         </button>
-      </TooltipTrigger>
-      <TooltipContent side={side} style={{ maxWidth }}>
+      </PopoverTrigger>
+      <PopoverContent
+        side={side}
+        className="w-auto max-w-60 px-3 py-1.5 text-xs"
+        style={{ maxWidth }}
+      >
         <p>{text}</p>
-      </TooltipContent>
-    </Tooltip>
+      </PopoverContent>
+    </Popover>
   )
 }
