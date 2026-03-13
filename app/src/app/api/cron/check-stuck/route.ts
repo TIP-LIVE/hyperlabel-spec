@@ -81,8 +81,13 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      // If max movement is less than threshold, shipment is stuck
+      // If max movement is less than threshold, check if stuck long enough
       if (maxDistance < MOVEMENT_THRESHOLD_M) {
+        // Only alert if the shipment has been at the same spot for 48+ hours
+        const oldestTime = recentLocations[recentLocations.length - 1].recordedAt.getTime()
+        const newestTime = recentLocations[0].recordedAt.getTime()
+        const stuckDurationHours = (newestTime - oldestTime) / (60 * 60 * 1000)
+        if (stuckDurationHours < 48) continue
         // Check if we already sent a stuck notification in the last 48h
         const recentNotification = await db.notification.findFirst({
           where: {
