@@ -3,7 +3,7 @@
 import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView, Circle } from '@react-google-maps/api'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns'
 import { MapPin, LocateFixed, Radio } from 'lucide-react'
 import { isNullIsland } from '@/lib/validations/device'
 
@@ -110,6 +110,97 @@ const darkStyles: google.maps.MapTypeStyle[] = [
   },
 ]
 
+// ── Clustering utilities ──
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+interface StopCluster {
+  type: 'stop'
+  centroidLat: number
+  centroidLng: number
+  points: LocationPoint[]
+  arrivalTime: Date
+  departureTime: Date
+  dwellMinutes: number
+}
+
+interface TransitPoint {
+  type: 'transit'
+  point: LocationPoint
+}
+
+type Segment = StopCluster | TransitPoint
+
+const CLUSTER_RADIUS_KM = 1.0
+
+function clusterLocations(points: LocationPoint[]): Segment[] {
+  if (points.length === 0) return []
+
+  const segments: Segment[] = []
+  let clusterPoints: LocationPoint[] = [points[0]]
+  let centroidLat = points[0].latitude
+  let centroidLng = points[0].longitude
+
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i]
+    const dist = haversineKm(centroidLat, centroidLng, p.latitude, p.longitude)
+
+    if (dist <= CLUSTER_RADIUS_KM) {
+      clusterPoints.push(p)
+      const n = clusterPoints.length
+      centroidLat = ((centroidLat * (n - 1)) + p.latitude) / n
+      centroidLng = ((centroidLng * (n - 1)) + p.longitude) / n
+    } else {
+      // Finalize current cluster
+      segments.push(finalizeCluster(clusterPoints, centroidLat, centroidLng))
+      clusterPoints = [p]
+      centroidLat = p.latitude
+      centroidLng = p.longitude
+    }
+  }
+  // Finalize last cluster
+  segments.push(finalizeCluster(clusterPoints, centroidLat, centroidLng))
+
+  return segments
+}
+
+function finalizeCluster(points: LocationPoint[], centroidLat: number, centroidLng: number): Segment {
+  if (points.length === 1) {
+    return { type: 'transit', point: points[0] }
+  }
+  const arrival = new Date(points[0].recordedAt)
+  const departure = new Date(points[points.length - 1].recordedAt)
+  return {
+    type: 'stop',
+    centroidLat,
+    centroidLng,
+    points,
+    arrivalTime: arrival,
+    departureTime: departure,
+    dwellMinutes: differenceInMinutes(departure, arrival),
+  }
+}
+
+function formatDwell(minutes: number): string {
+  if (minutes < 1) return '<1m'
+  if (minutes < 60) return `${minutes}m`
+  if (minutes < 60 * 24) {
+    const h = minutes / 60
+    return h >= 10 ? `${Math.round(h)}h` : `${h.toFixed(1).replace(/\.0$/, '')}h`
+  }
+  const d = minutes / (60 * 24)
+  return d >= 10 ? `${Math.round(d)}d` : `${d.toFixed(1).replace(/\.0$/, '')}d`
+}
 
 export function TrackingMap({
   locations,
@@ -122,6 +213,7 @@ export function TrackingMap({
   height = '400px',
 }: TrackingMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null)
+  const [selectedCluster, setSelectedCluster] = useState<StopCluster | null>(null)
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null)
   const [legendOpen, setLegendOpen] = useState(false)
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
@@ -160,14 +252,35 @@ export function TrackingMap({
     return defaultCenter
   }, [latestLocation, hasDestination, destinationLat, destinationLng, hasOrigin, originLat, originLng])
 
-  // Build the full route path from actual GPS data points (oldest → newest)
-  const path = useMemo(() => {
-    const reversed = [...locations].reverse()
-    return reversed.map((loc) => ({ lat: loc.latitude, lng: loc.longitude }))
+  // Cluster sequential nearby points into stops
+  const segments = useMemo(() => {
+    if (locations.length <= 2) return [] // Skip clustering for 0-2 locations
+    const historical = [...locations.slice(1)].reverse() // oldest-first, exclude current
+    return clusterLocations(historical)
   }, [locations])
 
-  // The oldest location is the actual starting point
+  // Build simplified path connecting segment centroids + current location
+  const simplifiedPath = useMemo(() => {
+    if (segments.length === 0) {
+      // Fallback: raw path for 0-2 locations
+      const reversed = [...locations].reverse()
+      return reversed.map((loc) => ({ lat: loc.latitude, lng: loc.longitude }))
+    }
+    const path = segments.map((seg) =>
+      seg.type === 'stop'
+        ? { lat: seg.centroidLat, lng: seg.centroidLng }
+        : { lat: seg.point.latitude, lng: seg.point.longitude }
+    )
+    // Connect to current location
+    if (latestLocation) {
+      path.push({ lat: latestLocation.latitude, lng: latestLocation.longitude })
+    }
+    return path
+  }, [segments, locations, latestLocation])
+
+  // The oldest location / first segment for the start marker
   const oldestLocation = locations.length > 0 ? locations[locations.length - 1] : null
+  const firstSegment = segments.length > 0 ? segments[0] : null
 
   // Dashed line from current location to destination (remaining route)
   const remainingPath = useMemo(() => {
@@ -299,9 +412,9 @@ export function TrackingMap({
         options={mapOptions}
       >
         {/* ── Completed route: solid line with direction arrows ── */}
-        {path.length > 1 && (
+        {simplifiedPath.length > 1 && (
           <Polyline
-            path={path}
+            path={simplifiedPath}
             options={{
               strokeColor: isDark ? '#60a5fa' : '#3b82f6',
               strokeOpacity: 0.85,
@@ -348,10 +461,14 @@ export function TrackingMap({
           />
         )}
 
-        {/* ── Start marker (first actual GPS data point) ── */}
+        {/* ── Start marker (first actual GPS data point or first cluster centroid) ── */}
         {mapRef && oldestLocation && locations.length > 1 && (
           <OverlayView
-            position={{ lat: oldestLocation.latitude, lng: oldestLocation.longitude }}
+            position={
+              firstSegment?.type === 'stop'
+                ? { lat: firstSegment.centroidLat, lng: firstSegment.centroidLng }
+                : { lat: oldestLocation.latitude, lng: oldestLocation.longitude }
+            }
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
           >
             <div className="pointer-events-none flex flex-col items-center" style={{ transform: 'translate(-50%, -50%)' }}>
@@ -390,22 +507,83 @@ export function TrackingMap({
           </OverlayView>
         )}
 
-        {/* ── Historical location dots ── */}
-        {locations.slice(1).map((location) => (
-          <Marker
-            key={location.id}
-            position={{ lat: location.latitude, lng: location.longitude }}
-            onClick={() => setSelectedLocation(location)}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 5,
-              fillColor: isDark ? '#60a5fa' : '#3b82f6',
-              fillOpacity: 0.7,
-              strokeColor: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.9)',
-              strokeWeight: 2,
-            }}
-          />
-        ))}
+        {/* ── Clustered stop markers ── */}
+        {segments.length > 0
+          ? segments.map((seg, i) =>
+              seg.type === 'stop' ? (
+                <OverlayView
+                  key={`stop-${i}`}
+                  position={{ lat: seg.centroidLat, lng: seg.centroidLng }}
+                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                >
+                  <div
+                    className="flex cursor-pointer items-center justify-center"
+                    style={{ transform: 'translate(-50%, -50%)' }}
+                    onClick={() => {
+                      setSelectedCluster(seg)
+                      setSelectedLocation(null)
+                    }}
+                  >
+                    <div
+                      className="flex items-center justify-center rounded-full shadow-lg"
+                      style={{
+                        minWidth: 28,
+                        height: 28,
+                        padding: '0 8px',
+                        backgroundColor: isDark ? '#d97706' : '#f59e0b',
+                        border: '2.5px solid rgba(255,255,255,0.95)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#fff',
+                          lineHeight: 1,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {formatDwell(seg.dwellMinutes)}
+                      </span>
+                    </div>
+                  </div>
+                </OverlayView>
+              ) : (
+                <Marker
+                  key={`transit-${seg.point.id}`}
+                  position={{ lat: seg.point.latitude, lng: seg.point.longitude }}
+                  onClick={() => {
+                    setSelectedLocation(seg.point)
+                    setSelectedCluster(null)
+                  }}
+                  icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 4,
+                    fillColor: isDark ? '#60a5fa' : '#3b82f6',
+                    fillOpacity: 0.6,
+                    strokeColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)',
+                    strokeWeight: 1.5,
+                  }}
+                />
+              )
+            )
+          : /* Fallback: raw markers for ≤2 locations */
+            locations.slice(1).map((location) => (
+              <Marker
+                key={location.id}
+                position={{ lat: location.latitude, lng: location.longitude }}
+                onClick={() => setSelectedLocation(location)}
+                icon={{
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 5,
+                  fillColor: isDark ? '#60a5fa' : '#3b82f6',
+                  fillOpacity: 0.7,
+                  strokeColor: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.9)',
+                  strokeWeight: 2,
+                }}
+              />
+            ))}
 
         {/* ── Current location: pulsing blue dot ── */}
         {mapRef && latestLocation && (
@@ -562,7 +740,7 @@ export function TrackingMap({
           </OverlayView>
         )}
 
-        {/* ── Info window for clicked location ── */}
+        {/* ── Info window for clicked single location ── */}
         {selectedLocation && (
           <InfoWindow
             position={{ lat: selectedLocation.latitude, lng: selectedLocation.longitude }}
@@ -619,6 +797,59 @@ export function TrackingMap({
             </div>
           </InfoWindow>
         )}
+
+        {/* ── Info window for clicked stop cluster ── */}
+        {selectedCluster && (
+          <InfoWindow
+            position={{ lat: selectedCluster.centroidLat, lng: selectedCluster.centroidLng }}
+            onCloseClick={() => setSelectedCluster(null)}
+            options={{ maxWidth: 300 }}
+          >
+            <div style={{ padding: '4px 2px', fontFamily: 'system-ui, sans-serif' }}>
+              <div
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#92400e',
+                  marginBottom: '6px',
+                }}
+              >
+                Stopped for {formatDwell(selectedCluster.dwellMinutes)}
+              </div>
+              <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                {format(new Date(selectedCluster.arrivalTime), 'PPp')}
+                {' '}&#8594;{' '}
+                {format(new Date(selectedCluster.departureTime), 'p')}
+              </div>
+              <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                {selectedCluster.points.length} location readings
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  fontSize: '12px',
+                  color: '#6b7280',
+                }}
+              >
+                {(() => {
+                  const batteries = selectedCluster.points
+                    .map((p) => p.batteryPct)
+                    .filter((b): b is number => b !== null)
+                  if (batteries.length > 0) {
+                    const min = Math.min(...batteries)
+                    const max = Math.max(...batteries)
+                    return <span>🔋 {min === max ? `${min}%` : `${min}% - ${max}%`}</span>
+                  }
+                  return null
+                })()}
+                <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
+                  {selectedCluster.centroidLat.toFixed(5)}, {selectedCluster.centroidLng.toFixed(5)}
+                </span>
+              </div>
+            </div>
+          </InfoWindow>
+        )}
       </GoogleMap>
 
       {/* ── Map legend (collapsible) ── */}
@@ -639,6 +870,12 @@ export function TrackingMap({
               <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
               <span className="text-muted-foreground">Current</span>
             </div>
+            {segments.some((s) => s.type === 'stop') && (
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="text-muted-foreground">Stop</span>
+              </div>
+            )}
             {hasDestination && (
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-full bg-orange-500" />
