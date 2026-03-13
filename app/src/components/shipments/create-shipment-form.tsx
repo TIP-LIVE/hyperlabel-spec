@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import { AddressInput } from '@/components/ui/address-input'
 import { FieldInfo } from '@/components/ui/field-info'
+import { SectionCard } from '@/components/ui/section-card'
 import { QrScanner } from '@/components/shipments/qr-scanner'
 import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
 
@@ -403,62 +404,65 @@ function CargoTrackingForm({
   const firstAnalysis = photos.find((p) => p.analysis)?.analysis
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Cargo Name / ID */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Label htmlFor="name">Cargo Name / ID</Label>
-          <FieldInfo text="Include cargo reference or invoice number to identify shipments on your dashboard." />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Cargo Essentials */}
+      <SectionCard icon={Package} title="Cargo Essentials">
+        {/* Cargo Name / ID */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="name">Cargo Name / ID</Label>
+            <FieldInfo text="Include cargo reference or invoice number to identify shipments on your dashboard." />
+          </div>
+          <Input id="name" placeholder="e.g., Electronics — INV-2024-001" {...register('name')} />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
-        <Input id="name" placeholder="e.g., Electronics — INV-2024-001" {...register('name')} />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-      </div>
 
-      {/* Label Selection */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="labelId">Tracking Label</Label>
-          {!labelsLoading && labels.length > 0 && (
-            <QrScanner onDeviceIdScanned={handleQrScanned} />
+        {/* Label Selection */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="labelId">Tracking Label</Label>
+            {!labelsLoading && labels.length > 0 && (
+              <QrScanner onDeviceIdScanned={handleQrScanned} />
+            )}
+          </div>
+          {labelsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading available labels...
+            </div>
+          ) : labels.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-4 text-center">
+              <Package className="mx-auto h-8 w-8 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">
+                No available labels. Purchase labels first.
+              </p>
+              <Button variant="outline" className="mt-3" asChild>
+                <a href="/buy">Buy Labels</a>
+              </Button>
+            </div>
+          ) : (
+            <Select
+              value={selectedLabelId}
+              onValueChange={(value) => setValue('labelId', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a label" />
+              </SelectTrigger>
+              <SelectContent>
+                {labels.map((label) => (
+                  <SelectItem key={label.id} value={label.id}>
+                    {label.deviceId}
+                    {label.batteryPct !== null && ` (${label.batteryPct}% battery)`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {errors.labelId && (
+            <p className="text-sm text-destructive">{errors.labelId.message}</p>
           )}
         </div>
-        {labelsLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading available labels...
-          </div>
-        ) : labels.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-4 text-center">
-            <Package className="mx-auto h-8 w-8 text-muted-foreground/50" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              No available labels. Purchase labels first.
-            </p>
-            <Button variant="outline" className="mt-3" asChild>
-              <a href="/buy">Buy Labels</a>
-            </Button>
-          </div>
-        ) : (
-          <Select
-            value={selectedLabelId}
-            onValueChange={(value) => setValue('labelId', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a label" />
-            </SelectTrigger>
-            <SelectContent>
-              {labels.map((label) => (
-                <SelectItem key={label.id} value={label.id}>
-                  {label.deviceId}
-                  {label.batteryPct !== null && ` (${label.batteryPct}% battery)`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {errors.labelId && (
-          <p className="text-sm text-destructive">{errors.labelId.message}</p>
-        )}
-      </div>
+      </SectionCard>
 
       {/* Route Details */}
       <RouteSection
@@ -468,13 +472,9 @@ function CargoTrackingForm({
         onDestinationSelect={handleDestinationSelect}
       />
 
-      {/* Consignee */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Mail className="h-4 w-4" />
-          Notify Consignee
-        </div>
-        <div className="space-y-2">
+      {/* Notify Consignee */}
+      <SectionCard icon={Mail} title="Notify Consignee" badge="Optional">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
             <Label htmlFor="consigneeEmail">Consignee Email</Label>
             <FieldInfo text="Optional — we'll send them a real-time tracking link so they can follow the delivery." />
@@ -489,7 +489,7 @@ function CargoTrackingForm({
             <p className="text-sm text-destructive">{errors.consigneeEmail.message}</p>
           )}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
             <Label htmlFor="consigneePhone">Consignee Phone</Label>
             <FieldInfo text="Optional phone number for the recipient." />
@@ -501,18 +501,10 @@ function CargoTrackingForm({
             {...register('consigneePhone')}
           />
         </div>
-      </div>
+      </SectionCard>
 
       {/* Cargo Photos */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Label>Cargo Photos</Label>
-          <FieldInfo
-            text="Document your cargo before shipping. AI will automatically analyze the photo for cargo type, label visibility, and hazards."
-            maxWidth={320}
-          />
-          <span className="text-xs text-muted-foreground">(optional, max 5)</span>
-        </div>
+      <SectionCard icon={Camera} title="Cargo Photos" badge="Optional, max 5">
 
         {photos.length > 0 && (
           <div className="flex flex-wrap gap-3">
@@ -629,11 +621,10 @@ function CargoTrackingForm({
           onChange={handlePhotoSelect}
           className="hidden"
         />
-
-      </div>
+      </SectionCard>
 
       {/* Submit */}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"
@@ -748,29 +739,30 @@ function LabelDispatchForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Dispatch Name */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Label htmlFor="dispatch-name">Dispatch Name</Label>
-          <FieldInfo text="A name to identify this label dispatch on your dashboard." />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Dispatch Details */}
+      <SectionCard icon={Send} title="Dispatch Details">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="dispatch-name">Dispatch Name</Label>
+            <FieldInfo text="A name to identify this label dispatch on your dashboard." />
+          </div>
+          <Input
+            id="dispatch-name"
+            placeholder="e.g., Labels for Berlin Warehouse"
+            {...register('name')}
+          />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
-        <Input
-          id="dispatch-name"
-          placeholder="e.g., Labels for Berlin Warehouse"
-          {...register('name')}
-        />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-      </div>
 
-      {/* Multi-Label Selector */}
-      <div className="space-y-2">
-        <Label>Labels to Dispatch</Label>
-        <MultiLabelSelector
-          selectedIds={selectedLabelIds}
-          onChange={setSelectedLabelIds}
-        />
-      </div>
+        <div className="space-y-1.5">
+          <Label>Labels to Dispatch</Label>
+          <MultiLabelSelector
+            selectedIds={selectedLabelIds}
+            onChange={setSelectedLabelIds}
+          />
+        </div>
+      </SectionCard>
 
       {/* Route Details */}
       <RouteSection
@@ -781,7 +773,7 @@ function LabelDispatchForm({
       />
 
       {/* Submit */}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"
@@ -822,45 +814,36 @@ function RouteSection({
   onDestinationSelect: (address: string, lat: number, lng: number) => void
 }) {
   return (
-    <>
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Navigation className="h-4 w-4" />
-          Route Details
+    <SectionCard icon={Navigation} title="Route Details" badge="Optional">
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="origin">Origin Address</Label>
+          <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
         </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="origin">Origin Address (optional)</Label>
-            <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
-          </div>
-          <AddressInput
-            id="origin"
-            placeholder="e.g., 45 Warehouse Rd, London, UK"
-            onAddressSelect={onOriginSelect}
-          />
-          {errors.originAddress && (
-            <p className="text-sm text-destructive">{errors.originAddress.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="destination">Destination Address (optional)</Label>
-            <FieldInfo text="Destination for route tracking and delivery detection." />
-          </div>
-          <AddressInput
-            id="destination"
-            placeholder="e.g., 123 Main St, Berlin, Germany"
-            onAddressSelect={onDestinationSelect}
-          />
-          {errors.destinationAddress && (
-            <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
-          )}
-        </div>
+        <AddressInput
+          id="origin"
+          placeholder="e.g., 45 Warehouse Rd, London, UK"
+          onAddressSelect={onOriginSelect}
+        />
+        {errors.originAddress && (
+          <p className="text-sm text-destructive">{errors.originAddress.message}</p>
+        )}
       </div>
 
-      {/* Hidden coordinate fields (managed via setValue, not DOM inputs) */}
-    </>
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="destination">Destination Address</Label>
+          <FieldInfo text="Destination for route tracking and delivery detection." />
+        </div>
+        <AddressInput
+          id="destination"
+          placeholder="e.g., 123 Main St, Berlin, Germany"
+          onAddressSelect={onDestinationSelect}
+        />
+        {errors.destinationAddress && (
+          <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
+        )}
+      </div>
+    </SectionCard>
   )
 }

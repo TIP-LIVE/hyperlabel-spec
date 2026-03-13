@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CreateDispatchForm } from '@/components/dispatch/create-dispatch-form'
 import type { Metadata } from 'next'
 
@@ -9,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function NewDispatchPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 pb-10">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">New Label Dispatch</h1>
         <p className="text-muted-foreground">
@@ -17,17 +16,7 @@ export default function NewDispatchPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Dispatch Details</CardTitle>
-          <CardDescription>
-            Configure your label dispatch details below
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CreateDispatchForm />
-        </CardContent>
-      </Card>
+      <CreateDispatchForm />
     </div>
   )
 }

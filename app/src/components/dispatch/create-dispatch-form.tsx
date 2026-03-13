@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Loader2, Navigation } from 'lucide-react'
+import { Loader2, Navigation, Send } from 'lucide-react'
 import { FieldInfo } from '@/components/ui/field-info'
+import { SectionCard } from '@/components/ui/section-card'
 import { AddressInput } from '@/components/ui/address-input'
 import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
 
@@ -116,40 +117,38 @@ export function CreateDispatchForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Dispatch Name */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Label htmlFor="dispatch-name">Dispatch Name</Label>
-          <FieldInfo text="A name to identify this label dispatch on your dashboard." />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Dispatch Details */}
+      <SectionCard icon={Send} title="Dispatch Details">
+        {/* Dispatch Name */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="dispatch-name">Dispatch Name</Label>
+            <FieldInfo text="A name to identify this label dispatch on your dashboard." />
+          </div>
+          <Input
+            id="dispatch-name"
+            placeholder="e.g., Labels for Berlin Warehouse"
+            {...register('name')}
+          />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
-        <Input
-          id="dispatch-name"
-          placeholder="e.g., Labels for Berlin Warehouse"
-          {...register('name')}
-        />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-      </div>
 
-      {/* Multi-Label Selector */}
-      <div className="space-y-2">
-        <Label>Labels to Dispatch</Label>
-        <MultiLabelSelector
-          selectedIds={selectedLabelIds}
-          onChange={setSelectedLabelIds}
-        />
-      </div>
+        {/* Multi-Label Selector */}
+        <div className="space-y-1.5">
+          <Label>Labels to Dispatch</Label>
+          <MultiLabelSelector
+            selectedIds={selectedLabelIds}
+            onChange={setSelectedLabelIds}
+          />
+        </div>
+      </SectionCard>
 
       {/* Route Details */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Navigation className="h-4 w-4" />
-          Route Details
-        </div>
-
-        <div className="space-y-2">
+      <SectionCard icon={Navigation} title="Route Details" badge="Optional">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
-            <Label htmlFor="origin">Origin Address (optional)</Label>
+            <Label htmlFor="origin">Origin Address</Label>
             <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
           </div>
           <AddressInput
@@ -162,9 +161,9 @@ export function CreateDispatchForm() {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
-            <Label htmlFor="destination">Destination Address (optional)</Label>
+            <Label htmlFor="destination">Destination Address</Label>
             <FieldInfo text="Destination for route tracking and delivery detection." />
           </div>
           <AddressInput
@@ -176,10 +175,10 @@ export function CreateDispatchForm() {
             <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
           )}
         </div>
-      </div>
+      </SectionCard>
 
       {/* Submit */}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"

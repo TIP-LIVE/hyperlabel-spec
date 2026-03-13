@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { FieldInfo } from '@/components/ui/field-info'
+import { SectionCard } from '@/components/ui/section-card'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -84,34 +85,6 @@ type CargoAnalysis = {
   cargoCondition: 'good' | 'damaged' | 'unknown'
   confidence: number
   summary: string
-}
-
-
-function SectionCard({
-  icon: Icon,
-  title,
-  badge,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  badge?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-xl border bg-card">
-      <div className="flex items-center gap-2 border-b px-5 py-3">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{title}</span>
-        {badge && (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {badge}
-          </span>
-        )}
-      </div>
-      <div className="space-y-4 p-5">{children}</div>
-    </div>
-  )
 }
 
 export function CreateCargoForm() {
