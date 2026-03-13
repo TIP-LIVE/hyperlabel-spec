@@ -1,7 +1,7 @@
 'use client'
 
 import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView, Circle } from '@react-google-maps/api'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns'
 import { MapPin, LocateFixed, Radio } from 'lucide-react'
@@ -132,7 +132,6 @@ interface StopCluster {
   arrivalTime: Date
   departureTime: Date
   dwellMinutes: number
-  radiusM: number
 }
 
 interface TransitPoint {
@@ -196,17 +195,14 @@ function mergeNearbyClusters(segments: Segment[]): Segment[] {
         // Absorb j into i
         const allPoints = [...stops[i].points, ...stops[j].points]
         const n = allPoints.length
-        const newCentroidLat = allPoints.reduce((s, p) => s + p.latitude, 0) / n
-        const newCentroidLng = allPoints.reduce((s, p) => s + p.longitude, 0) / n
         stops[i] = {
           type: 'stop',
-          centroidLat: newCentroidLat,
-          centroidLng: newCentroidLng,
+          centroidLat: allPoints.reduce((s, p) => s + p.latitude, 0) / n,
+          centroidLng: allPoints.reduce((s, p) => s + p.longitude, 0) / n,
           points: allPoints,
           arrivalTime: stops[i].arrivalTime < stops[j].arrivalTime ? stops[i].arrivalTime : stops[j].arrivalTime,
           departureTime: stops[i].departureTime > stops[j].departureTime ? stops[i].departureTime : stops[j].departureTime,
           dwellMinutes: stops[i].dwellMinutes + stops[j].dwellMinutes,
-          radiusM: clusterRadiusM(allPoints, newCentroidLat, newCentroidLng),
         }
         merged.add(j)
       }
@@ -244,15 +240,6 @@ function mergeNearbyClusters(segments: Segment[]): Segment[] {
   return result
 }
 
-function clusterRadiusM(points: LocationPoint[], centroidLat: number, centroidLng: number): number {
-  let maxKm = 0
-  for (const p of points) {
-    const d = haversineKm(centroidLat, centroidLng, p.latitude, p.longitude)
-    if (d > maxKm) maxKm = d
-  }
-  return maxKm * 1000 // km → meters
-}
-
 function finalizeCluster(points: LocationPoint[], centroidLat: number, centroidLng: number): Segment {
   if (points.length === 1) {
     return { type: 'transit', point: points[0] }
@@ -267,7 +254,6 @@ function finalizeCluster(points: LocationPoint[], centroidLat: number, centroidL
     arrivalTime: arrival,
     departureTime: departure,
     dwellMinutes: differenceInMinutes(departure, arrival),
-    radiusM: clusterRadiusM(points, centroidLat, centroidLng),
   }
 }
 
@@ -591,35 +577,22 @@ export function TrackingMap({
         {segments.length > 0
           ? segments.map((seg, i) =>
               seg.type === 'stop' ? (
-                <React.Fragment key={`stop-${i}`}>
-                  <Circle
-                    center={{ lat: seg.centroidLat, lng: seg.centroidLng }}
-                    radius={seg.radiusM || 50}
-                    options={{
-                      fillColor: isDark ? '#60a5fa' : '#3b82f6',
-                      fillOpacity: 0.08,
-                      strokeColor: isDark ? '#60a5fa' : '#3b82f6',
-                      strokeOpacity: 0.3,
-                      strokeWeight: 1.5,
-                      clickable: false,
-                    }}
-                  />
-                  <Marker
-                    position={{ lat: seg.centroidLat, lng: seg.centroidLng }}
-                    onClick={() => {
-                      setSelectedCluster(seg)
-                      setSelectedLocation(null)
-                    }}
-                    icon={{
-                      path: google.maps.SymbolPath.CIRCLE,
-                      scale: 5,
-                      fillColor: isDark ? '#60a5fa' : '#3b82f6',
-                      fillOpacity: 0.7,
-                      strokeColor: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.9)',
-                      strokeWeight: 2,
-                    }}
-                  />
-                </React.Fragment>
+                <Marker
+                  key={`stop-${i}`}
+                  position={{ lat: seg.centroidLat, lng: seg.centroidLng }}
+                  onClick={() => {
+                    setSelectedCluster(seg)
+                    setSelectedLocation(null)
+                  }}
+                  icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 4,
+                    fillColor: isDark ? '#60a5fa' : '#3b82f6',
+                    fillOpacity: 0.6,
+                    strokeColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)',
+                    strokeWeight: 1.5,
+                  }}
+                />
               ) : (
                 <Marker
                   key={`transit-${seg.point.id}`}
