@@ -83,8 +83,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Prevent updates to delivered or cancelled shipments
-    if (existing.status === 'DELIVERED' || existing.status === 'CANCELLED') {
+    // Block non-status edits on delivered/cancelled shipments
+    if ((existing.status === 'DELIVERED' || existing.status === 'CANCELLED') && !validated.data.status) {
       return NextResponse.json(
         { error: `Cannot update a ${existing.status.toLowerCase()} shipment` },
         { status: 400 }
@@ -96,6 +96,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       const allowedTransitions: Record<string, string[]> = {
         PENDING: ['IN_TRANSIT', 'CANCELLED'],
         IN_TRANSIT: ['CANCELLED'],
+        DELIVERED: ['IN_TRANSIT'],
+        CANCELLED: [],
       }
       const allowed = allowedTransitions[existing.status] || []
       if (!allowed.includes(validated.data.status)) {
