@@ -129,8 +129,8 @@ export type OnomonodoConnectorInput = z.infer<typeof onomondoConnectorSchema>
  * cannot be determined.
  */
 export const onomondoLocationUpdateSchema = z.object({
-  type: z.literal('location'),
-  imei: z.string().min(1),
+  type: z.string().default('location'),
+  imei: z.coerce.string().default(''),
   iccid: z.string().min(1),
   sim_id: z.coerce.string(),
   location: z.object({
@@ -150,8 +150,8 @@ export const onomondoLocationUpdateSchema = z.object({
   network_type: z.coerce.string(),
   sim_label: z.coerce.string(),
   time: z.coerce.string(),
-  ipv4: z.coerce.string(),
-  session_id: z.coerce.string(),
-})
+  ipv4: z.coerce.string().default(''),
+  session_id: z.coerce.string().default(''),
+}).passthrough()
 
 export type OnomonodoLocationUpdateInput = z.infer<typeof onomondoLocationUpdateSchema>
