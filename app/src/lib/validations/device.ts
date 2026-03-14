@@ -134,9 +134,9 @@ export const onomondoLocationUpdateSchema = z.object({
   iccid: z.string().min(1),
   sim_id: z.coerce.string(),
   location: z.object({
-    cell_id: z.number(),
-    location_area_code: z.number().nullable(),
-    accuracy: z.number().nullable(),
+    cell_id: z.coerce.number(),
+    location_area_code: z.coerce.number().nullable(),
+    accuracy: z.coerce.number().nullable(),
     lat: z.union([z.string(), z.number()]).nullable().transform((v) => (v === null ? null : String(v))),
     lng: z.union([z.string(), z.number()]).nullable().transform((v) => (v === null ? null : String(v))),
   }),

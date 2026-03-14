@@ -59,6 +59,7 @@ export async function resolveCellTowerLocation(
     const res = await fetch(`${GOOGLE_GEOLOCATION_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(3000),
       body: JSON.stringify({
         cellTowers: [
           {
