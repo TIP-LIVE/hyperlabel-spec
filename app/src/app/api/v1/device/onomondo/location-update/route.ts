@@ -77,34 +77,37 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
-    // Only process "location" type events
-    if (data.type !== 'location') {
-      console.info('[webhook:location-update] skipped non-location type', { type: data.type })
+    // Only process "location" type events (other types like network-registration,
+    // network-authentication, usage etc. are accepted but skipped)
+    if (data.type !== 'location' || !data.location) {
+      console.info('[webhook:location-update] skipped non-location type', { type: data.type, simLabel: data.sim_label })
       return NextResponse.json({ success: true, skipped: true, reason: `Ignored type: ${data.type}` })
     }
+
+    const loc = data.location
 
     console.info('[webhook:location-update] received', {
       iccid: data.iccid,
       imei: data.imei,
       simLabel: data.sim_label,
-      lat: data.location.lat,
-      lng: data.location.lng,
+      lat: loc.lat,
+      lng: loc.lng,
     })
 
     // Process synchronously — DB ops are fast, only defer geocoding
     const mcc = parseInt(data.network.mcc, 10)
     const mnc = parseInt(data.network.mnc, 10)
-    const lac = data.location.location_area_code
-    const cid = data.location.cell_id
+    const lac = loc.location_area_code
+    const cid = loc.cell_id
 
     let lat: number | null = null
     let lng: number | null = null
-    let accuracy: number | undefined = data.location.accuracy ?? undefined
+    let accuracy: number | undefined = loc.accuracy ?? undefined
 
     // Try Onomondo-provided coordinates first
-    if (data.location.lat !== null && data.location.lng !== null) {
-      const parsedLat = parseFloat(data.location.lat)
-      const parsedLng = parseFloat(data.location.lng)
+    if (loc.lat !== null && loc.lng !== null) {
+      const parsedLat = parseFloat(loc.lat)
+      const parsedLng = parseFloat(loc.lng)
       if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
         lat = parsedLat
         lng = parsedLng
@@ -141,7 +144,7 @@ export async function POST(req: NextRequest) {
         iccid: data.iccid,
         simLabel: data.sim_label,
         cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
-        onomondoLatNull: data.location.lat === null,
+        onomondoLatNull: loc.lat === null,
       })
       return NextResponse.json({ success: true, skipped: true, reason: 'No coordinates available' })
     }
