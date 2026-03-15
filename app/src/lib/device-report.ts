@@ -77,6 +77,9 @@ export interface LocationReportInput {
 
   isOfflineSync?: boolean
   source?: 'GPS' | 'CELL_TOWER'
+
+  /** Skip reverse geocoding (caller will handle it asynchronously). */
+  skipGeocode?: boolean
 }
 
 export interface LocationReportResult {
@@ -331,22 +334,24 @@ export async function processLocationReport(
   }
 
   // Reverse-geocode the location and persist on the record
-  try {
-    const geo = await reverseGeocode(effectiveLat, effectiveLng)
-    if (geo) {
-      await db.locationEvent.update({
-        where: { id: locationEvent.id },
-        data: {
-          geocodedCity: geo.city,
-          geocodedArea: geo.area,
-          geocodedCountry: geo.country,
-          geocodedCountryCode: geo.countryCode,
-        },
-      })
+  if (!input.skipGeocode) {
+    try {
+      const geo = await reverseGeocode(effectiveLat, effectiveLng)
+      if (geo) {
+        await db.locationEvent.update({
+          where: { id: locationEvent.id },
+          data: {
+            geocodedCity: geo.city,
+            geocodedArea: geo.area,
+            geocodedCountry: geo.country,
+            geocodedCountryCode: geo.countryCode,
+          },
+        })
+      }
+    } catch (err) {
+      // Geocoding failure should never block location ingest
+      console.warn('[Device report] geocoding failed:', err)
     }
-  } catch (err) {
-    // Geocoding failure should never block location ingest
-    console.warn('[Device report] geocoding failed:', err)
   }
 
   // Update label: lastSeenAt always, battery if provided
@@ -467,6 +472,33 @@ export async function processLocationReport(
     locationId: locationEvent.id,
     shipmentId: activeShipment?.id || null,
     deviceId: label.deviceId,
+  }
+}
+
+/**
+ * Geocode a previously-created LocationEvent.
+ * Intended to be called from after() so geocoding doesn't block the webhook response.
+ */
+export async function geocodeLocationEvent(
+  locationId: string,
+  latitude: number,
+  longitude: number
+): Promise<void> {
+  try {
+    const geo = await reverseGeocode(latitude, longitude)
+    if (geo) {
+      await db.locationEvent.update({
+        where: { id: locationId },
+        data: {
+          geocodedCity: geo.city,
+          geocodedArea: geo.area,
+          geocodedCountry: geo.country,
+          geocodedCountryCode: geo.countryCode,
+        },
+      })
+    }
+  } catch (err) {
+    console.warn('[Device report] deferred geocoding failed:', err)
   }
 }
 

@@ -3,6 +3,7 @@ import { onomondoLocationUpdateSchema } from '@/lib/validations/device'
 import {
   processLocationReport,
   shouldSkipDuplicateLocation,
+  geocodeLocationEvent,
 } from '@/lib/device-report'
 import {
   rateLimit,
@@ -90,95 +91,100 @@ export async function POST(req: NextRequest) {
       lng: data.location.lng,
     })
 
-    // Return 200 immediately — process in background to avoid 1000ms timeout
-    after(async () => {
-      try {
-        const mcc = parseInt(data.network.mcc, 10)
-        const mnc = parseInt(data.network.mnc, 10)
-        const lac = data.location.location_area_code
-        const cid = data.location.cell_id
+    // Process synchronously — DB ops are fast, only defer geocoding
+    const mcc = parseInt(data.network.mcc, 10)
+    const mnc = parseInt(data.network.mnc, 10)
+    const lac = data.location.location_area_code
+    const cid = data.location.cell_id
 
-        let lat: number | null = null
-        let lng: number | null = null
-        let accuracy: number | undefined = data.location.accuracy ?? undefined
+    let lat: number | null = null
+    let lng: number | null = null
+    let accuracy: number | undefined = data.location.accuracy ?? undefined
 
-        // Try Onomondo-provided coordinates first
-        if (data.location.lat !== null && data.location.lng !== null) {
-          const parsedLat = parseFloat(data.location.lat)
-          const parsedLng = parseFloat(data.location.lng)
-          if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
-            lat = parsedLat
-            lng = parsedLng
-          }
-        }
-
-        // Fallback: resolve cell tower coordinates via Google Geolocation API
-        if (lat === null || lng === null) {
-          if (lac !== null && !isNaN(mcc) && !isNaN(mnc)) {
-            const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
-            if (resolved) {
-              lat = resolved.lat
-              lng = resolved.lng
-              accuracy = resolved.accuracyM
-              console.info('[webhook:location-update] resolved via cell tower geolocation', {
-                iccid: data.iccid,
-                cell: `${mcc}:${mnc}:${lac}:${cid}`,
-                lat,
-                lng,
-                accuracyM: accuracy,
-              })
-            }
-          }
-        }
-
-        // If still no coordinates, skip
-        if (lat === null || lng === null) {
-          console.info('[webhook:location-update] skipped — no coordinates', {
-            iccid: data.iccid,
-            simLabel: data.sim_label,
-            cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
-            onomondoLatNull: data.location.lat === null,
-          })
-          return
-        }
-
-        // Dedup: skip if a recent event already exists nearby for this label
-        const shouldSkip = await shouldSkipDuplicateLocation({
-          iccid: data.iccid,
-          latitude: lat,
-          longitude: lng,
-          source: 'CELL_TOWER',
-        })
-
-        if (shouldSkip) {
-          // Device is online but location is duplicate — still record the heartbeat
-          await db.label.update({
-            where: { iccid: data.iccid },
-            data: { lastSeenAt: new Date() },
-          })
-          console.info('[webhook:location-update] dedup skip', {
-            iccid: data.iccid,
-            lat,
-            lng,
-          })
-          return
-        }
-
-        await processLocationReport({
-          iccid: data.iccid,
-          imei: data.imei || undefined,
-          cellLatitude: lat,
-          cellLongitude: lng,
-          accuracy,
-          recordedAt: data.time,
-          source: 'CELL_TOWER',
-        })
-      } catch (error) {
-        console.error('[webhook:location-update] background processing error:', error)
+    // Try Onomondo-provided coordinates first
+    if (data.location.lat !== null && data.location.lng !== null) {
+      const parsedLat = parseFloat(data.location.lat)
+      const parsedLng = parseFloat(data.location.lng)
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        lat = parsedLat
+        lng = parsedLng
       }
+    }
+
+    // Fallback: resolve cell tower coordinates via Google Geolocation API
+    // This external call is fast (~100-200ms) and critical for getting any location
+    if (lat === null || lng === null) {
+      if (lac !== null && !isNaN(mcc) && !isNaN(mnc)) {
+        try {
+          const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
+          if (resolved) {
+            lat = resolved.lat
+            lng = resolved.lng
+            accuracy = resolved.accuracyM
+            console.info('[webhook:location-update] resolved via cell tower geolocation', {
+              iccid: data.iccid,
+              cell: `${mcc}:${mnc}:${lac}:${cid}`,
+              lat,
+              lng,
+              accuracyM: accuracy,
+            })
+          }
+        } catch (err) {
+          console.warn('[webhook:location-update] cell tower geolocation failed:', err)
+        }
+      }
+    }
+
+    // If still no coordinates, skip
+    if (lat === null || lng === null) {
+      console.info('[webhook:location-update] skipped — no coordinates', {
+        iccid: data.iccid,
+        simLabel: data.sim_label,
+        cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
+        onomondoLatNull: data.location.lat === null,
+      })
+      return NextResponse.json({ success: true, skipped: true, reason: 'No coordinates available' })
+    }
+
+    // Dedup: skip if a recent event already exists nearby for this label
+    const shouldSkip = await shouldSkipDuplicateLocation({
+      iccid: data.iccid,
+      latitude: lat,
+      longitude: lng,
+      source: 'CELL_TOWER',
     })
 
-    return NextResponse.json({ success: true, queued: true })
+    if (shouldSkip) {
+      // Device is online but location is duplicate — still record the heartbeat
+      await db.label.update({
+        where: { iccid: data.iccid },
+        data: { lastSeenAt: new Date() },
+      })
+      console.info('[webhook:location-update] dedup skip', {
+        iccid: data.iccid,
+        lat,
+        lng,
+      })
+      return NextResponse.json({ success: true, skipped: true, reason: 'Duplicate location' })
+    }
+
+    const result = await processLocationReport({
+      iccid: data.iccid,
+      imei: data.imei || undefined,
+      cellLatitude: lat,
+      cellLongitude: lng,
+      accuracy,
+      recordedAt: data.time,
+      source: 'CELL_TOWER',
+      skipGeocode: true,
+    })
+
+    // Defer only geocoding to after() — non-critical
+    after(async () => {
+      await geocodeLocationEvent(result.locationId, lat!, lng!)
+    })
+
+    return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[webhook:location-update] error:', error)
     return NextResponse.json(

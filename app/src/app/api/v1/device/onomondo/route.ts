@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { onomondoConnectorSchema } from '@/lib/validations/device'
 import {
   processLocationReport,
+  geocodeLocationEvent,
 } from '@/lib/device-report'
 import {
   rateLimit,
@@ -75,48 +76,63 @@ export async function POST(req: NextRequest) {
       offlineQueue: data.offline_queue?.length ?? 0,
     })
 
-    // Return 200 immediately — process in background to avoid 1000ms timeout
-    after(async () => {
-      try {
-        // Process the main report
-        await processLocationReport({
-          iccid: data.iccid,
-          imei: data.imei,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          battery: data.battery,
-          recordedAt: data.timestamp,
-          cellLatitude: data.onomondo_latitude,
-          cellLongitude: data.onomondo_longitude,
-        })
-
-        // Process offline queue — each entry becomes its own LocationEvent
-        if (data.offline_queue && data.offline_queue.length > 0) {
-          for (const entry of data.offline_queue) {
-            try {
-              await processLocationReport({
-                iccid: data.iccid,
-                imei: data.imei,
-                latitude: entry.latitude,
-                longitude: entry.longitude,
-                battery: entry.battery_pct,
-                recordedAt: entry.timestamp,
-                isOfflineSync: true,
-              })
-            } catch (err) {
-              console.warn(
-                '[webhook:onomondo] failed to process offline entry:',
-                err
-              )
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[webhook:onomondo] background processing error:', error)
-      }
+    // Process synchronously (DB ops are fast) — skip geocoding to stay under 1000ms
+    const result = await processLocationReport({
+      iccid: data.iccid,
+      imei: data.imei,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      battery: data.battery,
+      recordedAt: data.timestamp,
+      cellLatitude: data.onomondo_latitude,
+      cellLongitude: data.onomondo_longitude,
+      skipGeocode: true,
     })
 
-    return NextResponse.json({ success: true, queued: true })
+    // Collect location IDs for deferred geocoding
+    const toGeocode: { id: string; lat: number; lng: number }[] = []
+    const effectiveLat = data.latitude ?? data.onomondo_latitude
+    const effectiveLng = data.longitude ?? data.onomondo_longitude
+    if (effectiveLat != null && effectiveLng != null) {
+      toGeocode.push({ id: result.locationId, lat: effectiveLat, lng: effectiveLng })
+    }
+
+    // Process offline queue synchronously too
+    if (data.offline_queue && data.offline_queue.length > 0) {
+      for (const entry of data.offline_queue) {
+        try {
+          const offlineResult = await processLocationReport({
+            iccid: data.iccid,
+            imei: data.imei,
+            latitude: entry.latitude,
+            longitude: entry.longitude,
+            battery: entry.battery_pct,
+            recordedAt: entry.timestamp,
+            isOfflineSync: true,
+            skipGeocode: true,
+          })
+          if (entry.latitude != null && entry.longitude != null) {
+            toGeocode.push({ id: offlineResult.locationId, lat: entry.latitude, lng: entry.longitude })
+          }
+        } catch (err) {
+          console.warn(
+            '[webhook:onomondo] failed to process offline entry:',
+            err
+          )
+        }
+      }
+    }
+
+    // Defer geocoding to after() — non-critical, can fail without data loss
+    if (toGeocode.length > 0) {
+      after(async () => {
+        for (const loc of toGeocode) {
+          await geocodeLocationEvent(loc.id, loc.lat, loc.lng)
+        }
+      })
+    }
+
+    return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[Onomondo connector] error:', error)
     return NextResponse.json(
