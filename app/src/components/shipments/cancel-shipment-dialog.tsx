@@ -21,10 +21,15 @@ interface CancelShipmentDialogProps {
   shipmentId: string
   shipmentName: string | null
   apiBasePath?: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '/api/v1/shipments' }: CancelShipmentDialogProps) {
-  const [open, setOpen] = useState(false)
+export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '/api/v1/shipments', open: controlledOpen, onOpenChange }: CancelShipmentDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? (onOpenChange ?? (() => {})) : setInternalOpen
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -53,12 +58,14 @@ export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm" className="gap-2">
-          <XCircle className="h-4 w-4" />
-          Cancel Shipment
-        </Button>
-      </AlertDialogTrigger>
+      {!isControlled && (
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm" className="gap-2">
+            <XCircle className="h-4 w-4" />
+            Cancel Shipment
+          </Button>
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Cancel Shipment</AlertDialogTitle>

@@ -5,6 +5,13 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   ArrowLeft,
   Battery,
@@ -14,10 +21,11 @@ import {
   CheckCircle,
   RefreshCw,
   Navigation,
-  ArrowRight,
-  Send,
+  MoreHorizontal,
+  XCircle,
+  Tag,
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
@@ -78,6 +86,7 @@ const statusConfig = {
 
 export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetailClientProps) {
   const [shipment] = useState<DispatchData>(initialData)
+  const [cancelOpen, setCancelOpen] = useState(false)
 
   const statusInfo = statusConfig[shipment.status]
   const StatusIcon = statusInfo.icon
@@ -87,7 +96,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
   return (
     <div className="space-y-6 min-w-0 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/dispatch">
@@ -99,9 +108,9 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
               <h1 className="text-2xl font-bold tracking-tight">
                 {shipment.name || 'Unnamed Dispatch'}
               </h1>
-              <Badge variant="secondary" className="gap-1">
-                <Send className="h-3 w-3" />
-                Dispatch
+              <Badge variant={statusInfo.variant} className="gap-1 px-2.5 py-0.5">
+                <StatusIcon className="h-3 w-3" />
+                {statusInfo.label}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -109,11 +118,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge variant={statusInfo.variant} className="gap-1 px-3 py-1">
-            <StatusIcon className="h-3 w-3" />
-            {statusInfo.label}
-          </Badge>
+        <div className="flex items-center gap-2">
           {shipment.status === 'PENDING' && (
             <Button
               variant="default"
@@ -162,49 +167,67 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
               Mark as Delivered
             </Button>
           )}
-          <div className="flex items-center gap-1.5">
-            {isActive && (
-              <EditShipmentDialog
-                shipmentId={shipment.id}
-                currentName={shipment.name}
-                currentOrigin={shipment.originAddress}
-                currentDestination={shipment.destinationAddress}
-                apiBasePath="/api/v1/dispatch"
-              />
-            )}
-            {shipment.status === 'DELIVERED' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`/api/v1/dispatch/${shipment.id}`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ status: 'IN_TRANSIT' }),
-                    })
-                    if (!res.ok) throw new Error('Failed to reactivate')
-                    toast.success('Tracking reactivated')
-                    window.location.reload()
-                  } catch {
-                    toast.error('Failed to reactivate tracking')
-                  }
-                }}
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Reactivate Tracking
-              </Button>
-            )}
-            <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
-            {isActive && (
+          {shipment.status === 'DELIVERED' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/v1/dispatch/${shipment.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'IN_TRANSIT' }),
+                  })
+                  if (!res.ok) throw new Error('Failed to reactivate')
+                  toast.success('Tracking reactivated')
+                  window.location.reload()
+                } catch {
+                  toast.error('Failed to reactivate tracking')
+                }
+              }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reactivate Tracking
+            </Button>
+          )}
+          {isActive && (
+            <EditShipmentDialog
+              shipmentId={shipment.id}
+              currentName={shipment.name}
+              currentOrigin={shipment.originAddress}
+              currentDestination={shipment.destinationAddress}
+              apiBasePath="/api/v1/dispatch"
+            />
+          )}
+          <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
+          {isActive && (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => setCancelOpen(true)}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancel Dispatch
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <CancelShipmentDialog
                 shipmentId={shipment.id}
                 shipmentName={shipment.name}
                 apiBasePath="/api/v1/dispatch"
+                open={cancelOpen}
+                onOpenChange={setCancelOpen}
               />
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -213,7 +236,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Send className="h-4 w-4" />
+              <Tag className="h-4 w-4" />
               Dispatched Labels ({labelCount})
             </CardTitle>
             <CardDescription>
@@ -242,14 +265,17 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No labels in this dispatch</p>
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <Tag className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">No labels in this dispatch</p>
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Right column */}
         <div className="space-y-4">
-          {/* Route Card */}
+          {/* Route & Details Card (merged) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -257,21 +283,23 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
                 Route
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
+              {/* Origin */}
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                  <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+                <div className="flex flex-col items-center">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+                  </div>
+                  <div className="my-1.5 h-6 w-px border-l-2 border-dashed border-muted-foreground/30" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Origin</p>
                   <p className="text-sm">{shipment.originAddress || 'Not specified'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 pl-2">
-                <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
-              </div>
+              {/* Destination */}
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                   <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>
                 </div>
                 <div>
@@ -279,42 +307,28 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
                   <p className="text-sm">{shipment.destinationAddress || 'Not specified'}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Delivery Info */}
-          {shipment.deliveredAt && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Delivery Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Delivered</p>
-                    <p className="font-medium">
+              <Separator className="my-4" />
+
+              {/* Metadata */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Created</p>
+                  <p>{format(new Date(shipment.createdAt), 'PPP')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Labels</p>
+                  <p>{labelCount} label{labelCount !== 1 ? 's' : ''}</p>
+                </div>
+                {shipment.deliveredAt && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Delivered</p>
+                    <p className="flex items-center gap-1.5">
+                      <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                       {format(new Date(shipment.deliveredAt), 'PPP')}
                     </p>
                   </div>
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Created */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Dispatch Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Created</p>
-                <p className="text-sm">{format(new Date(shipment.createdAt), 'PPP')}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Labels</p>
-                <p className="text-sm">{labelCount} label{labelCount !== 1 ? 's' : ''}</p>
+                )}
               </div>
             </CardContent>
           </Card>
