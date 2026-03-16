@@ -17,7 +17,7 @@ function sanitizeHeaders(headers: Headers): Record<string, string> {
   return result
 }
 
-export function createWebhookLog(params: {
+export async function createWebhookLog(params: {
   id: string
   endpoint: string
   method?: string
@@ -26,45 +26,37 @@ export function createWebhookLog(params: {
   ipAddress?: string
   iccid?: string | null
   eventType?: string | null
-}) {
-  db.webhookLog
-    .create({
-      data: {
-        id: params.id,
-        endpoint: params.endpoint,
-        method: params.method ?? 'POST',
-        headers: sanitizeHeaders(params.headers) as object,
-        body: (params.body ?? {}) as object,
-        ipAddress: params.ipAddress,
-        iccid: params.iccid ?? undefined,
-        eventType: params.eventType ?? undefined,
-      },
-    })
-    .catch((err) =>
-      console.warn('[webhook-log] failed to create log:', err)
-    )
+}): Promise<void> {
+  await db.webhookLog.create({
+    data: {
+      id: params.id,
+      endpoint: params.endpoint,
+      method: params.method ?? 'POST',
+      headers: sanitizeHeaders(params.headers) as object,
+      body: (params.body ?? {}) as object,
+      ipAddress: params.ipAddress,
+      iccid: params.iccid ?? undefined,
+      eventType: params.eventType ?? undefined,
+    },
+  })
 }
 
-export function updateWebhookLog(
+export async function updateWebhookLog(
   id: string,
   params: {
     statusCode?: number
     processingResult?: unknown
     durationMs?: number
   }
-) {
-  db.webhookLog
-    .update({
-      where: { id },
-      data: {
-        statusCode: params.statusCode,
-        processingResult: (params.processingResult ?? undefined) as object | undefined,
-        durationMs: params.durationMs,
-      },
-    })
-    .catch((err) =>
-      console.warn('[webhook-log] failed to update log:', err)
-    )
+): Promise<void> {
+  await db.webhookLog.update({
+    where: { id },
+    data: {
+      statusCode: params.statusCode,
+      processingResult: (params.processingResult ?? undefined) as object | undefined,
+      durationMs: params.durationMs,
+    },
+  })
 }
 
 export async function pruneWebhookLogs(): Promise<number> {
