@@ -35,7 +35,7 @@ function EndpointBadge({ endpoint }: { endpoint: string }) {
   return <Badge variant="outline" className="text-purple-600 dark:text-purple-400 border-purple-600/30">Location</Badge>
 }
 
-export function WebhookLogTable({ logs }: { logs: WebhookLogEntry[] }) {
+export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[]; iccidToLabel: Record<string, string> }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   if (logs.length === 0) {
@@ -56,6 +56,7 @@ export function WebhookLogTable({ logs }: { logs: WebhookLogEntry[] }) {
             <th className="pb-3 font-medium">Endpoint</th>
             <th className="pb-3 font-medium">Event Type</th>
             <th className="pb-3 font-medium">ICCID</th>
+            <th className="pb-3 font-medium">Label</th>
             <th className="pb-3 font-medium">Status</th>
             <th className="pb-3 font-medium">Duration</th>
             <th className="pb-3 font-medium">Result</th>
@@ -91,6 +92,9 @@ export function WebhookLogTable({ logs }: { logs: WebhookLogEntry[] }) {
                   <td className="py-3 font-mono text-xs text-foreground">
                     {log.iccid || '—'}
                   </td>
+                  <td className="py-3 text-sm text-foreground">
+                    {log.iccid && iccidToLabel[log.iccid] ? iccidToLabel[log.iccid] : '—'}
+                  </td>
                   <td className="py-3">
                     <StatusBadge code={log.statusCode} />
                   </td>
@@ -109,7 +113,7 @@ export function WebhookLogTable({ logs }: { logs: WebhookLogEntry[] }) {
                 </tr>
                 {isExpanded && (
                   <tr>
-                    <td colSpan={8} className="bg-muted/30 px-4 py-4">
+                    <td colSpan={9} className="bg-muted/30 px-4 py-4">
                       <div className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>

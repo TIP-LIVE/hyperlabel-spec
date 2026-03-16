@@ -45,6 +45,19 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
     db.webhookLog.count({ where }),
   ])
 
+  // Build ICCID → deviceId map for label column
+  const iccids = [...new Set(logs.map((l) => l.iccid).filter(Boolean))] as string[]
+  const labels = iccids.length > 0
+    ? await db.label.findMany({
+        where: { iccid: { in: iccids } },
+        select: { iccid: true, deviceId: true },
+      })
+    : []
+  const iccidToLabel: Record<string, string> = {}
+  for (const l of labels) {
+    if (l.iccid) iccidToLabel[l.iccid] = l.deviceId
+  }
+
   const totalPages = Math.ceil(total / perPage)
 
   // Build search params string for pagination links
@@ -89,7 +102,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <WebhookLogTable logs={serializedLogs} />
+          <WebhookLogTable logs={serializedLogs} iccidToLabel={iccidToLabel} />
 
           {totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
