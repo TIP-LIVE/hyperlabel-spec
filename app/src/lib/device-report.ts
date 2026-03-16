@@ -129,7 +129,10 @@ export async function processLocationReport(
     },
   }
 
-  // Find the label by deviceId, IMEI, or ICCID
+  // Find the label by deviceId, IMEI, or ICCID.
+  // When IMEI finds a label without an active shipment, continue checking
+  // ICCID — the SIM may have moved to a different device whose label IS
+  // linked to the current shipment.
   let label = input.deviceId
     ? await db.label.findUnique({
         where: { deviceId: input.deviceId },
@@ -144,11 +147,21 @@ export async function processLocationReport(
     })
   }
 
-  if (!label && input.iccid) {
-    label = await db.label.findFirst({
+  // If IMEI matched a label but it has no active shipment, try ICCID too —
+  // the SIM card (ICCID) is a more reliable identifier for the current device.
+  const imeiLabelHasNoShipment =
+    label && !label.shipments[0] && !label.shipmentLabels[0]
+  if ((!label || imeiLabelHasNoShipment) && input.iccid) {
+    const iccidLabel = await db.label.findFirst({
       where: { iccid: input.iccid },
       include: shipmentInclude,
     })
+    if (iccidLabel) {
+      // Prefer the ICCID label if it has an active shipment, or if no label was found by IMEI
+      if (!label || iccidLabel.shipments[0] || iccidLabel.shipmentLabels[0]) {
+        label = iccidLabel
+      }
+    }
   }
 
   // Auto-register: if no label found but IMEI/ICCID provided, create one
@@ -309,14 +322,21 @@ export async function processLocationReport(
     }
   }
 
-  // Update label: lastSeenAt always, battery if provided
-  await db.label.update({
-    where: { id: label.id },
-    data: {
-      lastSeenAt: recordedAt,
-      ...(input.battery !== undefined && { batteryPct: input.battery }),
-    },
-  })
+  // Update label: lastSeenAt only if newer (prevents regression from
+  // out-of-order cell tower events), battery if provided
+  const labelUpdateData: Record<string, unknown> = {}
+  if (!label.lastSeenAt || recordedAt > label.lastSeenAt) {
+    labelUpdateData.lastSeenAt = recordedAt
+  }
+  if (input.battery !== undefined) {
+    labelUpdateData.batteryPct = input.battery
+  }
+  if (Object.keys(labelUpdateData).length > 0) {
+    await db.label.update({
+      where: { id: label.id },
+      data: labelUpdateData,
+    })
+  }
 
   // If shipment is PENDING and we received first location, update to IN_TRANSIT
   if (activeShipment && activeShipment.status === 'PENDING') {

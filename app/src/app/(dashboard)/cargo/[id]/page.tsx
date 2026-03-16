@@ -58,6 +58,22 @@ export default async function CargoDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  // Backfill orphaned label locations (created by webhooks before shipment association)
+  let locations = shipment.locations
+  if (shipment.labelId) {
+    const backfilled = await db.locationEvent.updateMany({
+      where: { labelId: shipment.labelId, shipmentId: null },
+      data: { shipmentId: shipment.id },
+    })
+    if (backfilled.count > 0) {
+      locations = await db.locationEvent.findMany({
+        where: { shipmentId: shipment.id },
+        orderBy: { recordedAt: 'desc' },
+        take: 100,
+      })
+    }
+  }
+
   const totalLocations = await db.locationEvent.count({
     where: { shipmentId: shipment.id },
   })
@@ -100,7 +116,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
       activatedAt: shipment.label.activatedAt?.toISOString() ?? null,
       lastSeenAt: shipment.label.lastSeenAt?.toISOString() ?? null,
     } : null,
-    locations: shipment.locations.map((loc) => ({
+    locations: locations.map((loc) => ({
       id: loc.id,
       latitude: loc.latitude,
       longitude: loc.longitude,
