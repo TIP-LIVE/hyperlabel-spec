@@ -63,14 +63,25 @@ export function MobileNav() {
                 </Link>
               </Button>
             )}
-            <Button
-              asChild
-              className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
-            >
-              <Link href="/buy" onClick={() => setOpen(false)}>
-                Buy a Label
-              </Link>
-            </Button>
+            {isLoaded && isSignedIn ? (
+              <Button
+                asChild
+                className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
+              >
+                <Link href="/dashboard" onClick={() => setOpen(false)}>
+                  Dashboard
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                asChild
+                className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
+              >
+                <Link href="/buy" onClick={() => setOpen(false)}>
+                  Buy a Label
+                </Link>
+              </Button>
+            )}
           </div>
         </nav>
       </SheetContent>

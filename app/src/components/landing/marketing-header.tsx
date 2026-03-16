@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { SignedOut } from '@clerk/nextjs'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { AnimatedEyeLogo } from '@/components/landing/animated-eye-logo'
 import { MobileNav } from '@/components/landing/mobile-nav'
@@ -41,13 +41,24 @@ export function MarketingHeader() {
               <Link href="/sign-in">Sign In</Link>
             </Button>
           </SignedOut>
-          <Button
-            size="sm"
-            asChild
-            className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
-          >
-            <Link href="/buy">Buy a Label</Link>
-          </Button>
+          <SignedOut>
+            <Button
+              size="sm"
+              asChild
+              className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
+            >
+              <Link href="/buy">Buy a Label</Link>
+            </Button>
+          </SignedOut>
+          <SignedIn>
+            <Button
+              size="sm"
+              asChild
+              className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
+            >
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          </SignedIn>
           <MobileNav />
         </div>
       </div>
