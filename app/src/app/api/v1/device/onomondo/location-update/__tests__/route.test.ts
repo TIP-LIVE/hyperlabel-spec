@@ -23,7 +23,6 @@ vi.mock('@/lib/device-report', async () => ({
     success: true,
     locationId: 'loc-002',
   }),
-  shouldSkipDuplicateLocation: vi.fn().mockResolvedValue(false),
   geocodeLocationEvent: vi.fn().mockResolvedValue(undefined),
 }))
 

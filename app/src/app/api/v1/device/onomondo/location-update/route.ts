@@ -2,7 +2,6 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { onomondoLocationUpdateSchema } from '@/lib/validations/device'
 import {
   processLocationReport,
-  shouldSkipDuplicateLocation,
   geocodeLocationEvent,
 } from '@/lib/device-report'
 import {
@@ -170,28 +169,6 @@ export async function POST(req: NextRequest) {
         onomondoLatNull: loc.lat === null,
       })
       return NextResponse.json({ success: true, skipped: true, reason: 'No coordinates available' })
-    }
-
-    // Dedup: skip if a recent event already exists nearby for this label
-    const shouldSkip = await shouldSkipDuplicateLocation({
-      iccid: data.iccid,
-      latitude: lat,
-      longitude: lng,
-      source: 'CELL_TOWER',
-    })
-
-    if (shouldSkip) {
-      // Device is online but location is duplicate — still record the heartbeat
-      await db.label.update({
-        where: { iccid: data.iccid },
-        data: { lastSeenAt: new Date() },
-      })
-      console.info('[webhook:location-update] dedup skip', {
-        iccid: data.iccid,
-        lat,
-        lng,
-      })
-      return NextResponse.json({ success: true, skipped: true, reason: 'Duplicate location' })
     }
 
     const result = await processLocationReport({

@@ -11,51 +11,6 @@ import { format } from 'date-fns'
 import { syncSimLabelToOnomondo } from '@/lib/onomondo'
 import { generateShareCode } from '@/lib/utils/share-code'
 
-/** Minimum time gap (ms) between cell tower events to consider them distinct. */
-const CELL_DEDUP_WINDOW_MS = 30 * 60 * 1000 // 30 minutes
-
-/** Minimum distance (m) between cell tower events to consider them distinct. */
-const CELL_DEDUP_THRESHOLD_M = 1000 // 1 km
-
-/**
- * Check whether an incoming CELL_TOWER location should be skipped because
- * a recent event already exists nearby for the same label.
- *
- * GPS reports are never deduplicated — they are the primary source.
- */
-export async function shouldSkipDuplicateLocation(opts: {
-  iccid: string
-  latitude: number
-  longitude: number
-  source: 'GPS' | 'CELL_TOWER'
-}): Promise<boolean> {
-  if (opts.source !== 'CELL_TOWER') return false
-
-  const label = await db.label.findFirst({
-    where: { iccid: opts.iccid },
-    select: { id: true },
-  })
-  if (!label) return false
-
-  const latest = await db.locationEvent.findFirst({
-    where: { labelId: label.id },
-    orderBy: { recordedAt: 'desc' },
-    select: { recordedAt: true, latitude: true, longitude: true },
-  })
-  if (!latest) return false
-
-  const age = Date.now() - latest.recordedAt.getTime()
-  if (age >= CELL_DEDUP_WINDOW_MS) return false
-
-  const distance = calculateDistance(
-    opts.latitude,
-    opts.longitude,
-    latest.latitude,
-    latest.longitude
-  )
-  return distance < CELL_DEDUP_THRESHOLD_M
-}
-
 /** Input shape for the shared location report processing logic. */
 export interface LocationReportInput {
   deviceId?: string
