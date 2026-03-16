@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Package, MapPin, Truck, CreditCard, User } from 'lucide-react'
-import { MarkShippedButton } from '@/components/admin/mark-shipped-button'
+import { ArrowLeft, Package, MapPin, Truck, CreditCard, User, Send } from 'lucide-react'
+import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
+import { shipmentStatusStyles } from '@/lib/status-config'
 import { format } from 'date-fns'
 import type { Metadata } from 'next'
 
@@ -45,6 +46,13 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
               status: true,
               batteryPct: true,
               activatedAt: true,
+              shipmentLabels: {
+                include: {
+                  shipment: {
+                    select: { id: true, name: true, status: true, shareCode: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -54,11 +62,72 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
 
   if (!order) notFound()
 
+  // Build label info with dispatch status
+  const labelsWithDispatch = order.orderLabels.map((ol) => {
+    const activeDispatch = ol.label.shipmentLabels.find(
+      (sl) => sl.shipment.status === 'PENDING' || sl.shipment.status === 'IN_TRANSIT'
+    )
+    const deliveredDispatch = ol.label.shipmentLabels.find(
+      (sl) => sl.shipment.status === 'DELIVERED'
+    )
+    const dispatch = activeDispatch || deliveredDispatch
+    return {
+      id: ol.label.id,
+      deviceId: ol.label.deviceId,
+      status: ol.label.status,
+      batteryPct: ol.label.batteryPct,
+      activatedAt: ol.label.activatedAt,
+      inActiveDispatch: !!activeDispatch,
+      dispatchStatus: dispatch?.shipment.status,
+      dispatchName: dispatch?.shipment.name,
+      dispatchShareCode: dispatch?.shipment.shareCode,
+    }
+  })
+
+  // Get all dispatches related to this order's labels
+  const orderLabelIds = order.orderLabels.map((ol) => ol.label.id)
+  let dispatches: Array<{
+    id: string
+    name: string | null
+    status: string
+    shareCode: string
+    createdAt: Date
+    _count: { shipmentLabels: number }
+  }> = []
+
+  if (orderLabelIds.length > 0) {
+    const shipmentLabels = await db.shipmentLabel.findMany({
+      where: { labelId: { in: orderLabelIds } },
+      select: { shipmentId: true },
+    })
+    const shipmentIds = [...new Set(shipmentLabels.map((sl) => sl.shipmentId))]
+
+    if (shipmentIds.length > 0) {
+      dispatches = await db.shipment.findMany({
+        where: { id: { in: shipmentIds }, type: 'LABEL_DISPATCH' },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          shareCode: true,
+          createdAt: true,
+          _count: { select: { shipmentLabels: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+    }
+  }
+
   const shippingAddress = order.shippingAddress as {
     line1?: string; line2?: string; city?: string; state?: string; postal_code?: string; country?: string
   } | null
 
   const currencySymbol = order.currency === 'GBP' ? '\u00a3' : order.currency === 'EUR' ? '\u20ac' : '$'
+  const orderShortId = order.id.slice(-8).toUpperCase()
+
+  const hasUndispatchedLabels = labelsWithDispatch.some(
+    (l) => !l.inActiveDispatch && !l.dispatchStatus && (l.status === 'SOLD' || l.status === 'INVENTORY')
+  )
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -74,7 +143,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Order {order.id.slice(-8).toUpperCase()}
+            Order {orderShortId}
           </h1>
           <p className="text-sm text-muted-foreground">
             {format(new Date(order.createdAt), 'PPPp')}
@@ -82,7 +151,19 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Badge className={statusStyles[order.status]}>{order.status}</Badge>
-          {order.status === 'PAID' && <MarkShippedButton orderId={order.id} />}
+          {(order.status === 'PAID' || order.status === 'SHIPPED') && hasUndispatchedLabels && (
+            <CreateDispatchButton
+              orderId={order.id}
+              orderShortId={orderShortId}
+              labels={labelsWithDispatch.map((l) => ({
+                id: l.id,
+                deviceId: l.deviceId,
+                status: l.status,
+                inActiveDispatch: l.inActiveDispatch || !!l.dispatchStatus,
+                dispatchStatus: l.dispatchStatus,
+              }))}
+            />
+          )}
         </div>
       </div>
 
@@ -145,55 +226,63 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      {/* Shipping */}
-      <Card className="border-border bg-card">
-        <CardHeader className="flex flex-row items-center gap-2">
-          <Truck className="h-5 w-5 text-muted-foreground" />
-          <CardTitle className="text-card-foreground">Shipping</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {shippingAddress ? (
-            <div className="space-y-1">
-              <p className="text-muted-foreground">Delivery address</p>
-              <div className="flex items-start gap-2 text-foreground">
-                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <div>
-                  {shippingAddress.line1 && <p>{shippingAddress.line1}</p>}
-                  {shippingAddress.line2 && <p>{shippingAddress.line2}</p>}
-                  <p>
-                    {[shippingAddress.city, shippingAddress.state, shippingAddress.postal_code]
-                      .filter(Boolean)
-                      .join(', ')}
-                  </p>
-                  {shippingAddress.country && <p>{shippingAddress.country}</p>}
-                </div>
+      {/* Delivery Address */}
+      {shippingAddress && (
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center gap-2">
+            <MapPin className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-card-foreground">Delivery Address</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <div className="flex items-start gap-2 text-foreground">
+              <div>
+                {shippingAddress.line1 && <p>{shippingAddress.line1}</p>}
+                {shippingAddress.line2 && <p>{shippingAddress.line2}</p>}
+                <p>
+                  {[shippingAddress.city, shippingAddress.state, shippingAddress.postal_code]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                {shippingAddress.country && <p>{shippingAddress.country}</p>}
               </div>
             </div>
-          ) : (
-            <p className="text-muted-foreground">No shipping address on file</p>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
-          {order.shippedAt && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Shipped on</span>
-              <span className="text-foreground">{format(new Date(order.shippedAt), 'PPPp')}</span>
+      {/* Dispatches */}
+      {dispatches.length > 0 && (
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Send className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-card-foreground">Dispatches ({dispatches.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {dispatches.map((d) => (
+                <Link
+                  key={d.id}
+                  href={`/admin/dispatch?q=${d.shareCode}`}
+                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2 transition-colors hover:bg-muted"
+                >
+                  <div className="flex items-center gap-3">
+                    <Send className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <span className="text-sm text-card-foreground">{d.name || 'Unnamed dispatch'}</span>
+                      <p className="text-xs text-muted-foreground">
+                        {d._count.shipmentLabels} label{d._count.shipmentLabels !== 1 ? 's' : ''} · {format(new Date(d.createdAt), 'PP')}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge className={shipmentStatusStyles[d.status as keyof typeof shipmentStatusStyles]}>
+                    {d.status === 'IN_TRANSIT' ? 'In Transit' : d.status.charAt(0) + d.status.slice(1).toLowerCase()}
+                  </Badge>
+                </Link>
+              ))}
             </div>
-          )}
-          {order.trackingNumber && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Tracking</span>
-              <a
-                href={`https://track.aftership.com/${order.trackingNumber}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-xs text-primary hover:underline"
-              >
-                {order.trackingNumber}
-              </a>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Labels */}
       <Card className="border-border bg-card">
@@ -210,29 +299,37 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
             </p>
           ) : (
             <div className="space-y-2">
-              {order.orderLabels.map((ol) => (
+              {labelsWithDispatch.map((label) => (
                 <div
-                  key={ol.label.id}
+                  key={label.id}
                   className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
                 >
                   <div className="flex items-center gap-3">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-mono text-sm text-card-foreground">{ol.label.deviceId}</span>
+                    <span className="font-mono text-sm text-card-foreground">{label.deviceId}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {ol.label.batteryPct !== null && (
-                      <span className={`text-xs ${ol.label.batteryPct < 20 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
-                        {ol.label.batteryPct}%
+                    {label.batteryPct !== null && (
+                      <span className={`text-xs ${label.batteryPct < 20 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
+                        {label.batteryPct}%
                       </span>
                     )}
                     <Badge className={
-                      ol.label.status === 'ACTIVE' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
-                      ol.label.status === 'SOLD' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
-                      ol.label.status === 'DEPLETED' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
+                      label.status === 'ACTIVE' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                      label.status === 'SOLD' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
+                      label.status === 'DEPLETED' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
                       'bg-gray-500/20 text-muted-foreground'
                     }>
-                      {ol.label.status}
+                      {label.status}
                     </Badge>
+                    {label.dispatchStatus && (
+                      <Badge variant="outline" className="text-xs">
+                        {label.dispatchStatus === 'PENDING' ? 'Dispatched' :
+                         label.dispatchStatus === 'IN_TRANSIT' ? 'In Transit' :
+                         label.dispatchStatus === 'DELIVERED' ? 'Delivered' :
+                         label.dispatchStatus}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               ))}

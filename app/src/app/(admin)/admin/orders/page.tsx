@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { format } from 'date-fns'
-import { MarkShippedButton } from '@/components/admin/mark-shipped-button'
+import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
 import { Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { orderStatusStyles } from '@/lib/status-config'
@@ -34,7 +34,6 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
   if (q) {
     where.OR = [
       { user: { email: { contains: q, mode: 'insensitive' } } },
-      { trackingNumber: { contains: q, mode: 'insensitive' } },
       { id: { contains: q, mode: 'insensitive' } },
     ]
   }
@@ -44,7 +43,25 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       where,
       include: {
         user: { select: { email: true } },
-        _count: { select: { orderLabels: true } },
+        orderLabels: {
+          include: {
+            label: {
+              select: {
+                id: true,
+                deviceId: true,
+                status: true,
+                shipmentLabels: {
+                  where: {
+                    shipment: { status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] } },
+                  },
+                  select: {
+                    shipment: { select: { status: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * perPage,
@@ -71,6 +88,30 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
 
   const currentStatus = statusFilter || 'ALL'
 
+  // Compute dispatch info per order
+  const ordersWithDispatchInfo = orders.map((order) => {
+    const labels = order.orderLabels.map((ol) => {
+      const activeDispatch = ol.label.shipmentLabels.find(
+        (sl) => sl.shipment.status === 'PENDING' || sl.shipment.status === 'IN_TRANSIT'
+      )
+      const deliveredDispatch = ol.label.shipmentLabels.find(
+        (sl) => sl.shipment.status === 'DELIVERED'
+      )
+      return {
+        id: ol.label.id,
+        deviceId: ol.label.deviceId,
+        status: ol.label.status,
+        inActiveDispatch: !!(activeDispatch || deliveredDispatch),
+        dispatchStatus: (activeDispatch || deliveredDispatch)?.shipment.status,
+      }
+    })
+    const dispatchedCount = labels.filter((l) => l.inActiveDispatch).length
+    const hasUndispatched = labels.some(
+      (l) => !l.inActiveDispatch && (l.status === 'SOLD' || l.status === 'INVENTORY')
+    )
+    return { ...order, labels, dispatchedCount, hasUndispatched }
+  })
+
   return (
     <div className="space-y-6">
       <div>
@@ -79,7 +120,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <AdminSearch placeholder="Search by email, order ID, tracking #..." />
+        <AdminSearch placeholder="Search by email, order ID..." />
       </div>
 
       {/* Status Tabs */}
@@ -110,7 +151,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {orders.length === 0 ? (
+          {ordersWithDispatchInfo.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Package className="mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="text-lg font-semibold text-foreground">No orders found</h3>
@@ -128,52 +169,69 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                       <th className="pb-3 font-medium">Customer</th>
                       <th className="pb-3 font-medium">Qty</th>
                       <th className="pb-3 font-medium">Labels</th>
+                      <th className="pb-3 font-medium">Dispatched</th>
                       <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium">Tracking #</th>
                       <th className="pb-3 font-medium">Date</th>
                       <th className="pb-3 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {orders.map((order) => (
-                      <tr key={order.id} className="text-sm">
-                        <td className="py-3">
-                          <Link
-                            href={`/admin/orders/${order.id}`}
-                            className="font-mono text-primary hover:underline"
-                          >
-                            {order.id.slice(-8).toUpperCase()}
-                          </Link>
-                        </td>
-                        <td className="py-3 text-foreground">{order.user.email}</td>
-                        <td className="py-3 text-foreground">{order.quantity}</td>
-                        <td className="py-3">
-                          <span
-                            className={
-                              order._count.orderLabels < order.quantity
-                                ? 'text-yellow-400'
-                                : 'text-foreground'
-                            }
-                          >
-                            {order._count.orderLabels}/{order.quantity}
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          <Badge className={orderStatusStyles[order.status as keyof typeof orderStatusStyles]}>{order.status}</Badge>
-                        </td>
-                        <td className="py-3 font-mono text-muted-foreground">
-                          {order.trackingNumber || '—'}
-                        </td>
-                        <td className="py-3 text-muted-foreground">
-                          {format(new Date(order.createdAt), 'PP')}
-                        </td>
-                        <td className="py-3">
-                          {order.status === 'PAID' && (
-                            <MarkShippedButton orderId={order.id} />
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {ordersWithDispatchInfo.map((order) => {
+                      const orderShortId = order.id.slice(-8).toUpperCase()
+                      return (
+                        <tr key={order.id} className="text-sm">
+                          <td className="py-3">
+                            <Link
+                              href={`/admin/orders/${order.id}`}
+                              className="font-mono text-primary hover:underline"
+                            >
+                              {orderShortId}
+                            </Link>
+                          </td>
+                          <td className="py-3 text-foreground">{order.user.email}</td>
+                          <td className="py-3 text-foreground">{order.quantity}</td>
+                          <td className="py-3">
+                            <span
+                              className={
+                                order.orderLabels.length < order.quantity
+                                  ? 'text-yellow-400'
+                                  : 'text-foreground'
+                              }
+                            >
+                              {order.orderLabels.length}/{order.quantity}
+                            </span>
+                          </td>
+                          <td className="py-3">
+                            <span
+                              className={
+                                order.dispatchedCount > 0 && order.dispatchedCount < order.orderLabels.length
+                                  ? 'text-blue-400'
+                                  : order.dispatchedCount === order.orderLabels.length && order.orderLabels.length > 0
+                                  ? 'text-green-500'
+                                  : 'text-muted-foreground'
+                              }
+                            >
+                              {order.dispatchedCount}/{order.orderLabels.length}
+                            </span>
+                          </td>
+                          <td className="py-3">
+                            <Badge className={orderStatusStyles[order.status as keyof typeof orderStatusStyles]}>{order.status}</Badge>
+                          </td>
+                          <td className="py-3 text-muted-foreground">
+                            {format(new Date(order.createdAt), 'PP')}
+                          </td>
+                          <td className="py-3">
+                            {(order.status === 'PAID' || order.status === 'SHIPPED') && order.hasUndispatched && (
+                              <CreateDispatchButton
+                                orderId={order.id}
+                                orderShortId={orderShortId}
+                                labels={order.labels}
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
