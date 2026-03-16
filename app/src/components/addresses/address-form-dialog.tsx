@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -66,6 +66,24 @@ export function AddressFormDialog({
       country: 'GB',
     },
   })
+
+  // Reset form values when initialData changes (e.g. opening edit for a different address)
+  useEffect(() => {
+    if (open) {
+      reset(
+        initialData ?? {
+          label: '',
+          name: '',
+          line1: '',
+          line2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: 'GB',
+        }
+      )
+    }
+  }, [open, initialData, reset])
 
   const selectedCountry = watch('country')
   const fmt = useMemo(() => countryFormats[selectedCountry] || defaultCountryFormat, [selectedCountry])
