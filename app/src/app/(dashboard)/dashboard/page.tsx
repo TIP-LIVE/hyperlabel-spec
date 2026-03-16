@@ -159,7 +159,7 @@ export default async function DashboardPage() {
       value: totalLabels.toString(),
       icon: Package,
       description: 'Labels owned',
-      href: '/buy',
+      href: '/labels',
     },
     {
       name: 'Delivered',
@@ -357,7 +357,7 @@ export default async function DashboardPage() {
                           {shipment.name || 'Unnamed Cargo'}
                         </span>
                         <p className="text-sm text-muted-foreground">
-                          {label?.deviceId ?? '—'} ·{' '}
+                          {label?.deviceId ? `${label.deviceId} · ` : ''}
                           {formatDistanceToNow(
                             new Date(shipment.locations[0]?.recordedAt ?? shipment.updatedAt),
                             { addSuffix: true }

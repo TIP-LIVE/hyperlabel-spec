@@ -35,7 +35,7 @@ const statusConfig = {
   PENDING: { label: 'Pending', variant: 'secondary' as const },
   PAID: { label: 'Paid', variant: 'default' as const },
   SHIPPED: { label: 'Shipped', variant: 'default' as const },
-  DELIVERED: { label: 'Delivered', variant: 'outline' as const },
+  DELIVERED: { label: 'Delivered', variant: 'success' as const },
   CANCELLED: { label: 'Cancelled', variant: 'destructive' as const },
 }
 

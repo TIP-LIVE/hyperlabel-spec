@@ -11,11 +11,11 @@ export type ShipmentStatus = 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED
 
 export const shipmentStatusConfig: Record<
   ShipmentStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' }
 > = {
   PENDING: { label: 'Pending', variant: 'secondary' },
   IN_TRANSIT: { label: 'In Transit', variant: 'default' },
-  DELIVERED: { label: 'Delivered', variant: 'outline' },
+  DELIVERED: { label: 'Delivered', variant: 'success' },
   CANCELLED: { label: 'Cancelled', variant: 'destructive' },
 }
 
@@ -35,12 +35,12 @@ export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCEL
 
 export const orderStatusConfig: Record<
   OrderStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' }
 > = {
   PENDING: { label: 'Pending', variant: 'secondary' },
   PAID: { label: 'Paid', variant: 'default' },
   SHIPPED: { label: 'Shipped', variant: 'default' },
-  DELIVERED: { label: 'Delivered', variant: 'outline' },
+  DELIVERED: { label: 'Delivered', variant: 'success' },
   CANCELLED: { label: 'Cancelled', variant: 'destructive' },
 }
 
