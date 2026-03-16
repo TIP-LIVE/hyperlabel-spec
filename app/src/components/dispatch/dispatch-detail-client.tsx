@@ -145,16 +145,16 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
               className="gap-1.5 bg-green-600 hover:bg-green-700"
               onClick={async () => {
                 try {
-                  const res = await fetch(`/api/v1/track/${shipment.shareCode}/confirm-delivery`, {
-                    method: 'POST',
+                  const res = await fetch(`/api/v1/dispatch/${shipment.id}`, {
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify({ status: 'DELIVERED' }),
                   })
-                  if (!res.ok) throw new Error('Failed to confirm delivery')
+                  if (!res.ok) throw new Error('Failed to mark as delivered')
                   toast.success('Dispatch marked as delivered')
                   window.location.reload()
                 } catch {
-                  toast.error('Failed to confirm delivery')
+                  toast.error('Failed to mark as delivered')
                 }
               }}
             >
@@ -196,7 +196,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
                 Reactivate Tracking
               </Button>
             )}
-            <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />
+            <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
             {isActive && (
               <CancelShipmentDialog
                 shipmentId={shipment.id}
@@ -324,10 +324,10 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Share2 className="h-4 w-4" />
-                Share Tracking
+                Share Dispatch
               </CardTitle>
               <CardDescription>
-                Share this link with your recipient to let them track the dispatch
+                Share this link with your recipient so they know their labels are on the way
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -337,6 +337,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
               <ShareLinkButton
                 shareCode={shipment.shareCode}
                 trackingUrl={trackingUrl}
+                variant="dispatch"
                 className="mt-3 w-full rounded-full"
               />
             </CardContent>

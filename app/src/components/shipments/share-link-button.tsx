@@ -21,17 +21,36 @@ interface ShareLinkButtonProps {
   shareCode: string
   trackingUrl: string
   className?: string
+  variant?: 'cargo' | 'dispatch'
 }
 
-export function ShareLinkButton({ shareCode, trackingUrl, className }: ShareLinkButtonProps) {
+const copyVariants = {
+  cargo: {
+    title: 'Share Tracking Link',
+    description: 'Share this link with your consignee so they can track the shipment without creating an account.',
+    qrCaption: 'Scan to track shipment',
+    codeHelper: 'Your consignee can use this code on the tracking page',
+    toast: 'Tracking link copied!',
+  },
+  dispatch: {
+    title: 'Share Dispatch Link',
+    description: 'Share this link with your recipient so they know their labels are on the way.',
+    qrCaption: 'Scan to view dispatch status',
+    codeHelper: 'Your recipient can use this code to check dispatch status',
+    toast: 'Dispatch link copied!',
+  },
+}
+
+export function ShareLinkButton({ shareCode, trackingUrl, className, variant = 'cargo' }: ShareLinkButtonProps) {
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
+  const copy = copyVariants[variant]
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(trackingUrl)
       setCopied(true)
-      toast.success('Tracking link copied!')
+      toast.success(copy.toast)
       setTimeout(() => setCopied(false), 2000)
     } catch {
       toast.error('Failed to copy link')
@@ -48,10 +67,9 @@ export function ShareLinkButton({ shareCode, trackingUrl, className }: ShareLink
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Share Tracking Link</DialogTitle>
+          <DialogTitle>{copy.title}</DialogTitle>
           <DialogDescription>
-            Share this link with your consignee so they can track the shipment without creating
-            an account.
+            {copy.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -65,7 +83,7 @@ export function ShareLinkButton({ shareCode, trackingUrl, className }: ShareLink
               includeMargin={false}
             />
             <p className="text-xs text-gray-500">
-              Scan to track shipment
+              {copy.qrCaption}
             </p>
           </div>
 
@@ -89,7 +107,7 @@ export function ShareLinkButton({ shareCode, trackingUrl, className }: ShareLink
             <Label>Share Code</Label>
             <p className="rounded-lg bg-muted px-3 py-2 font-mono text-sm">{shareCode}</p>
             <p className="text-xs text-muted-foreground">
-              Your consignee can use this code on the tracking page
+              {copy.codeHelper}
             </p>
           </div>
 

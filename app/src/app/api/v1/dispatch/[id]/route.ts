@@ -95,7 +95,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     if (validated.data.status) {
       const allowedTransitions: Record<string, string[]> = {
         PENDING: ['IN_TRANSIT', 'CANCELLED'],
-        IN_TRANSIT: ['CANCELLED'],
+        IN_TRANSIT: ['DELIVERED', 'CANCELLED'],
         DELIVERED: ['IN_TRANSIT'],
         CANCELLED: [],
       }
@@ -112,6 +112,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         ...validated.data,
+        ...(validated.data.status === 'DELIVERED' && { deliveredAt: new Date() }),
         ...(validated.data.status === 'IN_TRANSIT' && { deliveredAt: null }),
       },
       include: {

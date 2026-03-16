@@ -206,7 +206,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             <PartyPopper className="h-5 w-5 text-green-600 dark:text-green-400" />
             <div>
               <p className="font-medium text-green-900 dark:text-green-100">
-                Shipment Delivered!
+                {isDispatch ? 'Labels Delivered!' : 'Shipment Delivered!'}
               </p>
               <p className="text-sm text-green-700 dark:text-green-300">
                 {shipment.deliveredAt
@@ -222,7 +222,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{shipment.name || 'Shipment Tracking'}</h1>
+            <h1 className="text-2xl font-bold">{shipment.name || (isDispatch ? 'Label Dispatch' : 'Shipment Tracking')}</h1>
             <p className="text-sm text-muted-foreground">
               Tracking code: <span className="font-mono">{code}</span>
             </p>
@@ -359,7 +359,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
           {/* Sidebar */}
           <div className={`space-y-6 ${isDispatch ? 'lg:col-span-2' : ''}`}>
             {/* Consignee Delivery Confirmation — only when in transit (not pending) */}
-            {shipment.status === 'IN_TRANSIT' && (
+            {shipment.status === 'IN_TRANSIT' && !isDispatch && (
               <Card className="border-2 border-dashed border-primary/50 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -430,7 +430,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             {/* Status Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Shipment Info</CardTitle>
+                <CardTitle>{isDispatch ? 'Dispatch Info' : 'Shipment Info'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -505,9 +505,11 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             {/* P1: Share tracking link */}
             <Card>
               <CardContent className="pt-6">
-                <p className="text-sm font-medium mb-2">Share Tracking Link</p>
+                <p className="text-sm font-medium mb-2">{isDispatch ? 'Share Dispatch Link' : 'Share Tracking Link'}</p>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Send this link to anyone who needs to follow this shipment.
+                  {isDispatch
+                    ? 'Send this link to anyone expecting this label delivery.'
+                    : 'Send this link to anyone who needs to follow this shipment.'}
                 </p>
                 <Button
                   variant="outline"
@@ -531,7 +533,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             </Card>
 
             {/* P2: CTA — only show when NOT actively tracking */}
-            {!isActive && (
+            {!isActive && !isDispatch && (
               <Card className="bg-primary text-primary-foreground">
                 <CardContent className="pt-6">
                   <p className="font-medium">Need to track your own cargo?</p>
@@ -551,7 +553,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
       {/* Footer */}
       <footer className="mt-12 border-t bg-card py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Powered by TIP — door-to-door cargo tracking</p>
+          <p>{isDispatch ? 'Powered by TIP' : 'Powered by TIP — door-to-door cargo tracking'}</p>
           <p className="mt-1">
             <Link href="/" className="hover:underline">
               tip.live
