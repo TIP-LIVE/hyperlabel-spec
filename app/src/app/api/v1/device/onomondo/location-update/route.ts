@@ -15,6 +15,23 @@ import { db } from '@/lib/db'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
 import { createWebhookLog, updateWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
 
+// --- In-memory dedup for Onomondo's double-delivery ---
+const recentEvents = new Map<string, number>()
+const DEDUP_WINDOW_MS = 30_000
+
+function isDuplicate(key: string): boolean {
+  const now = Date.now()
+  // Evict stale entries
+  for (const [k, ts] of recentEvents) {
+    if (now - ts > DEDUP_WINDOW_MS * 2) recentEvents.delete(k)
+  }
+  if (recentEvents.has(key) && now - recentEvents.get(key)! < DEDUP_WINDOW_MS) {
+    return true
+  }
+  recentEvents.set(key, now)
+  return false
+}
+
 /**
  * POST /api/v1/device/onomondo/location-update
  *
@@ -78,8 +95,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Log every incoming webhook immediately — raw type and SIM info
     const rawBody = body as Record<string, unknown>
+
+    // Deduplicate Onomondo's double-delivery (same iccid+time within 30s)
+    const dedupeKey = `${rawBody?.iccid}:${rawBody?.time}`
+    if (isDuplicate(dedupeKey)) {
+      console.info('[webhook:location-update] DEDUP skipped', { iccid: rawBody?.iccid, time: rawBody?.time })
+      return NextResponse.json({ success: true, deduplicated: true })
+    }
+
+    // Log every incoming webhook immediately — raw type and SIM info
     console.info('[webhook:location-update] INCOMING', {
       type: rawBody?.type,
       iccid: rawBody?.iccid,
@@ -89,16 +114,22 @@ export async function POST(req: NextRequest) {
       networkCountry: (rawBody?.network as Record<string, unknown>)?.country_code,
     })
 
-    // Fire-and-forget: persist raw webhook for admin debug panel
-    createWebhookLog({
-      id: logId,
-      endpoint: 'location-update',
-      headers: req.headers,
-      body: rawBody,
-      ipAddress: getClientIp(req),
-      iccid: rawBody?.iccid as string | undefined,
-      eventType: rawBody?.type as string | undefined,
-    })
+    // Persist raw webhook for admin debug panel
+    try {
+      await createWebhookLog({
+        id: logId,
+        endpoint: 'location-update',
+        headers: req.headers,
+        body: rawBody,
+        ipAddress: getClientIp(req),
+        iccid: rawBody?.iccid as string | undefined,
+        eventType: rawBody?.type as string | undefined,
+      })
+    } catch (err) {
+      console.error('[webhook:location-update] FAILED to persist webhook log', {
+        logId, iccid: rawBody?.iccid, type: rawBody?.type, error: String(err),
+      })
+    }
 
     const validated = onomondoLocationUpdateSchema.safeParse(body)
     if (!validated.success) {
@@ -106,7 +137,7 @@ export async function POST(req: NextRequest) {
         errors: validated.error.flatten(),
         body: JSON.stringify(body).slice(0, 500),
       })
-      updateWebhookLog(logId, { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime })
+      await updateWebhookLog(logId, { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }
@@ -137,7 +168,7 @@ export async function POST(req: NextRequest) {
     if (!data.location) {
       console.info('[webhook:location-update] skipped — no location data', { type: data.type, simLabel: data.sim_label })
       const result = { success: true, skipped: true, reason: 'No location data' }
-      updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
+      await updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
       return NextResponse.json(result)
     }
 
@@ -204,7 +235,7 @@ export async function POST(req: NextRequest) {
         onomondoLatNull: loc.lat === null,
       })
       const result = { success: true, skipped: true, reason: 'No coordinates available' }
-      updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
+      await updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
       return NextResponse.json(result)
     }
 
@@ -226,11 +257,11 @@ export async function POST(req: NextRequest) {
       if (Math.random() < 0.05) await pruneWebhookLogs()
     })
 
-    updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId }, durationMs: Date.now() - startTime })
+    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId }, durationMs: Date.now() - startTime })
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[webhook:location-update] error:', error)
-    updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
+    await updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
