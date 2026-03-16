@@ -7,7 +7,13 @@ import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { AddExistingLabelsButton } from '@/components/dashboard/add-existing-labels-dialog'
 import { shipmentStatusConfig } from '@/lib/status-config'
-import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle, AlertCircle } from 'lucide-react'
+import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle, AlertCircle, Send, ChevronDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
@@ -199,12 +205,29 @@ export default async function DashboardPage() {
           action={
           <>
             <AddExistingLabelsButton />
-            <Button asChild>
-              <Link href="/shipments/new">
-                <Package className="mr-2 h-4 w-4" />
-                New Shipment
-              </Link>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Package className="mr-2 h-4 w-4" />
+                  New Shipment
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/cargo/new">
+                    <Truck className="mr-2 h-4 w-4" />
+                    Track Cargo
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dispatch/new">
+                    <Send className="mr-2 h-4 w-4" />
+                    Label Dispatch
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         }
         />
@@ -262,12 +285,20 @@ export default async function DashboardPage() {
                   <p className="text-sm text-muted-foreground">
                     Create a shipment to attach a label and start tracking your cargo in real-time.
                   </p>
-                  <Button asChild>
-                    <Link href="/shipments/new">
-                      <Package className="mr-2 h-4 w-4" />
-                      New Shipment
-                    </Link>
-                  </Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button asChild>
+                      <Link href="/cargo/new">
+                        <Truck className="mr-2 h-4 w-4" />
+                        Track Cargo
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href="/dispatch/new">
+                        <Send className="mr-2 h-4 w-4" />
+                        Label Dispatch
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
