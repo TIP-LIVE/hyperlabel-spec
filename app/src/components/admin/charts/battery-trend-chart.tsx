@@ -3,6 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
+import { useTheme } from 'next-themes'
 
 interface BatteryDataPoint {
   recordedAt: string // ISO date string
@@ -14,6 +15,15 @@ interface BatteryTrendChartProps {
 }
 
 export function BatteryTrendChart({ data }: BatteryTrendChartProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  const gridColor = isDark ? '#374151' : '#e5e7eb'
+  const axisColor = isDark ? '#6b7280' : '#9ca3af'
+  const tooltipBg = isDark ? '#1f2937' : '#ffffff'
+  const tooltipBorder = isDark ? '#374151' : '#e5e7eb'
+  const dotStroke = isDark ? '#1f2937' : '#ffffff'
+
   const chartData = data
     .filter((d) => d.batteryPct !== null)
     .reverse() // oldest first for left-to-right
@@ -43,25 +53,25 @@ export function BatteryTrendChart({ data }: BatteryTrendChartProps) {
                   <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
               <XAxis
                 dataKey="time"
                 type="number"
                 domain={['dataMin', 'dataMax']}
                 tickFormatter={(v) => format(new Date(v), 'MMM d')}
-                stroke="#6b7280"
+                stroke={axisColor}
                 fontSize={11}
               />
               <YAxis
                 domain={[0, 100]}
-                stroke="#6b7280"
+                stroke={axisColor}
                 fontSize={11}
                 tickFormatter={(v) => `${v}%`}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -76,7 +86,7 @@ export function BatteryTrendChart({ data }: BatteryTrendChartProps) {
                 fill="url(#batteryGradient)"
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, fill: '#22c55e', stroke: '#1f2937', strokeWidth: 2 }}
+                activeDot={{ r: 4, fill: '#22c55e', stroke: dotStroke, strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>

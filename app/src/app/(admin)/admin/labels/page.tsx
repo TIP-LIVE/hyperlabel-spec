@@ -101,10 +101,10 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
                       : tab.value === 'INVENTORY'
                         ? 'text-muted-foreground'
                         : tab.value === 'SOLD'
-                          ? 'text-blue-400'
+                          ? 'text-blue-600 dark:text-blue-400'
                           : tab.value === 'ACTIVE'
-                            ? 'text-green-400'
-                            : 'text-red-400'
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
                   }`}
                 >
                   {tab.count}

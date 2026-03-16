@@ -48,7 +48,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Button>
           {isClerkConfigured() && (
             <SignOutButton>
-              <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-red-400">
+              <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-red-600 dark:hover:text-red-400">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>

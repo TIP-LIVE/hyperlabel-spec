@@ -11,9 +11,9 @@ import { cn } from '@/lib/utils'
 
 const statusStyles: Record<string, string> = {
   INVENTORY: 'bg-gray-500/20 text-muted-foreground',
-  SOLD: 'bg-blue-500/20 text-blue-400',
-  ACTIVE: 'bg-green-500/20 text-green-400',
-  DEPLETED: 'bg-red-500/20 text-red-400',
+  SOLD: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+  ACTIVE: 'bg-green-500/20 text-green-600 dark:text-green-400',
+  DEPLETED: 'bg-red-500/20 text-red-600 dark:text-red-400',
 }
 
 export type LabelRow = {
@@ -172,7 +172,7 @@ export function LabelsTableWithSelection({
                       {label.batteryPct !== null ? (
                         <span
                           className={
-                            label.batteryPct < 20 ? 'text-red-400' : 'text-foreground'
+                            label.batteryPct < 20 ? 'text-red-600 dark:text-red-400' : 'text-foreground'
                           }
                         >
                           {label.batteryPct}%

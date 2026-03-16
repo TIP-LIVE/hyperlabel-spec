@@ -123,9 +123,9 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
 
   const healthTabs = [
     { label: 'All', value: 'ALL', count: allCount, color: 'text-foreground' },
-    { label: 'Healthy', value: 'HEALTHY', count: healthyCount, color: 'text-green-400' },
-    { label: 'Low Battery', value: 'LOW_BATTERY', count: lowBatteryCount, color: 'text-yellow-400' },
-    { label: 'No Signal', value: 'NO_SIGNAL', count: noSignalCount, color: 'text-red-400' },
+    { label: 'Healthy', value: 'HEALTHY', count: healthyCount, color: 'text-green-600 dark:text-green-400' },
+    { label: 'Low Battery', value: 'LOW_BATTERY', count: lowBatteryCount, color: 'text-yellow-600 dark:text-yellow-400' },
+    { label: 'No Signal', value: 'NO_SIGNAL', count: noSignalCount, color: 'text-red-600 dark:text-red-400' },
   ]
 
   const currentHealth = healthFilter || 'ALL'
@@ -215,7 +215,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Open in Onomondo"
-                              className="text-muted-foreground hover:text-purple-400 transition-colors"
+                              className="text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                             >
                               <ExternalLink className="h-3 w-3" />
                             </a>
@@ -236,7 +236,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                       </td>
                       <td className="py-3">
                         {label.batteryPct !== null ? (
-                          <span className={label.health === 'low_battery' ? 'text-yellow-400' : 'text-foreground'}>
+                          <span className={label.health === 'low_battery' ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}>
                             {label.batteryPct}%
                           </span>
                         ) : (
@@ -247,9 +247,9 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                         {lastLocation ? (
                           <span className="inline-flex items-center gap-1.5">
                             {lastLocation.source === 'CELL_TOWER' ? (
-                              <Radio className="h-3 w-3 text-purple-400" title="Onomondo" />
+                              <Radio className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Onomondo" />
                             ) : (
-                              <Satellite className="h-3 w-3 text-blue-400" title="Device" />
+                              <Satellite className="h-3 w-3 text-blue-600 dark:text-blue-400" title="Device" />
                             )}
                             {formatDistanceToNow(new Date(lastLocation.recordedAt), {
                               addSuffix: true,
@@ -283,11 +283,11 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                       </td>
                       <td className="py-3">
                         {label.health === 'no_signal' ? (
-                          <Badge className="bg-red-500/20 text-red-400">No Signal</Badge>
+                          <Badge className="bg-red-500/20 text-red-600 dark:text-red-400">No Signal</Badge>
                         ) : label.health === 'low_battery' ? (
-                          <Badge className="bg-yellow-500/20 text-yellow-400">Low Battery</Badge>
+                          <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">Low Battery</Badge>
                         ) : (
-                          <Badge className="bg-green-500/20 text-green-400">Healthy</Badge>
+                          <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">Healthy</Badge>
                         )}
                       </td>
                     </tr>

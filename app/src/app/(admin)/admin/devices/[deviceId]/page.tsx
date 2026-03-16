@@ -34,17 +34,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 const statusColors: Record<string, string> = {
-  ACTIVE: 'bg-green-500/20 text-green-400',
+  ACTIVE: 'bg-green-500/20 text-green-600 dark:text-green-400',
   INVENTORY: 'bg-gray-500/20 text-muted-foreground',
-  SOLD: 'bg-blue-500/20 text-blue-400',
-  DEPLETED: 'bg-red-500/20 text-red-400',
+  SOLD: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+  DEPLETED: 'bg-red-500/20 text-red-600 dark:text-red-400',
 }
 
 const shipmentStatusColors: Record<string, string> = {
   PENDING: 'bg-gray-500/20 text-muted-foreground',
-  IN_TRANSIT: 'bg-blue-500/20 text-blue-400',
-  DELIVERED: 'bg-green-500/20 text-green-400',
-  CANCELLED: 'bg-red-500/20 text-red-400',
+  IN_TRANSIT: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+  DELIVERED: 'bg-green-500/20 text-green-600 dark:text-green-400',
+  CANCELLED: 'bg-red-500/20 text-red-600 dark:text-red-400',
 }
 
 export default async function DeviceDetailPage({ params }: PageProps) {
@@ -131,7 +131,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
               href={`https://app.onomondo.com/sims/${onomondoSim.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-purple-400 hover:border-purple-400/50 hover:bg-accent transition-colors"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-purple-600 dark:text-purple-400 hover:border-purple-500/50 dark:hover:border-purple-400/50 hover:bg-accent transition-colors"
             >
               <ExternalLink className="h-3 w-3" />
               Onomondo
@@ -139,13 +139,13 @@ export default async function DeviceDetailPage({ params }: PageProps) {
           )}
           <Badge className={statusColors[label.status]}>{label.status}</Badge>
           {isNoSignal && (
-            <Badge className="bg-red-500/20 text-red-400">
+            <Badge className="bg-red-500/20 text-red-600 dark:text-red-400">
               <WifiOff className="mr-1 h-3 w-3" />
               No Signal
             </Badge>
           )}
           {isLowBattery && (
-            <Badge className="bg-yellow-500/20 text-yellow-400">
+            <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
               <Battery className="mr-1 h-3 w-3" />
               Low Battery
             </Badge>
@@ -162,10 +162,10 @@ export default async function DeviceDetailPage({ params }: PageProps) {
               label.batteryPct === null
                 ? 'text-muted-foreground'
                 : label.batteryPct < 20
-                  ? 'text-red-400'
+                  ? 'text-red-600 dark:text-red-400'
                   : label.batteryPct < 50
-                    ? 'text-yellow-400'
-                    : 'text-green-400'
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-green-600 dark:text-green-400'
             }`}>
               {label.batteryPct !== null ? `${label.batteryPct}%` : 'Unknown'}
             </p>
@@ -275,12 +275,12 @@ export default async function DeviceDetailPage({ params }: PageProps) {
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {lastLocation.source === 'CELL_TOWER' ? (
                   <>
-                    <Radio className="h-3 w-3 text-purple-400" />
+                    <Radio className="h-3 w-3 text-purple-600 dark:text-purple-400" />
                     Onomondo
                   </>
                 ) : (
                   <>
-                    <Satellite className="h-3 w-3 text-blue-400" />
+                    <Satellite className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                     Device
                   </>
                 )}
@@ -340,11 +340,11 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                     </td>
                     <td className="py-2">
                       {loc.source === 'CELL_TOWER' ? (
-                        <span className="inline-flex items-center gap-1 text-purple-400">
+                        <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400">
                           <Radio className="h-3 w-3" /> Onomondo
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-blue-400">
+                        <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
                           <Satellite className="h-3 w-3" /> Device
                         </span>
                       )}
@@ -356,17 +356,17 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                       {loc.batteryPct !== null ? (
                         <span className={`inline-flex items-center gap-1 ${
                           loc.batteryPct < 20
-                            ? 'text-red-400'
+                            ? 'text-red-600 dark:text-red-400'
                             : loc.batteryPct < 50
-                              ? 'text-yellow-400'
-                              : 'text-green-400'
+                              ? 'text-yellow-600 dark:text-yellow-400'
+                              : 'text-green-600 dark:text-green-400'
                         }`}>
                           <span className={`inline-block h-1.5 w-1.5 rounded-full ${
                             loc.batteryPct < 20
-                              ? 'bg-red-400'
+                              ? 'bg-red-500 dark:bg-red-400'
                               : loc.batteryPct < 50
-                                ? 'bg-yellow-400'
-                                : 'bg-green-400'
+                                ? 'bg-yellow-500 dark:bg-yellow-400'
+                                : 'bg-green-500 dark:bg-green-400'
                           }`} />
                           {loc.batteryPct}%
                         </span>

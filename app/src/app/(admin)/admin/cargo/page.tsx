@@ -161,7 +161,7 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
                           {s.label?.batteryPct !== null && s.label?.batteryPct !== undefined && (
                             <span
                               className={`ml-2 text-xs ${
-                                s.label.batteryPct < 20 ? 'text-red-400' : 'text-muted-foreground'
+                                s.label.batteryPct < 20 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
                               }`}
                             >
                               {s.label.batteryPct}%

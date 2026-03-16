@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
+import { useTheme } from 'next-themes'
 
 export interface ReportingDay {
   date: string // YYYY-MM-DD
@@ -15,6 +16,15 @@ interface ReportingFrequencyChartProps {
 }
 
 export function ReportingFrequencyChart({ data }: ReportingFrequencyChartProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  const gridColor = isDark ? '#374151' : '#e5e7eb'
+  const axisColor = isDark ? '#6b7280' : '#9ca3af'
+  const tooltipBg = isDark ? '#1f2937' : '#ffffff'
+  const tooltipBorder = isDark ? '#374151' : '#e5e7eb'
+  const legendColor = isDark ? '#9ca3af' : '#6b7280'
+
   if (data.length === 0) return null
 
   const chartData = data.map((d) => ({
@@ -33,22 +43,22 @@ export function ReportingFrequencyChart({ data }: ReportingFrequencyChartProps) 
         <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
               <XAxis
                 dataKey="label"
-                stroke="#6b7280"
+                stroke={axisColor}
                 fontSize={11}
                 tickLine={false}
               />
               <YAxis
-                stroke="#6b7280"
+                stroke={axisColor}
                 fontSize={11}
                 tickLine={false}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -60,7 +70,7 @@ export function ReportingFrequencyChart({ data }: ReportingFrequencyChartProps) 
                 }}
               />
               <Legend
-                wrapperStyle={{ fontSize: 11, color: '#9ca3af' }}
+                wrapperStyle={{ fontSize: 11, color: legendColor }}
               />
               <Bar
                 dataKey="deviceCount"

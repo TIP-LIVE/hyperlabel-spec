@@ -106,10 +106,10 @@ export function SimStatusPanel() {
           {/* Online */}
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-              <Wifi className="h-5 w-5 text-green-400" />
+              <Wifi className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-xl font-bold text-green-400">{summary.onlineCount}</p>
+              <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.onlineCount}</p>
               <p className="text-xs text-muted-foreground">Online</p>
             </div>
           </div>
@@ -128,10 +128,10 @@ export function SimStatusPanel() {
           {/* Data Usage */}
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-              <HardDrive className="h-5 w-5 text-blue-400" />
+              <HardDrive className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-xl font-bold text-blue-400">{formatBytes(summary.totalBytes)}</p>
+              <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatBytes(summary.totalBytes)}</p>
               <p className="text-xs text-muted-foreground">Data used</p>
             </div>
           </div>

@@ -23,10 +23,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 const statusStyles: Record<string, string> = {
   PENDING: 'bg-gray-500/20 text-muted-foreground',
-  PAID: 'bg-yellow-500/20 text-yellow-400',
-  SHIPPED: 'bg-blue-500/20 text-blue-400',
-  DELIVERED: 'bg-green-500/20 text-green-400',
-  CANCELLED: 'bg-red-500/20 text-red-400',
+  PAID: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+  SHIPPED: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+  DELIVERED: 'bg-green-500/20 text-green-600 dark:text-green-400',
+  CANCELLED: 'bg-red-500/20 text-red-600 dark:text-red-400',
 }
 
 export default async function AdminOrderDetailPage({ params }: PageProps) {
@@ -221,14 +221,14 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     {ol.label.batteryPct !== null && (
-                      <span className={`text-xs ${ol.label.batteryPct < 20 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                      <span className={`text-xs ${ol.label.batteryPct < 20 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                         {ol.label.batteryPct}%
                       </span>
                     )}
                     <Badge className={
-                      ol.label.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                      ol.label.status === 'SOLD' ? 'bg-blue-500/20 text-blue-400' :
-                      ol.label.status === 'DEPLETED' ? 'bg-red-500/20 text-red-400' :
+                      ol.label.status === 'ACTIVE' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                      ol.label.status === 'SOLD' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
+                      ol.label.status === 'DEPLETED' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
                       'bg-gray-500/20 text-muted-foreground'
                     }>
                       {ol.label.status}

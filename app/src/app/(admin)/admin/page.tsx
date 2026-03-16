@@ -75,7 +75,7 @@ export default async function AdminOverviewPage() {
       {(pendingOrders > 0 || lowBatteryLabels > 0) && (
         <Card className="border-yellow-500/50 bg-yellow-500/10">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-yellow-500">
+            <CardTitle className="flex items-center gap-2 text-yellow-700 dark:text-yellow-500">
               <AlertTriangle className="h-5 w-5" />
               Attention Required
             </CardTitle>
@@ -84,7 +84,7 @@ export default async function AdminOverviewPage() {
             {pendingOrders > 0 && (
               <Link
                 href="/admin/orders?status=PAID"
-                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-yellow-200 transition-colors hover:bg-yellow-500/10"
+                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-yellow-700 dark:text-yellow-200 transition-colors hover:bg-yellow-500/10"
               >
                 <span>• {pendingOrders} order(s) awaiting fulfillment</span>
                 <ArrowRight className="h-4 w-4" />
@@ -93,7 +93,7 @@ export default async function AdminOverviewPage() {
             {lowBatteryLabels > 0 && (
               <Link
                 href="/admin/devices"
-                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-yellow-200 transition-colors hover:bg-yellow-500/10"
+                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-yellow-700 dark:text-yellow-200 transition-colors hover:bg-yellow-500/10"
               >
                 <span>• {lowBatteryLabels} active label(s) with low battery (&lt;20%)</span>
                 <ArrowRight className="h-4 w-4" />
@@ -111,11 +111,11 @@ export default async function AdminOverviewPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
                 <stat.icon
-                  className={`h-4 w-4 ${stat.alert ? 'text-yellow-500' : 'text-muted-foreground'}`}
+                  className={`h-4 w-4 ${stat.alert ? 'text-yellow-600 dark:text-yellow-500' : 'text-muted-foreground'}`}
                 />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-500' : 'text-card-foreground'}`}>
+                <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-600 dark:text-yellow-500' : 'text-card-foreground'}`}>
                   {stat.value}
                 </div>
                 <p className="text-xs text-muted-foreground">{stat.description}</p>
@@ -190,8 +190,8 @@ async function RecentOrders() {
           <span
             className={`rounded px-2 py-1 text-xs ${
               order.status === 'PAID'
-                ? 'bg-yellow-500/20 text-yellow-500'
-                : 'bg-blue-500/20 text-blue-500'
+                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-500'
+                : 'bg-blue-500/20 text-blue-600 dark:text-blue-500'
             }`}
           >
             {order.status}
@@ -238,7 +238,7 @@ async function LowBatteryLabels() {
                 )}
               </p>
             </div>
-            <span className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-500">
+            <span className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-600 dark:text-red-500">
               {label.batteryPct}%
             </span>
           </div>
