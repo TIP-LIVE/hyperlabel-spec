@@ -263,7 +263,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
     id: 'lastUpdate',
     header: 'Last Update',
     cell: ({ row }) => {
-      const timestamp = row.original.label?.lastSeenAt || row.original.latestLocation?.recordedAt
+      const timestamp = row.original.latestLocation?.recordedAt || row.original.label?.lastSeenAt
       if (!timestamp) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
