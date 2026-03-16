@@ -13,6 +13,7 @@ import {
 } from '@/lib/rate-limit'
 import { resolveCellTowerLocation } from '@/lib/cell-geolocation'
 import { db } from '@/lib/db'
+import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
 
 /**
  * POST /api/v1/device/onomondo/location-update
@@ -24,7 +25,7 @@ import { db } from '@/lib/db'
  * Returns 200 immediately after validation, then processes in background
  * via after() to avoid Onomondo's 1000ms webhook timeout.
  *
- * Authentication: API key in header (X-API-Key) or query param (?key=)
+ * Authentication: API key via X-API-Key / ?key=, or shared secret header.
  * Rate limit: 120 req/min per API key
  */
 export async function POST(req: NextRequest) {
@@ -40,16 +41,27 @@ export async function POST(req: NextRequest) {
       return rateLimitResponse(rl)
     }
 
-    // Verify API key
-    const expectedKey =
+    const expectedApiKey =
       process.env.ONOMONDO_WEBHOOK_API_KEY ||
       process.env.ONOMONDO_CONNECTOR_API_KEY ||
       process.env.DEVICE_API_KEY
-    if (expectedKey && apiKey !== expectedKey) {
-      console.warn('[webhook:location-update] 401 Invalid API key', {
-        hasKey: !!apiKey,
+    const expectedWebhookSecret = process.env.ONOMONDO_WEBHOOK_SECRET
+
+    if (
+      !verifyOnomondoRequest({
+        req,
+        expectedApiKey,
+        expectedWebhookSecret,
       })
-      return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
+    ) {
+      console.warn('[webhook:location-update] 401 Invalid webhook credentials', {
+        hasApiKey: !!apiKey,
+        hasWebhookSecret:
+          !!req.headers.get('x-onomondo-webhook-secret') ||
+          !!req.headers.get('x-webhook-secret') ||
+          !!req.headers.get('authorization'),
+      })
+      return NextResponse.json({ error: 'Invalid webhook credentials' }, { status: 401 })
     }
 
     let body: unknown

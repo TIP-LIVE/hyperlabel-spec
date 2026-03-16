@@ -2,6 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createTestRequest, parseResponse } from '@/test/helpers/api'
 import { validOnomonodoPayload } from '@/test/helpers/fixtures'
 
+vi.mock('next/server', async () => {
+  const actual = await vi.importActual<typeof import('next/server')>('next/server')
+  return {
+    ...actual,
+    after: vi.fn(async (callback: () => Promise<void> | void) => {
+      await callback()
+    }),
+  }
+})
+
 // Mock rate limiter to always allow
 vi.mock('@/lib/rate-limit', () => ({
   rateLimit: vi.fn().mockReturnValue({ success: true, limit: 120, remaining: 119, resetAt: Date.now() + 60000 }),
@@ -30,6 +40,7 @@ vi.mock('@/lib/device-report', async () => {
       deviceId: 'TIP-001',
     }),
     LocationReportError,
+    geocodeLocationEvent: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -41,6 +52,9 @@ const mockedProcessLocationReport = vi.mocked(processLocationReport)
 describe('POST /api/v1/device/onomondo', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    process.env.DEVICE_API_KEY = 'test-device-api-key'
+    delete process.env.ONOMONDO_CONNECTOR_API_KEY
+    delete process.env.ONOMONDO_WEBHOOK_SECRET
   })
 
   // ── Authentication ─────────────────────────────────
@@ -56,7 +70,24 @@ describe('POST /api/v1/device/onomondo', () => {
     const { status, body } = await parseResponse(res)
 
     expect(status).toBe(401)
-    expect(body).toEqual({ error: 'Invalid API key' })
+    expect(body).toEqual({ error: 'Invalid webhook credentials' })
+  })
+
+  it('accepts a valid webhook secret header', async () => {
+    process.env.ONOMONDO_WEBHOOK_SECRET = 'shared-secret'
+
+    const req = createTestRequest('/api/v1/device/onomondo', {
+      method: 'POST',
+      body: validOnomonodoPayload(),
+      headers: { 'X-Onomondo-Webhook-Secret': 'shared-secret' },
+    })
+
+    const res = await POST(req)
+    const { status, body } = await parseResponse(res)
+
+    expect(status).toBe(200)
+    expect(body).toMatchObject({ success: true, locationId: 'loc-001' })
+    expect(mockedProcessLocationReport).toHaveBeenCalledOnce()
   })
 
   // ── Validation ─────────────────────────────────────
@@ -151,7 +182,7 @@ describe('POST /api/v1/device/onomondo', () => {
     expect(mockedProcessLocationReport).toHaveBeenCalledTimes(3)
   })
 
-  it('returns offlineProcessed count', async () => {
+  it('returns success for offline_queue payloads', async () => {
     const payload = validOnomonodoPayload({
       offline_queue: [
         {
@@ -170,9 +201,9 @@ describe('POST /api/v1/device/onomondo', () => {
     })
 
     const res = await POST(req)
-    const { status, body } = await parseResponse<{ offlineProcessed: number }>(res)
+    const { status, body } = await parseResponse<{ locationId: string }>(res)
 
     expect(status).toBe(200)
-    expect(body.offlineProcessed).toBe(1)
+    expect(body.locationId).toBe('loc-001')
   })
 })
