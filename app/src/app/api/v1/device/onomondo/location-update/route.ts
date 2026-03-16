@@ -63,6 +63,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Log every incoming webhook immediately — raw type and SIM info
+    const rawBody = body as Record<string, unknown>
+    console.info('[webhook:location-update] INCOMING', {
+      type: rawBody?.type,
+      iccid: rawBody?.iccid,
+      simLabel: rawBody?.sim_label,
+      time: rawBody?.time,
+      hasLocation: !!rawBody?.location,
+      networkCountry: (rawBody?.network as Record<string, unknown>)?.country_code,
+    })
+
     const validated = onomondoLocationUpdateSchema.safeParse(body)
     if (!validated.success) {
       console.warn('[webhook:location-update] validation failed', {
