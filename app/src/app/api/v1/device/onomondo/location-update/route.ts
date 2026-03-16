@@ -115,8 +115,6 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
-    // Update lastSeenAt for ANY event type — proves the device is online
-    // even when there's no new location data
     if (data.iccid) {
       db.label.updateMany({
         where: { iccid: data.iccid },
@@ -125,10 +123,6 @@ export async function POST(req: NextRequest) {
         console.warn('[webhook:location-update] lastSeenAt update failed:', err)
       )
 
-      // Any webhook event proves the device is online, so transition
-      // PENDING shipments to IN_TRANSIT even without location coordinates.
-      // This covers cases where a label is reactivated and the first events
-      // are non-location types (connectivity, data usage, etc.).
       db.shipment.updateMany({
         where: {
           OR: [
@@ -147,10 +141,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Only process "location" type events for coordinates
-    if (data.type !== 'location' || !data.location) {
-      console.info('[webhook:location-update] skipped non-location type (lastSeenAt updated)', { type: data.type, simLabel: data.sim_label })
-      const result = { success: true, skipped: true, reason: `Ignored type: ${data.type}` }
+    if (!data.location) {
+      console.info('[webhook:location-update] skipped — no location data', { type: data.type, simLabel: data.sim_label })
+      const result = { success: true, skipped: true, reason: 'No location data' }
       updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
       return NextResponse.json(result)
     }
