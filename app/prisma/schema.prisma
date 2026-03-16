@@ -293,3 +293,27 @@ model Notification {
   @@index([userId, orgId, sentAt])
   @@map("notifications")
 }
+
+// ============================================
+// WEBHOOK DEBUG LOGS
+// ============================================
+
+model WebhookLog {
+  id               String   @id @default(cuid())
+  endpoint         String                        // "connector" | "location-update"
+  method           String   @default("POST")
+  headers          Json                          // Sanitized (auth values redacted)
+  body             Json                          // Raw JSON payload
+  ipAddress        String?  @map("ip_address")
+  statusCode       Int?     @map("status_code")
+  processingResult Json?    @map("processing_result")
+  iccid            String?
+  eventType        String?  @map("event_type")
+  durationMs       Int?     @map("duration_ms")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([iccid])
+  @@index([endpoint])
+  @@map("webhook_logs")
+}

@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Truck,
   Send,
+  Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
   { name: 'Label Dispatch', href: '/admin/dispatch', icon: Send },
   { name: 'Devices', href: '/admin/devices', icon: Radio },
+  { name: 'Webhooks', href: '/admin/webhooks', icon: Activity },
 ]
 
 export function AdminSidebarNav() {

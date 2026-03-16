@@ -21,6 +21,7 @@ import {
   Truck,
   Send,
   Menu,
+  Activity,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
   { name: 'Label Dispatch', href: '/admin/dispatch', icon: Send },
   { name: 'Devices', href: '/admin/devices', icon: Radio },
+  { name: 'Webhooks', href: '/admin/webhooks', icon: Activity },
 ]
 
 export function AdminMobileSidebar() {

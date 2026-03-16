@@ -13,6 +13,7 @@ import {
 import { resolveCellTowerLocation } from '@/lib/cell-geolocation'
 import { db } from '@/lib/db'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
+import { createWebhookLog, updateWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
 
 /**
  * POST /api/v1/device/onomondo/location-update
@@ -28,6 +29,9 @@ import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
  * Rate limit: 120 req/min per API key
  */
 export async function POST(req: NextRequest) {
+  const startTime = Date.now()
+  const logId = crypto.randomUUID()
+
   try {
     const apiKey =
       req.headers.get('x-api-key') || req.nextUrl.searchParams.get('key')
@@ -85,12 +89,24 @@ export async function POST(req: NextRequest) {
       networkCountry: (rawBody?.network as Record<string, unknown>)?.country_code,
     })
 
+    // Fire-and-forget: persist raw webhook for admin debug panel
+    createWebhookLog({
+      id: logId,
+      endpoint: 'location-update',
+      headers: req.headers,
+      body: rawBody,
+      ipAddress: getClientIp(req),
+      iccid: rawBody?.iccid as string | undefined,
+      eventType: rawBody?.type as string | undefined,
+    })
+
     const validated = onomondoLocationUpdateSchema.safeParse(body)
     if (!validated.success) {
       console.warn('[webhook:location-update] validation failed', {
         errors: validated.error.flatten(),
         body: JSON.stringify(body).slice(0, 500),
       })
+      updateWebhookLog(logId, { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }
@@ -113,7 +129,9 @@ export async function POST(req: NextRequest) {
     // Only process "location" type events for coordinates
     if (data.type !== 'location' || !data.location) {
       console.info('[webhook:location-update] skipped non-location type (lastSeenAt updated)', { type: data.type, simLabel: data.sim_label })
-      return NextResponse.json({ success: true, skipped: true, reason: `Ignored type: ${data.type}` })
+      const result = { success: true, skipped: true, reason: `Ignored type: ${data.type}` }
+      updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
+      return NextResponse.json(result)
     }
 
     const loc = data.location
@@ -178,7 +196,9 @@ export async function POST(req: NextRequest) {
         cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
         onomondoLatNull: loc.lat === null,
       })
-      return NextResponse.json({ success: true, skipped: true, reason: 'No coordinates available' })
+      const result = { success: true, skipped: true, reason: 'No coordinates available' }
+      updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
+      return NextResponse.json(result)
     }
 
     const result = await processLocationReport({
@@ -195,11 +215,15 @@ export async function POST(req: NextRequest) {
     // Defer only geocoding to after() — non-critical
     after(async () => {
       await geocodeLocationEvent(result.locationId, lat!, lng!)
+      // Probabilistic pruning of old webhook logs
+      if (Math.random() < 0.05) await pruneWebhookLogs()
     })
 
+    updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId }, durationMs: Date.now() - startTime })
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[webhook:location-update] error:', error)
+    updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

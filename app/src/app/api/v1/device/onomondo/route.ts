@@ -11,6 +11,7 @@ import {
   rateLimitResponse,
 } from '@/lib/rate-limit'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
+import { createWebhookLog, updateWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
 
 /**
  * POST /api/v1/device/onomondo
@@ -25,6 +26,9 @@ import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
  * Rate limit: 120 req/min per API key
  */
 export async function POST(req: NextRequest) {
+  const startTime = Date.now()
+  const logId = crypto.randomUUID()
+
   try {
     const apiKey =
       req.headers.get('x-api-key') || req.nextUrl.searchParams.get('key')
@@ -65,12 +69,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const rawBody = body as Record<string, unknown>
+
+    // Fire-and-forget: persist raw webhook for admin debug panel
+    createWebhookLog({
+      id: logId,
+      endpoint: 'connector',
+      headers: req.headers,
+      body: rawBody,
+      ipAddress: getClientIp(req),
+      iccid: rawBody?.iccid as string | undefined,
+    })
+
     const validated = onomondoConnectorSchema.safeParse(body)
     if (!validated.success) {
       console.warn('[webhook:onomondo] validation failed', {
         errors: validated.error.flatten(),
         body: JSON.stringify(body).slice(0, 500),
       })
+      updateWebhookLog(logId, { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }
@@ -141,12 +158,16 @@ export async function POST(req: NextRequest) {
         for (const loc of toGeocode) {
           await geocodeLocationEvent(loc.id, loc.lat, loc.lng)
         }
+        // Probabilistic pruning of old webhook logs
+        if (Math.random() < 0.05) await pruneWebhookLogs()
       })
     }
 
+    updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId, offlineQueueProcessed: data.offline_queue?.length ?? 0 }, durationMs: Date.now() - startTime })
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[Onomondo connector] error:', error)
+    updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
