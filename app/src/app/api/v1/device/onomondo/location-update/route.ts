@@ -124,6 +124,27 @@ export async function POST(req: NextRequest) {
       }).catch((err) =>
         console.warn('[webhook:location-update] lastSeenAt update failed:', err)
       )
+
+      // Any webhook event proves the device is online, so transition
+      // PENDING shipments to IN_TRANSIT even without location coordinates.
+      // This covers cases where a label is reactivated and the first events
+      // are non-location types (connectivity, data usage, etc.).
+      db.shipment.updateMany({
+        where: {
+          OR: [
+            { label: { iccid: data.iccid } },
+            { shipmentLabels: { some: { label: { iccid: data.iccid } } } },
+          ],
+          status: 'PENDING',
+        },
+        data: { status: 'IN_TRANSIT' },
+      }).then((r) => {
+        if (r.count > 0) {
+          console.info(`[webhook:location-update] ${r.count} PENDING shipment(s) → IN_TRANSIT via ${data.type} event (iccid: ${data.iccid})`)
+        }
+      }).catch((err) =>
+        console.warn('[webhook:location-update] PENDING→IN_TRANSIT update failed:', err)
+      )
     }
 
     // Only process "location" type events for coordinates
