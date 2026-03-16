@@ -1,0 +1,110 @@
+const faqItems = [
+  {
+    question: 'What is a TIP tracking label?',
+    answer:
+      'TIP is a disposable cellular tracking label that you attach to your cargo. It uses LTE Cat-1 connectivity and an embedded softSIM to transmit location data from 180+ countries — no scanners, no apps, no infrastructure required.',
+  },
+  {
+    question: 'How does TIP work?',
+    answer:
+      'Scan the QR code on the label with your phone camera to activate it, peel off the backing, and stick it to your cargo. The label starts transmitting location data within seconds. Track your shipment via the TIP dashboard or share a public tracking link with anyone.',
+  },
+  {
+    question: 'How much does a TIP label cost?',
+    answer:
+      'TIP labels start from $20 per label. The price includes 60+ days of cellular connectivity, full platform access, shareable tracking links, and email notifications. No monthly fees, no data plans, no hidden costs.',
+  },
+  {
+    question: 'Do I need to return the label after delivery?',
+    answer:
+      'No. TIP labels are designed as single-use devices. There is no return shipping, no cleaning, no recharging, and no fleet management. Ship it, track it, done.',
+  },
+  {
+    question: 'Which countries does TIP cover?',
+    answer:
+      'TIP labels work in 180+ countries via embedded softSIM technology. They connect to local cellular networks automatically — on land, at sea, and in the air.',
+  },
+  {
+    question: 'Can I share tracking with my customers?',
+    answer:
+      'Yes. Every shipment generates a public tracking link that anyone can open in a browser — no app downloads, no account creation. Share it via email, messaging apps, or any channel.',
+  },
+]
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'TIP',
+  url: 'https://tip.live',
+  logo: 'https://tip.live/images/TIP-Logo.svg',
+  description:
+    'Door-to-door cargo tracking labels with real-time visibility in 180+ countries.',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'support@tip.live',
+    contactType: 'customer service',
+  },
+}
+
+const productSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'TIP Tracking Label',
+  description:
+    'Disposable cellular tracking label for cargo shipments. LTE Cat-1 connectivity, 60+ day battery, 180+ country coverage. One-time purchase, no subscriptions.',
+  brand: { '@type': 'Brand', name: 'TIP' },
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'USD',
+    lowPrice: '20',
+    highPrice: '30',
+    offerCount: '3',
+    availability: 'https://schema.org/InStock',
+  },
+  image: 'https://tip.live/images/tip-label-3d.webp',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer,
+    },
+  })),
+}
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'TIP',
+  url: 'https://tip.live',
+  description:
+    'Door-to-door cargo tracking labels. Real-time visibility in 180+ countries.',
+}
+
+export function StructuredData() {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+    </>
+  )
+}

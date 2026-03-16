@@ -60,6 +60,25 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Immutable cache for optimized images and videos
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/videos/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       // CORS headers for device API (IoT devices send location reports)
       {
         source: '/api/v1/device/:path*',

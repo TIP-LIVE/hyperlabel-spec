@@ -346,7 +346,7 @@ export function CreateCargoForm() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Label htmlFor="labelId">Tracking Label</Label>
-                <FieldInfo text="Select a purchased label to attach to this cargo for real-time GPS tracking." />
+                <FieldInfo text="Select a purchased label to attach to this cargo for real-time tracking." />
               </div>
               {!labelsLoading && labels.length > 0 && (
                 <QrScanner onDeviceIdScanned={handleQrScanned} />

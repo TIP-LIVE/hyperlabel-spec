@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
-import { Logo } from '@/components/ui/logo'
+import { AnimatedEyeLogo } from '@/components/landing/animated-eye-logo'
 import { MobileNav } from '@/components/landing/mobile-nav'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 const navLinks = [
   { href: '/features', label: 'Features' },
@@ -14,37 +13,50 @@ const navLinks = [
 
 export function MarketingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <Logo size="lg" />
+          <AnimatedEyeLogo className="h-8 w-8" />
+          <span className="text-xl font-bold text-[#00FF2B]">TIP</span>
         </Link>
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
             >
               {link.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <SignedOut>
-            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="hidden text-gray-400 hover:bg-white/10 hover:text-white sm:inline-flex"
+            >
               <Link href="/sign-in">Sign In</Link>
             </Button>
-            <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
-              <Link href="/sign-up">Get Started</Link>
+            <Button
+              size="sm"
+              asChild
+              className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
+            >
+              <Link href="/sign-up">Buy a Label</Link>
             </Button>
           </SignedOut>
           <SignedIn>
-            <Button size="sm" asChild className="hidden rounded-full px-5 sm:inline-flex">
+            <Button
+              size="sm"
+              asChild
+              className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
+            >
               <Link href="/dashboard">Dashboard</Link>
             </Button>
           </SignedIn>
-          <ThemeToggle />
           <MobileNav />
         </div>
       </div>

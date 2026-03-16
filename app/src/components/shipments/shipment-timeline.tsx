@@ -111,7 +111,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Radio className="h-10 w-10 text-muted-foreground/50 animate-pulse" />
-        <p className="mt-3 text-sm text-muted-foreground">Acquiring GPS signal</p>
+        <p className="mt-3 text-sm text-muted-foreground">Acquiring signal</p>
         <p className="text-xs text-muted-foreground">
           The label is connecting to the cellular network. First location typically appears within a few minutes.
         </p>

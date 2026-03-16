@@ -418,7 +418,7 @@ export function TrackingMap({
       >
         <Radio className="h-8 w-8 text-muted-foreground/40 animate-pulse" />
         <div className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">Acquiring GPS signal</p>
+          <p className="text-sm font-medium text-muted-foreground">Acquiring signal</p>
           <p className="mt-1 text-xs text-muted-foreground/70">
             The tracking label is powering on and connecting. First location typically appears within a few minutes.
           </p>
@@ -436,7 +436,7 @@ export function TrackingMap({
       >
         <Radio className="h-8 w-8 text-muted-foreground/40 animate-pulse" />
         <div className="text-center space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Acquiring GPS signal</p>
+          <p className="text-sm font-medium text-muted-foreground">Acquiring signal</p>
           <p className="text-xs text-muted-foreground/70">
             The label is connecting to the network. First location typically appears within a few minutes. This page updates automatically.
           </p>

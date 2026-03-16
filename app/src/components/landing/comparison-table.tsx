@@ -99,21 +99,21 @@ const columns = [
   { key: 'tip' as const, label: 'TIP', highlight: true },
   { key: 'rfid' as const, label: 'Traditional RFID' },
   { key: 'bluetooth' as const, label: 'Bluetooth Trackers' },
-  { key: 'enterprise' as const, label: 'Enterprise GPS' },
+  { key: 'enterprise' as const, label: 'Enterprise Trackers' },
 ]
 
 function CellValue({ value, highlight }: { value: boolean | string; highlight?: boolean }) {
   if (typeof value === 'string') {
     return (
-      <span className={cn('text-sm', highlight ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+      <span className={cn('text-sm', highlight ? 'font-semibold text-white' : 'text-gray-400')}>
         {value}
       </span>
     )
   }
   if (value) {
-    return <Check className={cn('mx-auto h-5 w-5', highlight ? 'text-primary' : 'text-primary/70')} />
+    return <Check className={cn('mx-auto h-5 w-5', highlight ? 'text-[#00FF2B]' : 'text-[#00FF2B]/70')} />
   }
-  return <X className="mx-auto h-5 w-5 text-muted-foreground/30" />
+  return <X className="mx-auto h-5 w-5 text-gray-600" />
 }
 
 /* ─── Desktop Table ──────────────────────────────────────────────── */
@@ -122,37 +122,37 @@ function DesktopTable() {
     <div className="hidden md:block">
       <Table>
         <TableHeader>
-          <TableRow className="border-b-2">
-            <TableHead className="w-[260px] text-base">Feature</TableHead>
+          <TableRow className="border-b border-white/10">
+            <TableHead className="w-[260px] text-base text-gray-400">Feature</TableHead>
             {columns.map((col) => (
               <TableHead
                 key={col.key}
                 className={cn(
                   'text-center text-base',
-                  col.highlight && 'bg-primary/5 border-x-2 border-t-2 border-primary rounded-t-lg'
+                  col.highlight && 'rounded-t-lg border-x border-t border-[#00FF2B]/30 bg-[#00FF2B]/5'
                 )}
               >
                 {col.highlight && (
-                  <span className="mb-1 inline-block rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
+                  <span className="mb-1 inline-block rounded-full bg-[#00FF2B] px-3 py-0.5 text-xs font-medium text-black">
                     Best Value
                   </span>
                 )}
-                <div className={cn(col.highlight && 'font-bold')}>{col.label}</div>
+                <div className={cn('text-gray-300', col.highlight && 'font-bold text-white')}>{col.label}</div>
               </TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
           {features.map((feature, i) => (
-            <TableRow key={feature.name} className={cn(i % 2 === 0 && 'bg-muted/30')}>
-              <TableCell className="font-medium">
+            <TableRow key={feature.name} className={cn('border-white/5', i % 2 === 0 && 'bg-white/[0.02]')}>
+              <TableCell className="font-medium text-white">
                 <div>{feature.name}</div>
-                <div className="text-xs text-muted-foreground">{feature.description}</div>
+                <div className="text-xs text-gray-500">{feature.description}</div>
               </TableCell>
               {columns.map((col) => (
                 <TableCell
                   key={col.key}
-                  className={cn('text-center', col.highlight && 'bg-primary/5 border-x-2 border-primary')}
+                  className={cn('text-center', col.highlight && 'border-x border-[#00FF2B]/30 bg-[#00FF2B]/5')}
                 >
                   <CellValue value={feature[col.key]} highlight={col.highlight} />
                 </TableCell>
@@ -165,7 +165,7 @@ function DesktopTable() {
             {columns.map((col) => (
               <TableCell
                 key={col.key}
-                className={cn(col.highlight && 'border-x-2 border-b-2 border-primary rounded-b-lg')}
+                className={cn(col.highlight && 'rounded-b-lg border-x border-b border-[#00FF2B]/30')}
               />
             ))}
           </TableRow>
@@ -180,36 +180,35 @@ function MobileCards() {
   return (
     <div className="space-y-4 md:hidden">
       {features.map((feature) => (
-        <div key={feature.name} className="rounded-xl border bg-card p-4 shadow-sm">
-          <h3 className="font-semibold">{feature.name}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{feature.description}</p>
+        <div key={feature.name} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <h3 className="font-semibold text-white">{feature.name}</h3>
+          <p className="mt-1 text-xs text-gray-500">{feature.description}</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {columns.map((col) => {
               const value = feature[col.key]
-              const isPositive = value === true || (typeof value === 'string' && col.highlight)
               return (
                 <div
                   key={col.key}
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-2 text-xs',
                     col.highlight
-                      ? 'bg-primary/10 border border-primary/20 font-medium'
-                      : 'bg-muted'
+                      ? 'border border-[#00FF2B]/20 bg-[#00FF2B]/10 font-medium'
+                      : 'bg-white/[0.03]'
                   )}
                 >
                   {typeof value === 'boolean' ? (
                     value ? (
-                      <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      <Check className="h-3.5 w-3.5 shrink-0 text-[#00FF2B]" />
                     ) : (
-                      <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+                      <X className="h-3.5 w-3.5 shrink-0 text-gray-600" />
                     )
                   ) : (
-                    <Minus className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                    <Minus className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                   )}
                   <div>
-                    <div className="text-muted-foreground">{col.label}</div>
+                    <div className="text-gray-500">{col.label}</div>
                     {typeof value === 'string' && (
-                      <div className={cn('font-medium', col.highlight ? 'text-primary' : 'text-foreground')}>
+                      <div className={cn('font-medium', col.highlight ? 'text-[#00FF2B]' : 'text-white')}>
                         {value}
                       </div>
                     )}

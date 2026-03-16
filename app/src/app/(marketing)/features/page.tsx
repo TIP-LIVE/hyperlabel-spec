@@ -24,19 +24,28 @@ export default function FeaturesPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b bg-black py-20 md:py-28">
+      <section className="relative overflow-hidden border-b border-white/5 bg-black py-20 md:py-28">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-headline text-4xl text-white md:text-5xl lg:text-6xl">
             Built for Simplicity
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-body-brand text-gray-400 md:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-400">
             Five core capabilities that make cargo tracking as simple as sticking a label.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Button size="lg" className="h-12 rounded-full px-8 text-base font-semibold shadow-lg" asChild>
+            <Button
+              size="lg"
+              className="h-12 rounded-full bg-[#00FF2B] px-8 text-base font-semibold text-black shadow-lg hover:bg-[#00DD25]"
+              asChild
+            >
               <Link href="/sign-up">Get Started</Link>
             </Button>
-            <Button size="lg" variant="ghost" className="h-12 rounded-full px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white" asChild>
+            <Button
+              size="lg"
+              variant="ghost"
+              className="h-12 rounded-full border border-white/20 px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white"
+              asChild
+            >
               <Link href="/compare">Compare Solutions</Link>
             </Button>
           </div>
@@ -98,7 +107,7 @@ export default function FeaturesPage() {
         icon={PackageCheck}
         title="No Return Logistics"
         subtitle="Ship it, track it, done"
-        description="TIP labels are designed as single-use devices. At $20-30 per label, there is no need to coordinate device returns across international borders, manage inventory of reusable trackers, or handle cleaning and recharging cycles. This eliminates the reverse logistics cost that makes enterprise GPS trackers prohibitively expensive for most shipments — where device return shipping alone can exceed the cost of a TIP label."
+        description="TIP labels are designed as single-use devices. At $20-30 per label, there is no need to coordinate device returns across international borders, manage inventory of reusable trackers, or handle cleaning and recharging cycles. This eliminates the reverse logistics cost that makes enterprise trackers prohibitively expensive for most shipments — where device return shipping alone can exceed the cost of a TIP label."
         specs={[
           { label: 'Device type', value: 'Single-use' },
           { label: 'Return shipping', value: 'None' },
@@ -128,41 +137,27 @@ export default function FeaturesPage() {
       />
 
       {/* Specs Summary Grid */}
-      <section className="bg-muted py-20 md:py-24">
+      <section className="border-t border-white/5 bg-white/[0.02] py-20 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-center text-3xl font-bold md:text-4xl">At a Glance</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
+          <h2 className="text-center text-3xl font-bold text-white md:text-4xl">At a Glance</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-gray-400">
             The key technical specs behind every TIP label.
           </p>
           <div className="mx-auto mt-16 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
-                <Globe className="h-6 w-6" />
+            {[
+              { icon: Globe, value: '180+', label: 'Countries Covered' },
+              { icon: Battery, value: '60+', label: 'Day Battery Life' },
+              { icon: Radio, value: '2hr', label: 'Update Interval' },
+              { icon: Cpu, value: 'LTE', label: 'Cat-1 Cellular' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-[#00FF2B] text-black">
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <div className="mt-4 text-2xl font-bold text-white">{item.value}</div>
+                <div className="mt-1 text-sm text-gray-500">{item.label}</div>
               </div>
-              <div className="mt-4 text-2xl font-bold">180+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Countries Covered</div>
-            </div>
-            <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
-                <Battery className="h-6 w-6" />
-              </div>
-              <div className="mt-4 text-2xl font-bold">60+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Day Battery Life</div>
-            </div>
-            <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
-                <Radio className="h-6 w-6" />
-              </div>
-              <div className="mt-4 text-2xl font-bold">2hr</div>
-              <div className="mt-1 text-sm text-muted-foreground">Update Interval</div>
-            </div>
-            <div className="rounded-xl border bg-card p-6 text-center shadow-sm">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white dark:bg-primary dark:text-black">
-                <Cpu className="h-6 w-6" />
-              </div>
-              <div className="mt-4 text-2xl font-bold">LTE</div>
-              <div className="mt-1 text-sm text-muted-foreground">Cat-1 Cellular</div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
