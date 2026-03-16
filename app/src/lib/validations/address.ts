@@ -15,3 +15,17 @@ export const updateSavedAddressSchema = savedAddressSchema.partial()
 
 export type SavedAddressInput = z.infer<typeof savedAddressSchema>
 export type UpdateSavedAddressInput = z.infer<typeof updateSavedAddressSchema>
+
+export const shipperAddressSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  line1: z.string().min(1, 'Address is required').max(300),
+  line2: z.string().max(300).optional().or(z.literal('')),
+  city: z.string().min(1, 'City is required').max(100),
+  state: z.string().max(100).optional().or(z.literal('')),
+  postalCode: z.string().min(1, 'Postal code is required').max(20),
+  country: z.string().length(2, 'Select a country'),
+  email: z.string().email('Valid email is required'),
+  phone: z.string().max(30).optional().or(z.literal('')),
+})
+
+export type ShipperAddressInput = z.infer<typeof shipperAddressSchema>

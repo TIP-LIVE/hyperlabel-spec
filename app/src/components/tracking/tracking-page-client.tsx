@@ -22,6 +22,9 @@ import { formatDistanceToNow, format } from 'date-fns'
 import { PublicTrackingMap } from '@/components/maps/public-tracking-map'
 import { PublicTimeline } from '@/components/tracking/public-timeline'
 import { ConfirmDeliveryDialog } from '@/components/tracking/confirm-delivery-dialog'
+import { ShipperAddressForm } from '@/components/tracking/shipper-address-form'
+import type { ShipperAddressInput } from '@/lib/validations/address'
+import { getCountryName } from '@/lib/constants/countries'
 import { toast } from 'sonner'
 import { Logo } from '@/components/ui/logo'
 import { shipmentStatusConfig } from '@/lib/status-config'
@@ -53,6 +56,16 @@ interface ShipmentData {
   destinationAddress: string | null
   destinationLat: number | null
   destinationLng: number | null
+  destinationName: string | null
+  destinationLine1: string | null
+  destinationLine2: string | null
+  destinationCity: string | null
+  destinationState: string | null
+  destinationPostalCode: string | null
+  destinationCountry: string | null
+  addressSubmittedAt: string | null
+  consigneeEmail: string | null
+  consigneePhone: string | null
   deliveredAt: string | null
   createdAt: string
   label: {
@@ -161,6 +174,27 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
       ...prev,
       status: 'DELIVERED' as const,
       deliveredAt: new Date().toISOString(),
+    }))
+  }, [])
+
+  // Optimistic update after shipper submits address
+  const handleAddressSubmitted = useCallback((data: ShipperAddressInput) => {
+    const formatted = [data.name, data.line1, data.line2, data.city, data.state, data.postalCode, getCountryName(data.country)]
+      .filter(Boolean)
+      .join(', ')
+    setShipment((prev) => ({
+      ...prev,
+      destinationAddress: formatted,
+      destinationName: data.name,
+      destinationLine1: data.line1,
+      destinationLine2: data.line2 || null,
+      destinationCity: data.city,
+      destinationState: data.state || null,
+      destinationPostalCode: data.postalCode,
+      destinationCountry: data.country,
+      consigneeEmail: data.email,
+      consigneePhone: data.phone || null,
+      addressSubmittedAt: new Date().toISOString(),
     }))
   }, [])
 
@@ -378,6 +412,44 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                     shipmentName={shipment.name}
                     onDeliveryConfirmed={handleDeliveryConfirmed}
                   />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Shipper address form — dispatch pending, no address yet */}
+            {isDispatch && shipment.status === 'PENDING' && !shipment.addressSubmittedAt && (
+              <ShipperAddressForm shareCode={code} onSubmitted={handleAddressSubmitted} />
+            )}
+
+            {/* Submitted address — dispatch with address already submitted */}
+            {isDispatch && shipment.addressSubmittedAt && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Delivery Address Submitted
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <p className="font-medium">{shipment.destinationName}</p>
+                  <p>{shipment.destinationLine1}</p>
+                  {shipment.destinationLine2 && <p>{shipment.destinationLine2}</p>}
+                  <p>
+                    {[shipment.destinationCity, shipment.destinationState, shipment.destinationPostalCode]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                  {shipment.destinationCountry && (
+                    <p>{getCountryName(shipment.destinationCountry)}</p>
+                  )}
+                  {(shipment.consigneeEmail || shipment.consigneePhone) && (
+                    <>
+                      <div className="border-t pt-2 mt-2 space-y-1 text-muted-foreground">
+                        {shipment.consigneeEmail && <p>{shipment.consigneeEmail}</p>}
+                        {shipment.consigneePhone && <p>{shipment.consigneePhone}</p>}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
