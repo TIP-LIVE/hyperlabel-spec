@@ -313,7 +313,7 @@ export async function processLocationReport(
   await db.label.update({
     where: { id: label.id },
     data: {
-      lastSeenAt: new Date(),
+      lastSeenAt: recordedAt,
       ...(input.battery !== undefined && { batteryPct: input.battery }),
     },
   })

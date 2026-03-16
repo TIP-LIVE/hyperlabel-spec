@@ -116,13 +116,6 @@ export async function POST(req: NextRequest) {
     const data = validated.data
 
     if (data.iccid) {
-      db.label.updateMany({
-        where: { iccid: data.iccid },
-        data: { lastSeenAt: new Date() },
-      }).catch((err) =>
-        console.warn('[webhook:location-update] lastSeenAt update failed:', err)
-      )
-
       db.shipment.updateMany({
         where: {
           OR: [
