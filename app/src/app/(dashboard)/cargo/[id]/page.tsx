@@ -44,6 +44,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
           status: true,
           firmwareVersion: true,
           activatedAt: true,
+          lastSeenAt: true,
         },
       },
       locations: {
@@ -97,6 +98,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
       status: shipment.label.status,
       firmwareVersion: shipment.label.firmwareVersion,
       activatedAt: shipment.label.activatedAt?.toISOString() ?? null,
+      lastSeenAt: shipment.label.lastSeenAt?.toISOString() ?? null,
     } : null,
     locations: shipment.locations.map((loc) => ({
       id: loc.id,

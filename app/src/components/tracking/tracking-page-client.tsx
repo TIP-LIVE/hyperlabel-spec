@@ -58,6 +58,7 @@ interface ShipmentData {
   label: {
     deviceId: string
     batteryPct: number | null
+    lastSeenAt: string | null
   } | null
   locations: LocationPoint[]
 }
@@ -232,7 +233,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
               <div className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
                 <Clock className="h-3.5 w-3.5" />
                 <span>
-                  Updated {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+                  Updated {formatDistanceToNow(new Date(shipment.label?.lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}
                 </span>
               </div>
             )}
@@ -306,7 +307,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                   <CardTitle>Location</CardTitle>
                   <CardDescription>
                     {latestLocation
-                      ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
+                      ? `Last updated ${formatDistanceToNow(new Date(shipment.label?.lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}`
                       : 'The tracking label is connecting. First location typically appears within a few minutes.'}
                   </CardDescription>
                 </CardHeader>

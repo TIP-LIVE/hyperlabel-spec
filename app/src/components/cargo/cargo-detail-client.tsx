@@ -51,6 +51,7 @@ interface LabelInfo {
   status: string
   firmwareVersion: string | null
   activatedAt: string | null
+  lastSeenAt: string | null
 }
 
 interface CargoData {
@@ -404,7 +405,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
           </CardTitle>
           <CardDescription>
             {latestLocation
-              ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
+              ? `Last updated ${formatDistanceToNow(new Date(shipment.label?.lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}`
               : 'Acquiring GPS signal — first location typically appears within a few minutes'}
           </CardDescription>
         </CardHeader>

@@ -36,6 +36,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
         select: {
           deviceId: true,
           batteryPct: true,
+          lastSeenAt: true,
         },
       },
       shipmentLabels: {
@@ -89,7 +90,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
     destinationLng: shipment.destinationLng,
     deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
     createdAt: shipment.createdAt.toISOString(),
-    label: shipment.label ? { deviceId: shipment.label.deviceId, batteryPct: shipment.label.batteryPct } : null,
+    label: shipment.label ? { deviceId: shipment.label.deviceId, batteryPct: shipment.label.batteryPct, lastSeenAt: shipment.label.lastSeenAt?.toISOString() ?? null } : null,
     locations: shipment.locations.map((loc) => ({
       id: loc.id,
       latitude: loc.latitude,
