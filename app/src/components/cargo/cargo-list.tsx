@@ -74,6 +74,13 @@ export function CargoList({ initialStatus }: CargoListProps) {
     })
   }, [fetchShipments])
 
+  // Re-fetch when a shipment is deleted from the actions menu
+  useEffect(() => {
+    const handler = () => fetchShipments()
+    window.addEventListener('cargo-list-refresh', handler)
+    return () => window.removeEventListener('cargo-list-refresh', handler)
+  }, [fetchShipments])
+
   // Auto-poll every 60s when there are active shipments
   const hasActiveShipments = useMemo(
     () => allShipments.some((s) => s.status === 'PENDING' || s.status === 'IN_TRANSIT'),

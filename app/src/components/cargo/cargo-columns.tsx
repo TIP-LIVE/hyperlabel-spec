@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
@@ -38,7 +37,6 @@ import { countryCodeToFlag } from '@/lib/utils/country-flag'
 function CargoActionsCell({ shipment }: { shipment: CargoRow }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const router = useRouter()
   const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${shipment.shareCode}`
 
   async function handleDelete() {
@@ -51,7 +49,7 @@ function CargoActionsCell({ shipment }: { shipment: CargoRow }) {
       }
       toast.success('Cargo shipment cancelled')
       setDeleteOpen(false)
-      router.refresh()
+      window.dispatchEvent(new CustomEvent('cargo-list-refresh'))
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Something went wrong')
     } finally {
