@@ -389,7 +389,7 @@ export default function HomePage() {
                 variant="outline"
                 asChild
               >
-                <Link href="/buy">Buy 1 Label</Link>
+                <Link href="/buy?pack=starter">Buy 1 Label</Link>
               </Button>
             </div>
 
@@ -412,7 +412,7 @@ export default function HomePage() {
                 className="mt-6 w-full rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
                 asChild
               >
-                <Link href="/buy">Buy 5 Labels</Link>
+                <Link href="/buy?pack=team">Buy 5 Labels</Link>
               </Button>
             </div>
 
@@ -434,7 +434,7 @@ export default function HomePage() {
                 variant="outline"
                 asChild
               >
-                <Link href="/buy">Buy 10 Labels</Link>
+                <Link href="/buy?pack=volume">Buy 10 Labels</Link>
               </Button>
             </div>
           </div>

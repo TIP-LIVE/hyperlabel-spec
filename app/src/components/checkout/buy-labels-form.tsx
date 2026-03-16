@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -50,6 +51,13 @@ const packs = [
 
 export function BuyLabelsForm() {
   const [loading, setLoading] = useState(false)
+  const [autoSubmitting, setAutoSubmitting] = useState(false)
+  const searchParams = useSearchParams()
+
+  const packParam = searchParams.get('pack')
+  const validPackParam = packParam && ['starter', 'team', 'volume'].includes(packParam)
+    ? (packParam as 'starter' | 'team' | 'volume')
+    : null
 
   const {
     handleSubmit,
@@ -58,12 +66,21 @@ export function BuyLabelsForm() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      packType: 'team',
+      packType: validPackParam || 'team',
     },
   })
 
   const selectedPack = watch('packType')
   const currentPack = packs.find((p) => p.key === selectedPack)!
+
+  // Auto-submit when arriving with a valid ?pack= param
+  useEffect(() => {
+    if (validPackParam && !autoSubmitting) {
+      setAutoSubmitting(true)
+      handleSubmit(onSubmit)()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validPackParam])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
