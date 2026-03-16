@@ -73,7 +73,7 @@ const statusConfig = {
   PENDING: { label: 'Pending', variant: 'secondary' as const, icon: Package },
   IN_TRANSIT: { label: 'In Transit', variant: 'default' as const, icon: Truck },
   DELIVERED: { label: 'Delivered', variant: 'success' as const, icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' as const, icon: Package },
+  CANCELLED: { label: 'Cancelled', variant: 'secondary' as const, icon: Package },
 }
 
 export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetailClientProps) {

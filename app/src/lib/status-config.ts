@@ -16,7 +16,7 @@ export const shipmentStatusConfig: Record<
   PENDING: { label: 'Pending', variant: 'secondary' },
   IN_TRANSIT: { label: 'In Transit', variant: 'default' },
   DELIVERED: { label: 'Delivered', variant: 'success' },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' },
+  CANCELLED: { label: 'Cancelled', variant: 'secondary' },
 }
 
 /** Admin dark-theme color classes for shipment status badges */
@@ -24,7 +24,7 @@ export const shipmentStatusStyles: Record<ShipmentStatus, string> = {
   PENDING: 'bg-gray-500/20 text-gray-400',
   IN_TRANSIT: 'bg-blue-500/20 text-blue-400',
   DELIVERED: 'bg-green-500/20 text-green-400',
-  CANCELLED: 'bg-red-500/20 text-red-400',
+  CANCELLED: 'bg-gray-500/20 text-gray-400',
 }
 
 // ────────────────────────────────────────
@@ -41,7 +41,7 @@ export const orderStatusConfig: Record<
   PAID: { label: 'Paid', variant: 'default' },
   SHIPPED: { label: 'Shipped', variant: 'default' },
   DELIVERED: { label: 'Delivered', variant: 'success' },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' },
+  CANCELLED: { label: 'Cancelled', variant: 'secondary' },
 }
 
 /** Admin dark-theme color classes for order status badges */
@@ -50,5 +50,5 @@ export const orderStatusStyles: Record<OrderStatus, string> = {
   PAID: 'bg-yellow-500/20 text-yellow-400',
   SHIPPED: 'bg-blue-500/20 text-blue-400',
   DELIVERED: 'bg-green-500/20 text-green-400',
-  CANCELLED: 'bg-red-500/20 text-red-400',
+  CANCELLED: 'bg-gray-500/20 text-gray-400',
 }

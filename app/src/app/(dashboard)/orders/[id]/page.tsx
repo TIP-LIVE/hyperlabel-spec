@@ -36,7 +36,7 @@ const statusConfig = {
   PAID: { label: 'Paid', variant: 'default' as const },
   SHIPPED: { label: 'Shipped', variant: 'default' as const },
   DELIVERED: { label: 'Delivered', variant: 'success' as const },
-  CANCELLED: { label: 'Cancelled', variant: 'destructive' as const },
+  CANCELLED: { label: 'Cancelled', variant: 'secondary' as const },
 }
 
 export default async function OrderDetailPage({ params }: PageProps) {
