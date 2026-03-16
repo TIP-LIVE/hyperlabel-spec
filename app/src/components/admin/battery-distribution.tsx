@@ -18,16 +18,16 @@ export function BatteryDistribution({ battery }: BatteryDistributionProps) {
   const total = Object.values(battery).reduce((sum, v) => sum + v, 0)
 
   return (
-    <Card className="border-gray-800 bg-gray-800/50">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-white">
+        <CardTitle className="text-sm font-medium text-card-foreground">
           Battery Distribution
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Stacked bar */}
         {total > 0 && (
-          <div className="flex h-4 overflow-hidden rounded-full bg-gray-700">
+          <div className="flex h-4 overflow-hidden rounded-full bg-muted">
             {segments.map((seg) => {
               const value = battery[seg.key]
               if (value === 0) return null
@@ -52,13 +52,13 @@ export function BatteryDistribution({ battery }: BatteryDistributionProps) {
             return (
               <div key={seg.key} className="flex items-center gap-2">
                 <div className={`h-2.5 w-2.5 rounded-full ${seg.color}`} />
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   {seg.label}
                 </span>
-                <span className="ml-auto text-xs font-medium text-gray-300">
+                <span className="ml-auto text-xs font-medium text-foreground">
                   {value}
                   {total > 0 && (
-                    <span className="text-gray-500"> ({pct}%)</span>
+                    <span className="text-muted-foreground"> ({pct}%)</span>
                   )}
                 </span>
               </div>

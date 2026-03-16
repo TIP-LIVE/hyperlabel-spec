@@ -51,10 +51,10 @@ export function SimStatusPanel() {
 
   if (loading) {
     return (
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardContent className="flex items-center justify-center py-8">
-          <RefreshCw className="h-5 w-5 animate-spin text-gray-500" />
-          <span className="ml-2 text-sm text-gray-500">Loading SIM status...</span>
+          <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading SIM status...</span>
         </CardContent>
       </Card>
     )
@@ -62,9 +62,9 @@ export function SimStatusPanel() {
 
   if (error || !data) {
     return (
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardContent className="py-6">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Unable to fetch Onomondo SIM status. Check ONOMONDO_API_KEY.
           </p>
         </CardContent>
@@ -74,14 +74,14 @@ export function SimStatusPanel() {
 
   if (!data.onomondoAvailable) {
     return (
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-white">
+          <CardTitle className="text-sm font-medium text-card-foreground">
             Live SIM Status
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Onomondo API unavailable. {data.summary.total} SIM{data.summary.total !== 1 ? 's' : ''} registered locally.
           </p>
         </CardContent>
@@ -92,13 +92,13 @@ export function SimStatusPanel() {
   const { summary } = data
 
   return (
-    <Card className="border-gray-800 bg-gray-800/50">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-white">
+          <CardTitle className="text-sm font-medium text-card-foreground">
             Live SIM Status
           </CardTitle>
-          <span className="text-[10px] text-gray-500">via Onomondo · auto-refreshes</span>
+          <span className="text-[10px] text-muted-foreground">via Onomondo · auto-refreshes</span>
         </div>
       </CardHeader>
       <CardContent>
@@ -110,18 +110,18 @@ export function SimStatusPanel() {
             </div>
             <div>
               <p className="text-xl font-bold text-green-400">{summary.onlineCount}</p>
-              <p className="text-xs text-gray-500">Online</p>
+              <p className="text-xs text-muted-foreground">Online</p>
             </div>
           </div>
 
           {/* Offline */}
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-500/10">
-              <WifiOff className="h-5 w-5 text-gray-400" />
+              <WifiOff className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-400">{summary.offlineCount}</p>
-              <p className="text-xs text-gray-500">Offline</p>
+              <p className="text-xl font-bold text-muted-foreground">{summary.offlineCount}</p>
+              <p className="text-xs text-muted-foreground">Offline</p>
             </div>
           </div>
 
@@ -132,7 +132,7 @@ export function SimStatusPanel() {
             </div>
             <div>
               <p className="text-xl font-bold text-blue-400">{formatBytes(summary.totalBytes)}</p>
-              <p className="text-xs text-gray-500">Data used</p>
+              <p className="text-xs text-muted-foreground">Data used</p>
             </div>
           </div>
         </div>

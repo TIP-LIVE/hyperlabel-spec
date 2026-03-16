@@ -10,7 +10,7 @@ import { Building2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const statusStyles: Record<string, string> = {
-  INVENTORY: 'bg-gray-500/20 text-gray-400',
+  INVENTORY: 'bg-gray-500/20 text-muted-foreground',
   SOLD: 'bg-blue-500/20 text-blue-400',
   ACTIVE: 'bg-green-500/20 text-green-400',
   DEPLETED: 'bg-red-500/20 text-red-400',
@@ -85,11 +85,11 @@ export function LabelsTableWithSelection({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Label Inventory</h1>
-          <p className="text-gray-400">Track and manage all labels</p>
+          <h1 className="text-2xl font-bold text-foreground">Label Inventory</h1>
+          <p className="text-muted-foreground">Track and manage all labels</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild className="border-gray-600">
+          <Button variant="outline" asChild className="border-border">
             <Link href={assignHref}>
               <Building2 className="mr-2 h-4 w-4" />
               {selectedIds.size > 0
@@ -106,9 +106,9 @@ export function LabelsTableWithSelection({
         </div>
       </div>
 
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-white">Labels ({totalCount})</CardTitle>
+          <CardTitle className="text-card-foreground">Labels ({totalCount})</CardTitle>
           <CardDescription>
             {q ? `Showing results for "${q}"` : 'Complete inventory list'}
             {selectedIds.size > 0 && (
@@ -122,14 +122,14 @@ export function LabelsTableWithSelection({
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700 text-left text-sm text-gray-400">
+                <tr className="border-b border-border text-left text-sm text-muted-foreground">
                   <th className="w-10 pb-3 pr-2">
                     <label className="flex cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={allOnPageSelected}
                         onChange={toggleAllOnPage}
-                        className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary focus:ring-2 focus:ring-primary"
+                        className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-2 focus:ring-primary"
                         aria-label="Select all on page"
                       />
                       <span className="sr-only">Select all</span>
@@ -143,7 +143,7 @@ export function LabelsTableWithSelection({
                   <th className="pb-3 font-medium">Activated</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {labels.map((label) => (
                   <tr
                     key={label.id}
@@ -158,13 +158,13 @@ export function LabelsTableWithSelection({
                           type="checkbox"
                           checked={selectedIds.has(label.deviceId)}
                           onChange={() => toggleOne(label.deviceId)}
-                          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary focus:ring-2 focus:ring-primary"
+                          className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-2 focus:ring-primary"
                           aria-label={`Select ${label.deviceId}`}
                         />
                       </label>
                     </td>
-                    <td className="py-3 font-mono text-white">{label.deviceId}</td>
-                    <td className="py-3 font-mono text-gray-400">{label.imei || '—'}</td>
+                    <td className="py-3 font-mono text-foreground">{label.deviceId}</td>
+                    <td className="py-3 font-mono text-muted-foreground">{label.imei || '—'}</td>
                     <td className="py-3">
                       <Badge className={statusStyles[label.status]}>{label.status}</Badge>
                     </td>
@@ -172,19 +172,19 @@ export function LabelsTableWithSelection({
                       {label.batteryPct !== null ? (
                         <span
                           className={
-                            label.batteryPct < 20 ? 'text-red-400' : 'text-gray-300'
+                            label.batteryPct < 20 ? 'text-red-400' : 'text-foreground'
                           }
                         >
                           {label.batteryPct}%
                         </span>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="py-3 text-gray-300">
+                    <td className="py-3 text-foreground">
                       {label.orderLabels[0]?.order?.user?.email ?? '—'}
                     </td>
-                    <td className="py-3 text-gray-400">
+                    <td className="py-3 text-muted-foreground">
                       {label.activatedAt
                         ? format(new Date(label.activatedAt), 'PP')
                         : '—'}
@@ -193,7 +193,7 @@ export function LabelsTableWithSelection({
                 ))}
                 {labels.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
                       {q ? 'No labels match your search' : 'No labels in inventory'}
                     </td>
                   </tr>
@@ -203,8 +203,8 @@ export function LabelsTableWithSelection({
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
-              <p className="text-sm text-gray-400">
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">
                 Page {page} of {totalPages} ({totalCount} total)
               </p>
               <div className="flex gap-2">
@@ -215,7 +215,7 @@ export function LabelsTableWithSelection({
                       ...(statusFilter ? { status: statusFilter } : {}),
                       page: String(page - 1),
                     }).toString()}`}
-                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                    className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                   >
                     Previous
                   </Link>
@@ -227,7 +227,7 @@ export function LabelsTableWithSelection({
                       ...(statusFilter ? { status: statusFilter } : {}),
                       page: String(page + 1),
                     }).toString()}`}
-                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                    className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                   >
                     Next
                   </Link>

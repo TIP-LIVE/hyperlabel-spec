@@ -67,7 +67,7 @@ export default async function AssignLabelsPage({ searchParams }: AssignPageProps
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Assign Labels to Organisations
           </h1>
         </div>

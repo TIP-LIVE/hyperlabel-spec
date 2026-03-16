@@ -21,9 +21,9 @@ export function GeoDistributionTable({ geography }: GeoDistributionTableProps) {
   const maxCount = geography[0]?.count ?? 1
 
   return (
-    <Card className="border-gray-800 bg-gray-800/50">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-white">
+        <CardTitle className="text-sm font-medium text-card-foreground">
           Geographic Distribution
         </CardTitle>
       </CardHeader>
@@ -36,18 +36,18 @@ export function GeoDistributionTable({ geography }: GeoDistributionTableProps) {
                 <span className="w-6 text-center text-sm">
                   {geo.countryCode ? countryCodeToFlag(geo.countryCode) : '🌍'}
                 </span>
-                <span className="min-w-[100px] text-xs text-gray-300">
+                <span className="min-w-[100px] text-xs text-foreground">
                   {geo.country}
                 </span>
                 <div className="flex-1">
-                  <div className="h-2 rounded-full bg-gray-700">
+                  <div className="h-2 rounded-full bg-muted">
                     <div
                       className="h-2 rounded-full bg-blue-500/60 transition-all"
                       style={{ width: `${barPct}%` }}
                     />
                   </div>
                 </div>
-                <span className="min-w-[40px] text-right text-xs font-medium text-gray-400">
+                <span className="min-w-[40px] text-right text-xs font-medium text-muted-foreground">
                   {geo.count.toLocaleString()}
                 </span>
               </div>

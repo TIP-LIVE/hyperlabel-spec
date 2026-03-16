@@ -7,14 +7,14 @@ export default function AdminLoading() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="border-gray-800 bg-gray-800/50">
+          <Card key={i} className="border-border bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <Skeleton className="h-4 w-24 bg-gray-700" />
-              <Skeleton className="h-4 w-4 bg-gray-700" />
+              <Skeleton className="h-4 w-24 bg-muted" />
+              <Skeleton className="h-4 w-4 bg-muted" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-8 w-16 bg-gray-700" />
-              <Skeleton className="mt-1 h-3 w-32 bg-gray-700" />
+              <Skeleton className="h-8 w-16 bg-muted" />
+              <Skeleton className="mt-1 h-3 w-32 bg-muted" />
             </CardContent>
           </Card>
         ))}
@@ -23,20 +23,20 @@ export default function AdminLoading() {
       {/* Cards */}
       <div className="grid gap-6 md:grid-cols-2">
         {[1, 2].map((i) => (
-          <Card key={i} className="border-gray-800 bg-gray-800/50">
+          <Card key={i} className="border-border bg-card">
             <CardHeader>
-              <Skeleton className="h-6 w-40 bg-gray-700" />
-              <Skeleton className="h-4 w-56 bg-gray-700" />
+              <Skeleton className="h-6 w-40 bg-muted" />
+              <Skeleton className="h-4 w-56 bg-muted" />
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[1, 2, 3].map((j) => (
                   <div key={j} className="flex items-center justify-between">
                     <div>
-                      <Skeleton className="h-4 w-32 bg-gray-700" />
-                      <Skeleton className="mt-1 h-3 w-24 bg-gray-700" />
+                      <Skeleton className="h-4 w-32 bg-muted" />
+                      <Skeleton className="mt-1 h-3 w-24 bg-muted" />
                     </div>
-                    <Skeleton className="h-6 w-16 bg-gray-700" />
+                    <Skeleton className="h-6 w-16 bg-muted" />
                   </div>
                 ))}
               </div>

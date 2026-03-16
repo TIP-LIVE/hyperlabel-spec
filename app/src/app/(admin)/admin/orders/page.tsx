@@ -74,8 +74,8 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Order Management</h1>
-        <p className="text-gray-400">View and fulfill customer orders</p>
+        <h1 className="text-2xl font-bold text-foreground">Order Management</h1>
+        <p className="text-muted-foreground">View and fulfill customer orders</p>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -94,7 +94,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors ${
               currentStatus === tab.value
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                : 'bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label} ({tab.count})
@@ -102,9 +102,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
         ))}
       </div>
 
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-white">Orders ({totalCount})</CardTitle>
+          <CardTitle className="text-card-foreground">Orders ({totalCount})</CardTitle>
           <CardDescription>
             {q ? `Showing results for "${q}"` : 'Orders sorted by date (newest first)'}
           </CardDescription>
@@ -112,9 +112,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
         <CardContent>
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Package className="mb-4 h-12 w-12 text-gray-600" />
-              <h3 className="text-lg font-semibold text-white">No orders found</h3>
-              <p className="mt-1 max-w-sm text-sm text-gray-400">
+              <Package className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="text-lg font-semibold text-foreground">No orders found</h3>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
                 {q ? 'Try a different search term' : 'No orders yet'}
               </p>
             </div>
@@ -123,7 +123,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-700 text-left text-sm text-gray-400">
+                    <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Order</th>
                       <th className="pb-3 font-medium">Customer</th>
                       <th className="pb-3 font-medium">Qty</th>
@@ -134,7 +134,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                       <th className="pb-3 font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-border">
                     {orders.map((order) => (
                       <tr key={order.id} className="text-sm">
                         <td className="py-3">
@@ -145,14 +145,14 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             {order.id.slice(-8).toUpperCase()}
                           </Link>
                         </td>
-                        <td className="py-3 text-gray-300">{order.user.email}</td>
-                        <td className="py-3 text-gray-300">{order.quantity}</td>
+                        <td className="py-3 text-foreground">{order.user.email}</td>
+                        <td className="py-3 text-foreground">{order.quantity}</td>
                         <td className="py-3">
                           <span
                             className={
                               order._count.orderLabels < order.quantity
                                 ? 'text-yellow-400'
-                                : 'text-gray-300'
+                                : 'text-foreground'
                             }
                           >
                             {order._count.orderLabels}/{order.quantity}
@@ -161,10 +161,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                         <td className="py-3">
                           <Badge className={orderStatusStyles[order.status as keyof typeof orderStatusStyles]}>{order.status}</Badge>
                         </td>
-                        <td className="py-3 font-mono text-gray-400">
+                        <td className="py-3 font-mono text-muted-foreground">
                           {order.trackingNumber || '—'}
                         </td>
-                        <td className="py-3 text-gray-400">
+                        <td className="py-3 text-muted-foreground">
                           {format(new Date(order.createdAt), 'PP')}
                         </td>
                         <td className="py-3">
@@ -179,13 +179,13 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
-                  <p className="text-sm text-gray-400">Page {page} of {totalPages} ({totalCount} total)</p>
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                  <p className="text-sm text-muted-foreground">Page {page} of {totalPages} ({totalCount} total)</p>
                   <div className="flex gap-2">
                     {page > 1 && (
                       <Link
                         href={`/admin/orders?${new URLSearchParams({ ...(q ? { q } : {}), ...(statusFilter ? { status: statusFilter } : {}), page: String(page - 1) }).toString()}`}
-                        className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                        className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                       >
                         Previous
                       </Link>
@@ -193,7 +193,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                     {page < totalPages && (
                       <Link
                         href={`/admin/orders?${new URLSearchParams({ ...(q ? { q } : {}), ...(statusFilter ? { status: statusFilter } : {}), page: String(page + 1) }).toString()}`}
-                        className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                        className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                       >
                         Next
                       </Link>

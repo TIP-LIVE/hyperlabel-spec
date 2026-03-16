@@ -50,15 +50,15 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">User Management</h1>
-        <p className="text-gray-400">View and manage registered users</p>
+        <h1 className="text-2xl font-bold text-foreground">User Management</h1>
+        <p className="text-muted-foreground">View and manage registered users</p>
       </div>
 
       <AdminSearch placeholder="Search by email or name..." />
 
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-white">All Users ({totalCount})</CardTitle>
+          <CardTitle className="text-card-foreground">All Users ({totalCount})</CardTitle>
           <CardDescription>
             {q ? `Showing results for "${q}"` : 'List of all registered accounts'}
           </CardDescription>
@@ -67,7 +67,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700 text-left text-sm text-gray-400">
+                <tr className="border-b border-border text-left text-sm text-muted-foreground">
                   <th className="pb-3 font-medium">Email</th>
                   <th className="pb-3 font-medium">Name</th>
                   <th className="pb-3 font-medium">Role</th>
@@ -77,11 +77,11 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                   <th className="pb-3 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {users.map((user) => (
                   <tr key={user.id} className="text-sm">
-                    <td className="py-3 text-white">{user.email}</td>
-                    <td className="py-3 text-gray-300">
+                    <td className="py-3 text-foreground">{user.email}</td>
+                    <td className="py-3 text-foreground">
                       {user.firstName || user.lastName
                         ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
                         : '—'}
@@ -94,9 +94,9 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                         {user.role}
                       </Badge>
                     </td>
-                    <td className="py-3 text-gray-300">{user._count.orders}</td>
-                    <td className="py-3 text-gray-300">{user._count.shipments}</td>
-                    <td className="py-3 text-gray-400">
+                    <td className="py-3 text-foreground">{user._count.orders}</td>
+                    <td className="py-3 text-foreground">{user._count.shipments}</td>
+                    <td className="py-3 text-muted-foreground">
                       {format(new Date(user.createdAt), 'PP')}
                     </td>
                     <td className="py-3">
@@ -106,7 +106,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
                       {q ? 'No users match your search' : 'No users found'}
                     </td>
                   </tr>
@@ -116,13 +116,13 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
-              <p className="text-sm text-gray-400">Page {page} of {totalPages} ({totalCount} total)</p>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">Page {page} of {totalPages} ({totalCount} total)</p>
               <div className="flex gap-2">
                 {page > 1 && (
                   <Link
                     href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page - 1) }).toString()}`}
-                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                    className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                   >
                     Previous
                   </Link>
@@ -130,7 +130,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                 {page < totalPages && (
                   <Link
                     href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page + 1) }).toString()}`}
-                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                    className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                   >
                     Next
                   </Link>

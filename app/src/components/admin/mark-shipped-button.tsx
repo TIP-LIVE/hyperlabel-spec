@@ -55,14 +55,14 @@ export function MarkShippedButton({ orderId }: MarkShippedButtonProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="border-gray-700 text-gray-300">
+        <Button size="sm" variant="outline" className="border-border text-foreground">
           <Truck className="mr-1 h-3 w-3" />
           Ship
         </Button>
       </DialogTrigger>
-      <DialogContent className="border-gray-800 bg-gray-900">
+      <DialogContent className="border-border bg-background">
         <DialogHeader>
-          <DialogTitle className="text-white">Mark Order as Shipped</DialogTitle>
+          <DialogTitle className="text-foreground">Mark Order as Shipped</DialogTitle>
           <DialogDescription>
             Enter the shipping tracking number (optional)
           </DialogDescription>
@@ -72,14 +72,14 @@ export function MarkShippedButton({ orderId }: MarkShippedButtonProps) {
             placeholder="Tracking number (e.g., 1Z999AA10123456784)"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
-            className="border-gray-700 bg-gray-800 text-white"
+            className="border-border bg-muted text-foreground"
           />
           <div className="flex gap-2">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="text-gray-400"
+              className="text-muted-foreground"
             >
               Cancel
             </Button>

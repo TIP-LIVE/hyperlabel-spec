@@ -23,9 +23,9 @@ export function ReportingFrequencyChart({ data }: ReportingFrequencyChartProps) 
   }))
 
   return (
-    <Card className="border-gray-800 bg-gray-800/50">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-white">
+        <CardTitle className="text-sm font-medium text-card-foreground">
           Reporting Frequency (14 days)
         </CardTitle>
       </CardHeader>

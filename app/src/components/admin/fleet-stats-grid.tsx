@@ -29,7 +29,7 @@ export function FleetStatsGrid({ stats }: FleetStatsGridProps) {
       title: 'Inventory',
       value: stats.counts.inventory,
       icon: Package,
-      color: 'text-gray-400',
+      color: 'text-muted-foreground',
       href: '/admin/labels',
     },
     {
@@ -43,14 +43,14 @@ export function FleetStatsGrid({ stats }: FleetStatsGridProps) {
       title: 'Depleted',
       value: stats.counts.depleted,
       icon: Archive,
-      color: 'text-gray-500',
+      color: 'text-muted-foreground',
       href: '/admin/labels',
     },
     {
       title: 'Low Battery',
       value: stats.counts.lowBattery,
       icon: BatteryWarning,
-      color: stats.counts.lowBattery > 0 ? 'text-yellow-400' : 'text-gray-500',
+      color: stats.counts.lowBattery > 0 ? 'text-yellow-400' : 'text-muted-foreground',
       alert: stats.counts.lowBattery > 0,
       href: '/admin/devices?health=LOW_BATTERY',
     },
@@ -58,7 +58,7 @@ export function FleetStatsGrid({ stats }: FleetStatsGridProps) {
       title: 'No Signal',
       value: stats.counts.noSignal,
       icon: WifiOff,
-      color: stats.counts.noSignal > 0 ? 'text-red-400' : 'text-gray-500',
+      color: stats.counts.noSignal > 0 ? 'text-red-400' : 'text-muted-foreground',
       alert: stats.counts.noSignal > 0,
       href: '/admin/devices?health=NO_SIGNAL',
     },
@@ -73,7 +73,7 @@ export function FleetStatsGrid({ stats }: FleetStatsGridProps) {
       title: 'Total Events',
       value: stats.reporting.total.toLocaleString(),
       icon: MapPin,
-      color: 'text-gray-400',
+      color: 'text-muted-foreground',
       href: undefined,
     },
   ]
@@ -83,14 +83,14 @@ export function FleetStatsGrid({ stats }: FleetStatsGridProps) {
       {cards.map((card) => {
         const content = (
           <Card
-            className={`border-gray-800 bg-gray-800/50 transition-colors ${card.href ? 'hover:border-gray-600 hover:bg-gray-800' : ''}`}
+            className={`border-border bg-card transition-colors ${card.href ? 'hover:border-border/80 hover:bg-accent' : ''}`}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
                 {card.title}
               </CardTitle>
               <card.icon
-                className={`h-4 w-4 ${card.alert ? card.color : 'text-gray-600'}`}
+                className={`h-4 w-4 ${card.alert ? card.color : 'text-muted-foreground'}`}
               />
             </CardHeader>
             <CardContent>

@@ -60,7 +60,7 @@ export function ToggleRoleButton({ userId, currentRole }: ToggleRoleButtonProps)
         <Button
           size="sm"
           variant="outline"
-          className="border-gray-700 text-gray-300"
+          className="border-border text-foreground"
           disabled={loading}
         >
           {loading ? (
@@ -73,9 +73,9 @@ export function ToggleRoleButton({ userId, currentRole }: ToggleRoleButtonProps)
           {isAdmin ? 'Remove Admin' : 'Make Admin'}
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className="border-gray-800 bg-gray-900">
+      <AlertDialogContent className="border-border bg-background">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-white">
+          <AlertDialogTitle className="text-foreground">
             {isAdmin ? 'Remove Admin Role' : 'Grant Admin Role'}
           </AlertDialogTitle>
           <AlertDialogDescription>
@@ -85,7 +85,7 @@ export function ToggleRoleButton({ userId, currentRole }: ToggleRoleButtonProps)
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="border-gray-700 text-gray-300">
+          <AlertDialogCancel className="border-border text-foreground">
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction

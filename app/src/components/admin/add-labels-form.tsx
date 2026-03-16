@@ -94,7 +94,7 @@ export function AddLabelsForm() {
           type="button"
           variant={mode === 'single' ? 'default' : 'outline'}
           onClick={() => setMode('single')}
-          className={mode === 'single' ? '' : 'border-gray-700 text-gray-400'}
+          className={mode === 'single' ? '' : 'border-border text-muted-foreground'}
         >
           Single Label
         </Button>
@@ -102,7 +102,7 @@ export function AddLabelsForm() {
           type="button"
           variant={mode === 'bulk' ? 'default' : 'outline'}
           onClick={() => setMode('bulk')}
-          className={mode === 'bulk' ? '' : 'border-gray-700 text-gray-400'}
+          className={mode === 'bulk' ? '' : 'border-border text-muted-foreground'}
         >
           Bulk Import
         </Button>
@@ -111,31 +111,31 @@ export function AddLabelsForm() {
       {mode === 'single' ? (
         <form onSubmit={handleSingleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-gray-300">Device ID *</Label>
+            <Label className="text-foreground">Device ID *</Label>
             <Input
               placeholder="HL-001234"
               value={deviceId}
               onChange={(e) => setDeviceId(e.target.value)}
               required
-              className="border-gray-700 bg-gray-800 text-white"
+              className="border-border bg-muted text-foreground"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-300">IMEI (Optional)</Label>
+            <Label className="text-foreground">IMEI (Optional)</Label>
             <Input
               placeholder="123456789012345"
               value={imei}
               onChange={(e) => setImei(e.target.value)}
-              className="border-gray-700 bg-gray-800 text-white"
+              className="border-border bg-muted text-foreground"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-300">ICCID (Optional)</Label>
+            <Label className="text-foreground">ICCID (Optional)</Label>
             <Input
               placeholder="8944..."
               value={iccid}
               onChange={(e) => setIccid(e.target.value)}
-              className="border-gray-700 bg-gray-800 text-white"
+              className="border-border bg-muted text-foreground"
             />
           </div>
           <Button type="submit" disabled={loading || !deviceId}>
@@ -147,15 +147,15 @@ export function AddLabelsForm() {
       ) : (
         <form onSubmit={handleBulkSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-gray-300">Bulk Import (CSV)</Label>
+            <Label className="text-foreground">Bulk Import (CSV)</Label>
             <Textarea
               placeholder="deviceId,imei,iccid&#10;HL-001234,123456789012345,8944...&#10;HL-001235,123456789012346,8944..."
               value={bulkData}
               onChange={(e) => setBulkData(e.target.value)}
               rows={10}
-              className="border-gray-700 bg-gray-800 font-mono text-sm text-white"
+              className="border-border bg-muted font-mono text-sm text-foreground"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               One label per line. Format: deviceId,imei,iccid (imei and iccid optional)
             </p>
           </div>

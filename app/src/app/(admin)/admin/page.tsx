@@ -107,18 +107,18 @@ export default async function AdminOverviewPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.title} href={stat.href}>
-            <Card className="border-gray-800 bg-gray-800/50 transition-colors hover:border-gray-600 hover:bg-gray-800">
+            <Card className="border-border bg-card transition-colors hover:border-border/80 hover:bg-accent">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-400">{stat.title}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
                 <stat.icon
-                  className={`h-4 w-4 ${stat.alert ? 'text-yellow-500' : 'text-gray-500'}`}
+                  className={`h-4 w-4 ${stat.alert ? 'text-yellow-500' : 'text-muted-foreground'}`}
                 />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-500' : 'text-white'}`}>
+                <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-500' : 'text-card-foreground'}`}>
                   {stat.value}
                 </div>
-                <p className="text-xs text-gray-500">{stat.description}</p>
+                <p className="text-xs text-muted-foreground">{stat.description}</p>
               </CardContent>
             </Card>
           </Link>
@@ -127,10 +127,10 @@ export default async function AdminOverviewPage() {
 
       {/* Quick Actions */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-white">Recent Orders</CardTitle>
+              <CardTitle className="text-card-foreground">Recent Orders</CardTitle>
               <CardDescription>Latest orders requiring attention</CardDescription>
             </div>
             <Link href="/admin/orders" className="text-xs text-primary hover:underline">
@@ -142,10 +142,10 @@ export default async function AdminOverviewPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-white">Low Battery Alerts</CardTitle>
+              <CardTitle className="text-card-foreground">Low Battery Alerts</CardTitle>
               <CardDescription>Labels with battery below 20%</CardDescription>
             </div>
             <Link href="/admin/devices" className="text-xs text-primary hover:underline">
@@ -170,7 +170,7 @@ async function RecentOrders() {
   })
 
   if (orders.length === 0) {
-    return <p className="text-sm text-gray-500">No pending orders</p>
+    return <p className="text-sm text-muted-foreground">No pending orders</p>
   }
 
   return (
@@ -179,11 +179,11 @@ async function RecentOrders() {
         <Link
           key={order.id}
           href={`/admin/orders/${order.id}`}
-          className="flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-700/50"
+          className="flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors hover:bg-accent/50"
         >
           <div>
-            <p className="text-sm font-medium text-white">{order.user.email}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm font-medium text-card-foreground">{order.user.email}</p>
+            <p className="text-xs text-muted-foreground">
               {order.quantity} labels · {format(new Date(order.createdAt), 'PP')}
             </p>
           </div>
@@ -217,7 +217,7 @@ async function LowBatteryLabels() {
   })
 
   if (labels.length === 0) {
-    return <p className="text-sm text-gray-500">All labels healthy</p>
+    return <p className="text-sm text-muted-foreground">All labels healthy</p>
   }
 
   return (
@@ -227,8 +227,8 @@ async function LowBatteryLabels() {
         return (
           <div key={label.id} className="flex items-center justify-between rounded-lg px-2 py-1.5">
             <div>
-              <p className="text-sm font-medium text-white">{label.deviceId}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm font-medium text-card-foreground">{label.deviceId}</p>
+              <p className="text-xs text-muted-foreground">
                 {shipment ? (
                   <Link href={`/admin/shipments?q=${label.deviceId}`} className="text-primary hover:underline">
                     {shipment.name || 'Untitled shipment'}

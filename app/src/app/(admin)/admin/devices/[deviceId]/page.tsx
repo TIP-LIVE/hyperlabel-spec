@@ -35,13 +35,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 const statusColors: Record<string, string> = {
   ACTIVE: 'bg-green-500/20 text-green-400',
-  INVENTORY: 'bg-gray-500/20 text-gray-400',
+  INVENTORY: 'bg-gray-500/20 text-muted-foreground',
   SOLD: 'bg-blue-500/20 text-blue-400',
   DEPLETED: 'bg-red-500/20 text-red-400',
 }
 
 const shipmentStatusColors: Record<string, string> = {
-  PENDING: 'bg-gray-500/20 text-gray-400',
+  PENDING: 'bg-gray-500/20 text-muted-foreground',
   IN_TRANSIT: 'bg-blue-500/20 text-blue-400',
   DELIVERED: 'bg-green-500/20 text-green-400',
   CANCELLED: 'bg-red-500/20 text-red-400',
@@ -119,19 +119,19 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       <div>
         <Link
           href="/admin/devices"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white"
+          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to devices
         </Link>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold font-mono text-white">{label.deviceId}</h1>
+          <h1 className="text-2xl font-bold font-mono text-foreground">{label.deviceId}</h1>
           {onomondoSim && (
             <a
               href={`https://app.onomondo.com/sims/${onomondoSim.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-purple-400 hover:border-purple-400/50 hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs text-purple-400 hover:border-purple-400/50 hover:bg-accent transition-colors"
             >
               <ExternalLink className="h-3 w-3" />
               Onomondo
@@ -155,12 +155,12 @@ export default async function DeviceDetailPage({ params }: PageProps) {
 
       {/* Device Info Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardContent className="pt-6">
-            <p className="text-xs text-gray-500">Battery</p>
+            <p className="text-xs text-muted-foreground">Battery</p>
             <p className={`text-2xl font-bold ${
               label.batteryPct === null
-                ? 'text-gray-500'
+                ? 'text-muted-foreground'
                 : label.batteryPct < 20
                   ? 'text-red-400'
                   : label.batteryPct < 50
@@ -172,10 +172,10 @@ export default async function DeviceDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardContent className="pt-6">
-            <p className="text-xs text-gray-500">Last Ping</p>
-            <p className="text-lg font-bold text-white">
+            <p className="text-xs text-muted-foreground">Last Ping</p>
+            <p className="text-lg font-bold text-card-foreground">
               {lastLocation
                 ? formatDistanceToNow(new Date(lastLocation.recordedAt), { addSuffix: true })
                 : 'Never'
@@ -184,18 +184,18 @@ export default async function DeviceDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardContent className="pt-6">
-            <p className="text-xs text-gray-500">Total Events</p>
-            <p className="text-2xl font-bold text-white">{label.locations.length}</p>
-            <p className="text-xs text-gray-500">last 100 shown</p>
+            <p className="text-xs text-muted-foreground">Total Events</p>
+            <p className="text-2xl font-bold text-card-foreground">{label.locations.length}</p>
+            <p className="text-xs text-muted-foreground">last 100 shown</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardContent className="pt-6">
-            <p className="text-xs text-gray-500">Shipments</p>
-            <p className="text-2xl font-bold text-white">{label.shipments.length}</p>
+            <p className="text-xs text-muted-foreground">Shipments</p>
+            <p className="text-2xl font-bold text-card-foreground">{label.shipments.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -209,34 +209,34 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       />
 
       {/* Device Identifiers */}
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-white">Device Info</CardTitle>
+          <CardTitle className="text-sm font-medium text-card-foreground">Device Info</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="text-xs text-gray-500">IMEI</p>
-              <p className="font-mono text-sm text-gray-300">{label.imei || '—'}</p>
+              <p className="text-xs text-muted-foreground">IMEI</p>
+              <p className="font-mono text-sm text-foreground">{label.imei || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">ICCID</p>
-              <p className="font-mono text-sm text-gray-300">{label.iccid || '—'}</p>
+              <p className="text-xs text-muted-foreground">ICCID</p>
+              <p className="font-mono text-sm text-foreground">{label.iccid || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Firmware</p>
-              <p className="text-sm text-gray-300">{label.firmwareVersion || '—'}</p>
+              <p className="text-xs text-muted-foreground">Firmware</p>
+              <p className="text-sm text-foreground">{label.firmwareVersion || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Activated</p>
-              <p className="text-sm text-gray-300">
+              <p className="text-xs text-muted-foreground">Activated</p>
+              <p className="text-sm text-foreground">
                 {label.activatedAt ? format(new Date(label.activatedAt), 'PP') : '—'}
               </p>
             </div>
             {orgIds.length > 0 && (
               <div>
-                <p className="text-xs text-gray-500">Organizations</p>
-                <p className="text-sm text-gray-300">
+                <p className="text-xs text-muted-foreground">Organizations</p>
+                <p className="text-sm text-foreground">
                   {orgIds.length} org{orgIds.length !== 1 ? 's' : ''}
                 </p>
               </div>
@@ -247,9 +247,9 @@ export default async function DeviceDetailPage({ params }: PageProps) {
 
       {/* Current Location */}
       {lastLocation && (
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-white">
+            <CardTitle className="text-sm font-medium text-card-foreground">
               Last Known Location
             </CardTitle>
           </CardHeader>
@@ -257,8 +257,8 @@ export default async function DeviceDetailPage({ params }: PageProps) {
             <div className="flex flex-wrap items-center gap-4">
               {lastLocation.geocodedCity && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-300">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-foreground">
                     {lastLocation.geocodedCity}
                     {lastLocation.geocodedCountry ? `, ${lastLocation.geocodedCountry}` : ''}
                   </span>
@@ -272,7 +272,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
               >
                 {lastLocation.latitude.toFixed(5)}, {lastLocation.longitude.toFixed(5)}
               </a>
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {lastLocation.source === 'CELL_TOWER' ? (
                   <>
                     <Radio className="h-3 w-3 text-purple-400" />
@@ -286,7 +286,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                 )}
               </div>
               {lastLocation.accuracyM && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   ±{lastLocation.accuracyM}m
                 </span>
               )}
@@ -296,15 +296,15 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       )}
 
       {/* Location History Table */}
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-white">Location History</CardTitle>
+          <CardTitle className="text-card-foreground">Location History</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700 text-left text-xs text-gray-400">
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="pb-2 font-medium">Time</th>
                   <th className="pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Source</th>
@@ -312,12 +312,12 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                   <th className="pb-2 font-medium">Battery</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {label.locations.map((loc) => (
                   <tr key={loc.id} className="text-xs">
-                    <td className="py-2 text-gray-300">
+                    <td className="py-2 text-foreground">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3 text-gray-500" />
+                        <Clock className="h-3 w-3 text-muted-foreground" />
                         <span title={format(new Date(loc.recordedAt), 'PPpp')}>
                           {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
                         </span>
@@ -326,7 +326,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                     <td className="py-2">
                       <div>
                         {loc.geocodedCity && (
-                          <span className="text-gray-300">{loc.geocodedCity} </span>
+                          <span className="text-foreground">{loc.geocodedCity} </span>
                         )}
                         <a
                           href={`https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`}
@@ -349,7 +349,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                         </span>
                       )}
                     </td>
-                    <td className="py-2 text-gray-400">
+                    <td className="py-2 text-muted-foreground">
                       {loc.accuracyM ? `±${loc.accuracyM}m` : '—'}
                     </td>
                     <td className="py-2">
@@ -371,14 +371,14 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                           {loc.batteryPct}%
                         </span>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>
                 ))}
                 {label.locations.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
                       No location events recorded
                     </td>
                   </tr>
@@ -391,9 +391,9 @@ export default async function DeviceDetailPage({ params }: PageProps) {
 
       {/* Shipment History */}
       {label.shipments.length > 0 && (
-        <Card className="border-gray-800 bg-gray-800/50">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-white">Shipment History</CardTitle>
+            <CardTitle className="text-card-foreground">Shipment History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -401,15 +401,15 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                 <Link
                   key={shipment.id}
                   href={`/admin/shipments?q=${label.deviceId}`}
-                  className="flex items-center justify-between rounded-lg border border-gray-700 p-3 transition-colors hover:bg-gray-700/50"
+                  className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
                 >
                   <div className="flex items-center gap-3">
-                    <Truck className="h-4 w-4 text-gray-500" />
+                    <Truck className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-card-foreground">
                         {shipment.name || 'Unnamed shipment'}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {format(new Date(shipment.createdAt), 'PP')}
                         {shipment.destinationAddress && (
                           <> &rarr; {shipment.destinationAddress}</>
@@ -419,7 +419,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     {shipment.deliveredAt && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {format(new Date(shipment.deliveredAt), 'PP')}
                       </span>
                     )}

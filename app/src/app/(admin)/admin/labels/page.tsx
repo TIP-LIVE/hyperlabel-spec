@@ -91,15 +91,15 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
             href={tab.value === 'ALL' ? '/admin/labels' : `/admin/labels?status=${tab.value}`}
           >
             <Card
-              className={`border-gray-800 bg-gray-800/50 transition-colors hover:border-gray-600 ${currentStatus === tab.value ? 'border-primary' : ''}`}
+              className={`border-border bg-card transition-colors hover:border-border/80 ${currentStatus === tab.value ? 'border-primary' : ''}`}
             >
               <CardContent className="pt-6">
                 <p
                   className={`text-2xl font-bold ${
                     tab.value === 'ALL'
-                      ? 'text-white'
+                      ? 'text-card-foreground'
                       : tab.value === 'INVENTORY'
-                        ? 'text-gray-400'
+                        ? 'text-muted-foreground'
                         : tab.value === 'SOLD'
                           ? 'text-blue-400'
                           : tab.value === 'ACTIVE'
@@ -109,7 +109,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
                 >
                   {tab.count}
                 </p>
-                <p className="text-xs text-gray-500">{tab.label}</p>
+                <p className="text-xs text-muted-foreground">{tab.label}</p>
               </CardContent>
             </Card>
           </Link>

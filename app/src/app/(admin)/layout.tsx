@@ -27,20 +27,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-muted">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 border-r border-gray-800 bg-gray-900 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 border-r border-border bg-card lg:block">
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
-          <Logo size="md" iconClassName="text-primary" textClassName="text-white" />
+        <div className="flex h-16 items-center justify-between border-b border-border px-6">
+          <Logo size="md" />
         </div>
 
         {/* Navigation */}
         <AdminSidebarNav />
 
         {/* Bottom actions */}
-        <div className="absolute bottom-0 left-0 right-0 space-y-1 border-t border-gray-800 p-4">
-          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white" asChild>
+        <div className="absolute bottom-0 left-0 right-0 space-y-1 border-t border-border p-4">
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
@@ -48,7 +48,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Button>
           {isClerkConfigured() && (
             <SignOutButton>
-              <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-red-400">
+              <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-red-400">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>
@@ -60,17 +60,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-gray-800 bg-gray-900 px-4 lg:px-6">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
           {/* Mobile menu button */}
           <AdminMobileSidebar />
 
           {/* Mobile logo */}
           <Link href="/admin" className="lg:hidden">
-            <Logo size="md" iconClassName="text-primary" textClassName="text-white" />
+            <Logo size="md" />
           </Link>
 
           {/* Desktop title */}
-          <h1 className="hidden text-lg font-medium text-white lg:block">TIP Admin</h1>
+          <h1 className="hidden text-lg font-medium text-foreground lg:block">TIP Admin</h1>
           <div className="flex items-center gap-3">
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
               <Link href="/dashboard">
@@ -79,7 +79,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </Link>
             </Button>
             <ThemeToggle />
-            <span className="hidden text-sm text-gray-400 sm:block">{user?.email}</span>
+            <span className="hidden text-sm text-muted-foreground sm:block">{user?.email}</span>
             <div className="h-8 w-8 rounded-full bg-primary/20" />
           </div>
         </header>

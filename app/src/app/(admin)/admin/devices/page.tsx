@@ -122,7 +122,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
   const noSignalCount = labelsWithHealth.filter((l) => l.health === 'no_signal').length
 
   const healthTabs = [
-    { label: 'All', value: 'ALL', count: allCount, color: 'text-white' },
+    { label: 'All', value: 'ALL', count: allCount, color: 'text-foreground' },
     { label: 'Healthy', value: 'HEALTHY', count: healthyCount, color: 'text-green-400' },
     { label: 'Low Battery', value: 'LOW_BATTERY', count: lowBatteryCount, color: 'text-yellow-400' },
     { label: 'No Signal', value: 'NO_SIGNAL', count: noSignalCount, color: 'text-red-400' },
@@ -133,8 +133,8 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Device Dashboard</h1>
-        <p className="text-gray-400">Fleet overview and device health monitoring</p>
+        <h1 className="text-2xl font-bold text-foreground">Device Dashboard</h1>
+        <p className="text-muted-foreground">Fleet overview and device health monitoring</p>
       </div>
 
       {/* Fleet Overview Stats */}
@@ -162,10 +162,10 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
             key={tab.value}
             href={tab.value === 'ALL' ? '/admin/devices' : `/admin/devices?health=${tab.value}${q ? `&q=${q}` : ''}`}
           >
-            <Card className={`border-gray-800 bg-gray-800/50 transition-colors hover:border-gray-600 ${currentHealth === tab.value ? 'border-primary' : ''}`}>
+            <Card className={`border-border bg-card transition-colors hover:border-border/80 ${currentHealth === tab.value ? 'border-primary' : ''}`}>
               <CardContent className="pt-6">
                 <p className={`text-2xl font-bold ${tab.color}`}>{tab.count}</p>
-                <p className="text-xs text-gray-500">{tab.label}</p>
+                <p className="text-xs text-muted-foreground">{tab.label}</p>
               </CardContent>
             </Card>
           </Link>
@@ -175,9 +175,9 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
       <AdminSearch placeholder="Search by device ID or IMEI..." />
 
       {/* Devices Table */}
-      <Card className="border-gray-800 bg-gray-800/50">
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-white">Active Devices ({filteredTotal})</CardTitle>
+          <CardTitle className="text-card-foreground">Active Devices ({filteredTotal})</CardTitle>
           <CardDescription>
             {q ? `Showing results for "${q}"` : 'Real-time status of all tracking labels'}
           </CardDescription>
@@ -186,7 +186,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700 text-left text-sm text-gray-400">
+                <tr className="border-b border-border text-left text-sm text-muted-foreground">
                   <th className="pb-3 font-medium">Device ID</th>
                   <th className="pb-3 font-medium">Shipment</th>
                   <th className="pb-3 font-medium">Battery</th>
@@ -195,7 +195,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                   <th className="pb-3 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {paginatedLabels.map((label) => {
                   const lastLocation = label.locations[0]
 
@@ -215,14 +215,14 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Open in Onomondo"
-                              className="text-gray-500 hover:text-purple-400 transition-colors"
+                              className="text-muted-foreground hover:text-purple-400 transition-colors"
                             >
                               <ExternalLink className="h-3 w-3" />
                             </a>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 text-gray-300">
+                      <td className="py-3 text-foreground">
                         {label.shipments[0] ? (
                           <Link
                             href={`/admin/shipments?q=${label.deviceId}`}
@@ -231,19 +231,19 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                             {label.shipments[0].name || 'Untitled'}
                           </Link>
                         ) : (
-                          <span className="text-gray-500">No shipment</span>
+                          <span className="text-muted-foreground">No shipment</span>
                         )}
                       </td>
                       <td className="py-3">
                         {label.batteryPct !== null ? (
-                          <span className={label.health === 'low_battery' ? 'text-yellow-400' : 'text-gray-300'}>
+                          <span className={label.health === 'low_battery' ? 'text-yellow-400' : 'text-foreground'}>
                             {label.batteryPct}%
                           </span>
                         ) : (
-                          <span className="text-gray-500">Unknown</span>
+                          <span className="text-muted-foreground">Unknown</span>
                         )}
                       </td>
-                      <td className="py-3 text-gray-400">
+                      <td className="py-3 text-muted-foreground">
                         {lastLocation ? (
                           <span className="inline-flex items-center gap-1.5">
                             {lastLocation.source === 'CELL_TOWER' ? (
@@ -256,14 +256,14 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                             })}
                           </span>
                         ) : (
-                          <span className="text-gray-500">Never</span>
+                          <span className="text-muted-foreground">Never</span>
                         )}
                       </td>
                       <td className="py-3">
                         {lastLocation ? (
                           <div className="flex flex-col">
                             {lastLocation.geocodedCity && (
-                              <span className="text-xs text-gray-300">
+                              <span className="text-xs text-foreground">
                                 {lastLocation.geocodedCity}
                               </span>
                             )}
@@ -278,7 +278,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                             </a>
                           </div>
                         ) : (
-                          <span className="text-gray-500">—</span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="py-3">
@@ -295,7 +295,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                 })}
                 {paginatedLabels.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
                       {q ? 'No devices match your search' : 'No active devices'}
                     </td>
                   </tr>
@@ -305,13 +305,13 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
-              <p className="text-sm text-gray-400">Page {page} of {totalPages} ({filteredTotal} total)</p>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">Page {page} of {totalPages} ({filteredTotal} total)</p>
               <div className="flex gap-2">
                 {page > 1 && (
                   <Link
                     href={`/admin/devices?${new URLSearchParams({ ...(q ? { q } : {}), ...(healthFilter ? { health: healthFilter } : {}), page: String(page - 1) }).toString()}`}
-                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                    className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                   >
                     Previous
                   </Link>
@@ -319,7 +319,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                 {page < totalPages && (
                   <Link
                     href={`/admin/devices?${new URLSearchParams({ ...(q ? { q } : {}), ...(healthFilter ? { health: healthFilter } : {}), page: String(page + 1) }).toString()}`}
-                    className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
+                    className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
                   >
                     Next
                   </Link>
