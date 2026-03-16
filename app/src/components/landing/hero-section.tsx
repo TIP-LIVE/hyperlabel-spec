@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { SignedIn, SignedOut } from '@clerk/nextjs'
+
 
 const cities = [
   'Jakarta',
@@ -85,24 +85,13 @@ export function HeroSection() {
           subscriptions.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-4">
-          <SignedOut>
-            <Button
-              size="lg"
-              className="h-12 rounded-full bg-[#00FF2B] px-8 text-base font-semibold text-black hover:bg-[#00DD25]"
-              asChild
-            >
-              <Link href="/sign-up">Buy a Label</Link>
-            </Button>
-          </SignedOut>
-          <SignedIn>
-            <Button
-              size="lg"
-              className="h-12 rounded-full bg-[#00FF2B] px-8 text-base font-semibold text-black hover:bg-[#00DD25]"
-              asChild
-            >
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-          </SignedIn>
+          <Button
+            size="lg"
+            className="h-12 rounded-full bg-[#00FF2B] px-8 text-base font-semibold text-black hover:bg-[#00DD25]"
+            asChild
+          >
+            <Link href="/buy">Buy a Label</Link>
+          </Button>
           <Button
             size="lg"
             variant="outline"

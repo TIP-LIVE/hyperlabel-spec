@@ -28,7 +28,7 @@ export default function ComparePage() {
               className="h-12 rounded-full bg-[#00FF2B] px-8 text-base font-semibold text-black shadow-lg hover:bg-[#00DD25]"
               asChild
             >
-              <Link href="/sign-up">Try TIP Today</Link>
+              <Link href="/buy">Try TIP Today</Link>
             </Button>
             <Button
               size="lg"

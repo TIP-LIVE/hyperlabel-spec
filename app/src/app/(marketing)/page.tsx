@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { HeroSection } from '@/components/landing/hero-section'
 import { LandingFAQ } from '@/components/landing/landing-faq'
 import { MarketingCTA } from '@/components/landing/marketing-cta'
@@ -385,24 +384,13 @@ export default function HomePage() {
                 <li>&bull; Free shipping</li>
                 <li>&bull; 60+ day battery</li>
               </ul>
-              <SignedOut>
-                <Button
-                  className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"
-                  variant="outline"
-                  asChild
-                >
-                  <Link href="/sign-up">Buy 1 Label</Link>
-                </Button>
-              </SignedOut>
-              <SignedIn>
-                <Button
-                  className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"
-                  variant="outline"
-                  asChild
-                >
-                  <Link href="/dashboard">Buy 1 Label</Link>
-                </Button>
-              </SignedIn>
+              <Button
+                className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"
+                variant="outline"
+                asChild
+              >
+                <Link href="/buy">Buy 1 Label</Link>
+              </Button>
             </div>
 
             {/* 5 Labels — Best Value */}
@@ -420,22 +408,12 @@ export default function HomePage() {
                 <li>&bull; Free shipping</li>
                 <li>&bull; Save $15 vs buying one by one</li>
               </ul>
-              <SignedOut>
-                <Button
-                  className="mt-6 w-full rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
-                  asChild
-                >
-                  <Link href="/sign-up">Buy 5 Labels</Link>
-                </Button>
-              </SignedOut>
-              <SignedIn>
-                <Button
-                  className="mt-6 w-full rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
-                  asChild
-                >
-                  <Link href="/dashboard">Buy 5 Labels</Link>
-                </Button>
-              </SignedIn>
+              <Button
+                className="mt-6 w-full rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
+                asChild
+              >
+                <Link href="/buy">Buy 5 Labels</Link>
+              </Button>
             </div>
 
             {/* 10 Labels */}
@@ -451,24 +429,13 @@ export default function HomePage() {
                 <li>&bull; Lowest price per label</li>
                 <li>&bull; Save $50 vs buying one by one</li>
               </ul>
-              <SignedOut>
-                <Button
-                  className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"
-                  variant="outline"
-                  asChild
-                >
-                  <Link href="/sign-up">Buy 10 Labels</Link>
-                </Button>
-              </SignedOut>
-              <SignedIn>
-                <Button
-                  className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"
-                  variant="outline"
-                  asChild
-                >
-                  <Link href="/dashboard">Buy 10 Labels</Link>
-                </Button>
-              </SignedIn>
+              <Button
+                className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"
+                variant="outline"
+                asChild
+              >
+                <Link href="/buy">Buy 10 Labels</Link>
+              </Button>
             </div>
           </div>
         </div>

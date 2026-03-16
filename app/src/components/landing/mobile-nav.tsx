@@ -52,36 +52,25 @@ export function MobileNav() {
             </Link>
           ))}
           <div className="mt-4 flex flex-col gap-3">
-            {isLoaded && isSignedIn ? (
+            {isLoaded && !isSignedIn && (
               <Button
+                variant="outline"
                 asChild
-                className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
+                className="rounded-full border-white/20 text-white hover:bg-white/10"
               >
-                <Link href="/dashboard" onClick={() => setOpen(false)}>
-                  Dashboard
+                <Link href="/sign-in" onClick={() => setOpen(false)}>
+                  Sign In
                 </Link>
               </Button>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  asChild
-                  className="rounded-full border-white/20 text-white hover:bg-white/10"
-                >
-                  <Link href="/sign-in" onClick={() => setOpen(false)}>
-                    Sign In
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
-                >
-                  <Link href="/sign-up" onClick={() => setOpen(false)}>
-                    Buy a Label
-                  </Link>
-                </Button>
-              </>
             )}
+            <Button
+              asChild
+              className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
+            >
+              <Link href="/buy" onClick={() => setOpen(false)}>
+                Buy a Label
+              </Link>
+            </Button>
           </div>
         </nav>
       </SheetContent>
