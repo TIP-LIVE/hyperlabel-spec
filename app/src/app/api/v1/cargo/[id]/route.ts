@@ -209,13 +209,21 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Only platform admins can reactivate cancelled shipments
+    if (existing.status === 'CANCELLED' && validated.data.status && context.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only platform admins can reactivate cancelled shipments' },
+        { status: 403 }
+      )
+    }
+
     // Validate status transitions if status is being changed
     if (validated.data.status) {
       const allowedTransitions: Record<string, string[]> = {
         PENDING: ['IN_TRANSIT', 'CANCELLED'],
         IN_TRANSIT: ['CANCELLED'],
         DELIVERED: ['IN_TRANSIT'],
-        CANCELLED: [],
+        CANCELLED: ['PENDING'],
       }
       const allowed = allowedTransitions[existing.status] || []
       if (!allowed.includes(validated.data.status)) {

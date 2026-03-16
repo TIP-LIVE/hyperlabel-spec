@@ -89,6 +89,7 @@ interface CargoDetailClientProps {
   trackingUrl: string
   initialTotalLocations?: number
   initialOldestLocation?: OldestLocationInfo | null
+  isAdmin?: boolean
 }
 
 const statusConfig = {
@@ -110,7 +111,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocations, initialOldestLocation }: CargoDetailClientProps) {
+export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocations, initialOldestLocation, isAdmin }: CargoDetailClientProps) {
   const [shipment, setShipment] = useState<CargoData>(initialData)
   const [totalLocations, setTotalLocations] = useState(initialTotalLocations ?? initialData.locations.length)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -297,6 +298,30 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Reactivate Tracking
+              </Button>
+            )}
+            {isAdmin && shipment.status === 'CANCELLED' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/v1/cargo/${shipment.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ status: 'PENDING' }),
+                    })
+                    if (!res.ok) throw new Error('Failed to reactivate')
+                    toast.success('Shipment reactivated')
+                    window.location.reload()
+                  } catch {
+                    toast.error('Failed to reactivate shipment')
+                  }
+                }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Reactivate
               </Button>
             )}
             <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />

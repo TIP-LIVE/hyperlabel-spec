@@ -192,6 +192,30 @@ export function DispatchDetailClient({ initialData, trackingUrl, isAdmin }: Disp
               Reactivate Tracking
             </Button>
           )}
+          {isAdmin && shipment.status === 'CANCELLED' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/v1/dispatch/${shipment.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'PENDING' }),
+                  })
+                  if (!res.ok) throw new Error('Failed to reactivate')
+                  toast.success('Dispatch reactivated')
+                  window.location.reload()
+                } catch {
+                  toast.error('Failed to reactivate dispatch')
+                }
+              }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reactivate
+            </Button>
+          )}
           {isActive && (
             <EditShipmentDialog
               shipmentId={shipment.id}

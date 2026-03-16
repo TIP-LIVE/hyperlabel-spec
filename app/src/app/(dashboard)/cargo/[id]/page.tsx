@@ -127,5 +127,5 @@ export default async function CargoDetailPage({ params }: PageProps) {
     geocodedCountryCode: oldestLocation.geocodedCountryCode,
   } : null
 
-  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} initialTotalLocations={totalLocations} initialOldestLocation={serializedOldestLocation} />
+  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} initialTotalLocations={totalLocations} initialOldestLocation={serializedOldestLocation} isAdmin={user?.role === 'admin'} />
 }
