@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatCard } from '@/components/ui/stat-card'
 import { db } from '@/lib/db'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { WebhookFilters } from '@/components/admin/webhook-filters'
 import { WebhookLogTable } from '@/components/admin/webhook-log-detail'
+import { Activity, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Prisma } from '@prisma/client'
 
@@ -35,7 +37,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   if (statusCode) where.statusCode = parseInt(statusCode, 10)
   if (q) where.iccid = { contains: q, mode: 'insensitive' }
 
-  const [logs, total] = await Promise.all([
+  const [logs, total, totalAll, successCount, pendingCount, avgDuration] = await Promise.all([
     db.webhookLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -43,7 +45,14 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
       skip: (page - 1) * perPage,
     }),
     db.webhookLog.count({ where }),
+    db.webhookLog.count(),
+    db.webhookLog.count({ where: { statusCode: 200 } }),
+    db.webhookLog.count({ where: { statusCode: null } }),
+    db.webhookLog.aggregate({ _avg: { durationMs: true } }),
   ])
+
+  const successRate = totalAll > 0 ? Math.round((successCount / totalAll) * 100) : 0
+  const avgMs = Math.round(avgDuration._avg.durationMs ?? 0)
 
   // Build ICCID → deviceId map for label column
   const iccids = [...new Set(logs.map((l) => l.iccid).filter(Boolean))] as string[]
@@ -83,6 +92,13 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
         <p className="text-muted-foreground">
           Debug incoming Onomondo webhooks — raw payloads and processing results
         </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Total Events" value={totalAll} icon={Activity} description="All time" />
+        <StatCard title="Success Rate" value={`${successRate}%`} icon={CheckCircle} description={`${successCount} of ${totalAll} returned 200`} />
+        <StatCard title="Avg Duration" value={avgMs > 0 ? `${avgMs}ms` : '—'} icon={Clock} description="Average processing time" />
+        <StatCard title="Pending" value={pendingCount} icon={AlertCircle} description="Awaiting processing" alert={pendingCount > 0} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

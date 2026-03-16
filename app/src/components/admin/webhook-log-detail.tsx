@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, Fragment } from 'react'
+import { useState, Fragment, useCallback } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { ChevronRight, ChevronDown } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ChevronRight, ChevronDown, Webhook, Copy, Check } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface WebhookLogEntry {
@@ -35,14 +36,64 @@ function EndpointBadge({ endpoint }: { endpoint: string }) {
   return <Badge variant="outline" className="text-purple-600 dark:text-purple-400 border-purple-600/30">Location</Badge>
 }
 
+function EventTypeBadge({ eventType }: { eventType: string | null }) {
+  if (!eventType) return <span className="text-muted-foreground">—</span>
+
+  if (eventType === 'location') {
+    return <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 font-normal">{eventType}</Badge>
+  }
+  if (eventType.startsWith('network-')) {
+    return <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 font-normal">{eventType}</Badge>
+  }
+  return <Badge variant="outline" className="font-normal">{eventType}</Badge>
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [text])
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); handleCopy() }}
+      className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      title="Copy to clipboard"
+    >
+      {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  )
+}
+
+function JsonBlock({ label, data }: { label: string; data: unknown }) {
+  const text = JSON.stringify(data, null, 2)
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <h4 className="text-xs font-medium text-muted-foreground">{label}</h4>
+        <CopyButton text={text} />
+      </div>
+      <pre className="rounded-lg border border-border bg-muted/50 p-3 text-xs text-foreground overflow-auto max-h-64 font-mono">
+        {text}
+      </pre>
+    </div>
+  )
+}
+
 export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[]; iccidToLabel: Record<string, string> }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   if (logs.length === 0) {
     return (
-      <div className="py-8 text-center text-muted-foreground">
-        No webhook logs found
-      </div>
+      <EmptyState
+        icon={Webhook}
+        title="No webhook logs found"
+        description="No logs match the current filters. Try adjusting your search or filter criteria."
+      />
     )
   }
 
@@ -86,8 +137,8 @@ export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[
                   <td className="py-3">
                     <EndpointBadge endpoint={log.endpoint} />
                   </td>
-                  <td className="py-3 text-foreground">
-                    {log.eventType || '—'}
+                  <td className="py-3">
+                    <EventTypeBadge eventType={log.eventType} />
                   </td>
                   <td className="py-3 font-mono text-xs text-foreground">
                     {log.iccid || '—'}
@@ -113,15 +164,24 @@ export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[
                 </tr>
                 {isExpanded && (
                   <tr>
-                    <td colSpan={9} className="bg-muted/30 px-4 py-4">
+                    <td colSpan={9} className="bg-muted/30 px-6 py-5">
                       <div className="space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-3">
                           <div>
                             <h4 className="text-xs font-medium text-muted-foreground mb-1">
                               Timestamp
                             </h4>
                             <p className="text-sm text-foreground font-mono">
                               {new Date(log.createdAt).toISOString()}
+                            </p>
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-medium text-muted-foreground mb-1">
+                              Method &amp; Endpoint
+                            </h4>
+                            <p className="text-sm text-foreground">
+                              <Badge variant="outline" className="mr-2 font-mono text-xs">{log.method}</Badge>
+                              {log.endpoint}
                             </p>
                           </div>
                           <div>
@@ -134,33 +194,14 @@ export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[
                           </div>
                         </div>
 
-                        <div>
-                          <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                            Request Body
-                          </h4>
-                          <pre className="rounded-md bg-muted p-3 text-xs text-foreground overflow-auto max-h-64">
-                            {JSON.stringify(log.body, null, 2)}
-                          </pre>
-                        </div>
+                        <div className="border-t border-border pt-4 space-y-4">
+                          <JsonBlock label="Request Body" data={log.body} />
 
-                        {result && (
-                          <div>
-                            <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                              Processing Result
-                            </h4>
-                            <pre className="rounded-md bg-muted p-3 text-xs text-foreground overflow-auto max-h-40">
-                              {JSON.stringify(result, null, 2)}
-                            </pre>
-                          </div>
-                        )}
+                          {result && (
+                            <JsonBlock label="Processing Result" data={result} />
+                          )}
 
-                        <div>
-                          <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                            Headers
-                          </h4>
-                          <pre className="rounded-md bg-muted p-3 text-xs text-foreground overflow-auto max-h-40">
-                            {JSON.stringify(log.headers, null, 2)}
-                          </pre>
+                          <JsonBlock label="Headers" data={log.headers} />
                         </div>
                       </div>
                     </td>

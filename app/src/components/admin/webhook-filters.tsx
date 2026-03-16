@@ -1,15 +1,22 @@
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const ENDPOINTS = [
-  { label: 'All Endpoints', value: '' },
+  { label: 'All Endpoints', value: 'all' },
   { label: 'Connector', value: 'connector' },
   { label: 'Location Update', value: 'location-update' },
 ]
 
 const STATUS_CODES = [
-  { label: 'All Statuses', value: '' },
+  { label: 'All Statuses', value: 'all' },
   { label: '200 OK', value: '200' },
   { label: '400 Bad Request', value: '400' },
   { label: '401 Unauthorized', value: '401' },
@@ -23,7 +30,7 @@ export function WebhookFilters() {
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (value) {
+    if (value && value !== 'all') {
       params.set(key, value)
     } else {
       params.delete(key)
@@ -34,29 +41,37 @@ export function WebhookFilters() {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <select
-        value={searchParams.get('endpoint') || ''}
-        onChange={(e) => updateParam('endpoint', e.target.value)}
-        className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground"
+      <Select
+        value={searchParams.get('endpoint') || 'all'}
+        onValueChange={(value) => updateParam('endpoint', value)}
       >
-        {ENDPOINTS.map((ep) => (
-          <option key={ep.value} value={ep.value}>
-            {ep.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder="All Endpoints" />
+        </SelectTrigger>
+        <SelectContent>
+          {ENDPOINTS.map((ep) => (
+            <SelectItem key={ep.value} value={ep.value}>
+              {ep.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <select
-        value={searchParams.get('statusCode') || ''}
-        onChange={(e) => updateParam('statusCode', e.target.value)}
-        className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground"
+      <Select
+        value={searchParams.get('statusCode') || 'all'}
+        onValueChange={(value) => updateParam('statusCode', value)}
       >
-        {STATUS_CODES.map((sc) => (
-          <option key={sc.value} value={sc.value}>
-            {sc.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder="All Statuses" />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_CODES.map((sc) => (
+            <SelectItem key={sc.value} value={sc.value}>
+              {sc.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }
