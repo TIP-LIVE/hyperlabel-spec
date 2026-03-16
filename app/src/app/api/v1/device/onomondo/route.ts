@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId, offlineQueueProcessed: data.offline_queue?.length ?? 0 }, durationMs: Date.now() - startTime })
+    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId, offlineQueueProcessed: data.offline_queue?.length ?? 0 }, durationMs: Date.now() - startTime })
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[Onomondo connector] error:', error)

@@ -152,14 +152,19 @@ export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[
                   <td className="py-3 text-muted-foreground">
                     {log.durationMs !== null ? `${log.durationMs}ms` : '—'}
                   </td>
-                  <td className="py-3 text-xs text-muted-foreground max-w-[200px] truncate">
+                  <td className="py-3 text-xs max-w-[250px] truncate">
                     {result?.skipped
-                      ? (result.reason as string)
+                      ? <span className="text-muted-foreground">{result.reason as string}</span>
                       : result?.error
-                        ? String(result.error).slice(0, 50)
+                        ? <span className="text-red-500">{String(result.error).slice(0, 50)}</span>
                         : result?.locationId
-                          ? `OK → ${(result.locationId as string).slice(0, 8)}…`
-                          : '—'}
+                          ? (
+                            <span className={result.shipmentId ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}>
+                              OK → {(result.locationId as string).slice(0, 8)}…
+                              {result.shipmentId ? ' ✓' : ' ⚠ unlinked'}
+                            </span>
+                          )
+                          : <span className="text-muted-foreground">—</span>}
                   </td>
                 </tr>
                 {isExpanded && (

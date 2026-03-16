@@ -257,7 +257,7 @@ export async function POST(req: NextRequest) {
       if (Math.random() < 0.05) await pruneWebhookLogs()
     })
 
-    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId }, durationMs: Date.now() - startTime })
+    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId }, durationMs: Date.now() - startTime })
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[webhook:location-update] error:', error)
