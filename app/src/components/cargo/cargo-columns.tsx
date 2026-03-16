@@ -261,7 +261,17 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
     id: 'lastUpdate',
     header: 'Last Update',
     cell: ({ row }) => {
-      const timestamp = row.original.latestLocation?.recordedAt || row.original.label?.lastSeenAt
+      // Use the most recent of location recordedAt and label lastSeenAt
+      // so cell-tower webhook updates (which may not link to shipment) still show
+      const locTime = row.original.latestLocation?.recordedAt
+        ? new Date(row.original.latestLocation.recordedAt).getTime()
+        : 0
+      const seenTime = row.original.label?.lastSeenAt
+        ? new Date(row.original.label.lastSeenAt).getTime()
+        : 0
+      const timestamp = locTime >= seenTime
+        ? row.original.latestLocation?.recordedAt
+        : row.original.label?.lastSeenAt
       if (!timestamp) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
