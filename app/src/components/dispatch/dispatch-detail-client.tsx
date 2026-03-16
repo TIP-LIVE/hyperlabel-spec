@@ -75,6 +75,7 @@ interface DispatchData {
 interface DispatchDetailClientProps {
   initialData: DispatchData
   trackingUrl: string
+  isAdmin?: boolean
 }
 
 const statusConfig = {
@@ -84,7 +85,7 @@ const statusConfig = {
   CANCELLED: { label: 'Cancelled', variant: 'secondary' as const, icon: Package },
 }
 
-export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetailClientProps) {
+export function DispatchDetailClient({ initialData, trackingUrl, isAdmin }: DispatchDetailClientProps) {
   const [shipment] = useState<DispatchData>(initialData)
   const [cancelOpen, setCancelOpen] = useState(false)
 
@@ -119,7 +120,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {shipment.status === 'PENDING' && (
+          {isAdmin && shipment.status === 'PENDING' && (
             <Button
               variant="default"
               size="sm"
@@ -143,7 +144,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
               Mark as In Transit
             </Button>
           )}
-          {shipment.status === 'IN_TRANSIT' && (
+          {isAdmin && shipment.status === 'IN_TRANSIT' && (
             <Button
               variant="default"
               size="sm"
@@ -167,7 +168,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
               Mark as Delivered
             </Button>
           )}
-          {shipment.status === 'DELIVERED' && (
+          {isAdmin && shipment.status === 'DELIVERED' && (
             <Button
               variant="outline"
               size="sm"
@@ -201,7 +202,7 @@ export function DispatchDetailClient({ initialData, trackingUrl }: DispatchDetai
             />
           )}
           <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
-          {isActive && (
+          {isAdmin && isActive && (
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -3,6 +3,12 @@ import { db } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
+import { format } from 'date-fns'
+import {
+  sendConsigneeInTransitNotification,
+  sendConsigneeDeliveredNotification,
+  sendShipmentDeliveredNotification,
+} from '@/lib/notifications'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -73,7 +79,15 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const existing = await db.shipment.findUnique({ where: { id } })
+    const existing = await db.shipment.findUnique({
+      where: { id },
+      include: {
+        shipmentLabels: {
+          include: { label: { select: { deviceId: true } } },
+          take: 1,
+        },
+      },
+    })
 
     if (!existing || existing.type !== 'LABEL_DISPATCH') {
       return NextResponse.json({ error: 'Dispatch not found' }, { status: 404 })
@@ -81,6 +95,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     if (!canAccessRecord(context, existing)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Only platform admins can change dispatch status
+    if (validated.data.status && context.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only platform admins can change dispatch status' },
+        { status: 403 }
+      )
     }
 
     // Block non-status edits on delivered/cancelled shipments
@@ -126,6 +148,45 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       },
     })
 
+    // Send notifications on status changes (fire-and-forget)
+    if (validated.data.status === 'IN_TRANSIT' && existing.consigneeEmail) {
+      sendConsigneeInTransitNotification({
+        consigneeEmail: existing.consigneeEmail,
+        shipmentName: existing.name || 'Shipment',
+        shareCode: existing.shareCode,
+        originAddress: existing.originAddress,
+        destinationAddress: existing.destinationAddress,
+      }).catch((err) =>
+        console.error('Failed to send consignee in-transit notification:', err)
+      )
+    }
+
+    if (validated.data.status === 'DELIVERED') {
+      const deviceId = existing.shipmentLabels[0]?.label.deviceId || 'Unknown'
+
+      sendShipmentDeliveredNotification({
+        userId: existing.userId,
+        shipmentName: existing.name || 'Unnamed Shipment',
+        deviceId,
+        shareCode: existing.shareCode,
+        destination: existing.destinationAddress || 'Destination',
+      }).catch((err) =>
+        console.error('Failed to send delivery notification:', err)
+      )
+
+      if (existing.consigneeEmail) {
+        sendConsigneeDeliveredNotification({
+          consigneeEmail: existing.consigneeEmail,
+          shipmentName: existing.name || 'Shipment',
+          shareCode: existing.shareCode,
+          destinationAddress: existing.destinationAddress,
+          deliveredAt: format(new Date(), 'PPpp'),
+        }).catch((err) =>
+          console.error('Failed to send consignee delivery notification:', err)
+        )
+      }
+    }
+
     return NextResponse.json({ shipment })
   } catch (error) {
     return handleApiError(error, 'updating dispatch')
@@ -148,6 +209,14 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     if (!canAccessRecord(context, existing)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Only platform admins can cancel dispatches
+    if (context.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only platform admins can cancel dispatches' },
+        { status: 403 }
+      )
     }
 
     // Prevent cancelling already delivered or cancelled shipments

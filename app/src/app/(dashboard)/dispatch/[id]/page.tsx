@@ -107,5 +107,5 @@ export default async function DispatchDetailPage({ params }: PageProps) {
     })),
   }
 
-  return <DispatchDetailClient initialData={serializedData} trackingUrl={trackingUrl} />
+  return <DispatchDetailClient initialData={serializedData} trackingUrl={trackingUrl} isAdmin={user?.role === 'admin'} />
 }
