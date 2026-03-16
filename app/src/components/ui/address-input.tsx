@@ -18,13 +18,15 @@ interface AddressInputProps {
   disabled?: boolean
   onAddressSelect: (address: string, lat: number, lng: number) => void
   className?: string
+  /** When set, programmatically updates the input value (used by saved-address integration) */
+  externalValue?: string
 }
 
 /**
  * Address input with autocomplete suggestions.
  * Uses OpenStreetMap Nominatim (free, no API key).
  */
-export function AddressInput({ id, placeholder, defaultValue, disabled, onAddressSelect, className }: AddressInputProps) {
+export function AddressInput({ id, placeholder, defaultValue, disabled, onAddressSelect, className, externalValue }: AddressInputProps) {
   const [query, setQuery] = useState(defaultValue || '')
   const [results, setResults] = useState<AddressResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -49,6 +51,17 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Allow external code to push a value into the input (e.g. saved address selection)
+  useEffect(() => {
+    if (externalValue !== undefined && externalValue !== query) {
+      setQuery(externalValue)
+      setIsSelected(true)
+      setResults([])
+      setIsOpen(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalValue])
 
   const searchAddress = useCallback(async (searchQuery: string) => {
     if (searchQuery.length < 3) {

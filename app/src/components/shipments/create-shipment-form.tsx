@@ -31,7 +31,7 @@ import {
   Truck,
   Send,
 } from 'lucide-react'
-import { AddressInput } from '@/components/ui/address-input'
+import { AddressInputWithSaved } from '@/components/addresses/address-input-with-saved'
 import { FieldInfo } from '@/components/ui/field-info'
 import { SectionCard } from '@/components/ui/section-card'
 import { QrScanner } from '@/components/shipments/qr-scanner'
@@ -820,7 +820,7 @@ function RouteSection({
           <Label htmlFor="origin">Origin Address</Label>
           <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
         </div>
-        <AddressInput
+        <AddressInputWithSaved
           id="origin"
           placeholder="e.g., 45 Warehouse Rd, London, UK"
           onAddressSelect={onOriginSelect}
@@ -835,7 +835,7 @@ function RouteSection({
           <Label htmlFor="destination">Destination Address</Label>
           <FieldInfo text="Destination for route tracking and delivery detection." />
         </div>
-        <AddressInput
+        <AddressInputWithSaved
           id="destination"
           placeholder="e.g., 123 Main St, Berlin, Germany"
           onAddressSelect={onDestinationSelect}
