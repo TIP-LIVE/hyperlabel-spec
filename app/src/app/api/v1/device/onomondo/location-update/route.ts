@@ -99,10 +99,20 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
-    // Only process "location" type events (other types like network-registration,
-    // network-authentication, usage etc. are accepted but skipped)
+    // Update lastSeenAt for ANY event type — proves the device is online
+    // even when there's no new location data
+    if (data.iccid) {
+      db.label.updateMany({
+        where: { iccid: data.iccid },
+        data: { lastSeenAt: new Date() },
+      }).catch((err) =>
+        console.warn('[webhook:location-update] lastSeenAt update failed:', err)
+      )
+    }
+
+    // Only process "location" type events for coordinates
     if (data.type !== 'location' || !data.location) {
-      console.info('[webhook:location-update] skipped non-location type', { type: data.type, simLabel: data.sim_label })
+      console.info('[webhook:location-update] skipped non-location type (lastSeenAt updated)', { type: data.type, simLabel: data.sim_label })
       return NextResponse.json({ success: true, skipped: true, reason: `Ignored type: ${data.type}` })
     }
 
