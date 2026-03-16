@@ -12,7 +12,9 @@ import { toast } from 'sonner'
 import { Loader2, Navigation, Send } from 'lucide-react'
 import { FieldInfo } from '@/components/ui/field-info'
 import { SectionCard } from '@/components/ui/section-card'
-import { AddressInputWithSaved } from '@/components/addresses/address-input-with-saved'
+import { useSavedAddress } from '@/components/addresses/address-input-with-saved'
+import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
+import { AddressInput } from '@/components/ui/address-input'
 import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
 
 const dispatchFormSchema = z.object({
@@ -75,6 +77,9 @@ export function CreateDispatchForm() {
     },
     [setValue]
   )
+
+  const origin = useSavedAddress(handleOriginSelect)
+  const destination = useSavedAddress(handleDestinationSelect)
 
   const onSubmit = async (data: DispatchFormData) => {
     if (selectedLabelIds.length === 0) {
@@ -150,11 +155,14 @@ export function CreateDispatchForm() {
           <div className="flex items-center gap-1.5">
             <Label htmlFor="origin">Origin Address</Label>
             <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
+            <SavedAddressSelector onSelect={origin.handleSavedSelect} />
           </div>
-          <AddressInputWithSaved
+          <AddressInput
             id="origin"
             placeholder="e.g., 45 Warehouse Rd, London, UK"
             onAddressSelect={handleOriginSelect}
+            disabled={origin.geocoding}
+            externalValue={origin.externalValue}
           />
           {errors.originAddress && (
             <p className="text-sm text-destructive">{errors.originAddress.message}</p>
@@ -165,11 +173,14 @@ export function CreateDispatchForm() {
           <div className="flex items-center gap-1.5">
             <Label htmlFor="destination">Destination Address</Label>
             <FieldInfo text="Destination for route tracking and delivery detection." />
+            <SavedAddressSelector onSelect={destination.handleSavedSelect} />
           </div>
-          <AddressInputWithSaved
+          <AddressInput
             id="destination"
             placeholder="e.g., 123 Main St, Berlin, Germany"
             onAddressSelect={handleDestinationSelect}
+            disabled={destination.geocoding}
+            externalValue={destination.externalValue}
           />
           {errors.destinationAddress && (
             <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>

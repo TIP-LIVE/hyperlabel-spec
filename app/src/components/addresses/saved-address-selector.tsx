@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Button } from '@/components/ui/button'
 import { BookUser } from 'lucide-react'
 import { getCountryName } from '@/lib/constants/countries'
 
@@ -50,6 +54,7 @@ interface SavedAddressSelectorProps {
 export function SavedAddressSelector({ onSelect, onDefaultLoaded }: SavedAddressSelectorProps) {
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -89,9 +94,7 @@ export function SavedAddressSelector({ onSelect, onDefaultLoaded }: SavedAddress
   // Don't render anything until we know if there are addresses
   if (!loaded || addresses.length === 0) return null
 
-  const handleSelect = (addressId: string) => {
-    const addr = addresses.find((a) => a.id === addressId)
-    if (!addr) return
+  const handleSelect = (addr: SavedAddress) => {
     onSelect({
       name: addr.name,
       line1: addr.line1,
@@ -101,32 +104,47 @@ export function SavedAddressSelector({ onSelect, onDefaultLoaded }: SavedAddress
       postalCode: addr.postalCode,
       country: addr.country,
     })
+    setOpen(false)
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <BookUser className="h-4 w-4 text-muted-foreground" />
-        Use a saved address
-      </div>
-      <Select onValueChange={handleSelect}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select a saved address..." />
-        </SelectTrigger>
-        <SelectContent>
-          {addresses.map((addr) => (
-            <SelectItem key={addr.id} value={addr.id}>
-              <span className="font-medium">{addr.label}</span>
-              <span className="ml-2 text-muted-foreground">
-                — {addr.line1}, {addr.city}, {getCountryName(addr.country)}
-              </span>
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            >
+              <BookUser className="h-3.5 w-3.5" />
+              <span className="sr-only">Use saved address</span>
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top">Use saved address</TooltipContent>
+      </Tooltip>
+      <PopoverContent align="start" className="w-72 p-1">
+        {addresses.map((addr) => (
+          <button
+            key={addr.id}
+            type="button"
+            className="flex w-full flex-col gap-0.5 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
+            onClick={() => handleSelect(addr)}
+          >
+            <span className="font-medium">
+              {addr.label}
               {addr.isDefault && (
                 <span className="ml-1 text-xs text-primary">(Default)</span>
               )}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {addr.line1}, {addr.city}, {getCountryName(addr.country)}
+            </span>
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
   )
 }

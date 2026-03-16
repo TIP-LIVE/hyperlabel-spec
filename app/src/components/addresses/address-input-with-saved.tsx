@@ -1,20 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { AddressInput } from '@/components/ui/address-input'
-import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
 import { forwardGeocode } from '@/lib/geocode-client'
 import { getCountryName } from '@/lib/constants/countries'
 import { toast } from 'sonner'
-
-interface AddressInputWithSavedProps {
-  id?: string
-  placeholder?: string
-  defaultValue?: string
-  disabled?: boolean
-  onAddressSelect: (address: string, lat: number, lng: number) => void
-  className?: string
-}
 
 function formatSavedAddress(addr: {
   line1: string
@@ -27,18 +16,17 @@ function formatSavedAddress(addr: {
     .join(', ')
 }
 
-export function AddressInputWithSaved({
-  id,
-  placeholder,
-  defaultValue,
-  disabled,
-  onAddressSelect,
-  className,
-}: AddressInputWithSavedProps) {
+/**
+ * Hook that handles geocoding a saved address and providing the result
+ * to an AddressInput via its externalValue prop.
+ */
+export function useSavedAddress(
+  onAddressSelect: (address: string, lat: number, lng: number) => void
+) {
   const [externalValue, setExternalValue] = useState<string | undefined>(undefined)
   const [geocoding, setGeocoding] = useState(false)
 
-  const handleSavedAddressSelect = useCallback(
+  const handleSavedSelect = useCallback(
     async (addr: {
       name: string
       line1: string
@@ -58,7 +46,6 @@ export function AddressInputWithSaved({
         setExternalValue(result.displayName)
         onAddressSelect(result.displayName, result.lat, result.lng)
       } else {
-        // Fallback: use formatted string without coordinates
         setExternalValue(formatted)
         onAddressSelect(formatted, 0, 0)
         toast.warning('Could not determine exact coordinates for this address')
@@ -67,18 +54,5 @@ export function AddressInputWithSaved({
     [onAddressSelect]
   )
 
-  return (
-    <div className="space-y-2">
-      <SavedAddressSelector onSelect={handleSavedAddressSelect} />
-      <AddressInput
-        id={id}
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        disabled={disabled || geocoding}
-        onAddressSelect={onAddressSelect}
-        className={className}
-        externalValue={externalValue}
-      />
-    </div>
-  )
+  return { externalValue, geocoding, handleSavedSelect }
 }

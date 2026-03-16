@@ -32,6 +32,8 @@ import {
 
 } from 'lucide-react'
 import { AddressInput } from '@/components/ui/address-input'
+import { useSavedAddress } from '@/components/addresses/address-input-with-saved'
+import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
 import { QrScanner } from '@/components/shipments/qr-scanner'
 
 const cargoFormSchema = z.object({
@@ -170,6 +172,9 @@ export function CreateCargoForm() {
     },
     [setValue]
   )
+
+  const origin = useSavedAddress(handleOriginSelect)
+  const destination = useSavedAddress(handleDestinationSelect)
 
   const uploadPhoto = useCallback(async (file: File): Promise<string | null> => {
     try {
@@ -392,11 +397,14 @@ export function CreateCargoForm() {
             <div className="flex items-center gap-1.5">
               <Label htmlFor="origin">Origin Address</Label>
               <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
+              <SavedAddressSelector onSelect={origin.handleSavedSelect} />
             </div>
             <AddressInput
               id="origin"
               placeholder="e.g., 45 Warehouse Rd, London, UK"
               onAddressSelect={handleOriginSelect}
+              disabled={origin.geocoding}
+              externalValue={origin.externalValue}
             />
             {errors.originAddress && (
               <p className="text-sm text-destructive">{errors.originAddress.message}</p>
@@ -407,11 +415,14 @@ export function CreateCargoForm() {
             <div className="flex items-center gap-1.5">
               <Label htmlFor="destination">Destination Address</Label>
               <FieldInfo text="Destination for route tracking and delivery detection." />
+              <SavedAddressSelector onSelect={destination.handleSavedSelect} />
             </div>
             <AddressInput
               id="destination"
               placeholder="e.g., 123 Main St, Berlin, Germany"
               onAddressSelect={handleDestinationSelect}
+              disabled={destination.geocoding}
+              externalValue={destination.externalValue}
             />
             {errors.destinationAddress && (
               <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
