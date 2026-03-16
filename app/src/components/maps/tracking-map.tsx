@@ -4,7 +4,7 @@ import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView, Circle } from '@r
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns'
-import { MapPin, LocateFixed, Radio } from 'lucide-react'
+import { LocateFixed, Radio } from 'lucide-react'
 import { isNullIsland } from '@/lib/validations/device'
 
 interface LocationPoint {
