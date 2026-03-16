@@ -19,6 +19,7 @@ import {
   LayoutDashboard,
   ArrowLeft,
   Truck,
+  Send,
   Menu,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
@@ -29,7 +30,8 @@ const navigation = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Labels', href: '/admin/labels', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Shipments', href: '/admin/shipments', icon: Truck },
+  { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
+  { name: 'Label Dispatch', href: '/admin/dispatch', icon: Send },
   { name: 'Devices', href: '/admin/devices', icon: Radio },
 ]
 
@@ -40,15 +42,15 @@ export function AdminMobileSidebar() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white lg:hidden">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground lg:hidden">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[85vw] max-w-[300px] border-gray-800 bg-gray-900 p-0">
-        <SheetHeader className="border-b border-gray-800 px-6 py-4">
+      <SheetContent side="left" className="w-[85vw] max-w-[300px] border-border bg-card p-0">
+        <SheetHeader className="border-b border-border px-6 py-4">
           <SheetTitle>
-            <Logo size="md" iconClassName="text-primary" textClassName="text-white" />
+            <Logo size="md" />
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 p-4">
@@ -62,8 +64,8 @@ export function AdminMobileSidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -72,10 +74,10 @@ export function AdminMobileSidebar() {
             )
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 border-t border-gray-800 p-4">
+        <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
           <Button
             variant="ghost"
-            className="w-full justify-start text-gray-400 hover:text-white"
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
             asChild
             onClick={() => setOpen(false)}
           >

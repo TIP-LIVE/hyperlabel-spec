@@ -9,6 +9,7 @@ import {
   Radio,
   LayoutDashboard,
   Truck,
+  Send,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,7 +18,8 @@ const navigation = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Labels', href: '/admin/labels', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Shipments', href: '/admin/shipments', icon: Truck },
+  { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
+  { name: 'Label Dispatch', href: '/admin/dispatch', icon: Send },
   { name: 'Devices', href: '/admin/devices', icon: Radio },
 ]
 
@@ -38,8 +40,8 @@ export function AdminSidebarNav() {
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
               isActive
-                ? 'bg-gray-800 text-white'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                ? 'bg-accent text-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             )}
           >
             <item.icon className="h-5 w-5" />

@@ -11,20 +11,20 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Shipment Management',
-  description: 'View all shipments across all users',
+  title: 'Track Cargo',
+  description: 'View all cargo tracking shipments across all users',
 }
 
 interface PageProps {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>
 }
 
-export default async function AdminShipmentsPage({ searchParams }: PageProps) {
+export default async function AdminCargoPage({ searchParams }: PageProps) {
   const { q, status: statusFilter, page: pageStr } = await searchParams
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1)
   const perPage = 25
 
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { type: 'CARGO_TRACKING' }
 
   if (statusFilter && statusFilter !== 'ALL') {
     where.status = statusFilter
@@ -42,6 +42,8 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
     ]
   }
 
+  const typeWhere = { type: 'CARGO_TRACKING' as const }
+
   const [shipments, totalCount, statusCounts] = await Promise.all([
     db.shipment.findMany({
       where,
@@ -55,11 +57,11 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
     }),
     db.shipment.count({ where }),
     Promise.all([
-      db.shipment.count(),
-      db.shipment.count({ where: { status: 'PENDING' } }),
-      db.shipment.count({ where: { status: 'IN_TRANSIT' } }),
-      db.shipment.count({ where: { status: 'DELIVERED' } }),
-      db.shipment.count({ where: { status: 'CANCELLED' } }),
+      db.shipment.count({ where: typeWhere }),
+      db.shipment.count({ where: { ...typeWhere, status: 'PENDING' } }),
+      db.shipment.count({ where: { ...typeWhere, status: 'IN_TRANSIT' } }),
+      db.shipment.count({ where: { ...typeWhere, status: 'DELIVERED' } }),
+      db.shipment.count({ where: { ...typeWhere, status: 'CANCELLED' } }),
     ]),
   ])
 
@@ -79,11 +81,10 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">All Shipments</h1>
-        <p className="text-gray-400">View and manage shipments across all users</p>
+        <h1 className="text-2xl font-bold text-white">Track Cargo</h1>
+        <p className="text-gray-400">View cargo tracking shipments across all users</p>
       </div>
 
-      {/* Search & Status Filter */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <AdminSearch
           placeholder="Search by name, share code, address, device ID, email..."
@@ -91,12 +92,11 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
         />
       </div>
 
-      {/* Status Tabs */}
       <div className="flex gap-2 overflow-x-auto">
         {statusTabs.map((tab) => (
           <Link
             key={tab.value}
-            href={`/admin/shipments?${new URLSearchParams({
+            href={`/admin/cargo?${new URLSearchParams({
               ...(q ? { q } : {}),
               ...(tab.value !== 'ALL' ? { status: tab.value } : {}),
             }).toString()}`}
@@ -111,23 +111,22 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
         ))}
       </div>
 
-      {/* Shipments Table */}
       <Card className="border-gray-800 bg-gray-800/50">
         <CardHeader>
           <CardTitle className="text-white">
-            Shipments ({totalCount})
+            Cargo Shipments ({totalCount})
           </CardTitle>
           <CardDescription>
-            {q ? `Showing results for "${q}"` : 'All shipments sorted by date'}
+            {q ? `Showing results for "${q}"` : 'All cargo tracking shipments sorted by date'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {shipments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Package className="mb-4 h-12 w-12 text-gray-600" />
-              <h3 className="text-lg font-semibold text-white">No shipments found</h3>
+              <h3 className="text-lg font-semibold text-white">No cargo shipments found</h3>
               <p className="mt-1 text-sm text-gray-400">
-                {q ? 'Try a different search term' : 'No shipments have been created yet'}
+                {q ? 'Try a different search term' : 'No cargo tracking shipments have been created yet'}
               </p>
             </div>
           ) : (
@@ -193,7 +192,6 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
                   <p className="text-sm text-gray-400">
@@ -202,7 +200,7 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
                   <div className="flex gap-2">
                     {page > 1 && (
                       <Link
-                        href={`/admin/shipments?${new URLSearchParams({
+                        href={`/admin/cargo?${new URLSearchParams({
                           ...(q ? { q } : {}),
                           ...(statusFilter ? { status: statusFilter } : {}),
                           page: String(page - 1),
@@ -214,7 +212,7 @@ export default async function AdminShipmentsPage({ searchParams }: PageProps) {
                     )}
                     {page < totalPages && (
                       <Link
-                        href={`/admin/shipments?${new URLSearchParams({
+                        href={`/admin/cargo?${new URLSearchParams({
                           ...(q ? { q } : {}),
                           ...(statusFilter ? { status: statusFilter } : {}),
                           page: String(page + 1),
