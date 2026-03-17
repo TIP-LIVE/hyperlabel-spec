@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Share2, Truck, Battery, Trash2, Loader2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Share2, Truck, Battery, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -161,10 +161,41 @@ export type CargoRow = {
   } | null
 }
 
+function getLastUpdateTime(row: CargoRow): number {
+  const locTime = row.latestLocation?.recordedAt
+    ? new Date(row.latestLocation.recordedAt).getTime()
+    : 0
+  const seenTime = row.label?.lastSeenAt
+    ? new Date(row.label.lastSeenAt).getTime()
+    : 0
+  return Math.max(locTime, seenTime)
+}
+
+function SortableHeader({ column, label }: { column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void }; label: string }) {
+  const sorted = column.getIsSorted()
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-3 h-8"
+      onClick={() => column.toggleSorting(sorted === 'asc')}
+    >
+      {label}
+      {sorted === 'asc' ? (
+        <ArrowUp className="ml-1 h-3.5 w-3.5" />
+      ) : sorted === 'desc' ? (
+        <ArrowDown className="ml-1 h-3.5 w-3.5" />
+      ) : (
+        <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground/50" />
+      )}
+    </Button>
+  )
+}
+
 export const cargoColumns: ColumnDef<CargoRow>[] = [
   {
     accessorKey: 'name',
-    header: 'Cargo',
+    header: ({ column }) => <SortableHeader column={column} label="Cargo" />,
     cell: ({ row }) => {
       const name = row.getValue('name') as string | null
       return (
@@ -189,7 +220,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: ({ column }) => <SortableHeader column={column} label="Status" />,
     cell: ({ row }) => {
       const status = row.getValue('status') as CargoRow['status']
       const config = shipmentStatusConfig[status]
@@ -239,7 +270,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
   },
   {
     accessorKey: 'label.batteryPct',
-    header: 'Battery',
+    header: ({ column }) => <SortableHeader column={column} label="Battery" />,
     cell: ({ row }) => {
       const battery = row.original.label?.batteryPct ?? null
       if (battery === null) return <span className="text-muted-foreground">—</span>
@@ -259,19 +290,10 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
   },
   {
     id: 'lastUpdate',
-    header: 'Last Update',
+    accessorFn: (row) => getLastUpdateTime(row),
+    header: ({ column }) => <SortableHeader column={column} label="Last Update" />,
     cell: ({ row }) => {
-      // Use the most recent of location recordedAt and label lastSeenAt
-      // so cell-tower webhook updates (which may not link to shipment) still show
-      const locTime = row.original.latestLocation?.recordedAt
-        ? new Date(row.original.latestLocation.recordedAt).getTime()
-        : 0
-      const seenTime = row.original.label?.lastSeenAt
-        ? new Date(row.original.label.lastSeenAt).getTime()
-        : 0
-      const timestamp = locTime >= seenTime
-        ? row.original.latestLocation?.recordedAt
-        : row.original.label?.lastSeenAt
+      const timestamp = getLastUpdateTime(row.original)
       if (!timestamp) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
@@ -281,6 +303,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
         </span>
       )
     },
+    sortingFn: 'basic',
   },
   {
     id: 'actions',

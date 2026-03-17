@@ -188,6 +188,7 @@ export function CargoList({ initialStatus }: CargoListProps) {
         data={filteredShipments}
         searchKey="name"
         searchPlaceholder="Search cargo shipments..."
+        initialSorting={[{ id: 'lastUpdate', desc: true }]}
       />
     </div>
   )
