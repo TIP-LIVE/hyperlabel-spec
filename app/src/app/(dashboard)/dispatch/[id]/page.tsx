@@ -46,6 +46,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
               status: true,
               firmwareVersion: true,
               activatedAt: true,
+              lastSeenAt: true,
             },
           },
         },
@@ -90,6 +91,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
       status: sl.label.status,
       firmwareVersion: sl.label.firmwareVersion,
       activatedAt: sl.label.activatedAt?.toISOString() ?? null,
+      lastSeenAt: sl.label.lastSeenAt?.toISOString() ?? null,
     })),
     locations: shipment.locations.map((loc) => ({
       id: loc.id,

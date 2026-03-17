@@ -332,7 +332,13 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                   <CardTitle>Location</CardTitle>
                   <CardDescription>
                     {latestLocation
-                      ? `Last updated ${formatDistanceToNow(new Date(shipment.label?.lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}`
+                      ? `Last updated ${formatDistanceToNow(new Date(
+                          (() => {
+                            const locTime = new Date(latestLocation.recordedAt).getTime()
+                            const seenTime = shipment.label?.lastSeenAt ? new Date(shipment.label.lastSeenAt).getTime() : 0
+                            return seenTime > locTime ? shipment.label!.lastSeenAt! : latestLocation.recordedAt
+                          })()
+                        ), { addSuffix: true })}`
                       : 'The tracking label is connecting. First location typically appears within a few minutes.'}
                   </CardDescription>
                 </CardHeader>

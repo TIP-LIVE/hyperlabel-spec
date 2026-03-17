@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
               iccid: true,
               batteryPct: true,
               status: true,
+              lastSeenAt: true,
             },
           },
           shipmentLabels: {
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
                   iccid: true,
                   batteryPct: true,
                   status: true,
+                  lastSeenAt: true,
                 },
               },
             },

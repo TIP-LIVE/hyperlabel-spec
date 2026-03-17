@@ -151,6 +151,7 @@ export type DispatchRow = {
       deviceId: string
       batteryPct: number | null
       status: string
+      lastSeenAt: string | null
     }
   }>
   latestLocation: {
@@ -255,13 +256,26 @@ export const dispatchColumns: ColumnDef<DispatchRow>[] = [
     id: 'lastUpdate',
     header: 'Last Update',
     cell: ({ row }) => {
-      const loc = row.original.latestLocation
-      if (!loc) {
+      const locTime = row.original.latestLocation?.recordedAt
+        ? new Date(row.original.latestLocation.recordedAt).getTime()
+        : 0
+      const seenTime = Math.max(
+        0,
+        ...(row.original.shipmentLabels || [])
+          .map((sl) => sl.label.lastSeenAt ? new Date(sl.label.lastSeenAt).getTime() : 0)
+      )
+      const timestamp = locTime >= seenTime
+        ? row.original.latestLocation?.recordedAt
+        : (row.original.shipmentLabels || [])
+            .map((sl) => sl.label.lastSeenAt)
+            .filter(Boolean)
+            .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0]
+      if (!timestamp) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
+          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
         </span>
       )
     },

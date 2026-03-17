@@ -30,6 +30,7 @@ export type ShipmentRow = {
     deviceId: string
     batteryPct: number | null
     status: string
+    lastSeenAt: string | null
   } | null
   shipmentLabels?: Array<{
     label: {
@@ -37,6 +38,7 @@ export type ShipmentRow = {
       deviceId: string
       batteryPct: number | null
       status: string
+      lastSeenAt: string | null
     }
   }>
   latestLocation: {
@@ -147,13 +149,21 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     id: 'lastUpdate',
     header: 'Last Update',
     cell: ({ row }) => {
-      const loc = row.original.latestLocation
-      if (!loc) {
+      const locTime = row.original.latestLocation?.recordedAt
+        ? new Date(row.original.latestLocation.recordedAt).getTime()
+        : 0
+      const seenTime = row.original.label?.lastSeenAt
+        ? new Date(row.original.label.lastSeenAt).getTime()
+        : 0
+      const timestamp = locTime >= seenTime
+        ? row.original.latestLocation?.recordedAt
+        : row.original.label?.lastSeenAt
+      if (!timestamp) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
+          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
         </span>
       )
     },

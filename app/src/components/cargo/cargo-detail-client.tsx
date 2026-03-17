@@ -424,7 +424,13 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
           </CardTitle>
           <CardDescription>
             {latestLocation
-              ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
+              ? `Last updated ${formatDistanceToNow(new Date(
+                  (() => {
+                    const locTime = new Date(latestLocation.recordedAt).getTime()
+                    const seenTime = shipment.label?.lastSeenAt ? new Date(shipment.label.lastSeenAt).getTime() : 0
+                    return seenTime > locTime ? shipment.label!.lastSeenAt! : latestLocation.recordedAt
+                  })()
+                ), { addSuffix: true })}`
               : 'Acquiring signal — first location typically appears within a few minutes'}
           </CardDescription>
         </CardHeader>
