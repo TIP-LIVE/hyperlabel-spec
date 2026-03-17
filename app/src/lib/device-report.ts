@@ -325,8 +325,8 @@ export async function processLocationReport(
   // Update label: lastSeenAt only if newer (prevents regression from
   // out-of-order cell tower events), battery if provided
   const labelUpdateData: Record<string, unknown> = {}
-  if (!label.lastSeenAt || recordedAt > label.lastSeenAt) {
-    labelUpdateData.lastSeenAt = recordedAt
+  if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
+    labelUpdateData.lastSeenAt = receivedAt
   }
   if (input.battery !== undefined) {
     labelUpdateData.batteryPct = input.battery
