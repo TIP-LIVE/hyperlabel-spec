@@ -44,7 +44,7 @@ export function AdminMobileSidebar() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground lg:hidden">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground xl:hidden">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Open menu</span>
         </Button>
@@ -64,10 +64,10 @@ export function AdminMobileSidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors min-h-[44px] active:bg-accent/80 active:scale-[0.98]',
                   isActive
-                    ? 'bg-accent text-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
               >
                 <item.icon className="h-5 w-5" />

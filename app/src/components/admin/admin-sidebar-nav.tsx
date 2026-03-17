@@ -40,10 +40,10 @@ export function AdminSidebarNav() {
             key={item.name}
             href={item.href}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[44px] active:bg-accent/80 active:scale-[0.98]',
               isActive
-                ? 'bg-accent text-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             )}
           >
             <item.icon className="h-5 w-5" />

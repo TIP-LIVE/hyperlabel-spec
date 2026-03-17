@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatCard } from '@/components/ui/stat-card'
 import { db } from '@/lib/db'
 import { Users, Package, ShoppingCart, Radio, AlertTriangle, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
@@ -107,20 +108,13 @@ export default async function AdminOverviewPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.title} href={stat.href}>
-            <Card className="border-border bg-card transition-colors hover:border-border/80 hover:bg-accent">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                <stat.icon
-                  className={`h-4 w-4 ${stat.alert ? 'text-yellow-600 dark:text-yellow-500' : 'text-muted-foreground'}`}
-                />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${stat.alert ? 'text-yellow-600 dark:text-yellow-500' : 'text-card-foreground'}`}>
-                  {stat.value}
-                </div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              description={stat.description}
+              alert={stat.alert}
+            />
           </Link>
         ))}
       </div>

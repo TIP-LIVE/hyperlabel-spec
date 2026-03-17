@@ -29,17 +29,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-muted">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 border-r border-border bg-card lg:block">
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r border-border bg-card xl:flex">
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-6">
-          <Logo size="md" />
+        <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
+          <Logo size="lg" />
         </div>
 
         {/* Navigation */}
-        <AdminSidebarNav />
+        <div className="min-h-0 flex-1 overflow-auto">
+          <AdminSidebarNav />
+        </div>
 
         {/* Bottom actions */}
-        <div className="absolute bottom-0 left-0 right-0 space-y-1 border-t border-border p-4">
+        <div className="shrink-0 space-y-1 border-t border-border p-4">
           <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -58,19 +60,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="xl:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+        <header className="xl:sticky xl:top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 xl:px-6">
           {/* Mobile menu button */}
           <AdminMobileSidebar />
 
           {/* Mobile logo */}
-          <Link href="/admin" className="lg:hidden">
+          <Link href="/admin" className="xl:hidden">
             <Logo size="md" />
           </Link>
 
           {/* Desktop title */}
-          <h1 className="hidden text-lg font-medium text-foreground lg:block">TIP Admin</h1>
+          <h1 className="hidden text-lg font-medium text-foreground xl:block">TIP Admin</h1>
           <div className="flex items-center gap-3">
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
               <Link href="/dashboard">
@@ -85,7 +87,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-4 xl:p-6">{children}</main>
       </div>
     </div>
   )
