@@ -180,24 +180,6 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
         <p className="text-muted-foreground">Fleet overview and device health monitoring</p>
       </div>
 
-      {/* Fleet Overview Stats */}
-      <FleetStatsGrid stats={fleetStats} />
-
-      {/* Fleet Health: Battery Distribution + Signal Quality */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <BatteryDistribution battery={fleetStats.battery} />
-        <SignalQualityCard signal={fleetStats.signal} reporting={fleetStats.reporting} />
-      </div>
-
-      {/* Live SIM Status (Onomondo) */}
-      <SimStatusPanel />
-
-      {/* Geographic Distribution */}
-      <GeoDistributionTable geography={fleetStats.geography} />
-
-      {/* Reporting Frequency Chart */}
-      <ReportingFrequencyChart data={reportingHistory} />
-
       {/* Health Filter Tabs */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
         {healthTabs.map((tab) => (
@@ -395,6 +377,24 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Fleet Overview Stats */}
+      <FleetStatsGrid stats={fleetStats} />
+
+      {/* Fleet Health: Battery Distribution + Signal Quality */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <BatteryDistribution battery={fleetStats.battery} />
+        <SignalQualityCard signal={fleetStats.signal} reporting={fleetStats.reporting} />
+      </div>
+
+      {/* Live SIM Status (Onomondo) */}
+      <SimStatusPanel />
+
+      {/* Geographic Distribution */}
+      <GeoDistributionTable geography={fleetStats.geography} />
+
+      {/* Reporting Frequency Chart */}
+      <ReportingFrequencyChart data={reportingHistory} />
     </div>
   )
 }
