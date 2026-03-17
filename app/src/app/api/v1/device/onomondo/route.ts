@@ -173,7 +173,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[Onomondo connector] error:', error)
-    await updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
+    try {
+      await updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
+    } catch (logErr) {
+      console.error('[webhook:onomondo] failed to update webhook log', { logId, error: String(logErr) })
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
