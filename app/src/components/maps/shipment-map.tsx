@@ -21,6 +21,7 @@ interface ShipmentMapProps {
   destinationLng?: number | null
   destinationAddress?: string | null
   height?: string
+  lastSeenAt?: Date | string | null
 }
 
 export function ShipmentMap(props: ShipmentMapProps) {

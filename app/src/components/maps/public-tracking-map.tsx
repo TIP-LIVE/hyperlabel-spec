@@ -18,6 +18,7 @@ interface PublicTrackingMapProps {
   destinationLng?: number | null
   destinationAddress?: string | null
   height?: string
+  lastSeenAt?: Date | string | null
 }
 
 export function PublicTrackingMap(props: PublicTrackingMapProps) {

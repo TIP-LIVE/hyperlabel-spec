@@ -350,12 +350,6 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
             <p className="text-lg font-semibold truncate">
               {currentGeo?.name || `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`}
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3 shrink-0" />
-              <span>
-                {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
-              </span>
-            </div>
           </div>
           <button
             type="button"
@@ -451,6 +445,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
             destinationLng={shipment.destinationLng}
             destinationAddress={shipment.destinationAddress}
             height="450px"
+            lastSeenAt={shipment.label?.lastSeenAt}
           />
         </CardContent>
       </Card>

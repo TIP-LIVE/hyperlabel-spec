@@ -25,6 +25,7 @@ interface TrackingMapProps {
   destinationLng?: number | null
   destinationAddress?: string | null
   height?: string
+  lastSeenAt?: Date | string | null
 }
 
 const mapContainerStyle = {
@@ -277,6 +278,7 @@ export function TrackingMap({
   destinationLng,
   destinationAddress,
   height = '400px',
+  lastSeenAt,
 }: TrackingMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null)
   const [selectedCluster, setSelectedCluster] = useState<StopCluster | null>(null)
@@ -960,7 +962,7 @@ export function TrackingMap({
         <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border bg-background/95 px-3 py-1.5 text-[11px] shadow-md backdrop-blur-sm">
           <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           <span className="text-muted-foreground">
-            {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+            {formatDistanceToNow(new Date(lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}
           </span>
         </div>
       )}

@@ -11,7 +11,6 @@ import {
   Battery,
   Truck,
   CheckCircle,
-  Clock,
   Copy,
   Check,
   PartyPopper,
@@ -263,14 +262,6 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {latestLocation && !isDispatch && (
-              <div className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
-                <Clock className="h-3.5 w-3.5" />
-                <span>
-                  Updated {formatDistanceToNow(new Date(shipment.label?.lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}
-                </span>
-              </div>
-            )}
             {/* P1: Share button */}
             <button
               onClick={handleCopyLink}
@@ -359,6 +350,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                     destinationLng={shipment.destinationLng}
                     destinationAddress={shipment.destinationAddress}
                     height="400px"
+                    lastSeenAt={shipment.label?.lastSeenAt}
                   />
                 </CardContent>
               </Card>
