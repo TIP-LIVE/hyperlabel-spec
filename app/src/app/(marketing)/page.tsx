@@ -44,45 +44,69 @@ export default function HomePage() {
       {/* 2. Live Tracking Label — No Blind Spots */}
       <section className="py-20 md:py-28">
         <div className="container mx-auto px-4">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
+          {/* Centered heading */}
+          <div className="text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gray-400">
+              First Ever
+            </p>
+            <h2 className="text-headline mt-4 text-3xl text-white md:text-5xl lg:text-6xl">
+              Live Tracking Label
+              <br />
+              With No{' '}
+              <span className="text-destructive line-through decoration-destructive">
+                Blind
+              </span>{' '}
+              Spots
+            </h2>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.25em] text-gray-400">
+              Applicable to any cargo.
+            </p>
+          </div>
+
+          {/* Three-column: features | label image | specs */}
+          <div className="mx-auto mt-16 grid max-w-5xl items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
+            {/* Left — features */}
+            <div className="space-y-0">
+              {[
+                { title: 'No Scanners Required', subtitle: 'Countries Covered' },
+                { title: 'No Subscription Fees', subtitle: 'Days Battery Life' },
+                { title: '30-Second Activation', subtitle: 'Update Interval' },
+                { title: 'No Return Logistics', subtitle: 'Update Interval' },
+                { title: 'Shareable Tracking Links', subtitle: 'Cat-1 Cellular' },
+              ].map((item) => (
+                <div key={item.title} className="border-b border-white/10 py-4">
+                  <p className="text-sm font-bold text-white md:text-base">{item.title}</p>
+                  <p className="text-xs text-gray-500 italic">{item.subtitle}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Center — TIP label product image */}
             <div className="flex justify-center">
               <Image
-                src="/images/tip-box-photo.webp"
-                alt="TIP tracking label attached to a shipping box"
-                width={600}
-                height={600}
-                className="rounded-2xl"
+                src="/images/tip-label-3d.webp"
+                alt="TIP tracking label product"
+                width={280}
+                height={450}
+                className="drop-shadow-2xl"
                 priority
               />
             </div>
-            <div>
-              <h2 className="text-headline text-3xl text-white md:text-5xl lg:text-6xl">
-                Live Tracking Label
-                <br />
-                With No{' '}
-                <span className="text-destructive line-through decoration-destructive">
-                  Blind
-                </span>{' '}
-                Spots
-              </h2>
-              <p className="mt-6 max-w-md text-gray-400">
-                Every label ships with global cellular connectivity. No scanners
-                required, no subscription fees, 30-second activation.
-              </p>
-              <div className="mt-10 max-w-sm space-y-4">
-                {[
-                  { label: 'Countries', value: '180' },
-                  { label: 'Cities', value: '85+' },
-                  { label: 'Distance (km)', value: '240' },
-                  { label: 'Accuracy (m)', value: '175' },
-                  { label: 'Min Order', value: '1' },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <p className="text-sm text-gray-400">{stat.label}</p>
-                    <p className="text-lg font-bold text-[#00FF2B]">{stat.value}</p>
-                  </div>
-                ))}
-              </div>
+
+            {/* Right — specs */}
+            <div className="space-y-0">
+              {[
+                { value: '180', subtitle: 'Countries Covered' },
+                { value: '60+', subtitle: 'Days Battery Life' },
+                { value: '2HR', subtitle: 'Update Interval' },
+                { value: 'LTE', subtitle: 'Cat-1 Cellular' },
+                { value: '1', subtitle: 'Minimum Order' },
+              ].map((item) => (
+                <div key={item.subtitle} className="border-b border-white/10 py-4 text-right">
+                  <p className="text-lg font-bold text-white md:text-xl">{item.value}</p>
+                  <p className="text-xs text-gray-500 italic">{item.subtitle}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
