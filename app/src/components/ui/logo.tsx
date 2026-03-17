@@ -33,8 +33,8 @@ function TipLogoIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <circle cx="16.77" cy="16.77" r="16.77" fill="white" />
-      <circle cx="22.12" cy="11.85" r="6.55" fill="black" />
+      <circle cx="16.77" cy="16.77" r="16.77" className="fill-black dark:fill-white" />
+      <circle cx="22.12" cy="11.85" r="6.55" className="fill-white dark:fill-black" />
     </svg>
   )
 }
