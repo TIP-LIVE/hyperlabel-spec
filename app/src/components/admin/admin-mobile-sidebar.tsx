@@ -28,13 +28,13 @@ import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Labels', href: '/admin/labels', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
+  { name: 'Labels', href: '/admin/labels', icon: Package },
   { name: 'Label Dispatch', href: '/admin/dispatch', icon: Send },
+  { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
   { name: 'Devices', href: '/admin/devices', icon: Radio },
   { name: 'Webhooks', href: '/admin/webhooks', icon: Activity },
+  { name: 'Users', href: '/admin/users', icon: Users },
 ]
 
 export function AdminMobileSidebar() {
