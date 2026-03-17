@@ -68,7 +68,7 @@ export function HeroSection() {
             {/* Video — desktop */}
             <video
               ref={videoRef}
-              className="aspect-[4/3] w-full object-cover max-md:hidden"
+              className="aspect-video w-full object-cover max-md:hidden"
               poster="/videos/hero-poster.jpg"
               autoPlay
               muted
@@ -86,7 +86,7 @@ export function HeroSection() {
               alt="TIP cargo tracking visualization"
               width={800}
               height={600}
-              className="aspect-[4/3] w-full object-cover md:hidden"
+              className="aspect-video w-full object-cover md:hidden"
               priority
             />
 
