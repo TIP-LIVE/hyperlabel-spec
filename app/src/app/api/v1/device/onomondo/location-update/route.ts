@@ -241,7 +241,9 @@ export async function POST(req: NextRequest) {
 
     const result = await processLocationReport({
       iccid: data.iccid,
-      imei: data.imei || undefined,
+      // Don't pass IMEI for cell tower events — the ICCID (SIM) is the
+      // authoritative identifier here.  The IMEI belongs to the physical
+      // device, which may host a SIM provisioned under a different label.
       cellLatitude: lat,
       cellLongitude: lng,
       accuracy,
