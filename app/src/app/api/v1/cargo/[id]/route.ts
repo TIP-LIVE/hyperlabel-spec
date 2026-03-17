@@ -75,9 +75,21 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         }))
       : shipment.locations
 
+    // Deduplicate locations that share the same recordedAt + coordinates + source
+    // (handles Onomondo double-sends already stored in DB)
+    const seen = new Set<string>()
+    const deduped = finalLocations.filter((loc) => {
+      const key = `${loc.recordedAt.toISOString()}|${loc.latitude}|${loc.longitude}|${loc.source}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
     const totalLocations = await db.locationEvent.count({
       where: { shipmentId: shipment.id },
     })
+    // Adjust total by the number of duplicates removed from this page
+    const duplicatesRemoved = finalLocations.length - deduped.length
 
     // Fetch the actual oldest location so the frontend can infer origin
     // independently of which page of locations is currently loaded
@@ -86,7 +98,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       orderBy: { recordedAt: 'asc' },
     })
 
-    const ungeocodedLocations = finalLocations.filter(
+    const ungeocodedLocations = deduped.filter(
       (loc) => loc.latitude && loc.longitude && !isNullIsland(loc.latitude, loc.longitude) && (!loc.geocodedCity || !loc.geocodedArea)
     )
     // Await geocoding for the first batch so the response includes geocoded names
@@ -140,7 +152,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     // Backfill origin/destination address from coordinates if missing
     const addressUpdates: Record<string, string> = {}
-    const s = needsRefetch ? { ...shipment, locations: finalLocations } : shipment
+    const s = needsRefetch ? { ...shipment, locations: deduped } : { ...shipment, locations: deduped }
 
     if (s.originLat != null && s.originLng != null && !s.originAddress && !isNullIsland(s.originLat, s.originLng)) {
       const geo = await reverseGeocode(s.originLat, s.originLng)
@@ -164,7 +176,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       shipment: s,
-      totalLocations,
+      totalLocations: totalLocations - duplicatesRemoved,
       hasMoreLocations: offset + finalLocations.length < totalLocations,
       oldestLocation,
     })

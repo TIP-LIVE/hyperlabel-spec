@@ -128,6 +128,15 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Deduplicate locations with same recordedAt + coordinates (Onomondo double-sends)
+    const seenKeys = new Set<string>()
+    const dedupedLocations = shipment.locations.filter((loc) => {
+      const key = `${loc.recordedAt.toISOString()}|${loc.latitude}|${loc.longitude}`
+      if (seenKeys.has(key)) return false
+      seenKeys.add(key)
+      return true
+    })
+
     return NextResponse.json({
       shipment: {
         id: shipment.id,
@@ -154,7 +163,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         deliveredAt: shipment.deliveredAt,
         createdAt: shipment.createdAt,
         label: shipment.label,
-        locations: shipment.locations,
+        locations: dedupedLocations,
       },
     })
   } catch (error) {

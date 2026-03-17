@@ -260,6 +260,34 @@ export async function processLocationReport(
       ? true
       : receivedAt.getTime() - recordedAt.getTime() > OFFLINE_SYNC_THRESHOLD_MS
 
+  // Deduplicate: skip if an identical event already exists (e.g. Onomondo double-send)
+  const existingDuplicate = await db.locationEvent.findFirst({
+    where: {
+      labelId: label.id,
+      recordedAt,
+      latitude: effectiveLat,
+      longitude: effectiveLng,
+      source: input.source ?? 'GPS',
+    },
+    select: { id: true, shipmentId: true },
+  })
+
+  if (existingDuplicate) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Device report] duplicate event skipped', {
+        deviceId: label.deviceId,
+        existingId: existingDuplicate.id,
+        recordedAt: recordedAt.toISOString(),
+      })
+    }
+    return {
+      success: true,
+      locationId: existingDuplicate.id,
+      shipmentId: existingDuplicate.shipmentId,
+      deviceId: label.deviceId,
+    }
+  }
+
   if (process.env.NODE_ENV !== 'test') {
     console.info('[Device report] storing location', {
       deviceId: label.deviceId,

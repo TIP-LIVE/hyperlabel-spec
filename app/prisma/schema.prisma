@@ -181,6 +181,7 @@ model LocationEvent {
   shipmentId String?   @map("shipment_id")
   shipment   Shipment? @relation(fields: [shipmentId], references: [id])
 
+  @@unique([labelId, recordedAt, latitude, longitude, source], name: "location_events_dedup")
   @@index([labelId, recordedAt])
   @@index([shipmentId, recordedAt])
   @@map("location_events")
