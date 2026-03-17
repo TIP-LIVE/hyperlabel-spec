@@ -957,15 +957,6 @@ export function TrackingMap({
         />
       </button>
 
-      {/* ── Last updated badge ── */}
-      {latestLocation && (
-        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border bg-background/95 px-3 py-1.5 text-[11px] shadow-md backdrop-blur-sm">
-          <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-muted-foreground">
-            {formatDistanceToNow(new Date(lastSeenAt || latestLocation.recordedAt), { addSuffix: true })}
-          </span>
-        </div>
-      )}
     </div>
   )
 }
