@@ -35,7 +35,20 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   if (endpoint) where.endpoint = endpoint
   if (eventType) where.eventType = eventType
   if (statusCode) where.statusCode = parseInt(statusCode, 10)
-  if (q) where.iccid = { contains: q, mode: 'insensitive' }
+  // Resolve device ID to ICCID (WebhookLog only stores iccid)
+  let resolvedDeviceId: string | null = null
+  if (q) {
+    const label = await db.label.findFirst({
+      where: { deviceId: { contains: q, mode: 'insensitive' } },
+      select: { iccid: true, deviceId: true },
+    })
+    if (label?.iccid) {
+      resolvedDeviceId = label.deviceId
+      where.iccid = label.iccid
+    } else {
+      where.iccid = { contains: q, mode: 'insensitive' }
+    }
+  }
 
   const [logs, total, totalAll, successCount, pendingCount, avgDuration] = await Promise.all([
     db.webhookLog.findMany({
@@ -102,7 +115,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <AdminSearch placeholder="Search by ICCID..." />
+        <AdminSearch placeholder="Search by device ID or ICCID..." />
         <WebhookFilters />
       </div>
 
@@ -113,7 +126,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
           </CardTitle>
           <CardDescription>
             {q
-              ? `Showing results for "${q}"`
+              ? `Showing results for "${q}"${resolvedDeviceId ? ` (resolved to ICCID)` : ''}`
               : 'Click a row to expand and see the full payload'}
           </CardDescription>
         </CardHeader>

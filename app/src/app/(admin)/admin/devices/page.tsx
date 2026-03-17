@@ -12,7 +12,7 @@ import { GeoDistributionTable } from '@/components/admin/geo-distribution-table'
 import { SimStatusPanel } from '@/components/admin/sim-status-panel'
 import { ReportingFrequencyChart } from '@/components/admin/charts/reporting-frequency-chart'
 import { getOnomonodoSims } from '@/lib/onomondo'
-import { MapPin, Satellite, Radio, ExternalLink } from 'lucide-react'
+import { MapPin, Satellite, Radio, ExternalLink, Activity } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -92,6 +92,42 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
     if (sim.iccid) onomondoSimMap.set(sim.iccid, sim.id)
   }
 
+  // Fetch webhook activity stats per device
+  const activeIccids = allActiveLabels
+    .map((l) => l.iccid)
+    .filter(Boolean) as string[]
+
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+  const [webhookCounts24h, lastWebhooks] = activeIccids.length > 0
+    ? await Promise.all([
+        db.webhookLog.groupBy({
+          by: ['iccid'],
+          where: {
+            iccid: { in: activeIccids },
+            createdAt: { gte: twentyFourHoursAgo },
+          },
+          _count: { _all: true },
+        }),
+        db.webhookLog.findMany({
+          where: { iccid: { in: activeIccids } },
+          distinct: ['iccid'],
+          orderBy: { createdAt: 'desc' },
+          select: { iccid: true, createdAt: true, statusCode: true },
+        }),
+      ])
+    : [[], []]
+
+  const webhookCount24hMap = new Map<string, number>()
+  for (const row of webhookCounts24h) {
+    if (row.iccid) webhookCount24hMap.set(row.iccid, row._count._all)
+  }
+
+  const lastWebhookMap = new Map<string, { createdAt: Date; statusCode: number | null }>()
+  for (const row of lastWebhooks) {
+    if (row.iccid) lastWebhookMap.set(row.iccid, { createdAt: row.createdAt, statusCode: row.statusCode })
+  }
+
   const referenceTime = new Date().getTime()
 
   type ActiveLabel = (typeof allActiveLabels)[number]
@@ -105,13 +141,18 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
       : isLowBattery
         ? 'low_battery'
         : 'healthy'
-    return { ...label, health }
+    const webhookCount = label.iccid ? (webhookCount24hMap.get(label.iccid) ?? 0) : 0
+    const lastWebhook = label.iccid ? lastWebhookMap.get(label.iccid) : undefined
+
+    return { ...label, health, webhookCount, lastWebhook }
   })
 
   // Apply health filter
-  const filteredLabels = healthFilter && healthFilter !== 'ALL'
-    ? labelsWithHealth.filter((l) => l.health === healthFilter.toLowerCase())
-    : labelsWithHealth
+  const filteredLabels = healthFilter === 'SILENT'
+    ? labelsWithHealth.filter((l) => l.webhookCount === 0)
+    : healthFilter && healthFilter !== 'ALL'
+      ? labelsWithHealth.filter((l) => l.health === healthFilter.toLowerCase())
+      : labelsWithHealth
 
   // Pagination on filtered results
   const filteredTotal = filteredLabels.length
@@ -120,12 +161,14 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
 
   const [allCount, healthyCount, lowBatteryCount] = healthCounts
   const noSignalCount = labelsWithHealth.filter((l) => l.health === 'no_signal').length
+  const silentCount = labelsWithHealth.filter((l) => l.webhookCount === 0).length
 
   const healthTabs = [
     { label: 'All', value: 'ALL', count: allCount, color: 'text-foreground' },
     { label: 'Healthy', value: 'HEALTHY', count: healthyCount, color: 'text-green-600 dark:text-green-400' },
     { label: 'Low Battery', value: 'LOW_BATTERY', count: lowBatteryCount, color: 'text-yellow-600 dark:text-yellow-400' },
     { label: 'No Signal', value: 'NO_SIGNAL', count: noSignalCount, color: 'text-red-600 dark:text-red-400' },
+    { label: 'Silent', value: 'SILENT', count: silentCount, color: 'text-orange-600 dark:text-orange-400' },
   ]
 
   const currentHealth = healthFilter || 'ALL'
@@ -156,7 +199,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
       <ReportingFrequencyChart data={reportingHistory} />
 
       {/* Health Filter Tabs */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
         {healthTabs.map((tab) => (
           <Link
             key={tab.value}
@@ -191,6 +234,8 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                   <th className="pb-3 font-medium">Shipment</th>
                   <th className="pb-3 font-medium">Battery</th>
                   <th className="pb-3 font-medium">Last Ping</th>
+                  <th className="pb-3 font-medium">Last Webhook</th>
+                  <th className="pb-3 font-medium">Webhooks (24h)</th>
                   <th className="pb-3 font-medium">Location</th>
                   <th className="pb-3 font-medium">Status</th>
                 </tr>
@@ -208,6 +253,13 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                             className="font-mono text-primary hover:underline"
                           >
                             {label.deviceId}
+                          </Link>
+                          <Link
+                            href={`/admin/webhooks?q=${label.deviceId}`}
+                            title="View webhooks"
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Activity className="h-3 w-3" />
                           </Link>
                           {label.iccid && onomondoSimMap.has(label.iccid) && (
                             <a
@@ -259,6 +311,20 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                           <span className="text-muted-foreground">Never</span>
                         )}
                       </td>
+                      <td className="py-3 text-muted-foreground">
+                        {label.lastWebhook ? (
+                          <span className={label.lastWebhook.statusCode !== 200 ? 'text-red-500' : ''}>
+                            {formatDistanceToNow(new Date(label.lastWebhook.createdAt), { addSuffix: true })}
+                          </span>
+                        ) : (
+                          <span>Never</span>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <span className={label.webhookCount === 0 ? 'text-red-500 font-medium' : 'text-foreground'}>
+                          {label.webhookCount}
+                        </span>
+                      </td>
                       <td className="py-3">
                         {lastLocation ? (
                           <div className="flex flex-col">
@@ -295,7 +361,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                 })}
                 {paginatedLabels.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
                       {q ? 'No devices match your search' : 'No active devices'}
                     </td>
                   </tr>

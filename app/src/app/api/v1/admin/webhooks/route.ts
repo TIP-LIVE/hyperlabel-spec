@@ -21,7 +21,17 @@ export async function GET(req: NextRequest) {
   if (iccid) where.iccid = iccid
   if (eventType) where.eventType = eventType
   if (statusCode) where.statusCode = parseInt(statusCode, 10)
-  if (q) where.iccid = { contains: q, mode: 'insensitive' }
+  if (q) {
+    const label = await db.label.findFirst({
+      where: { deviceId: { contains: q, mode: 'insensitive' } },
+      select: { iccid: true },
+    })
+    if (label?.iccid) {
+      where.iccid = label.iccid
+    } else {
+      where.iccid = { contains: q, mode: 'insensitive' }
+    }
+  }
 
   const [logs, total] = await Promise.all([
     db.webhookLog.findMany({
