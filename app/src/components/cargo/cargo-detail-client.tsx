@@ -424,7 +424,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
           </CardTitle>
           <CardDescription>
             {latestLocation
-              ? `Last updated ${formatDistanceToNow(new Date(latestLocation.receivedAt || latestLocation.recordedAt), { addSuffix: true })}`
+              ? `Last updated ${formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}`
               : 'Acquiring signal — first location typically appears within a few minutes'}
           </CardDescription>
         </CardHeader>
