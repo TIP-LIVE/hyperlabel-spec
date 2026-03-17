@@ -74,7 +74,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
         shipments: {
           where: { status: 'IN_TRANSIT' },
           take: 1,
-          select: { name: true, shareCode: true },
+          select: { name: true, shareCode: true, type: true },
         },
       },
       orderBy: { activatedAt: 'desc' },
@@ -277,7 +277,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                       <td className="py-3 text-foreground">
                         {label.shipments[0] ? (
                           <Link
-                            href={`/admin/shipments?q=${label.deviceId}`}
+                            href={`/admin/${label.shipments[0].type === 'LABEL_DISPATCH' ? 'dispatch' : 'cargo'}?q=${label.deviceId}`}
                             className="text-primary hover:underline"
                           >
                             {label.shipments[0].name || 'Untitled'}

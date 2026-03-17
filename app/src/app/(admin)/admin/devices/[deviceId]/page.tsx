@@ -77,6 +77,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
         select: {
           id: true,
           name: true,
+          type: true,
           status: true,
           shareCode: true,
           createdAt: true,
@@ -400,7 +401,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
               {label.shipments.map((shipment) => (
                 <Link
                   key={shipment.id}
-                  href={`/admin/shipments?q=${label.deviceId}`}
+                  href={`/admin/${shipment.type === 'LABEL_DISPATCH' ? 'dispatch' : 'cargo'}?q=${label.deviceId}`}
                   className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
                 >
                   <div className="flex items-center gap-3">

@@ -66,7 +66,7 @@ export default async function AdminOverviewPage() {
       value: activeShipments,
       icon: Radio,
       description: `${totalShipments} total`,
-      href: '/admin/shipments?status=IN_TRANSIT',
+      href: '/admin/cargo?status=IN_TRANSIT',
     },
   ]
 
@@ -203,7 +203,7 @@ async function LowBatteryLabels() {
       shipments: {
         where: { status: 'IN_TRANSIT' },
         take: 1,
-        select: { name: true, id: true },
+        select: { name: true, id: true, type: true },
       },
     },
     orderBy: { batteryPct: 'asc' },
@@ -224,7 +224,7 @@ async function LowBatteryLabels() {
               <p className="text-sm font-medium text-card-foreground">{label.deviceId}</p>
               <p className="text-xs text-muted-foreground">
                 {shipment ? (
-                  <Link href={`/admin/shipments?q=${label.deviceId}`} className="text-primary hover:underline">
+                  <Link href={`/admin/${shipment.type === 'LABEL_DISPATCH' ? 'dispatch' : 'cargo'}?q=${label.deviceId}`} className="text-primary hover:underline">
                     {shipment.name || 'Untitled shipment'}
                   </Link>
                 ) : (
