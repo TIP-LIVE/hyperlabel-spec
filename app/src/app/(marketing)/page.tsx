@@ -45,6 +45,16 @@ export default function HomePage() {
       <section className="py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div className="flex justify-center">
+              <Image
+                src="/images/tip-box-photo.webp"
+                alt="TIP tracking label attached to a shipping box"
+                width={600}
+                height={600}
+                className="rounded-2xl"
+                priority
+              />
+            </div>
             <div>
               <h2 className="text-headline text-3xl text-white md:text-5xl lg:text-6xl">
                 Live Tracking Label
@@ -59,7 +69,7 @@ export default function HomePage() {
                 Every label ships with global cellular connectivity. No scanners
                 required, no subscription fees, 30-second activation.
               </p>
-              <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-3">
+              <div className="mt-10 max-w-sm space-y-4">
                 {[
                   { label: 'Countries', value: '180' },
                   { label: 'Cities', value: '85+' },
@@ -67,22 +77,12 @@ export default function HomePage() {
                   { label: 'Accuracy (m)', value: '175' },
                   { label: 'Min Order', value: '1' },
                 ].map((stat) => (
-                  <div key={stat.label}>
-                    <p className="text-3xl font-bold text-[#00FF2B]">{stat.value}</p>
-                    <p className="mt-1 text-sm text-gray-500">{stat.label}</p>
+                  <div key={stat.label} className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <p className="text-sm text-gray-400">{stat.label}</p>
+                    <p className="text-lg font-bold text-[#00FF2B]">{stat.value}</p>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="flex justify-center">
-              <Image
-                src="/images/tip-box-photo.webp"
-                alt="TIP tracking label attached to a shipping box"
-                width={600}
-                height={600}
-                className="rounded-2xl"
-                priority
-              />
             </div>
           </div>
         </div>
@@ -300,33 +300,37 @@ export default function HomePage() {
       {/* 9. Industries */}
       <section className="border-t border-white/5 py-20 md:py-28">
         <div className="container mx-auto px-4">
-          <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
-            Industries that rely on TIP
-          </h2>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { title: 'Electronics', image: '/images/tip-electronics.webp' },
-              { title: 'Pharma & Healthcare', image: '/images/tip-pharma-healthcare.webp' },
-              { title: 'Art & Collectibles', image: '/images/tip-art-collectibles.webp' },
-              { title: 'Air Cargo & Freight', image: '/images/tip-air-cargo-freight.webp' },
-            ].map((industry) => (
-              <div
-                key={industry.title}
-                className="group relative overflow-hidden rounded-xl"
-              >
-                <Image
-                  src={industry.image}
-                  alt={industry.title}
-                  width={400}
-                  height={500}
-                  className="h-64 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                <h3 className="absolute bottom-4 left-4 text-lg font-semibold text-white">
-                  {industry.title}
-                </h3>
-              </div>
-            ))}
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <h2 className="text-headline text-3xl text-white md:text-5xl">
+                Industries that rely on TIP
+              </h2>
+            </div>
+            <div className="grid gap-4 grid-cols-2">
+              {[
+                { title: 'Electronics', image: '/images/tip-electronics.webp' },
+                { title: 'Pharma & Healthcare', image: '/images/tip-pharma-healthcare.webp' },
+                { title: 'Art & Collectibles', image: '/images/tip-art-collectibles.webp' },
+                { title: 'Air Cargo & Freight', image: '/images/tip-air-cargo-freight.webp' },
+              ].map((industry) => (
+                <div
+                  key={industry.title}
+                  className="group relative overflow-hidden rounded-xl"
+                >
+                  <Image
+                    src={industry.image}
+                    alt={industry.title}
+                    width={400}
+                    height={500}
+                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                  <h3 className="absolute bottom-4 left-4 text-lg font-semibold text-white">
+                    {industry.title}
+                  </h3>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
