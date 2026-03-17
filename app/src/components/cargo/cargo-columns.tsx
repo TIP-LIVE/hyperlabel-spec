@@ -155,6 +155,7 @@ export type CargoRow = {
     latitude: number
     longitude: number
     recordedAt: string
+    receivedAt: string
     geocodedCity: string | null
     geocodedCountry: string | null
     geocodedCountryCode: string | null
@@ -162,8 +163,8 @@ export type CargoRow = {
 }
 
 function getLastUpdateTime(row: CargoRow): number {
-  const locTime = row.latestLocation?.recordedAt
-    ? new Date(row.latestLocation.recordedAt).getTime()
+  const locTime = row.latestLocation?.receivedAt
+    ? new Date(row.latestLocation.receivedAt).getTime()
     : 0
   const seenTime = row.label?.lastSeenAt
     ? new Date(row.label.lastSeenAt).getTime()

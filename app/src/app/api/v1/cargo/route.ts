@@ -39,13 +39,14 @@ export async function GET(req: NextRequest) {
             },
           },
           locations: {
-            orderBy: { recordedAt: 'desc' },
+            orderBy: { receivedAt: 'desc' },
             take: 1,
             select: {
               id: true,
               latitude: true,
               longitude: true,
               recordedAt: true,
+              receivedAt: true,
               geocodedCity: true,
               geocodedArea: true,
               geocodedCountry: true,
