@@ -22,17 +22,19 @@ const sizeConfig: Record<LogoSize, { icon: string; text: string; live: string }>
 }
 
 /**
- * TIP logo icon — filled circle matching the Figma brand.
+ * TIP logo icon — eye mark matching the brand.
+ * Static version of the animated eye used on the landing page (frame 0: pupil looking up-right).
  */
 function TipLogoIcon({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 32 32"
-      fill="currentColor"
+      viewBox="0 0 34 34"
+      fill="none"
       className={className}
       aria-hidden="true"
     >
-      <circle cx="16" cy="16" r="16" />
+      <circle cx="16.77" cy="16.77" r="16.77" fill="white" />
+      <circle cx="22.12" cy="11.85" r="6.55" fill="black" />
     </svg>
   )
 }
