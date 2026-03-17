@@ -126,6 +126,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  .container {
+    max-width: 80rem; /* 1280px */
+  }
 }
 
 /* Brand typography utilities matching Figma specs */
