@@ -21,13 +21,14 @@ interface PageProps {
     endpoint?: string
     statusCode?: string
     eventType?: string
+    label?: string
     q?: string
     page?: string
   }>
 }
 
 export default async function AdminWebhooksPage({ searchParams }: PageProps) {
-  const { endpoint, statusCode, eventType, q, page: pageStr } = await searchParams
+  const { endpoint, statusCode, eventType, label: labelFilter, q, page: pageStr } = await searchParams
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1)
   const perPage = 50
 
@@ -35,6 +36,10 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   if (endpoint) where.endpoint = endpoint
   if (eventType) where.eventType = eventType
   if (statusCode) where.statusCode = parseInt(statusCode, 10)
+  // Filter by label ICCID (from dropdown)
+  if (labelFilter) {
+    where.iccid = labelFilter
+  }
   // Resolve device ID to ICCID (WebhookLog only stores iccid)
   let resolvedDeviceId: string | null = null
   if (q) {
@@ -49,6 +54,16 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
       where.iccid = { contains: q, mode: 'insensitive' }
     }
   }
+
+  // Get all labels that have webhook logs for the filter dropdown
+  const labelsWithWebhooks = await db.label.findMany({
+    where: { iccid: { not: null } },
+    select: { deviceId: true, iccid: true },
+    orderBy: { deviceId: 'asc' },
+  })
+  const labelOptions = labelsWithWebhooks
+    .filter((l): l is { deviceId: string; iccid: string } => l.iccid !== null)
+    .map((l) => ({ deviceId: l.deviceId, iccid: l.iccid }))
 
   const [logs, total, totalAll, successCount, pendingCount, avgDuration] = await Promise.all([
     db.webhookLog.findMany({
@@ -87,6 +102,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   if (endpoint) filterParams.set('endpoint', endpoint)
   if (statusCode) filterParams.set('statusCode', statusCode)
   if (eventType) filterParams.set('eventType', eventType)
+  if (labelFilter) filterParams.set('label', labelFilter)
   if (q) filterParams.set('q', q)
 
   // Serialize logs for client component
@@ -116,7 +132,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <AdminSearch placeholder="Search by device ID or ICCID..." />
-        <WebhookFilters />
+        <WebhookFilters labels={labelOptions} />
       </div>
 
       <Card className="border-border bg-card">
