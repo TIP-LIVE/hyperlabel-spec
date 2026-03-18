@@ -90,34 +90,6 @@ export function HeroSection() {
               priority
             />
 
-            {/* Tracking card overlay */}
-            <div className="absolute bottom-6 left-6 right-6 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lg">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                <Image
-                  src="/images/tip-label-3d.webp"
-                  alt="TIP label"
-                  width={40}
-                  height={40}
-                  className="h-8 w-8 object-contain"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900">Cargo Robbie 16</p>
-                <div className="flex items-center gap-4">
-                  <div>
-                    <p className="text-[10px] text-gray-400">Route</p>
-                    <p className="text-sm font-bold text-gray-900">Jakarta – London</p>
-                  </div>
-                  <div className="ml-auto text-right">
-                    <p className="text-[10px] text-gray-400">Estimated Arrival</p>
-                    <p className="text-sm font-bold text-gray-900">
-                      18:44 <span className="text-[#00FF2B]">4 Feb</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <span className="absolute top-3 right-4 h-2.5 w-2.5 rounded-full bg-[#00FF2B]" />
-            </div>
           </div>
         </div>
       </div>
