@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse, after } from 'next/server'
-import { onomondoConnectorSchema } from '@/lib/validations/device'
-import {
-  processLocationReport,
-  geocodeLocationEvent,
-} from '@/lib/device-report'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { db } from '@/lib/db'
 import {
   rateLimit,
   RATE_LIMIT_DEVICE,
@@ -11,31 +8,20 @@ import {
   rateLimitResponse,
 } from '@/lib/rate-limit'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
-import { createWebhookLog, updateWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
+import { createWebhookLog, updateWebhookLog } from '@/lib/webhook-log'
+
+const batteryReportSchema = z.object({
+  iccid: z.string().min(1),
+  battery: z.number().min(0).max(100),
+})
 
 /**
  * POST /api/v1/device/onomondo
  *
- * DISABLED: GPS-source location reports are no longer used.
- * All location data now comes from Onomondo location-update webhook (CELL_TOWER source).
+ * Receives battery reports from device firmware via Onomondo connector.
+ * Location data comes separately from Onomondo location-update webhook.
  */
-export async function POST(_req: NextRequest) {
-  return NextResponse.json(
-    { error: 'Endpoint disabled – use Onomondo location-update webhook' },
-    { status: 410 },
-  )
-}
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/**
- * POST /api/v1/device/onomondo (DISABLED)
- *
- * Previously received location reports from Onomondo's HTTPS Connector.
- *
- * Authentication: API key via X-API-Key / ?key=, or shared secret header.
- * Rate limit: 120 req/min per API key
- */
-async function _POST_DISABLED(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const startTime = Date.now()
   const logId = crypto.randomUUID()
 
@@ -59,13 +45,7 @@ async function _POST_DISABLED(req: NextRequest) {
         expectedWebhookSecret,
       })
     ) {
-      console.warn('[Onomondo connector] 401 Invalid webhook credentials', {
-        hasApiKey: !!apiKey,
-        hasWebhookSecret:
-          !!req.headers.get('x-onomondo-webhook-secret') ||
-          !!req.headers.get('x-webhook-secret') ||
-          !!req.headers.get('authorization'),
-      })
+      console.warn('[webhook:onomondo:battery] 401 Invalid credentials')
       return NextResponse.json({ error: 'Invalid webhook credentials' }, { status: 401 })
     }
 
@@ -74,14 +54,13 @@ async function _POST_DISABLED(req: NextRequest) {
       body = await req.json()
     } catch {
       return NextResponse.json(
-        { error: 'Invalid JSON', details: 'Request body must be valid JSON' },
+        { error: 'Invalid JSON' },
         { status: 400 }
       )
     }
 
     const rawBody = body as Record<string, unknown>
 
-    // Persist raw webhook for admin debug panel
     try {
       await createWebhookLog({
         id: logId,
@@ -92,17 +71,13 @@ async function _POST_DISABLED(req: NextRequest) {
         iccid: rawBody?.iccid as string | undefined,
       })
     } catch (err) {
-      console.error('[webhook:onomondo] FAILED to persist webhook log', {
-        logId, iccid: rawBody?.iccid, error: String(err),
+      console.error('[webhook:onomondo:battery] FAILED to persist webhook log', {
+        logId, error: String(err),
       })
     }
 
-    const validated = onomondoConnectorSchema.safeParse(body)
+    const validated = batteryReportSchema.safeParse(body)
     if (!validated.success) {
-      console.warn('[webhook:onomondo] validation failed', {
-        errors: validated.error.flatten(),
-        body: JSON.stringify(body).slice(0, 500),
-      })
       await updateWebhookLog(logId, { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
@@ -110,87 +85,28 @@ async function _POST_DISABLED(req: NextRequest) {
       )
     }
 
-    const data = validated.data
+    const { iccid, battery } = validated.data
 
-    console.info('[webhook:onomondo] received', {
-      iccid: data.iccid,
-      imei: data.imei,
-      lat: data.latitude,
-      lng: data.longitude,
-      battery: data.battery,
-      offlineQueue: data.offline_queue?.length ?? 0,
+    const label = await db.label.findUnique({ where: { iccid } })
+    if (!label) {
+      await updateWebhookLog(logId, { statusCode: 404, processingResult: { error: 'Label not found' }, durationMs: Date.now() - startTime })
+      return NextResponse.json({ error: 'Label not found' }, { status: 404 })
+    }
+
+    await db.label.update({
+      where: { id: label.id },
+      data: { batteryPct: battery },
     })
 
-    // Process synchronously (DB ops are fast) — skip geocoding to stay under 1000ms
-    const result = await processLocationReport({
-      iccid: data.iccid,
-      imei: data.imei,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      battery: data.battery,
-      recordedAt: data.timestamp,
-      cellLatitude: data.onomondo_latitude,
-      cellLongitude: data.onomondo_longitude,
-      skipGeocode: true,
-    })
+    console.info('[webhook:onomondo:battery] updated', { iccid, battery })
 
-    // Collect location IDs for deferred geocoding
-    const toGeocode: { id: string; lat: number; lng: number }[] = []
-    const effectiveLat = data.latitude ?? data.onomondo_latitude
-    const effectiveLng = data.longitude ?? data.onomondo_longitude
-    if (effectiveLat != null && effectiveLng != null) {
-      toGeocode.push({ id: result.locationId, lat: effectiveLat, lng: effectiveLng })
-    }
-
-    // Process offline queue synchronously too
-    if (data.offline_queue && data.offline_queue.length > 0) {
-      for (const entry of data.offline_queue) {
-        try {
-          const offlineResult = await processLocationReport({
-            iccid: data.iccid,
-            imei: data.imei,
-            latitude: entry.latitude,
-            longitude: entry.longitude,
-            battery: entry.battery_pct,
-            recordedAt: entry.timestamp,
-            isOfflineSync: true,
-            skipGeocode: true,
-          })
-          if (entry.latitude != null && entry.longitude != null) {
-            toGeocode.push({ id: offlineResult.locationId, lat: entry.latitude, lng: entry.longitude })
-          }
-        } catch (err) {
-          console.warn(
-            '[webhook:onomondo] failed to process offline entry:',
-            err
-          )
-        }
-      }
-    }
-
-    // Defer geocoding to after() — non-critical, can fail without data loss
-    if (toGeocode.length > 0) {
-      after(async () => {
-        for (const loc of toGeocode) {
-          await geocodeLocationEvent(loc.id, loc.lat, loc.lng)
-        }
-        // Probabilistic pruning of old webhook logs
-        if (Math.random() < 0.05) await pruneWebhookLogs()
-      })
-    }
-
-    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId, offlineQueueProcessed: data.offline_queue?.length ?? 0 }, durationMs: Date.now() - startTime })
-    return NextResponse.json({ success: true, locationId: result.locationId })
+    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, labelId: label.id, battery }, durationMs: Date.now() - startTime })
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Onomondo connector] error:', error)
+    console.error('[webhook:onomondo:battery] error:', error)
     try {
       await updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
-    } catch (logErr) {
-      console.error('[webhook:onomondo] failed to update webhook log', { logId, error: String(logErr) })
-    }
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    } catch {}
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
