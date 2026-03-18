@@ -13,7 +13,8 @@ import {
 import { resolveCellTowerLocation } from '@/lib/cell-geolocation'
 import { db } from '@/lib/db'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
-import { createWebhookLog, updateWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
+import { createWebhookLog, updateWebhookLog, upsertWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
+import type { WebhookLogCreateParams } from '@/lib/webhook-log'
 
 // --- In-memory dedup for Onomondo's double-delivery ---
 const recentEvents = new Map<string, number>()
@@ -48,6 +49,8 @@ function isDuplicate(key: string): boolean {
 export async function POST(req: NextRequest) {
   const startTime = Date.now()
   const logId = crypto.randomUUID()
+  let logCreated = false
+  let webhookLogParams: WebhookLogCreateParams | null = null
 
   try {
     const apiKey =
@@ -115,19 +118,21 @@ export async function POST(req: NextRequest) {
     })
 
     // Persist raw webhook for admin debug panel
+    webhookLogParams = {
+      id: logId,
+      endpoint: 'location-update',
+      headers: req.headers,
+      body: rawBody,
+      ipAddress: getClientIp(req),
+      iccid: rawBody?.iccid as string | undefined,
+      eventType: rawBody?.type as string | undefined,
+    }
     try {
-      await createWebhookLog({
-        id: logId,
-        endpoint: 'location-update',
-        headers: req.headers,
-        body: rawBody,
-        ipAddress: getClientIp(req),
-        iccid: rawBody?.iccid as string | undefined,
-        eventType: rawBody?.type as string | undefined,
-      })
+      await createWebhookLog(webhookLogParams)
+      logCreated = true
     } catch (err) {
       console.error('[webhook:location-update] FAILED to persist webhook log', {
-        logId, iccid: rawBody?.iccid, type: rawBody?.type, error: String(err),
+        logId, iccid: rawBody?.iccid, type: rawBody?.type, error: err,
       })
     }
 
@@ -137,7 +142,12 @@ export async function POST(req: NextRequest) {
         errors: validated.error.flatten(),
         body: JSON.stringify(body).slice(0, 500),
       })
-      await updateWebhookLog(logId, { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime })
+      const valFailParams = { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime }
+      if (logCreated) {
+        await updateWebhookLog(logId, valFailParams)
+      } else if (webhookLogParams) {
+        await upsertWebhookLog(webhookLogParams, valFailParams)
+      }
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }
@@ -253,7 +263,12 @@ export async function POST(req: NextRequest) {
         onomondoLatNull: loc?.lat === null || loc?.lat === undefined,
       })
       const result = { success: true, skipped: true, reason: 'No coordinates available' }
-      await updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
+      const skipParams = { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime }
+      if (logCreated) {
+        await updateWebhookLog(logId, skipParams)
+      } else if (webhookLogParams) {
+        await upsertWebhookLog(webhookLogParams, skipParams)
+      }
       return NextResponse.json(result)
     }
 
@@ -277,14 +292,24 @@ export async function POST(req: NextRequest) {
       if (Math.random() < 0.05) await pruneWebhookLogs()
     })
 
-    await updateWebhookLog(logId, { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId }, durationMs: Date.now() - startTime })
+    const successParams = { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId }, durationMs: Date.now() - startTime }
+    if (logCreated) {
+      await updateWebhookLog(logId, successParams)
+    } else if (webhookLogParams) {
+      await upsertWebhookLog(webhookLogParams, successParams)
+    }
     return NextResponse.json({ success: true, locationId: result.locationId })
   } catch (error) {
     console.error('[webhook:location-update] error:', error)
     try {
-      await updateWebhookLog(logId, { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime })
+      const errParams = { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime }
+      if (logCreated) {
+        await updateWebhookLog(logId, errParams)
+      } else if (webhookLogParams) {
+        await upsertWebhookLog(webhookLogParams, errParams)
+      }
     } catch (logErr) {
-      console.error('[webhook:location-update] failed to update webhook log', { logId, error: String(logErr) })
+      console.error('[webhook:location-update] failed to update webhook log', { logId, error: logErr })
     }
     return NextResponse.json(
       { error: 'Internal server error' },

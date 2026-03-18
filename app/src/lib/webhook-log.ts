@@ -17,7 +17,7 @@ function sanitizeHeaders(headers: Headers): Record<string, string> {
   return result
 }
 
-export async function createWebhookLog(params: {
+export interface WebhookLogCreateParams {
   id: string
   endpoint: string
   method?: string
@@ -26,19 +26,33 @@ export async function createWebhookLog(params: {
   ipAddress?: string
   iccid?: string | null
   eventType?: string | null
-}): Promise<void> {
-  await db.webhookLog.create({
-    data: {
-      id: params.id,
-      endpoint: params.endpoint,
-      method: params.method ?? 'POST',
-      headers: sanitizeHeaders(params.headers) as object,
-      body: (params.body ?? {}) as object,
-      ipAddress: params.ipAddress,
-      iccid: params.iccid ?? undefined,
-      eventType: params.eventType ?? undefined,
-    },
-  })
+}
+
+export async function createWebhookLog(params: WebhookLogCreateParams): Promise<void> {
+  const data = {
+    id: params.id,
+    endpoint: params.endpoint,
+    method: params.method ?? 'POST',
+    headers: sanitizeHeaders(params.headers) as object,
+    body: (params.body ?? {}) as object,
+    ipAddress: params.ipAddress,
+    iccid: params.iccid ?? undefined,
+    eventType: params.eventType ?? undefined,
+  }
+
+  // Retry once after 100ms to handle transient Neon connection issues
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await db.webhookLog.create({ data })
+      return
+    } catch (err) {
+      if (attempt === 0) {
+        await new Promise(r => setTimeout(r, 100))
+        continue
+      }
+      throw err
+    }
+  }
 }
 
 export async function updateWebhookLog(
@@ -55,6 +69,45 @@ export async function updateWebhookLog(
       statusCode: params.statusCode,
       processingResult: (params.processingResult ?? undefined) as object | undefined,
       durationMs: params.durationMs,
+    },
+  })
+}
+
+/**
+ * Fallback: create-or-update a webhook log record.
+ * Used when the initial createWebhookLog failed — ensures the audit
+ * record is captured with final status even if the early write was lost.
+ */
+export async function upsertWebhookLog(
+  createParams: WebhookLogCreateParams,
+  updateParams: {
+    statusCode?: number
+    processingResult?: unknown
+    durationMs?: number
+  }
+): Promise<void> {
+  const headers = sanitizeHeaders(createParams.headers) as object
+  const body = (createParams.body ?? {}) as object
+
+  await db.webhookLog.upsert({
+    where: { id: createParams.id },
+    update: {
+      statusCode: updateParams.statusCode,
+      processingResult: (updateParams.processingResult ?? undefined) as object | undefined,
+      durationMs: updateParams.durationMs,
+    },
+    create: {
+      id: createParams.id,
+      endpoint: createParams.endpoint,
+      method: createParams.method ?? 'POST',
+      headers,
+      body,
+      ipAddress: createParams.ipAddress,
+      iccid: createParams.iccid ?? undefined,
+      eventType: createParams.eventType ?? undefined,
+      statusCode: updateParams.statusCode,
+      processingResult: (updateParams.processingResult ?? undefined) as object | undefined,
+      durationMs: updateParams.durationMs,
     },
   })
 }
