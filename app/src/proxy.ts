@@ -47,43 +47,45 @@ const hasClerkKey =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_dummy'
 
 // Create the proxy handler (Next.js 16 renamed middleware → proxy)
-const proxy = hasClerkKey
-  ? clerkMiddleware(async (auth, req) => {
-      if (isPublicRoute(req)) return
+// Always wrap with clerkMiddleware so auth() calls in pages don't throw.
+// When Clerk isn't configured (CI/test), skip auth logic but still register the middleware.
+const proxy = clerkMiddleware(async (auth, req) => {
+  if (!hasClerkKey) return
 
-      // API routes: skip proxy-level auth — route handlers use requireOrgAuth()
-      // which returns proper 401/403 JSON responses instead of redirects
-      if (isApiRoute(req)) return
+  if (isPublicRoute(req)) return
 
-      // Page routes: require authentication; redirect to sign-in with return URL so user lands back here after sign-in
-      const { userId } = await auth()
-      if (!userId) {
-        const pathname = req.nextUrl.pathname
-        const signInUrl = new URL('/sign-in', req.url)
-        // Clerk may expect full URL for redirect_url
-        const redirectUrl = new URL(pathname, req.url).toString()
-        signInUrl.searchParams.set('redirect_url', redirectUrl)
-        console.log('[proxy] redirect to sign-in (no userId)', { pathname, redirect_url: redirectUrl, signInUrl: signInUrl.toString() })
-        return NextResponse.redirect(signInUrl)
-      }
+  // API routes: skip proxy-level auth — route handlers use requireOrgAuth()
+  // which returns proper 401/403 JSON responses instead of redirects
+  if (isApiRoute(req)) return
 
-      // For dashboard routes (except /settings), require an active organization
-      if (isDashboardRouteRequiringOrg(req)) {
-        const { orgId } = await auth()
-        if (!orgId) {
-          const orgSelectionUrl = new URL('/org-selection', req.url)
-          return NextResponse.redirect(orgSelectionUrl)
-        }
-      }
+  // Page routes: require authentication; redirect to sign-in with return URL so user lands back here after sign-in
+  const { userId } = await auth()
+  if (!userId) {
+    const pathname = req.nextUrl.pathname
+    const signInUrl = new URL('/sign-in', req.url)
+    // Clerk may expect full URL for redirect_url
+    const redirectUrl = new URL(pathname, req.url).toString()
+    signInUrl.searchParams.set('redirect_url', redirectUrl)
+    console.log('[proxy] redirect to sign-in (no userId)', { pathname, redirect_url: redirectUrl, signInUrl: signInUrl.toString() })
+    return NextResponse.redirect(signInUrl)
+  }
 
-      // Pass pathname so dashboard layout can redirect back to this URL after sign-in
-      const pathname = req.nextUrl.pathname
-      const requestHeaders = new Headers(req.headers)
-      requestHeaders.set('x-pathname', pathname)
-      console.log('[proxy] auth ok, passing x-pathname', { pathname })
-      return NextResponse.next({ request: { headers: requestHeaders } })
-    })
-  : () => NextResponse.next()
+  // For dashboard routes (except /settings), require an active organization
+  if (isDashboardRouteRequiringOrg(req)) {
+    const { orgId } = await auth()
+    if (!orgId) {
+      const orgSelectionUrl = new URL('/org-selection', req.url)
+      return NextResponse.redirect(orgSelectionUrl)
+    }
+  }
+
+  // Pass pathname so dashboard layout can redirect back to this URL after sign-in
+  const pathname = req.nextUrl.pathname
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-pathname', pathname)
+  console.log('[proxy] auth ok, passing x-pathname', { pathname })
+  return NextResponse.next({ request: { headers: requestHeaders } })
+})
 
 export default proxy
 
