@@ -64,7 +64,7 @@ export function HeroSection() {
 
         {/* Right — hero video in frame with tracking card overlay */}
         <div className="relative z-10">
-          <div className="relative overflow-hidden rounded-3xl lg:aspect-square lg:max-h-[calc(100dvh-10rem)]">
+          <div className="relative overflow-hidden rounded-3xl aspect-[4/3] md:aspect-square lg:max-h-[calc(100dvh-10rem)]">
             {/* Video — desktop */}
             <video
               ref={videoRef}
@@ -74,7 +74,7 @@ export function HeroSection() {
               muted
               loop
               playsInline
-              preload="none"
+              preload="auto"
               aria-hidden="true"
             >
               <source src="/videos/hero-1080p.mp4" type="video/mp4" />
