@@ -355,6 +355,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                     destinationLat={shipment.destinationLat}
                     destinationLng={shipment.destinationLng}
                     destinationAddress={shipment.destinationAddress}
+                    currentLocationLabel={latestLocation?.geocodedCity || latestLocation?.geocodedArea || latestLocation?.geocodedCountry || null}
                     height="400px"
                     lastSeenAt={shipment.label?.lastSeenAt}
                   />

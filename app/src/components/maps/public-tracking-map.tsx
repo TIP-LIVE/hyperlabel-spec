@@ -17,6 +17,7 @@ interface PublicTrackingMapProps {
   destinationLat?: number | null
   destinationLng?: number | null
   destinationAddress?: string | null
+  currentLocationLabel?: string | null
   height?: string
   lastSeenAt?: Date | string | null
 }

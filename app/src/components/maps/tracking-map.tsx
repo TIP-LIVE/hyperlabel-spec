@@ -24,6 +24,7 @@ interface TrackingMapProps {
   destinationLat?: number | null
   destinationLng?: number | null
   destinationAddress?: string | null
+  currentLocationLabel?: string | null
   height?: string
   lastSeenAt?: Date | string | null
 }
@@ -277,6 +278,7 @@ export function TrackingMap({
   destinationLat,
   destinationLng,
   destinationAddress,
+  currentLocationLabel,
   height = '400px',
   lastSeenAt,
 }: TrackingMapProps) {
@@ -631,38 +633,53 @@ export function TrackingMap({
               />
             ))}
 
-        {/* ── Current location: pulsing blue dot ── */}
+        {/* ── Current location: pulsing blue dot with label ── */}
         {mapRef && latestLocation && (
           <OverlayView
             position={{ lat: latestLocation.latitude, lng: latestLocation.longitude }}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
           >
-            <div className="relative flex items-center justify-center">
-              {/* Pulsing ring */}
-              <div
-                className="absolute -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full"
-                style={{
-                  width: 36,
-                  height: 36,
-                  backgroundColor: isDark ? 'rgba(96,165,250,0.25)' : 'rgba(59,130,246,0.25)',
-                }}
-              />
-              {/* Outer ring */}
-              <div
-                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{
-                  width: 22,
-                  height: 22,
-                  backgroundColor: isDark ? '#60a5fa' : '#3b82f6',
-                  border: '3px solid rgba(255,255,255,0.95)',
-                  boxShadow: '0 2px 10px rgba(59,130,246,0.5)',
-                }}
-              />
-              {/* Inner white dot */}
-              <div
-                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{ width: 8, height: 8, backgroundColor: '#fff' }}
-              />
+            <div className="pointer-events-none flex flex-col items-center" style={{ transform: 'translate(-50%, -50%)' }}>
+              {currentLocationLabel && (
+                <div
+                  className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg"
+                  style={{
+                    backgroundColor: isDark ? '#1d4ed8' : '#2563eb',
+                    color: '#fff',
+                    marginBottom: 4,
+                    border: '2px solid rgba(255,255,255,0.9)',
+                  }}
+                >
+                  {currentLocationLabel}
+                </div>
+              )}
+              <div className="relative flex items-center justify-center" style={{ width: 22, height: 22 }}>
+                {/* Pulsing ring */}
+                <div
+                  className="absolute animate-ping rounded-full"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: isDark ? 'rgba(96,165,250,0.25)' : 'rgba(59,130,246,0.25)',
+                  }}
+                />
+                {/* Outer ring */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 22,
+                    height: 22,
+                    backgroundColor: isDark ? '#60a5fa' : '#3b82f6',
+                    border: '3px solid rgba(255,255,255,0.95)',
+                    boxShadow: '0 2px 10px rgba(59,130,246,0.5)',
+                  }}
+                />
+                {/* Inner white dot */}
+                <div
+                  className="absolute rounded-full"
+                  style={{ width: 8, height: 8, backgroundColor: '#fff' }}
+                />
+              </div>
             </div>
           </OverlayView>
         )}

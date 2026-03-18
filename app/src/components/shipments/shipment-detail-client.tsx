@@ -368,6 +368,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               destinationLat={shipment.destinationLat}
               destinationLng={shipment.destinationLng}
               destinationAddress={shipment.destinationAddress}
+              currentLocationLabel={latestLocation?.geocodedCity || latestLocation?.geocodedArea || latestLocation?.geocodedCountry || null}
               height="450px"
             />
           </CardContent>
