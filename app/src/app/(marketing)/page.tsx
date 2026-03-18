@@ -86,8 +86,8 @@ export default function HomePage() {
               <Image
                 src="/images/tip-label-3d.webp"
                 alt="TIP tracking label product"
-                width={280}
-                height={450}
+                width={600}
+                height={600}
                 className="drop-shadow-2xl"
                 priority
               />
@@ -231,8 +231,8 @@ export default function HomePage() {
               <Image
                 src="/images/tip-label-3d.webp"
                 alt="TIP tracking label 3D render"
-                width={400}
-                height={400}
+                width={600}
+                height={600}
                 className="drop-shadow-2xl"
               />
             </div>
@@ -313,8 +313,8 @@ export default function HomePage() {
             <Image
               src="/images/tip-map-screenshot.webp"
               alt="TIP dashboard showing shipments on a world map"
-              width={1400}
-              height={800}
+              width={2800}
+              height={1439}
               className="w-full"
             />
           </div>
@@ -344,8 +344,8 @@ export default function HomePage() {
                   <Image
                     src={industry.image}
                     alt={industry.title}
-                    width={400}
-                    height={500}
+                    width={1200}
+                    height={1200}
                     className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />

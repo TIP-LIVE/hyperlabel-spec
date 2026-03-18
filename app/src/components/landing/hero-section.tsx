@@ -77,7 +77,7 @@ export function HeroSection() {
               preload="none"
               aria-hidden="true"
             >
-              <source src="/videos/hero-720p.mp4" type="video/mp4" />
+              <source src="/videos/hero-1080p.mp4" type="video/mp4" />
             </video>
 
             {/* Mobile — poster fallback */}
