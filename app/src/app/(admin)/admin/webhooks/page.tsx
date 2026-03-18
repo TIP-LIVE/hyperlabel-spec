@@ -35,7 +35,11 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   const where: Prisma.WebhookLogWhereInput = {}
   if (endpoint) where.endpoint = endpoint
   if (eventType) where.eventType = eventType
-  if (statusCode) where.statusCode = parseInt(statusCode, 10)
+  if (statusCode === 'pending') {
+    where.statusCode = null
+  } else if (statusCode) {
+    where.statusCode = parseInt(statusCode, 10)
+  }
   // Filter by label ICCID (from dropdown)
   if (labelFilter) {
     where.iccid = labelFilter
@@ -127,7 +131,9 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
         <StatCard title="Total Events" value={totalAll} icon={Activity} description="All time" />
         <StatCard title="Success Rate" value={`${successRate}%`} icon={CheckCircle} description={`${successCount} of ${totalAll} returned 200`} />
         <StatCard title="Avg Duration" value={avgMs > 0 ? `${avgMs}ms` : '—'} icon={Clock} description="Average processing time" />
-        <StatCard title="Pending" value={pendingCount} icon={AlertCircle} description="Awaiting processing" alert={pendingCount > 0} />
+        <Link href="/admin/webhooks?statusCode=pending">
+          <StatCard title="Pending" value={pendingCount} icon={AlertCircle} description="Awaiting processing" alert={pendingCount > 0} />
+        </Link>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

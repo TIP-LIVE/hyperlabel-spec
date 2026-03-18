@@ -20,7 +20,11 @@ export async function GET(req: NextRequest) {
   if (endpoint) where.endpoint = endpoint
   if (iccid) where.iccid = iccid
   if (eventType) where.eventType = eventType
-  if (statusCode) where.statusCode = parseInt(statusCode, 10)
+  if (statusCode === 'pending') {
+    where.statusCode = null
+  } else if (statusCode) {
+    where.statusCode = parseInt(statusCode, 10)
+  }
   if (q) {
     const label = await db.label.findFirst({
       where: { deviceId: { contains: q, mode: 'insensitive' } },

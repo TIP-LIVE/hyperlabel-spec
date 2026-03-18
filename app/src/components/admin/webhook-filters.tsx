@@ -17,6 +17,7 @@ const ENDPOINTS = [
 
 const STATUS_CODES = [
   { label: 'All Statuses', value: 'all' },
+  { label: 'Pending', value: 'pending' },
   { label: '200 OK', value: '200' },
   { label: '400 Bad Request', value: '400' },
   { label: '401 Unauthorized', value: '401' },
