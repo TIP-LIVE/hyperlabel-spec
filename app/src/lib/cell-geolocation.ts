@@ -21,10 +21,10 @@ const cache = new Map<string, CellTowerLocation | null>()
 function cacheKey(
   mcc: number,
   mnc: number,
-  lac: number,
+  lac: number | null,
   cid: number
 ): string {
-  return `${mcc}:${mnc}:${lac}:${cid}`
+  return `${mcc}:${mnc}:${lac ?? '?'}:${cid}`
 }
 
 /**
@@ -32,14 +32,14 @@ function cacheKey(
  *
  * @param mcc Mobile Country Code
  * @param mnc Mobile Network Code
- * @param lac Location Area Code
+ * @param lac Location Area Code (nullable — API can still resolve with just mcc/mnc)
  * @param cid Cell ID
  * @returns Resolved location or null if resolution fails
  */
 export async function resolveCellTowerLocation(
   mcc: number,
   mnc: number,
-  lac: number,
+  lac: number | null,
   cid: number
 ): Promise<CellTowerLocation | null> {
   const key = cacheKey(mcc, mnc, lac, cid)
@@ -56,20 +56,20 @@ export async function resolveCellTowerLocation(
   }
 
   try {
+    // Build cell tower object — omit lac/cid if not available.
+    // Google Geolocation API can still resolve with just mcc/mnc (lower accuracy).
+    const cellTower: Record<string, number> = {
+      mobileCountryCode: mcc,
+      mobileNetworkCode: mnc,
+    }
+    if (lac !== null) cellTower.locationAreaCode = lac
+    if (cid) cellTower.cellId = cid
+
     const res = await fetch(`${GOOGLE_GEOLOCATION_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(3000),
-      body: JSON.stringify({
-        cellTowers: [
-          {
-            cellId: cid,
-            locationAreaCode: lac,
-            mobileCountryCode: mcc,
-            mobileNetworkCode: mnc,
-          },
-        ],
-      }),
+      body: JSON.stringify({ cellTowers: [cellTower] }),
     })
 
     if (!res.ok) {

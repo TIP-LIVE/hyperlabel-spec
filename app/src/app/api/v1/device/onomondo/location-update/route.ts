@@ -165,35 +165,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!data.location) {
-      console.info('[webhook:location-update] skipped — no location data', { type: data.type, simLabel: data.sim_label })
-      const result = { success: true, skipped: true, reason: 'No location data' }
-      await updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
-      return NextResponse.json(result)
-    }
-
-    const loc = data.location
+    const loc = data.location ?? null
 
     console.info('[webhook:location-update] received', {
       iccid: data.iccid,
       imei: data.imei,
       simLabel: data.sim_label,
-      lat: loc.lat,
-      lng: loc.lng,
+      hasLocation: !!loc,
+      lat: loc?.lat,
+      lng: loc?.lng,
     })
 
     // Process synchronously — DB ops are fast, only defer geocoding
     const mcc = parseInt(data.network.mcc, 10)
     const mnc = parseInt(data.network.mnc, 10)
-    const lac = loc.location_area_code
-    const cid = loc.cell_id
+    const lac = loc?.location_area_code ?? null
+    const cid = loc?.cell_id ?? 0
 
     let lat: number | null = null
     let lng: number | null = null
-    let accuracy: number | undefined = loc.accuracy ?? undefined
+    let accuracy: number | undefined = loc?.accuracy ?? undefined
 
-    // Try Onomondo-provided coordinates first
-    if (loc.lat !== null && loc.lng !== null) {
+    // Try Onomondo-provided coordinates first (only available when location object exists)
+    if (loc?.lat !== null && loc?.lat !== undefined && loc?.lng !== null && loc?.lng !== undefined) {
       const parsedLat = parseFloat(loc.lat)
       const parsedLng = parseFloat(loc.lng)
       if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
@@ -203,9 +197,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback: resolve cell tower coordinates via Google Geolocation API
-    // This external call is fast (~100-200ms) and critical for getting any location
+    // This external call is fast (~100-200ms) and critical for getting any location.
+    // Also handles webhooks with no location object — we can still geolocate via mcc/mnc.
     if (lat === null || lng === null) {
-      if (lac !== null && !isNaN(mcc) && !isNaN(mnc)) {
+      if (!isNaN(mcc) && !isNaN(mnc)) {
         try {
           const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
           if (resolved) {
@@ -214,7 +209,7 @@ export async function POST(req: NextRequest) {
             accuracy = resolved.accuracyM
             console.info('[webhook:location-update] resolved via cell tower geolocation', {
               iccid: data.iccid,
-              cell: `${mcc}:${mnc}:${lac}:${cid}`,
+              cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
               lat,
               lng,
               accuracyM: accuracy,
@@ -226,13 +221,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Fallback: use the last known location for this device so we still
+    // record a "heartbeat" even when no coordinates are resolvable.
+    if (lat === null || lng === null) {
+      if (data.iccid) {
+        const lastLocation = await db.locationEvent.findFirst({
+          where: { label: { iccid: data.iccid }, source: 'CELL_TOWER' },
+          orderBy: { recordedAt: 'desc' },
+          select: { latitude: true, longitude: true, accuracyM: true },
+        })
+        if (lastLocation) {
+          lat = lastLocation.latitude
+          lng = lastLocation.longitude
+          accuracy = lastLocation.accuracyM ?? undefined
+          console.info('[webhook:location-update] using last known location', {
+            iccid: data.iccid,
+            lat,
+            lng,
+          })
+        }
+      }
+    }
+
     // If still no coordinates, skip
     if (lat === null || lng === null) {
       console.info('[webhook:location-update] skipped — no coordinates', {
         iccid: data.iccid,
         simLabel: data.sim_label,
         cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
-        onomondoLatNull: loc.lat === null,
+        hasLocation: !!loc,
+        onomondoLatNull: loc?.lat === null || loc?.lat === undefined,
       })
       const result = { success: true, skipped: true, reason: 'No coordinates available' }
       await updateWebhookLog(logId, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })

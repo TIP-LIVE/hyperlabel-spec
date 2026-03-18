@@ -87,7 +87,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     })
 
     const totalLocations = await db.locationEvent.count({
-      where: { shipmentId: shipment.id },
+      where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
     })
     // Adjust total by the number of duplicates removed from this page
     const duplicatesRemoved = finalLocations.length - deduped.length
