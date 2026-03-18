@@ -64,7 +64,7 @@ export function HeroSection() {
 
         {/* Right — hero video in frame with tracking card overlay */}
         <div className="relative z-10">
-          <div className="relative overflow-hidden rounded-3xl lg:aspect-[4/5]">
+          <div className="relative overflow-hidden rounded-3xl lg:aspect-square">
             {/* Video — desktop */}
             <video
               ref={videoRef}
