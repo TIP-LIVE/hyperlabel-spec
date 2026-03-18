@@ -5,7 +5,6 @@ import { defineConfig, devices } from '@playwright/test'
 dns.setDefaultResultOrder('ipv4first')
 
 const isCI = !!process.env.CI
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 
 const ciLaunchOptions = isCI
   ? {
@@ -13,8 +12,6 @@ const ciLaunchOptions = isCI
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--headless=new',
-        '--no-proxy-server',
       ],
     }
   : {}
@@ -28,7 +25,7 @@ export default defineConfig({
   reporter: isCI ? 'github' : 'html',
   timeout: 30_000,
   use: {
-    baseURL,
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -42,6 +39,8 @@ export default defineConfig({
       testIgnore: /.*\.public\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
+        // Use full Chromium (not headless-shell) in CI to avoid ERR_NAME_NOT_RESOLVED
+        channel: isCI ? 'chromium' : undefined,
         storageState: 'e2e/.auth/user.json',
         launchOptions: ciLaunchOptions,
       },
@@ -52,12 +51,13 @@ export default defineConfig({
       testMatch: /.*\.public\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
+        channel: isCI ? 'chromium' : undefined,
         launchOptions: ciLaunchOptions,
       },
     },
   ],
   webServer: {
-    command: isCI ? 'npm run build && npm run start' : 'npm run dev',
+    command: isCI ? 'npx next dev --hostname 0.0.0.0' : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !isCI,
     timeout: 120_000,
