@@ -12,6 +12,7 @@ const ciLaunchOptions = isCI
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--host-resolver-rules=MAP localhost 127.0.0.1',
       ],
     }
   : {}
