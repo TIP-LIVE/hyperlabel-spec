@@ -54,6 +54,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
     where: { deviceId },
     include: {
       locations: {
+        where: { source: 'CELL_TOWER' },
         orderBy: { recordedAt: 'desc' },
         take: 100,
         select: {

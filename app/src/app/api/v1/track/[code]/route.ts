@@ -69,9 +69,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           take: 1,
         },
         locations: {
-          where: since
-            ? { recordedAt: { gt: new Date(since) } }
-            : {},
+          where: {
+            source: 'CELL_TOWER',
+            ...(since ? { recordedAt: { gt: new Date(since) } } : {}),
+          },
           orderBy: { recordedAt: 'desc' },
           take: 50,
           select: {

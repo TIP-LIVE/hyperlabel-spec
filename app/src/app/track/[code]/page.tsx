@@ -43,6 +43,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
         select: { labelId: true },
       },
       locations: {
+        where: { source: 'CELL_TOWER' },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       },

@@ -392,11 +392,9 @@ export async function processLocationReport(
 
   // Check for delivery (if within geofence of destination)
   // Threshold is 1500m because location is cell tower triangulation (~500-1000m accuracy).
-  // Skip for CELL_TOWER webhook source (those are secondary/supplementary data points).
   const DELIVERY_THRESHOLD_M = 1500
   const shouldCheckDelivery =
-    !isCellTowerOnly &&
-    (!input.accuracy || input.accuracy <= DELIVERY_THRESHOLD_M)
+    !input.accuracy || input.accuracy <= DELIVERY_THRESHOLD_M
 
   if (
     shouldCheckDelivery &&

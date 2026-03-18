@@ -48,6 +48,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
         },
       },
       locations: {
+        where: { source: 'CELL_TOWER' },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       },
@@ -67,7 +68,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
     })
     if (backfilled.count > 0) {
       locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id },
+        where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       })
@@ -75,7 +76,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
   }
 
   const totalLocations = await db.locationEvent.count({
-    where: { shipmentId: shipment.id },
+    where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
   })
 
   const oldestLocation = await db.locationEvent.findFirst({

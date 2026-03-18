@@ -60,6 +60,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
       where,
       include: {
         locations: {
+          where: { source: 'CELL_TOWER' as const },
           orderBy: { recordedAt: 'desc' as const },
           take: 1,
           select: {

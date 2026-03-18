@@ -128,6 +128,7 @@ export default async function DashboardPage() {
             select: { deviceId: true, batteryPct: true, lastSeenAt: true },
           },
           locations: {
+            where: { source: 'CELL_TOWER' },
             select: { recordedAt: true },
             orderBy: { recordedAt: 'desc' },
             take: 1,

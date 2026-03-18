@@ -38,6 +38,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           },
         },
         locations: {
+          where: { source: 'CELL_TOWER' },
           orderBy: { recordedAt: 'desc' },
           take: limit,
           skip: offset,
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // Backfill geocoding for locations missing geocoded data
     const finalLocations = needsRefetch
       ? (await db.locationEvent.findMany({
-          where: { shipmentId: shipment.id },
+          where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
           orderBy: { recordedAt: 'desc' },
           take: limit,
           skip: offset,

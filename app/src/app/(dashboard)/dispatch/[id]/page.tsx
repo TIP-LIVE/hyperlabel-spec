@@ -52,6 +52,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
         },
       },
       locations: {
+        where: { source: 'CELL_TOWER' },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       },

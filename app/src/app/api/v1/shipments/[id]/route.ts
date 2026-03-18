@@ -43,6 +43,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           take: 1,
         },
         locations: {
+          where: { source: 'CELL_TOWER' },
           orderBy: { recordedAt: 'desc' },
           take: 100,
         },
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // Re-fetch locations if sync or backfill added new data
     if (needsRefetch) {
       const locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id },
+        where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       })

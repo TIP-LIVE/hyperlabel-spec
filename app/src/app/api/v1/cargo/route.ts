@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
             },
           },
           locations: {
+            where: { source: 'CELL_TOWER' },
             orderBy: { receivedAt: 'desc' },
             take: 1,
             select: {
