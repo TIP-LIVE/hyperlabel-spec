@@ -40,7 +40,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // Use full Chromium (not headless-shell) in CI to avoid ERR_NAME_NOT_RESOLVED
-        channel: isCI ? 'chromium' : undefined,
+        channel: isCI ? 'chrome' : undefined,
         storageState: 'e2e/.auth/user.json',
         launchOptions: ciLaunchOptions,
       },
@@ -51,7 +51,7 @@ export default defineConfig({
       testMatch: /.*\.public\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        channel: isCI ? 'chromium' : undefined,
+        channel: isCI ? 'chrome' : undefined,
         launchOptions: ciLaunchOptions,
       },
     },
