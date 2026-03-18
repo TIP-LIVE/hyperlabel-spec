@@ -110,6 +110,13 @@ jobs:
           DEVICE_API_KEY: 'test-device-api-key'
           CRON_SECRET: 'test-cron-secret'
           NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+          DATABASE_URL: 'postgresql://localhost:5432/tip'
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_dummy'
+          STRIPE_SECRET_KEY: 'sk_test_dummy'
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'dummy'
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in'
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up'
+          RESEND_API_KEY: 're_dummy'
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
