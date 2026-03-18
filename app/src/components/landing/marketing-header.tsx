@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
-import { AnimatedEyeLogo } from '@/components/landing/animated-eye-logo'
+import { Logo } from '@/components/ui/logo'
 import { MobileNav } from '@/components/landing/mobile-nav'
 
 const navLinks = [
@@ -15,9 +15,7 @@ export function MarketingHeader() {
     <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <AnimatedEyeLogo className="h-8 w-8" />
-          <span className="text-xl font-bold text-[#00FF2B]">TIP</span>
-          <span className="text-[10px] font-medium text-[#00FF2B]/60">Live</span>
+<Logo size="lg" />
         </Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (

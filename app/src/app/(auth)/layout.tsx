@@ -7,7 +7,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Left side - Branding */}
       <div className="hidden lg:flex flex-col justify-between bg-black p-10 text-white">
         <Link href="/">
-          <Logo size="lg" iconClassName="text-white" textClassName="text-white" />
+          <Logo size="lg" />
         </Link>
 
         <div className="space-y-4">

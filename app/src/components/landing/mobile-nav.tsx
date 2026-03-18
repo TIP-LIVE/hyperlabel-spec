@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
-import { AnimatedEyeLogo } from '@/components/landing/animated-eye-logo'
+import { Logo } from '@/components/ui/logo'
 
 const navLinks = [
   { href: '/how-it-works', label: 'How It Works' },
@@ -35,9 +35,7 @@ export function MobileNav() {
       <SheetContent side="right" className="w-[85vw] max-w-[400px] border-white/10 bg-black">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <AnimatedEyeLogo className="h-6 w-6" />
-            <span className="text-lg font-bold text-[#00FF2B]">TIP</span>
-            <span className="text-[8px] font-medium text-[#00FF2B]/60">Live</span>
+<Logo size="md" />
           </SheetTitle>
         </SheetHeader>
         <nav className="mt-8 flex flex-col gap-4">

@@ -27,7 +27,7 @@ export default async function OrgSelectionPage() {
       <div className="w-full max-w-lg space-y-8">
         {/* Branding */}
         <div className="flex flex-col items-center space-y-4 text-center">
-          <Logo size="lg" className="gap-3" iconClassName="text-primary h-10 w-10" textClassName="text-3xl font-bold" />
+          <Logo size="lg" />
           <div className="space-y-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Set up your organization
