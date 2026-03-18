@@ -60,7 +60,7 @@ export default defineConfig({
   webServer: {
     command: isCI ? 'npx next dev --hostname 0.0.0.0' : 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !isCI,
+    reuseExistingServer: true,
     timeout: 120_000,
   },
 })

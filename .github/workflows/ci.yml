@@ -101,54 +101,31 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Debug - test Chromium network
+      - name: Start dev server
         run: |
-          node -e "
-            const { chromium } = require('playwright');
-            (async () => {
-              console.log('=== Test 1: headless shell (default) ===');
-              try {
-                const b1 = await chromium.launch({
-                  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-                });
-                const p1 = await b1.newPage();
-                const r1 = await p1.goto('https://example.com', { timeout: 10000 });
-                console.log('headless-shell example.com:', r1?.status());
-                await b1.close();
-              } catch (e) { console.log('headless-shell error:', e.message.split('\\n')[0]); }
-
-              console.log('=== Test 2: channel chrome ===');
-              try {
-                const b2 = await chromium.launch({
-                  channel: 'chrome',
-                  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-                });
-                const p2 = await b2.newPage();
-                const r2 = await p2.goto('https://example.com', { timeout: 10000 });
-                console.log('chrome example.com:', r2?.status());
-                await b2.close();
-              } catch (e) { console.log('chrome error:', e.message.split('\\n')[0]); }
-
-              console.log('=== Test 3: headless:false with xvfb ===');
-              try {
-                const b3 = await chromium.launch({
-                  headless: false,
-                  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-                });
-                const p3 = await b3.newPage();
-                const r3 = await p3.goto('https://example.com', { timeout: 10000 });
-                console.log('headed example.com:', r3?.status());
-                await b3.close();
-              } catch (e) { console.log('headed error:', e.message.split('\\n')[0]); }
-            })();
-          "
+          npx next dev --hostname 0.0.0.0 &
+          # Wait for server to be ready
+          for i in $(seq 1 60); do
+            if curl -s -o /dev/null http://localhost:3000; then
+              echo "Server ready after $((i*2))s"
+              break
+            fi
+            sleep 2
+          done
         env:
-          DISPLAY: ':99'
-
-      - name: Start Xvfb
-        run: |
-          Xvfb :99 -screen 0 1280x1024x24 &
-          echo "Xvfb started"
+          NODE_ENV: test
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
+          CLERK_SECRET_KEY: 'sk_test_dummy'
+          NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+          DATABASE_URL: 'postgresql://localhost:5432/tip'
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_dummy'
+          STRIPE_SECRET_KEY: 'sk_test_dummy'
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'dummy'
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in'
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up'
+          RESEND_API_KEY: 're_dummy'
+          DEVICE_API_KEY: 'test-device-api-key'
+          CRON_SECRET: 'test-cron-secret'
 
       - name: Run Playwright tests (public only)
         run: npx playwright test --project=public
