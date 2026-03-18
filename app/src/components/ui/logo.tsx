@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 type LogoSize = 'sm' | 'md' | 'lg'
@@ -9,26 +10,19 @@ interface LogoProps {
   className?: string
 }
 
-const sizeConfig: Record<LogoSize, string> = {
-  sm: 'h-5',
-  md: 'h-6',
-  lg: 'h-8',
+const sizeConfig: Record<LogoSize, { class: string; height: number; width: number }> = {
+  sm: { class: 'h-5', height: 20, width: 70 },
+  md: { class: 'h-6', height: 24, width: 84 },
+  lg: { class: 'h-8', height: 32, width: 112 },
 }
 
-/**
- * TIP product logo — official brand SVG with eye icon, green "TIP" wordmark, and red "Live" subscript.
- */
-export function Logo({
-  size = 'md',
-  className,
-}: LogoProps) {
+function DarkModeSvg({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 119 34"
       fill="none"
-      className={cn(sizeConfig[size], 'w-auto', className)}
-      aria-label="TIP Live"
-      role="img"
+      className={className}
+      aria-hidden="true"
     >
       <circle cx="16.7717" cy="16.7717" r="16.7717" fill="white" />
       <circle cx="6.54899" cy="6.54899" r="6.54899" transform="matrix(-1 0 0 1 30.6685 12.2993)" fill="black" />
@@ -38,5 +32,31 @@ export function Logo({
       <circle cx="2.15637" cy="2.15637" r="2.15637" transform="matrix(-1 0 0 1 106.062 27.1543)" fill="#FF0000" />
       <path d="M108.548 27.028V30.0815H110.441V31.09H107.377V27.028H108.548ZM110.543 28.0757H111.663V31.09H110.543V28.0757ZM110.543 27.028H111.663V27.8236H110.543V27.028ZM112.915 28.0757L113.397 29.975L113.85 28.0757H115.016L114.002 31.09H112.758L111.716 28.0757H112.915ZM116.496 31.1684C115.431 31.1684 114.821 30.4905 114.821 29.5436C114.821 28.58 115.532 27.9637 116.445 27.9637C117.499 27.9637 118.154 28.7929 118.081 29.8406H115.907C115.947 30.1487 116.16 30.3448 116.513 30.3448C116.731 30.3448 116.955 30.2384 117.022 30.0759H118.076C117.941 30.5185 117.437 31.1684 116.496 31.1684ZM116.518 28.7312C116.283 28.7312 115.997 28.8601 115.924 29.2187H117.09C117.062 28.8601 116.759 28.7312 116.518 28.7312Z" fill="#FF0000" />
     </svg>
+  )
+}
+
+/**
+ * TIP product logo — switches between dark mode (green SVG) and light mode (black PNG).
+ */
+export function Logo({
+  size = 'md',
+  className,
+}: LogoProps) {
+  const config = sizeConfig[size]
+
+  return (
+    <span className={cn(config.class, 'w-auto inline-flex items-center', className)} aria-label="TIP Live" role="img">
+      {/* Dark mode: green SVG logo */}
+      <DarkModeSvg className="hidden dark:block h-full w-auto" />
+      {/* Light mode: black PNG logo */}
+      <Image
+        src="/logo-light.png"
+        alt="TIP Live"
+        width={config.width}
+        height={config.height}
+        className="block dark:hidden h-full w-auto"
+        priority
+      />
+    </span>
   )
 }
