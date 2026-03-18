@@ -46,10 +46,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           {/* Centered heading */}
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gray-400">
+            <p className="text-sm font-bold italic uppercase tracking-[0.25em] text-gray-400">
               First Ever
             </p>
-            <h2 className="text-headline mt-4 text-3xl text-white md:text-5xl lg:text-6xl">
+            <h2 className="text-headline mt-4 text-4xl text-white md:text-6xl lg:text-7xl">
               Live Tracking Label
               <br />
               With No{' '}
@@ -58,13 +58,13 @@ export default function HomePage() {
               </span>{' '}
               Spots
             </h2>
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.25em] text-gray-400">
+            <p className="mt-6 text-sm font-bold uppercase tracking-[0.25em] text-gray-400">
               Applicable to any cargo.
             </p>
           </div>
 
           {/* Three-column: features | label image | specs */}
-          <div className="mx-auto mt-16 grid max-w-5xl items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
+          <div className="mx-auto mt-16 grid max-w-6xl items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
             {/* Left — features */}
             <div className="space-y-0">
               {[
@@ -75,7 +75,7 @@ export default function HomePage() {
                 { title: 'Shareable Tracking Links', subtitle: 'Cat-1 Cellular' },
               ].map((item) => (
                 <div key={item.title} className="border-b border-white/10 py-4">
-                  <p className="text-sm font-bold text-white md:text-base">{item.title}</p>
+                  <p className="text-base font-bold text-white md:text-lg">{item.title}</p>
                   <p className="text-xs text-gray-500 italic">{item.subtitle}</p>
                 </div>
               ))}
@@ -103,7 +103,7 @@ export default function HomePage() {
                 { value: '1', subtitle: 'Minimum Order' },
               ].map((item) => (
                 <div key={item.subtitle} className="border-b border-white/10 py-4 text-right">
-                  <p className="text-lg font-bold text-white md:text-xl">{item.value}</p>
+                  <p className="text-2xl font-bold text-white md:text-3xl">{item.value}</p>
                   <p className="text-xs text-gray-500 italic">{item.subtitle}</p>
                 </div>
               ))}
