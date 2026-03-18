@@ -101,63 +101,57 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Debug - check server & browser
+      - name: Debug - test Chromium network
         run: |
-          echo "=== Start dev server in background ==="
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY='pk_test_ZHVtbXkuZXhhbXBsZS5jb20k' \
-          CLERK_SECRET_KEY='sk_test_dummy' \
-          NEXT_PUBLIC_APP_URL='http://localhost:3000' \
-          DATABASE_URL='postgresql://localhost:5432/tip' \
-          npx next dev --hostname 0.0.0.0 &
-          SERVER_PID=$!
-          echo "Server PID: $SERVER_PID"
-          echo "=== Wait for server ==="
-          for i in $(seq 1 30); do
-            if curl -s -o /dev/null http://localhost:3000; then
-              echo "Server ready after ${i}s"
-              break
-            fi
-            sleep 2
-          done
-          echo "=== curl localhost ==="
-          curl -sI http://localhost:3000 | head -5
-          echo "=== curl 127.0.0.1 ==="
-          curl -sI http://127.0.0.1:3000 | head -5
-          echo "=== Test Chromium directly ==="
           node -e "
             const { chromium } = require('playwright');
             (async () => {
-              const browser = await chromium.launch({
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-              });
-              const page = await browser.newPage();
+              console.log('=== Test 1: headless shell (default) ===');
               try {
-                const res = await page.goto('http://localhost:3000', { timeout: 10000 });
-                console.log('Status:', res?.status());
-              } catch (e) {
-                console.log('Error:', e.message);
-              }
+                const b1 = await chromium.launch({
+                  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+                });
+                const p1 = await b1.newPage();
+                const r1 = await p1.goto('https://example.com', { timeout: 10000 });
+                console.log('headless-shell example.com:', r1?.status());
+                await b1.close();
+              } catch (e) { console.log('headless-shell error:', e.message.split('\\n')[0]); }
+
+              console.log('=== Test 2: channel chrome ===');
               try {
-                const res = await page.goto('http://127.0.0.1:3000', { timeout: 10000 });
-                console.log('Status 127.0.0.1:', res?.status());
-              } catch (e) {
-                console.log('Error 127.0.0.1:', e.message);
-              }
+                const b2 = await chromium.launch({
+                  channel: 'chrome',
+                  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+                });
+                const p2 = await b2.newPage();
+                const r2 = await p2.goto('https://example.com', { timeout: 10000 });
+                console.log('chrome example.com:', r2?.status());
+                await b2.close();
+              } catch (e) { console.log('chrome error:', e.message.split('\\n')[0]); }
+
+              console.log('=== Test 3: headless:false with xvfb ===');
               try {
-                const res = await page.goto('https://example.com', { timeout: 10000 });
-                console.log('Status example.com:', res?.status());
-              } catch (e) {
-                console.log('Error example.com:', e.message);
-              }
-              await browser.close();
+                const b3 = await chromium.launch({
+                  headless: false,
+                  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+                });
+                const p3 = await b3.newPage();
+                const r3 = await p3.goto('https://example.com', { timeout: 10000 });
+                console.log('headed example.com:', r3?.status());
+                await b3.close();
+              } catch (e) { console.log('headed error:', e.message.split('\\n')[0]); }
             })();
           "
-          kill $SERVER_PID 2>/dev/null || true
         env:
-          NODE_ENV: test
+          DISPLAY: ':99'
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1280x1024x24 &
+          echo "Xvfb started"
 
       - name: Run Playwright tests (public only)
-        run: xvfb-run npx playwright test --project=public
+        run: npx playwright test --project=public
         env:
           NODE_ENV: test
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
