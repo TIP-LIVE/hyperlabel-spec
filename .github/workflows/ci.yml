@@ -128,7 +128,7 @@ jobs:
           CRON_SECRET: 'test-cron-secret'
 
       - name: Run Playwright tests (public only)
-        run: npx playwright test --project=public
+        run: DEBUG=pw:browser* npx playwright test --project=public 2>&1 | head -100
         env:
           NODE_ENV: test
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
