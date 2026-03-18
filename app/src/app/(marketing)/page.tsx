@@ -64,7 +64,7 @@ export default function HomePage() {
           </div>
 
           {/* Three-column: features | label image | specs */}
-          <div className="mx-auto mt-16 grid max-w-6xl items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
+          <div className="mx-auto mt-12 grid max-w-7xl items-center gap-6 lg:grid-cols-[1fr_auto_1fr] lg:gap-12">
             {/* Left — features */}
             <div className="space-y-0">
               {[
@@ -74,9 +74,9 @@ export default function HomePage() {
                 { title: 'No Return Logistics', subtitle: 'Update Interval' },
                 { title: 'Shareable Tracking Links', subtitle: 'Cat-1 Cellular' },
               ].map((item) => (
-                <div key={item.title} className="border-b border-white/10 py-4">
-                  <p className="text-base font-bold text-white md:text-lg">{item.title}</p>
-                  <p className="text-xs text-gray-500 italic">{item.subtitle}</p>
+                <div key={item.title} className="border-b border-white/10 py-5">
+                  <p className="text-lg font-bold text-white md:text-xl lg:text-2xl">{item.title}</p>
+                  <p className="text-sm text-gray-500 italic">{item.subtitle}</p>
                 </div>
               ))}
             </div>
@@ -86,9 +86,9 @@ export default function HomePage() {
               <Image
                 src="/images/tip-label-3d.webp"
                 alt="TIP tracking label product"
-                width={600}
-                height={600}
-                className="drop-shadow-2xl"
+                width={420}
+                height={420}
+                className="w-[320px] lg:w-[420px] drop-shadow-2xl"
                 priority
               />
             </div>
@@ -102,9 +102,9 @@ export default function HomePage() {
                 { value: 'LTE', subtitle: 'Cat-1 Cellular' },
                 { value: '1', subtitle: 'Minimum Order' },
               ].map((item) => (
-                <div key={item.subtitle} className="border-b border-white/10 py-4 text-right">
-                  <p className="text-2xl font-bold text-white md:text-3xl">{item.value}</p>
-                  <p className="text-xs text-gray-500 italic">{item.subtitle}</p>
+                <div key={item.subtitle} className="border-b border-white/10 py-5 text-right">
+                  <p className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">{item.value}</p>
+                  <p className="text-sm text-gray-500 italic">{item.subtitle}</p>
                 </div>
               ))}
             </div>
@@ -112,77 +112,79 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Why TIP — 6 feature cards */}
-      <section id="features" className="scroll-mt-20 border-t border-white/5 py-20 md:py-28">
+      {/* 3. Why TIP — 6 statements on green + bold statement */}
+      <section id="features" className="scroll-mt-20 bg-[#00FF00] py-20 md:py-28">
         <div className="container mx-auto px-4">
-          <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
-            Why TIP your cargo?
+          <h2 className="text-headline text-3xl text-black md:text-5xl">
+            Why to TIP your cargo?
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-gray-400">
-            There&apos;s no other door-to-door tracking service that&apos;s this
-            simple, affordable, and reliable.
-          </p>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                icon: Globe,
-                title: 'Reliable Global Coverage',
-                desc: 'Stable connection every 2 hours in 180+ countries. Track on land, sea, and air — your cargo never goes dark.',
+                fill: 'full',
+                text: 'There\u2019s no other door-to-door tracking service',
               },
               {
-                icon: Battery,
-                title: '60+ Day Battery',
-                desc: 'Long-lasting battery covers even the longest international shipments. Offline storage syncs when back online.',
+                fill: 'full',
+                text: 'Every existing service has blind spots',
               },
               {
-                icon: Brain,
-                title: 'AI Route Intelligence',
-                desc: 'Detects flights, ocean vessels, and road transport to reconstruct your cargo\u2019s precise route.',
+                fill: 'half-right',
+                text: 'There\u2019s usually 20+ chains in a chain, not connected with each other',
               },
               {
-                icon: Tag,
-                title: 'One Price, No Surprises',
-                desc: 'From $20 per label. No subscription, no hidden fees. Every label includes all features.',
+                fill: 'half-left',
+                text: 'Most shipments are blind, other  visible only at part of the way',
               },
               {
-                icon: Share2,
-                title: 'Shareable Links',
-                desc: 'Send a public tracking link to your consignee — no account required to view.',
+                fill: 'full',
+                text: 'Shipment from Temu has better tracking than helicopter engine',
               },
               {
-                icon: Smartphone,
-                title: 'Modern & Simple',
-                desc: 'Buy online, scan QR to activate, peel and stick. Track from any device — no app needed.',
+                fill: 'half-right',
+                text: 'Cost of lost shipment exceeds cost of tracking label in 99% of cases',
               },
-            ].map(({ icon: Icon, title, desc }, i) => (
-              <AnimatedSection key={title} delay={i * 100}>
-                <div className="rounded-xl border border-white/5 bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.06]">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#00FF2B] text-black">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
-                  <p className="mt-2 text-sm text-gray-400">{desc}</p>
+            ].map(({ fill, text }, i) => (
+              <AnimatedSection key={i} delay={i * 100}>
+                <div>
+                  <svg width="48" height="48" viewBox="0 0 48 48" className="mb-4">
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="black" strokeWidth="3" />
+                    {fill === 'full' && (
+                      <circle cx="24" cy="24" r="14" fill="black" />
+                    )}
+                    {fill === 'half-right' && (
+                      <path d="M24 10 A14 14 0 0 1 24 38 Z" fill="black" />
+                    )}
+                    {fill === 'half-left' && (
+                      <path d="M24 10 A14 14 0 0 0 24 38 Z" fill="black" />
+                    )}
+                  </svg>
+                  <p className="text-xl font-bold leading-tight text-black md:text-2xl">
+                    {text}
+                  </p>
                 </div>
               </AnimatedSection>
             ))}
           </div>
+
+          {/* Bold statement — part of the green section */}
+          <div className="mt-16 border-t border-black/20 pt-16">
+            <h2 className="text-headline max-w-4xl text-5xl text-black md:text-7xl lg:text-8xl">
+              TIP is the only way to understand where is your cargo
+            </h2>
+          </div>
         </div>
       </section>
 
-      {/* 4. Full-width image — "Only way to understand" */}
-      <section className="relative overflow-hidden py-32 md:py-44">
+      {/* 4. Full-width photo — hand placing label on box */}
+      <section className="relative">
         <Image
           src="/images/tip-box-photo.webp"
-          alt="TIP label on cargo box in transit"
-          fill
-          className="object-cover opacity-30"
+          alt="Hand placing TIP tracking label on a cargo box"
+          width={2560}
+          height={1440}
+          className="w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
-        <div className="relative z-10 container mx-auto px-4">
-          <h2 className="text-headline max-w-2xl text-3xl text-white md:text-5xl lg:text-6xl">
-            The only way to know exactly where your cargo is
-          </h2>
-        </div>
       </section>
 
       {/* 5. How it works — 4 steps */}
@@ -219,7 +221,8 @@ export default function HomePage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="text-headline text-3xl text-white md:text-5xl">
-                Send a TIP label to your sender and track from anywhere
+                And yes, you can send TIP label to your sender to{' '}
+                <span className="underline decoration-[#00FF2B] underline-offset-4">track it from anywhere</span>
               </h2>
               <p className="mt-6 text-gray-400">
                 Ship the label to your supplier or factory. They attach it to
@@ -327,7 +330,7 @@ export default function HomePage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="text-headline text-3xl text-white md:text-5xl">
-                Industries that rely on TIP
+                Businesses heavily benefiting from TIP
               </h2>
             </div>
             <div className="grid gap-4 grid-cols-2">
@@ -364,7 +367,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <AnimatedSection>
             <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
-              Real Results
+              TIP outcomes
             </h2>
           </AnimatedSection>
           <div className="mx-auto mt-16 grid max-w-4xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
