@@ -142,12 +142,6 @@ export async function POST(req: NextRequest) {
         errors: validated.error.flatten(),
         body: JSON.stringify(body).slice(0, 500),
       })
-      const valFailParams = { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime }
-      if (logCreated) {
-        await updateWebhookLog(logId, valFailParams)
-      } else if (webhookLogParams) {
-        await upsertWebhookLog(webhookLogParams, valFailParams)
-      }
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
         { status: 400 }
@@ -156,161 +150,173 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
-    if (data.iccid) {
-      db.shipment.updateMany({
-        where: {
-          OR: [
-            { label: { iccid: data.iccid } },
-            { shipmentLabels: { some: { label: { iccid: data.iccid } } } },
-          ],
-          status: 'PENDING',
-        },
-        data: { status: 'IN_TRANSIT' },
-      }).then((r) => {
-        if (r.count > 0) {
-          console.info(`[webhook:location-update] ${r.count} PENDING shipment(s) → IN_TRANSIT via ${data.type} event (iccid: ${data.iccid})`)
-        }
-      }).catch((err) =>
-        console.warn('[webhook:location-update] PENDING→IN_TRANSIT update failed:', err)
-      )
-    }
-
-    const loc = data.location ?? null
-
-    console.info('[webhook:location-update] received', {
-      iccid: data.iccid,
-      imei: data.imei,
-      simLabel: data.sim_label,
-      hasLocation: !!loc,
-      lat: loc?.lat,
-      lng: loc?.lng,
-    })
-
-    // Process synchronously — DB ops are fast, only defer geocoding
-    const mcc = parseInt(data.network.mcc, 10)
-    const mnc = parseInt(data.network.mnc, 10)
-    const lac = loc?.location_area_code ?? null
-    const cid = loc?.cell_id ?? 0
-
-    let lat: number | null = null
-    let lng: number | null = null
-    let accuracy: number | undefined = loc?.accuracy ?? undefined
-
-    // Try Onomondo-provided coordinates first (only available when location object exists)
-    if (loc?.lat !== null && loc?.lat !== undefined && loc?.lng !== null && loc?.lng !== undefined) {
-      const parsedLat = parseFloat(loc.lat)
-      const parsedLng = parseFloat(loc.lng)
-      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
-        lat = parsedLat
-        lng = parsedLng
-      }
-    }
-
-    // Fallback: resolve cell tower coordinates via Google Geolocation API
-    // This external call is fast (~100-200ms) and critical for getting any location.
-    // Also handles webhooks with no location object — we can still geolocate via mcc/mnc.
-    if (lat === null || lng === null) {
-      if (!isNaN(mcc) && !isNaN(mnc)) {
+    // Return 200 immediately — Onomondo has a strict 1000ms timeout.
+    // All processing (DB writes, geolocation, geocoding) happens in after().
+    after(async () => {
+      try {
+        // Persist raw webhook log
         try {
-          const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
-          if (resolved) {
-            lat = resolved.lat
-            lng = resolved.lng
-            accuracy = resolved.accuracyM
-            console.info('[webhook:location-update] resolved via cell tower geolocation', {
-              iccid: data.iccid,
-              cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
-              lat,
-              lng,
-              accuracyM: accuracy,
-            })
+          if (webhookLogParams) {
+            await createWebhookLog(webhookLogParams)
+            logCreated = true
           }
         } catch (err) {
-          console.warn('[webhook:location-update] cell tower geolocation failed:', err)
-        }
-      }
-    }
-
-    // Fallback: use the last known location for this device so we still
-    // record a "heartbeat" even when no coordinates are resolvable.
-    if (lat === null || lng === null) {
-      if (data.iccid) {
-        const lastLocation = await db.locationEvent.findFirst({
-          where: { label: { iccid: data.iccid }, source: 'CELL_TOWER' },
-          orderBy: { recordedAt: 'desc' },
-          select: { latitude: true, longitude: true, accuracyM: true },
-        })
-        if (lastLocation) {
-          lat = lastLocation.latitude
-          lng = lastLocation.longitude
-          accuracy = lastLocation.accuracyM ?? undefined
-          console.info('[webhook:location-update] using last known location', {
-            iccid: data.iccid,
-            lat,
-            lng,
+          console.error('[webhook:location-update] FAILED to persist webhook log', {
+            logId, iccid: data.iccid, type: data.type, error: err,
           })
         }
-      }
-    }
 
-    // If still no coordinates, skip
-    if (lat === null || lng === null) {
-      console.info('[webhook:location-update] skipped — no coordinates', {
-        iccid: data.iccid,
-        simLabel: data.sim_label,
-        cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
-        hasLocation: !!loc,
-        onomondoLatNull: loc?.lat === null || loc?.lat === undefined,
-      })
-      const result = { success: true, skipped: true, reason: 'No coordinates available' }
-      const skipParams = { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime }
-      if (logCreated) {
-        await updateWebhookLog(logId, skipParams)
-      } else if (webhookLogParams) {
-        await upsertWebhookLog(webhookLogParams, skipParams)
-      }
-      return NextResponse.json(result)
-    }
+        // Auto-promote PENDING → IN_TRANSIT
+        if (data.iccid) {
+          try {
+            const r = await db.shipment.updateMany({
+              where: {
+                OR: [
+                  { label: { iccid: data.iccid } },
+                  { shipmentLabels: { some: { label: { iccid: data.iccid } } } },
+                ],
+                status: 'PENDING',
+              },
+              data: { status: 'IN_TRANSIT' },
+            })
+            if (r.count > 0) {
+              console.info(`[webhook:location-update] ${r.count} PENDING shipment(s) → IN_TRANSIT via ${data.type} event (iccid: ${data.iccid})`)
+            }
+          } catch (err) {
+            console.warn('[webhook:location-update] PENDING→IN_TRANSIT update failed:', err)
+          }
+        }
 
-    const result = await processLocationReport({
-      iccid: data.iccid,
-      // Don't pass IMEI for cell tower events — the ICCID (SIM) is the
-      // authoritative identifier here.  The IMEI belongs to the physical
-      // device, which may host a SIM provisioned under a different label.
-      cellLatitude: lat,
-      cellLongitude: lng,
-      accuracy,
-      recordedAt: data.time,
-      source: 'CELL_TOWER',
-      skipGeocode: true,
+        const loc = data.location ?? null
+
+        console.info('[webhook:location-update] processing', {
+          iccid: data.iccid,
+          imei: data.imei,
+          simLabel: data.sim_label,
+          hasLocation: !!loc,
+          lat: loc?.lat,
+          lng: loc?.lng,
+        })
+
+        const mcc = parseInt(data.network.mcc, 10)
+        const mnc = parseInt(data.network.mnc, 10)
+        const lac = loc?.location_area_code ?? null
+        const cid = loc?.cell_id ?? 0
+
+        let lat: number | null = null
+        let lng: number | null = null
+        let accuracy: number | undefined = loc?.accuracy ?? undefined
+
+        // Try Onomondo-provided coordinates first
+        if (loc?.lat !== null && loc?.lat !== undefined && loc?.lng !== null && loc?.lng !== undefined) {
+          const parsedLat = parseFloat(loc.lat)
+          const parsedLng = parseFloat(loc.lng)
+          if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+            lat = parsedLat
+            lng = parsedLng
+          }
+        }
+
+        // Fallback: resolve cell tower coordinates via Google Geolocation API
+        if (lat === null || lng === null) {
+          if (!isNaN(mcc) && !isNaN(mnc)) {
+            try {
+              const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
+              if (resolved) {
+                lat = resolved.lat
+                lng = resolved.lng
+                accuracy = resolved.accuracyM
+                console.info('[webhook:location-update] resolved via cell tower geolocation', {
+                  iccid: data.iccid,
+                  cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
+                  lat,
+                  lng,
+                  accuracyM: accuracy,
+                })
+              }
+            } catch (err) {
+              console.warn('[webhook:location-update] cell tower geolocation failed:', err)
+            }
+          }
+        }
+
+        // Fallback: use the last known location for this device
+        if (lat === null || lng === null) {
+          if (data.iccid) {
+            const lastLocation = await db.locationEvent.findFirst({
+              where: { label: { iccid: data.iccid }, source: 'CELL_TOWER' },
+              orderBy: { recordedAt: 'desc' },
+              select: { latitude: true, longitude: true, accuracyM: true },
+            })
+            if (lastLocation) {
+              lat = lastLocation.latitude
+              lng = lastLocation.longitude
+              accuracy = lastLocation.accuracyM ?? undefined
+              console.info('[webhook:location-update] using last known location', {
+                iccid: data.iccid, lat, lng,
+              })
+            }
+          }
+        }
+
+        // If still no coordinates, skip
+        if (lat === null || lng === null) {
+          console.info('[webhook:location-update] skipped — no coordinates', {
+            iccid: data.iccid,
+            simLabel: data.sim_label,
+            cell: `${mcc}:${mnc}:${lac ?? '?'}:${cid}`,
+            hasLocation: !!loc,
+          })
+          const result = { success: true, skipped: true, reason: 'No coordinates available' }
+          const skipParams = { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime }
+          if (logCreated) {
+            await updateWebhookLog(logId, skipParams)
+          } else if (webhookLogParams) {
+            await upsertWebhookLog(webhookLogParams, skipParams)
+          }
+          return
+        }
+
+        const result = await processLocationReport({
+          iccid: data.iccid,
+          cellLatitude: lat,
+          cellLongitude: lng,
+          accuracy,
+          recordedAt: data.time,
+          source: 'CELL_TOWER',
+          skipGeocode: true,
+        })
+
+        // Geocode + update webhook log
+        await geocodeLocationEvent(result.locationId, lat, lng)
+
+        const successParams = { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId }, durationMs: Date.now() - startTime }
+        if (logCreated) {
+          await updateWebhookLog(logId, successParams)
+        } else if (webhookLogParams) {
+          await upsertWebhookLog(webhookLogParams, successParams)
+        }
+
+        // Probabilistic pruning of old webhook logs
+        if (Math.random() < 0.05) await pruneWebhookLogs()
+      } catch (error) {
+        console.error('[webhook:location-update] after() processing error:', error)
+        try {
+          const errParams = { statusCode: 200, processingResult: { error: String(error) }, durationMs: Date.now() - startTime }
+          if (logCreated) {
+            await updateWebhookLog(logId, errParams)
+          } else if (webhookLogParams) {
+            await upsertWebhookLog(webhookLogParams, errParams)
+          }
+        } catch (logErr) {
+          console.error('[webhook:location-update] failed to update webhook log', { logId, error: logErr })
+        }
+      }
     })
 
-    // Defer only geocoding to after() — non-critical
-    after(async () => {
-      await geocodeLocationEvent(result.locationId, lat!, lng!)
-      // Probabilistic pruning of old webhook logs
-      if (Math.random() < 0.05) await pruneWebhookLogs()
-    })
-
-    const successParams = { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId }, durationMs: Date.now() - startTime }
-    if (logCreated) {
-      await updateWebhookLog(logId, successParams)
-    } else if (webhookLogParams) {
-      await upsertWebhookLog(webhookLogParams, successParams)
-    }
-    return NextResponse.json({ success: true, locationId: result.locationId })
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[webhook:location-update] error:', error)
-    try {
-      const errParams = { statusCode: 500, processingResult: { error: String(error) }, durationMs: Date.now() - startTime }
-      if (logCreated) {
-        await updateWebhookLog(logId, errParams)
-      } else if (webhookLogParams) {
-        await upsertWebhookLog(webhookLogParams, errParams)
-      }
-    } catch (logErr) {
-      console.error('[webhook:location-update] failed to update webhook log', { logId, error: logErr })
-    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
