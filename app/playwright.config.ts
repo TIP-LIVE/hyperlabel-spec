@@ -4,7 +4,15 @@ const isCI = !!process.env.CI
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || (isCI ? 'http://127.0.0.1:3000' : 'http://localhost:3000')
 
 const ciLaunchOptions = isCI
-  ? { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+  ? {
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--proxy-server=direct://',
+        '--proxy-bypass-list=*',
+      ],
+    }
   : {}
 
 export default defineConfig({
