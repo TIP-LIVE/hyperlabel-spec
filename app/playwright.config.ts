@@ -1,7 +1,11 @@
+import dns from 'node:dns'
 import { defineConfig, devices } from '@playwright/test'
 
+// Node 20+ prefers IPv6 by default; force IPv4 so localhost resolves to 127.0.0.1
+dns.setDefaultResultOrder('ipv4first')
+
 const isCI = !!process.env.CI
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || (isCI ? 'http://127.0.0.1:3000' : 'http://localhost:3000')
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 
 const ciLaunchOptions = isCI
   ? {
@@ -9,8 +13,6 @@ const ciLaunchOptions = isCI
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--proxy-server=direct://',
-        '--proxy-bypass-list=*',
       ],
     }
   : {}
@@ -53,8 +55,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: isCI ? 'http://127.0.0.1:3000' : 'http://localhost:3000',
+    command: isCI ? 'npx next dev --hostname 0.0.0.0' : 'npm run dev',
+    url: 'http://localhost:3000',
     reuseExistingServer: !isCI,
     timeout: 120_000,
   },
