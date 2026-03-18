@@ -63,12 +63,12 @@ export function HeroSection() {
         </div>
 
         {/* Right — hero video in frame with tracking card overlay */}
-        <div className="relative z-10">
-          <div className="relative overflow-hidden rounded-2xl">
+        <div className="relative z-10 self-stretch">
+          <div className="relative h-full overflow-hidden rounded-2xl">
             {/* Video — desktop */}
             <video
               ref={videoRef}
-              className="aspect-square w-full max-md:hidden"
+              className="h-full w-full object-cover max-md:hidden"
               poster="/videos/hero-poster.jpg"
               autoPlay
               muted
@@ -86,7 +86,7 @@ export function HeroSection() {
               alt="TIP cargo tracking visualization"
               width={800}
               height={800}
-              className="aspect-square w-full md:hidden"
+              className="h-full w-full object-cover md:hidden"
               priority
             />
 
