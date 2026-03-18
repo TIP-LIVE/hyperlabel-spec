@@ -63,8 +63,8 @@ export function HeroSection() {
         </div>
 
         {/* Right — hero video in frame with tracking card overlay */}
-        <div className="relative z-10 self-stretch">
-          <div className="relative h-full overflow-hidden rounded-2xl">
+        <div className="relative z-10">
+          <div className="relative overflow-hidden rounded-3xl lg:h-[calc(90vh-10rem)]">
             {/* Video — desktop */}
             <video
               ref={videoRef}
@@ -91,7 +91,7 @@ export function HeroSection() {
             />
 
             {/* Tracking card overlay */}
-            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lg sm:bottom-6 sm:left-6 sm:right-6">
+            <div className="absolute bottom-6 left-6 right-6 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lg">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                 <Image
                   src="/images/tip-label-3d.webp"
