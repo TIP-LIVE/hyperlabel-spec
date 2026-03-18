@@ -101,8 +101,63 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Debug - check server & browser
+        run: |
+          echo "=== Start dev server in background ==="
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY='pk_test_ZHVtbXkuZXhhbXBsZS5jb20k' \
+          CLERK_SECRET_KEY='sk_test_dummy' \
+          NEXT_PUBLIC_APP_URL='http://localhost:3000' \
+          DATABASE_URL='postgresql://localhost:5432/tip' \
+          npx next dev --hostname 0.0.0.0 &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          echo "=== Wait for server ==="
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null http://localhost:3000; then
+              echo "Server ready after ${i}s"
+              break
+            fi
+            sleep 2
+          done
+          echo "=== curl localhost ==="
+          curl -sI http://localhost:3000 | head -5
+          echo "=== curl 127.0.0.1 ==="
+          curl -sI http://127.0.0.1:3000 | head -5
+          echo "=== Test Chromium directly ==="
+          node -e "
+            const { chromium } = require('playwright');
+            (async () => {
+              const browser = await chromium.launch({
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+              });
+              const page = await browser.newPage();
+              try {
+                const res = await page.goto('http://localhost:3000', { timeout: 10000 });
+                console.log('Status:', res?.status());
+              } catch (e) {
+                console.log('Error:', e.message);
+              }
+              try {
+                const res = await page.goto('http://127.0.0.1:3000', { timeout: 10000 });
+                console.log('Status 127.0.0.1:', res?.status());
+              } catch (e) {
+                console.log('Error 127.0.0.1:', e.message);
+              }
+              try {
+                const res = await page.goto('https://example.com', { timeout: 10000 });
+                console.log('Status example.com:', res?.status());
+              } catch (e) {
+                console.log('Error example.com:', e.message);
+              }
+              await browser.close();
+            })();
+          "
+          kill $SERVER_PID 2>/dev/null || true
+        env:
+          NODE_ENV: test
+
       - name: Run Playwright tests (public only)
-        run: npx playwright test --project=public
+        run: xvfb-run npx playwright test --project=public
         env:
           NODE_ENV: test
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
