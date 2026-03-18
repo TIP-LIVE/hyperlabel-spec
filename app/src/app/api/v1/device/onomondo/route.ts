@@ -16,16 +16,26 @@ import { createWebhookLog, updateWebhookLog, pruneWebhookLogs } from '@/lib/webh
 /**
  * POST /api/v1/device/onomondo
  *
- * Receives location reports directly from Onomondo's HTTPS Connector.
- * Accepts the DeviceDataOut format from firmware, including offline_queue.
+ * DISABLED: GPS-source location reports are no longer used.
+ * All location data now comes from Onomondo location-update webhook (CELL_TOWER source).
+ */
+export async function POST(_req: NextRequest) {
+  return NextResponse.json(
+    { error: 'Endpoint disabled – use Onomondo location-update webhook' },
+    { status: 410 },
+  )
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/**
+ * POST /api/v1/device/onomondo (DISABLED)
  *
- * Returns 200 immediately after validation, then processes in background
- * via after() to avoid Onomondo's 1000ms webhook timeout.
+ * Previously received location reports from Onomondo's HTTPS Connector.
  *
  * Authentication: API key via X-API-Key / ?key=, or shared secret header.
  * Rate limit: 120 req/min per API key
  */
-export async function POST(req: NextRequest) {
+async function _POST_DISABLED(req: NextRequest) {
   const startTime = Date.now()
   const logId = crypto.randomUUID()
 

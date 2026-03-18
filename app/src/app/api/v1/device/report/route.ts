@@ -14,13 +14,18 @@ import {
 /**
  * POST /api/v1/device/report
  *
- * Receives location reports from tracking labels.
- * This endpoint is called by the device firmware or via label.utec.ua webhook.
- *
- * Authentication: API key in header (X-API-Key) or query param (?key=)
- * Rate limit: 120 req/min per API key
+ * DISABLED: GPS-source location reports are no longer used.
+ * All location data now comes from Onomondo location-update webhook (CELL_TOWER source).
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
+  return NextResponse.json(
+    { error: 'Endpoint disabled – use Onomondo location-update webhook' },
+    { status: 410 },
+  )
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+async function _POST_DISABLED(req: NextRequest) {
   try {
     // Rate limit by API key or IP
     const apiKey =
