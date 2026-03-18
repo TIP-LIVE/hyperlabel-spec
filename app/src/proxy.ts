@@ -13,8 +13,8 @@ const isPublicRoute = createRouteMatcher([
   '/activate/(.*)', // Physical label QR scan
   '/privacy', // Privacy policy
   '/terms', // Terms of service
-  '/features', // Marketing: feature descriptions
-  '/compare', // Marketing: competitor comparison
+  '/how-it-works', // Marketing: feature descriptions
+  '/technology', // Marketing: competitor comparison
   '/deck', // Investor pitch deck
   '/docs/(.*)', // Documentation pages
   '/checkout/(.*)', // Checkout result pages

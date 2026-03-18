@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
       { source: '/android-chrome-512x512.png', destination: '/logo.svg' },
     ]
   },
+  // Permanent redirects for renamed marketing pages
+  async redirects() {
+    return [
+      { source: '/features', destination: '/how-it-works', permanent: true },
+      { source: '/compare', destination: '/technology', permanent: true },
+    ]
+  },
   // Security headers for all routes
   async headers() {
     return [

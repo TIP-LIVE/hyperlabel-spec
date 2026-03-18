@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "app",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/Users/denyschumak/.nvm/versions/node/v20.19.6/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev", "--turbopack"],
+      "env": { "PATH": "/Users/denyschumak/.nvm/versions/node/v20.19.6/bin:/usr/bin:/bin" },
       "port": 3000,
       "cwd": "app"
     }

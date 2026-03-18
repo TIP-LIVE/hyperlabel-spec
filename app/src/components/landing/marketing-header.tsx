@@ -5,9 +5,8 @@ import { AnimatedEyeLogo } from '@/components/landing/animated-eye-logo'
 import { MobileNav } from '@/components/landing/mobile-nav'
 
 const navLinks = [
-  { href: '/features', label: 'Features' },
-  { href: '/compare', label: 'Compare' },
-  { href: '/#pricing', label: 'Pricing' },
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/technology', label: 'Technology' },
   { href: '/#faq', label: 'FAQ' },
 ]
 
@@ -18,6 +17,7 @@ export function MarketingHeader() {
         <Link href="/" className="flex items-center gap-2">
           <AnimatedEyeLogo className="h-8 w-8" />
           <span className="text-xl font-bold text-[#00FF2B]">TIP</span>
+          <span className="text-[10px] font-medium text-[#00FF2B]/60">Live</span>
         </Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
@@ -47,7 +47,7 @@ export function MarketingHeader() {
               asChild
               className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
             >
-              <Link href="/buy">Buy a Label</Link>
+              <Link href="/buy">Get Started</Link>
             </Button>
           </SignedOut>
           <SignedIn>

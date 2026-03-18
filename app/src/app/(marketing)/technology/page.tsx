@@ -36,7 +36,7 @@ export default function ComparePage() {
               className="h-12 rounded-full border border-white/20 px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white"
               asChild
             >
-              <Link href="/features">See All Features</Link>
+              <Link href="/how-it-works">See All Features</Link>
             </Button>
           </div>
         </div>

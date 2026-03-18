@@ -15,9 +15,8 @@ import { Menu } from 'lucide-react'
 import { AnimatedEyeLogo } from '@/components/landing/animated-eye-logo'
 
 const navLinks = [
-  { href: '/features', label: 'Features' },
-  { href: '/compare', label: 'Compare' },
-  { href: '/#pricing', label: 'Pricing' },
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/technology', label: 'Technology' },
   { href: '/#faq', label: 'FAQ' },
 ]
 
@@ -38,6 +37,7 @@ export function MobileNav() {
           <SheetTitle className="flex items-center gap-2">
             <AnimatedEyeLogo className="h-6 w-6" />
             <span className="text-lg font-bold text-[#00FF2B]">TIP</span>
+            <span className="text-[8px] font-medium text-[#00FF2B]/60">Live</span>
           </SheetTitle>
         </SheetHeader>
         <nav className="mt-8 flex flex-col gap-4">
@@ -78,7 +78,7 @@ export function MobileNav() {
                 className="rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
               >
                 <Link href="/buy" onClick={() => setOpen(false)}>
-                  Buy a Label
+                  Get Started
                 </Link>
               </Button>
             )}

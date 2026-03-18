@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "runtimeExecutable": "/bin/zsh",
+      "runtimeArgs": ["-l", "-c", "cd /Users/denyschumak/Documents/HyperLabel/app && npm run dev"],
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }

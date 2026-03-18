@@ -28,9 +28,8 @@ export function MarketingFooter() {
                 Product
               </h4>
               <nav className="mt-3 flex flex-col gap-2 text-sm text-gray-400">
-                <Link href="/features" className="hover:text-white">Features</Link>
-                <Link href="/compare" className="hover:text-white">Compare</Link>
-                <Link href="/#pricing" className="hover:text-white">Pricing</Link>
+                <Link href="/how-it-works" className="hover:text-white">How It Works</Link>
+                <Link href="/technology" className="hover:text-white">Technology</Link>
                 <Link href="/#faq" className="hover:text-white">FAQ</Link>
               </nav>
             </div>
