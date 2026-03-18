@@ -105,7 +105,7 @@ jobs:
         run: npx playwright test --project=public
         env:
           NODE_ENV: test
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_dummy'
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
           CLERK_SECRET_KEY: 'sk_test_dummy'
           DEVICE_API_KEY: 'test-device-api-key'
           CRON_SECRET: 'test-cron-secret'
@@ -150,7 +150,7 @@ jobs:
         env:
           # Build-time env vars (dummy values for CI build validation)
           DATABASE_URL: 'postgresql://localhost:5432/tip'
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy' }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_dummy' }}

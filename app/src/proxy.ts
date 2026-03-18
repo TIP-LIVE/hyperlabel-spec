@@ -40,11 +40,12 @@ const isDashboardRouteRequiringOrg = createRouteMatcher([
 // API routes — let route handlers do their own auth (return 401 JSON, not redirect)
 const isApiRoute = createRouteMatcher(['/api/(.*)'])
 
-// Check if Clerk is configured
+// Check if Clerk is configured with real keys (not CI dummy values)
 const hasClerkKey =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
   !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_REPLACE') &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_dummy'
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_dummy' &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
 
 // Create the proxy handler (Next.js 16 renamed middleware → proxy)
 // Always wrap with clerkMiddleware so auth() calls in pages don't throw.
