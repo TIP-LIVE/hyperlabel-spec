@@ -318,3 +318,18 @@ model WebhookLog {
   @@index([endpoint])
   @@map("webhook_logs")
 }
+
+model CronExecutionLog {
+  id         String    @id @default(cuid())
+  jobName    String    @map("job_name")
+  status     String    @default("running") // "running" | "success" | "error"
+  durationMs Int?      @map("duration_ms")
+  metrics    Json?                         // The cron's response metrics
+  error      String?
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  @@index([jobName, startedAt])
+  @@index([startedAt])
+  @@map("cron_execution_logs")
+}

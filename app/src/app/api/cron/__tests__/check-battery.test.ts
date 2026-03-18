@@ -10,6 +10,10 @@ vi.mock('@/lib/db', () => ({
     notification: {
       findFirst: vi.fn(),
     },
+    cronExecutionLog: {
+      create: vi.fn().mockResolvedValue({ id: 'log-1' }),
+      update: vi.fn().mockResolvedValue({}),
+    },
   },
 }))
 

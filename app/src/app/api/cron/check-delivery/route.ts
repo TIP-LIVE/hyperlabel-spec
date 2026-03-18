@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendShipmentDeliveredNotification } from '@/lib/notifications'
-
-// Cron secret to prevent unauthorized access
-const CRON_SECRET = process.env.CRON_SECRET
+import { withCronLogging } from '@/lib/cron'
 
 // Delivery threshold: 1500m from destination.
 // Device uses cell tower triangulation (~500-1000m accuracy), not GPS.
@@ -18,92 +15,77 @@ const DWELL_TIME_MS = 30 * 60 * 1000
  * are all within 1500m of the destination, mark as delivered.
  * Threshold is 1500m because location is cell tower triangulation (~500-1000m accuracy).
  */
-export async function GET(req: NextRequest) {
-  // Verify cron secret
-  const authHeader = req.headers.get('authorization')
-  if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
-    // Find in-transit shipments with a destination
-    const shipments = await db.shipment.findMany({
-      where: {
-        status: 'IN_TRANSIT',
-        labelId: { not: null },
-        destinationLat: { not: null },
-        destinationLng: { not: null },
-      },
-      include: {
-        user: { select: { id: true } },
-        label: {
-          select: {
-            deviceId: true,
-            locations: {
-              orderBy: { recordedAt: 'desc' },
-              take: 10, // Last 10 location events
-            },
+export const GET = withCronLogging('check-delivery', async () => {
+  // Find in-transit shipments with a destination
+  const shipments = await db.shipment.findMany({
+    where: {
+      status: 'IN_TRANSIT',
+      labelId: { not: null },
+      destinationLat: { not: null },
+      destinationLng: { not: null },
+    },
+    include: {
+      user: { select: { id: true } },
+      label: {
+        select: {
+          deviceId: true,
+          locations: {
+            orderBy: { recordedAt: 'desc' },
+            take: 10, // Last 10 location events
           },
         },
       },
+    },
+  })
+
+  let deliveriesDetected = 0
+
+  for (const shipment of shipments) {
+    if (!shipment.label) continue
+    const locations = shipment.label.locations
+    if (locations.length < 2) continue
+
+    const destLat = shipment.destinationLat!
+    const destLng = shipment.destinationLng!
+
+    // Check if all recent locations are within the geofence
+    const locationsWithinGeofence = locations.filter((loc) => {
+      const distance = calculateDistance(loc.latitude, loc.longitude, destLat, destLng)
+      return distance <= DELIVERY_THRESHOLD_M
     })
 
-    let deliveriesDetected = 0
+    if (locationsWithinGeofence.length < 2) continue
 
-    for (const shipment of shipments) {
-      if (!shipment.label) continue
-      const locations = shipment.label.locations
-      if (locations.length < 2) continue
+    // Check dwell time: difference between oldest and newest in-range location
+    const oldest = locationsWithinGeofence[locationsWithinGeofence.length - 1]
+    const newest = locationsWithinGeofence[0]
+    const dwellTime = newest.recordedAt.getTime() - oldest.recordedAt.getTime()
 
-      const destLat = shipment.destinationLat!
-      const destLng = shipment.destinationLng!
-
-      // Check if all recent locations are within the geofence
-      const locationsWithinGeofence = locations.filter((loc) => {
-        const distance = calculateDistance(loc.latitude, loc.longitude, destLat, destLng)
-        return distance <= DELIVERY_THRESHOLD_M
+    if (dwellTime >= DWELL_TIME_MS) {
+      // Mark shipment as delivered
+      await db.shipment.update({
+        where: { id: shipment.id },
+        data: {
+          status: 'DELIVERED',
+          deliveredAt: new Date(),
+        },
       })
 
-      if (locationsWithinGeofence.length < 2) continue
+      // Send notification
+      await sendShipmentDeliveredNotification({
+        userId: shipment.userId,
+        shipmentName: shipment.name || 'Unnamed Shipment',
+        deviceId: shipment.label.deviceId,
+        shareCode: shipment.shareCode,
+        destination: shipment.destinationAddress || 'Destination',
+      })
 
-      // Check dwell time: difference between oldest and newest in-range location
-      const oldest = locationsWithinGeofence[locationsWithinGeofence.length - 1]
-      const newest = locationsWithinGeofence[0]
-      const dwellTime = newest.recordedAt.getTime() - oldest.recordedAt.getTime()
-
-      if (dwellTime >= DWELL_TIME_MS) {
-        // Mark shipment as delivered
-        await db.shipment.update({
-          where: { id: shipment.id },
-          data: {
-            status: 'DELIVERED',
-            deliveredAt: new Date(),
-          },
-        })
-
-        // Send notification
-        await sendShipmentDeliveredNotification({
-          userId: shipment.userId,
-          shipmentName: shipment.name || 'Unnamed Shipment',
-          deviceId: shipment.label.deviceId,
-          shareCode: shipment.shareCode,
-          destination: shipment.destinationAddress || 'Destination',
-        })
-
-        deliveriesDetected++
-      }
+      deliveriesDetected++
     }
-
-    return NextResponse.json({
-      success: true,
-      checked: shipments.length,
-      deliveriesDetected,
-    })
-  } catch (error) {
-    console.error('Error checking deliveries:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+
+  return { checked: shipments.length, deliveriesDetected }
+})
 
 /**
  * Calculate distance between two coordinates using Haversine formula.

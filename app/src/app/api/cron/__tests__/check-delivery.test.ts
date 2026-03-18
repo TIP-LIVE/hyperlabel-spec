@@ -8,6 +8,10 @@ vi.mock('@/lib/db', () => ({
       findMany: vi.fn(),
       update: vi.fn(),
     },
+    cronExecutionLog: {
+      create: vi.fn().mockResolvedValue({ id: 'log-1' }),
+      update: vi.fn().mockResolvedValue({}),
+    },
   },
 }))
 
