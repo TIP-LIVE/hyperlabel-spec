@@ -57,10 +57,16 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: isCI ? 'npx next dev --hostname 0.0.0.0' : 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
+  // In CI, the server is started in a separate workflow step.
+  // Locally, start the server manually before running tests.
+  ...(isCI
+    ? {}
+    : {
+        webServer: {
+          command: 'npm run dev',
+          url: 'http://localhost:3000',
+          reuseExistingServer: true,
+          timeout: 120_000,
+        },
+      }),
 })
