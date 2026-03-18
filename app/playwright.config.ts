@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const ciLaunchOptions = process.env.CI
+  ? { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+  : {}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -24,6 +28,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/user.json',
+        launchOptions: ciLaunchOptions,
       },
       dependencies: ['setup'],
     },
@@ -32,9 +37,7 @@ export default defineConfig({
       testMatch: /.*\.public\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: process.env.CI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
-        },
+        launchOptions: ciLaunchOptions,
       },
     },
   ],
