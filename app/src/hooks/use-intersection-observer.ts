@@ -20,9 +20,10 @@ export function useIntersectionObserver({
     const element = ref.current
     if (!element) return
 
-    // Respect reduced motion preference
+    // Respect reduced motion preference — treat as already visible
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: skip animations for a11y
       setIsIntersecting(true)
       return
     }

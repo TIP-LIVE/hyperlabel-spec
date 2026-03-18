@@ -66,7 +66,7 @@ async function main() {
 
   // Check if webhook locationIds match actual location_events
   const whLocationIds = recentWh
-    .map(wh => (wh.processing_result as any)?.locationId)
+    .map(wh => (wh.processing_result as Record<string, unknown>)?.locationId)
     .filter(Boolean)
 
   if (whLocationIds.length > 0) {

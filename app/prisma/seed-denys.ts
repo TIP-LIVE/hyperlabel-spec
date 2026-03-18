@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'

@@ -106,6 +106,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
     : null
 
   const lastLocation = label.locations[0]
+  // eslint-disable-next-line react-hooks/purity -- server component, Date.now() is fine
   const referenceTime = Date.now()
   const isNoSignal =
     !lastLocation ||

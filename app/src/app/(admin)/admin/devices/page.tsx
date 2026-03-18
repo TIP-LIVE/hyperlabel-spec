@@ -97,6 +97,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
     .map((l) => l.iccid)
     .filter(Boolean) as string[]
 
+  // eslint-disable-next-line react-hooks/purity -- server component, Date.now() is fine
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   const [webhookCounts24h, lastWebhooks] = activeIccids.length > 0
