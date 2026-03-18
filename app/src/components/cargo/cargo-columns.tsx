@@ -163,13 +163,9 @@ export type CargoRow = {
 }
 
 function getLastUpdateTime(row: CargoRow): number {
-  const locTime = row.latestLocation?.receivedAt
+  return row.latestLocation?.receivedAt
     ? new Date(row.latestLocation.receivedAt).getTime()
     : 0
-  const seenTime = row.label?.lastSeenAt
-    ? new Date(row.label.lastSeenAt).getTime()
-    : 0
-  return Math.max(locTime, seenTime)
 }
 
 function SortableHeader({ column, label }: { column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void }; label: string }) {

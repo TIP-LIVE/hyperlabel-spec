@@ -391,13 +391,7 @@ export default async function DashboardPage() {
                         <p className="text-sm text-muted-foreground">
                           {label?.deviceId ? `${label.deviceId} · ` : ''}
                           {formatDistanceToNow(
-                            new Date((() => {
-                              const locTime = shipment.locations[0]?.recordedAt ? new Date(shipment.locations[0].recordedAt).getTime() : 0
-                              const seenTime = label?.lastSeenAt ? new Date(label.lastSeenAt).getTime() : 0
-                              const fallback = shipment.updatedAt
-                              if (locTime === 0 && seenTime === 0) return fallback
-                              return seenTime > locTime ? label!.lastSeenAt! : shipment.locations[0]!.recordedAt
-                            })()),
+                            new Date(shipment.locations[0]?.recordedAt || shipment.updatedAt),
                             { addSuffix: true }
                           )}
                         </p>
