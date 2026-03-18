@@ -29,7 +29,7 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden bg-black">
-      <div className="container mx-auto grid h-dvh items-center gap-8 px-4 py-20 md:py-28 lg:grid-cols-2 lg:gap-12">
+      <div className="container mx-auto grid h-dvh items-center gap-8 px-4 pt-8 pb-12 md:pt-12 md:pb-16 lg:grid-cols-2 lg:gap-12">
         {/* Left — text content */}
         <div className="relative z-10">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
