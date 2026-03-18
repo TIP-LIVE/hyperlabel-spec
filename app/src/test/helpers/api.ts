@@ -27,7 +27,7 @@ export function createTestRequest(
     init.body = JSON.stringify(options.body)
   }
 
-  return new NextRequest(fullUrl, init)
+  return new NextRequest(fullUrl, init as never)
 }
 
 /**

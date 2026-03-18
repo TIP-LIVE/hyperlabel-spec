@@ -281,9 +281,9 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                         {lastLocation ? (
                           <span className="inline-flex items-center gap-1.5">
                             {lastLocation.source === 'CELL_TOWER' ? (
-                              <Radio className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Onomondo" />
+                              <Radio className="h-3 w-3 text-purple-600 dark:text-purple-400" aria-label="Onomondo" />
                             ) : (
-                              <Satellite className="h-3 w-3 text-blue-600 dark:text-blue-400" title="Device" />
+                              <Satellite className="h-3 w-3 text-blue-600 dark:text-blue-400" aria-label="Device" />
                             )}
                             {formatDistanceToNow(new Date(lastLocation.recordedAt), {
                               addSuffix: true,

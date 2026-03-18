@@ -82,7 +82,7 @@ export default async function DashboardPage() {
     name: string | null
     status: keyof typeof statusConfig
     updatedAt: Date
-    label?: { deviceId: string; batteryPct: number | null } | null
+    label?: { deviceId: string; batteryPct: number | null; lastSeenAt: Date | null } | null
     locations: Array<{ recordedAt: Date }>
   }> = []
 

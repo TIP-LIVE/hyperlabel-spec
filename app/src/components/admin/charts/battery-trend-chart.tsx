@@ -76,7 +76,8 @@ export function BatteryTrendChart({ data }: BatteryTrendChartProps) {
                   fontSize: 12,
                 }}
                 labelFormatter={(v) => format(new Date(v as number), 'PPp')}
-                formatter={(v: number) => [`${v}%`, 'Battery']}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={((v: number) => [`${v}%`, 'Battery']) as any}
               />
               <ReferenceLine y={20} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} />
               <Area

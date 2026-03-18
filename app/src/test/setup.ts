@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 // Set test environment variables
+// @ts-expect-error -- NODE_ENV is readonly in newer TS but we need to set it for tests
 process.env.NODE_ENV = 'test'
 process.env.DEVICE_API_KEY = 'test-device-api-key'
 process.env.CRON_SECRET = 'test-cron-secret'

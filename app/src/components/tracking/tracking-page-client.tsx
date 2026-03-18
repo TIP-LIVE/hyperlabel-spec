@@ -380,6 +380,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                       batteryPct: loc.batteryPct,
                       isOfflineSync: loc.isOfflineSync ?? false,
                       geocodedCity: loc.geocodedCity,
+                      geocodedArea: loc.geocodedArea,
                       geocodedCountry: loc.geocodedCountry,
                       geocodedCountryCode: loc.geocodedCountryCode,
                     }))}
