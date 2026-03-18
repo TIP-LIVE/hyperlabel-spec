@@ -1,19 +1,22 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const ciLaunchOptions = process.env.CI
+const isCI = !!process.env.CI
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || (isCI ? 'http://127.0.0.1:3000' : 'http://localhost:3000')
+
+const ciLaunchOptions = isCI
   ? { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
   : {}
 
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? 'github' : 'html',
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  workers: isCI ? 1 : undefined,
+  reporter: isCI ? 'github' : 'html',
   timeout: 30_000,
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -43,8 +46,8 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    url: isCI ? 'http://127.0.0.1:3000' : 'http://localhost:3000',
+    reuseExistingServer: !isCI,
     timeout: 120_000,
   },
 })
