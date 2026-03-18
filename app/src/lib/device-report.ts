@@ -288,6 +288,44 @@ export async function processLocationReport(
     }
   }
 
+  // Coordinate dedup: skip if the same label reported the same coordinates
+  // within the last 5 minutes (device hasn't moved, no need for a new event)
+  const COORD_DEDUP_WINDOW_MS = 5 * 60 * 1000
+  const coordDedup = await db.locationEvent.findFirst({
+    where: {
+      labelId: label.id,
+      latitude: effectiveLat,
+      longitude: effectiveLng,
+      source: input.source ?? 'GPS',
+      recordedAt: { gte: new Date(recordedAt.getTime() - COORD_DEDUP_WINDOW_MS) },
+    },
+    orderBy: { recordedAt: 'desc' },
+    select: { id: true, shipmentId: true },
+  })
+
+  if (coordDedup) {
+    // Still update lastSeenAt so the label appears active
+    if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
+      await db.label.update({
+        where: { id: label.id },
+        data: { lastSeenAt: receivedAt },
+      })
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Device report] coordinate dedup skipped (same location within 5min)', {
+        deviceId: label.deviceId,
+        existingId: coordDedup.id,
+        recordedAt: recordedAt.toISOString(),
+      })
+    }
+    return {
+      success: true,
+      locationId: coordDedup.id,
+      shipmentId: coordDedup.shipmentId,
+      deviceId: label.deviceId,
+    }
+  }
+
   if (process.env.NODE_ENV !== 'test') {
     console.info('[Device report] storing location', {
       deviceId: label.deviceId,
