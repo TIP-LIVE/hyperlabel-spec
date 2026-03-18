@@ -30,10 +30,22 @@ vi.mock('@/lib/cell-geolocation', () => ({
   resolveCellTowerLocation: vi.fn().mockResolvedValue(null),
 }))
 
+vi.mock('@/lib/webhook-log', () => ({
+  createWebhookLog: vi.fn().mockResolvedValue(undefined),
+  updateWebhookLog: vi.fn().mockResolvedValue(undefined),
+  pruneWebhookLogs: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('@/lib/db', () => ({
   db: {
     label: {
       update: vi.fn().mockResolvedValue(undefined),
+    },
+    shipment: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    locationEvent: {
+      findFirst: vi.fn().mockResolvedValue(null),
     },
   },
 }))
