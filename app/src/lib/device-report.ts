@@ -273,6 +273,13 @@ export async function processLocationReport(
   })
 
   if (existingDuplicate) {
+    // Still update lastSeenAt so the label appears active
+    if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
+      await db.label.update({
+        where: { id: label.id },
+        data: { lastSeenAt: receivedAt },
+      })
+    }
     if (process.env.NODE_ENV !== 'test') {
       console.info('[Device report] duplicate event skipped', {
         deviceId: label.deviceId,

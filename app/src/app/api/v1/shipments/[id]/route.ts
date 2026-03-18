@@ -28,6 +28,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
             status: true,
             firmwareVersion: true,
             activatedAt: true,
+            lastSeenAt: true,
           },
         },
         shipmentLabels: {
