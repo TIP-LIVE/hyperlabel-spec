@@ -68,7 +68,7 @@ export function HeroSection() {
             {/* Video — desktop */}
             <video
               ref={videoRef}
-              className="h-full w-full object-cover max-md:hidden"
+              className="h-full w-full object-contain max-md:hidden"
               poster="/videos/hero-poster.jpg"
               autoPlay
               muted
@@ -86,7 +86,7 @@ export function HeroSection() {
               alt="TIP cargo tracking visualization"
               width={800}
               height={800}
-              className="h-full w-full object-cover md:hidden"
+              className="h-full w-full object-contain md:hidden"
               priority
             />
 
