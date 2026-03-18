@@ -60,7 +60,6 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
       where,
       include: {
         locations: {
-          where: { source: 'CELL_TOWER' as const },
           orderBy: { recordedAt: 'desc' as const },
           take: 1,
           select: {
@@ -219,7 +218,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                   <th className="pb-3 font-medium">Last Ping</th>
                   <th className="pb-3 font-medium">Last Webhook</th>
                   <th className="pb-3 font-medium">Webhooks (24h)</th>
-                  <th className="pb-3 font-medium">Location</th>
+                  <th className="pb-3 font-medium">Last Location</th>
                   <th className="pb-3 font-medium">Status</th>
                 </tr>
               </thead>
