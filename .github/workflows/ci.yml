@@ -101,8 +101,17 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Debug network
+        run: |
+          echo "=== /etc/hosts ==="
+          cat /etc/hosts
+          echo "=== getent hosts localhost ==="
+          getent hosts localhost || echo "getent failed"
+          echo "=== resolveconf ==="
+          cat /etc/resolv.conf 2>/dev/null || echo "no resolv.conf"
+
       - name: Run Playwright tests (public only)
-        run: npx playwright test --project=public
+        run: DEBUG=pw:browser* npx playwright test --project=public
         env:
           NODE_ENV: test
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ZHVtbXkuZXhhbXBsZS5jb20k'
