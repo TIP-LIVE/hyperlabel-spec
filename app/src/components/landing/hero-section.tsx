@@ -35,7 +35,7 @@ export function HeroSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
             Tracking with no blind zones
           </p>
-          <h1 className="text-headline mt-4 text-5xl text-white md:text-7xl lg:text-8xl">
+          <h1 className="text-headline mt-4 text-5xl text-white md:text-6xl lg:text-7xl">
             Door to Door
             <br />
             Cargo Tracking
@@ -68,7 +68,7 @@ export function HeroSection() {
             {/* Video — desktop */}
             <video
               ref={videoRef}
-              className="aspect-video w-full object-cover max-md:hidden"
+              className="aspect-square w-full object-cover max-md:hidden"
               poster="/videos/hero-poster.jpg"
               autoPlay
               muted
@@ -85,8 +85,8 @@ export function HeroSection() {
               src="/videos/hero-poster.jpg"
               alt="TIP cargo tracking visualization"
               width={800}
-              height={600}
-              className="aspect-video w-full object-cover md:hidden"
+              height={800}
+              className="aspect-square w-full object-cover md:hidden"
               priority
             />
 
