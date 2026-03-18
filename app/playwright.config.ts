@@ -13,6 +13,8 @@ const ciLaunchOptions = isCI
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--headless=new',
+        '--no-proxy-server',
       ],
     }
   : {}
