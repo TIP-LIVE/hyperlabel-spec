@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { AddExistingLabelsButton } from '@/components/dashboard/add-existing-labels-dialog'
+import { DashboardMap } from '@/components/dashboard/dashboard-map'
 import { shipmentStatusConfig } from '@/lib/status-config'
+import { formatLocationName, getLastUpdateDate, getLocationCountryCode } from '@/lib/utils/location-display'
+import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle, AlertCircle, Send, ChevronDown } from 'lucide-react'
 import {
   DropdownMenu,
@@ -82,8 +85,19 @@ export default async function DashboardPage() {
     name: string | null
     status: keyof typeof statusConfig
     updatedAt: Date
-    label?: { deviceId: string; batteryPct: number | null; lastSeenAt: Date | null } | null
-    locations: Array<{ recordedAt: Date }>
+    label?: { deviceId: string; batteryPct: number | null; lastSeenAt: Date | null; status: string } | null
+    locations: Array<{
+      id: string
+      latitude: number
+      longitude: number
+      recordedAt: Date
+      accuracyM: number | null
+      batteryPct: number | null
+      geocodedCity: string | null
+      geocodedArea: string | null
+      geocodedCountry: string | null
+      geocodedCountryCode: string | null
+    }>
   }> = []
 
   try {
@@ -122,20 +136,31 @@ export default async function DashboardPage() {
           })
         : 0,
       db.shipment.findMany({
-        where,
+        where: { ...where, status: { in: ['IN_TRANSIT', 'PENDING'] } },
         include: {
           label: {
-            select: { deviceId: true, batteryPct: true, lastSeenAt: true },
+            select: { deviceId: true, batteryPct: true, lastSeenAt: true, status: true },
           },
           locations: {
             where: { source: 'CELL_TOWER' },
-            select: { recordedAt: true },
+            select: {
+              id: true,
+              latitude: true,
+              longitude: true,
+              recordedAt: true,
+              accuracyM: true,
+              batteryPct: true,
+              geocodedCity: true,
+              geocodedArea: true,
+              geocodedCountry: true,
+              geocodedCountryCode: true,
+            },
             orderBy: { recordedAt: 'desc' },
             take: 1,
           },
         },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
+        orderBy: { updatedAt: 'desc' },
+        take: 10,
       }),
     ])
     activeShipments = active
@@ -263,23 +288,11 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Recent Shipments */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Recent Shipments</CardTitle>
-            <CardDescription>Your most recent cargo shipments</CardDescription>
-          </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/shipments">
-              View all
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {recentShipments.length === 0 ? (
-            totalLabels > 0 ? (
+      {/* Live Shipment Tracker */}
+      {recentShipments.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            {totalLabels > 0 ? (
               <div className="py-8 text-center">
                 <div className="mx-auto max-w-sm space-y-4">
                   <h3 className="text-lg font-semibold">You have {totalLabels} label{totalLabels === 1 ? '' : 's'} ready</h3>
@@ -312,7 +325,6 @@ export default async function DashboardPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Step 1: Buy */}
                 <div className="flex items-start gap-4 rounded-lg border p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <ShoppingCart className="h-5 w-5" />
@@ -328,7 +340,6 @@ export default async function DashboardPage() {
                   </Button>
                 </div>
 
-                {/* Step 2: Create Shipment */}
                 <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <QrCode className="h-5 w-5" />
@@ -341,7 +352,6 @@ export default async function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Step 3: Track */}
                 <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <Radio className="h-5 w-5" />
@@ -354,7 +364,6 @@ export default async function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Step 4: Delivery */}
                 <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <CheckCircle className="h-5 w-5" />
@@ -368,65 +377,134 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </div>
-            )
-          ) : (
-            <div className="space-y-4">
-              {recentShipments.map((shipment) => {
-                const status = statusConfig[shipment.status]
-                const label = shipment.label
-                return (
-                  <Link
-                    key={shipment.id}
-                    href={`/shipments/${shipment.id}`}
-                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <Package className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <span className="font-medium">
-                          {shipment.name || 'Unnamed Cargo'}
-                        </span>
-                        <p className="text-sm text-muted-foreground">
-                          {label?.deviceId ? `${label.deviceId} · ` : ''}
-                          {formatDistanceToNow(
-                            new Date(shipment.locations[0]?.recordedAt || shipment.updatedAt),
-                            { addSuffix: true }
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {label != null && label.batteryPct !== null && (
-                        <div className="flex items-center gap-1">
-                          <Battery
-                            className={`h-4 w-4 ${
-                              label.batteryPct < 20
-                                ? 'text-destructive'
-                                : label.batteryPct < 50
-                                  ? 'text-yellow-500'
-                                  : 'text-green-500'
-                            }`}
-                          />
-                          <span
-                            className={`text-sm ${
-                              label.batteryPct < 20 ? 'text-destructive font-medium' : 'text-muted-foreground'
-                            }`}
-                          >
-                            {label.batteryPct}%
-                          </span>
-                        </div>
-                      )}
-                      <Badge variant={status.variant}>{status.label}</Badge>
-                    </div>
-                  </Link>
-                )
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Overview Map */}
+          <DashboardMap
+            shipments={recentShipments
+              .filter((s) => s.locations[0])
+              .map((s) => {
+                const loc = s.locations[0]
+                const lastUpdate = getLastUpdateDate({
+                  locationRecordedAt: loc.recordedAt,
+                  labelLastSeenAt: s.label?.lastSeenAt,
+                })
+                return {
+                  id: s.id,
+                  name: s.name || 'Unnamed Cargo',
+                  latitude: loc.latitude,
+                  longitude: loc.longitude,
+                  locationName: formatLocationName(loc),
+                  lastUpdate: lastUpdate?.toISOString() ?? null,
+                  batteryPct: s.label?.batteryPct ?? null,
+                }
               })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          />
+
+          {/* Active Shipments List */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Active Shipments</CardTitle>
+                <CardDescription>Shipments currently in transit or pending pickup</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/shipments">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentShipments.map((shipment) => {
+                  const status = statusConfig[shipment.status]
+                  const label = shipment.label
+                  const loc = shipment.locations[0]
+                  const locationName = loc ? formatLocationName(loc) : null
+                  const countryCode = loc ? getLocationCountryCode(loc) : null
+                  const flag = countryCode ? countryCodeToFlag(countryCode) : null
+                  const lastUpdate = getLastUpdateDate({
+                    locationRecordedAt: loc?.recordedAt,
+                    labelLastSeenAt: label?.lastSeenAt,
+                  })
+
+                  // Signal freshness: green <1h, yellow <24h, red >24h
+                  const msSinceUpdate = lastUpdate ? Date.now() - lastUpdate.getTime() : null
+                  const signalColor =
+                    msSinceUpdate === null
+                      ? 'bg-muted-foreground/30'
+                      : msSinceUpdate < 60 * 60 * 1000
+                        ? 'bg-green-500'
+                        : msSinceUpdate < 24 * 60 * 60 * 1000
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+
+                  return (
+                    <Link
+                      key={shipment.id}
+                      href={`/shipments/${shipment.id}`}
+                      className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Signal indicator */}
+                        <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${signalColor}`} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">
+                              {shipment.name || 'Unnamed Cargo'}
+                            </span>
+                            <Badge variant={status.variant} className="shrink-0">{status.label}</Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+                            {flag && <span>{flag}</span>}
+                            {locationName ? (
+                              <span className="truncate">{locationName}</span>
+                            ) : (
+                              <span className="italic">No location yet</span>
+                            )}
+                            {lastUpdate && (
+                              <>
+                                <span className="text-muted-foreground/50">·</span>
+                                <span className="shrink-0">{formatDistanceToNow(lastUpdate, { addSuffix: true })}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 ml-3">
+                        {label != null && label.batteryPct !== null && (
+                          <div className="flex items-center gap-1">
+                            <Battery
+                              className={`h-4 w-4 ${
+                                label.batteryPct < 20
+                                  ? 'text-destructive'
+                                  : label.batteryPct < 50
+                                    ? 'text-yellow-500'
+                                    : 'text-green-500'
+                              }`}
+                            />
+                            <span
+                              className={`text-sm ${
+                                label.batteryPct < 20 ? 'text-destructive font-medium' : 'text-muted-foreground'
+                              }`}
+                            >
+                              {label.batteryPct}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   )
 }
