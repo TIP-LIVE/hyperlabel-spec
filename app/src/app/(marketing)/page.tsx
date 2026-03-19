@@ -291,7 +291,7 @@ export default function HomePage() {
               TIP outcomes
             </h2>
           </AnimatedSection>
-          <div className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { end: 30, prefix: '-', suffix: '%', label: 'amount of mistakes' },
               { end: 40, prefix: '-', suffix: '%', label: 'operational costs' },
