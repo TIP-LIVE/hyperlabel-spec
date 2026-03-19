@@ -49,13 +49,14 @@ export function AdminMobileSidebar() {
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[85vw] max-w-[300px] border-border bg-card p-0">
-        <SheetHeader className="border-b border-border px-6 py-4">
+      <SheetContent side="left" className="flex w-[85vw] max-w-[300px] flex-col border-border bg-card p-0">
+        <SheetHeader className="shrink-0 border-b border-border px-6 py-4">
           <SheetTitle>
             <Logo size="md" />
           </SheetTitle>
         </SheetHeader>
-        <nav className="flex flex-col gap-1 p-4">
+        <nav className="min-h-0 flex-1 overflow-auto p-4">
+          <div className="flex flex-col gap-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
             return (
@@ -75,8 +76,9 @@ export function AdminMobileSidebar() {
               </Link>
             )
           })}
+          </div>
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
+        <div className="shrink-0 border-t border-border p-4">
           <Button
             variant="ghost"
             className="w-full justify-start text-muted-foreground hover:text-foreground"
