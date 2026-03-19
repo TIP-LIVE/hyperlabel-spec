@@ -139,7 +139,7 @@ export const onomondoLocationUpdateSchema = z.object({
     accuracy: z.coerce.number().nullable(),
     lat: z.union([z.string(), z.number()]).nullable().transform((v) => (v === null ? null : String(v))),
     lng: z.union([z.string(), z.number()]).nullable().transform((v) => (v === null ? null : String(v))),
-  }).optional(),
+  }).optional().nullable(),
   network: z.object({
     name: z.coerce.string().nullable(),
     country: z.coerce.string(),

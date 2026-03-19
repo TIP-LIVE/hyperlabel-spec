@@ -35,6 +35,10 @@ export interface LocationReportInput {
 
   /** Skip reverse geocoding (caller will handle it asynchronously). */
   skipGeocode?: boolean
+
+  /** Skip updating lastLatitude/lastLongitude/lastAccuracy on the label.
+   *  Set when coordinates are recycled from the label's own cache (fallback). */
+  skipLocationCache?: boolean
 }
 
 export interface LocationReportResult {
@@ -396,13 +400,22 @@ export async function processLocationReport(
   }
 
   // Update label: lastSeenAt only if newer (prevents regression from
-  // out-of-order cell tower events), battery if provided
+  // out-of-order cell tower events), battery if provided, and cache last known coords
   const labelUpdateData: Record<string, unknown> = {}
   if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
     labelUpdateData.lastSeenAt = receivedAt
   }
   if (input.battery !== undefined) {
     labelUpdateData.batteryPct = input.battery
+  }
+  // Cache last known coordinates on the label for fast fallback
+  // when future webhooks arrive with null location data.
+  // Skip when coordinates are recycled from the label's own cache
+  // to avoid overwriting accuracy with null.
+  if (!input.skipLocationCache) {
+    labelUpdateData.lastLatitude = effectiveLat
+    labelUpdateData.lastLongitude = effectiveLng
+    labelUpdateData.lastAccuracy = input.accuracy ?? null
   }
   if (Object.keys(labelUpdateData).length > 0) {
     await db.label.update({

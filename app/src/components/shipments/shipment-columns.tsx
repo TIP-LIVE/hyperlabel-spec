@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
+import { getLastUpdateDate, formatLocationName, getLocationCountryCode } from '@/lib/utils/location-display'
 
 export type ShipmentRow = {
   id: string
@@ -100,27 +101,25 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     header: 'Location',
     cell: ({ row }) => {
       const loc = row.original.latestLocation
-
       if (!loc) {
         return <span className="text-muted-foreground text-xs">No data yet</span>
       }
 
-      if (!loc.geocodedCity) {
-        return (
-          <span className="text-muted-foreground text-xs">
-            {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
-          </span>
-        )
+      const locationText = formatLocationName(loc)
+      const countryCode = getLocationCountryCode(loc)
+
+      if (!locationText) {
+        return <span className="text-muted-foreground text-xs">No data yet</span>
+      }
+
+      if (!countryCode) {
+        return <span className="text-muted-foreground text-xs">{locationText}</span>
       }
 
       return (
         <div className="flex items-center gap-2 max-w-[200px]">
-          {loc.geocodedCountryCode && (
-            <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
-          )}
-          <span className="text-sm truncate">
-            {loc.geocodedCity}{loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}
-          </span>
+          <span className="text-sm shrink-0">{countryCodeToFlag(countryCode)}</span>
+          <span className="text-sm truncate">{locationText}</span>
         </div>
       )
     },
@@ -149,21 +148,16 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
     id: 'lastUpdate',
     header: 'Last Update',
     cell: ({ row }) => {
-      const locTime = row.original.latestLocation?.recordedAt
-        ? new Date(row.original.latestLocation.recordedAt).getTime()
-        : 0
-      const seenTime = row.original.label?.lastSeenAt
-        ? new Date(row.original.label.lastSeenAt).getTime()
-        : 0
-      const timestamp = locTime >= seenTime
-        ? row.original.latestLocation?.recordedAt
-        : row.original.label?.lastSeenAt
-      if (!timestamp) {
+      const lastUpdate = getLastUpdateDate({
+        locationRecordedAt: row.original.latestLocation?.recordedAt,
+        labelLastSeenAt: row.original.label?.lastSeenAt,
+      })
+      if (!lastUpdate) {
         return <span className="text-muted-foreground text-xs">—</span>
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+          {formatDistanceToNow(lastUpdate, { addSuffix: true })}
         </span>
       )
     },

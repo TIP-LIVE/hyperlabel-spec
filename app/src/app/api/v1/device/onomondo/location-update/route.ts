@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server'
+import { createHash } from 'crypto'
 import { onomondoLocationUpdateSchema } from '@/lib/validations/device'
 import {
   processLocationReport,
@@ -13,24 +14,18 @@ import {
 import { resolveCellTowerLocation } from '@/lib/cell-geolocation'
 import { db } from '@/lib/db'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
-import { createWebhookLog, updateWebhookLog, upsertWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
+import { upsertWebhookLog, pruneWebhookLogs } from '@/lib/webhook-log'
 import type { WebhookLogCreateParams } from '@/lib/webhook-log'
 
-// --- In-memory dedup for Onomondo's double-delivery ---
-const recentEvents = new Map<string, number>()
-const DEDUP_WINDOW_MS = 30_000
-
-function isDuplicate(key: string): boolean {
-  const now = Date.now()
-  // Evict stale entries
-  for (const [k, ts] of recentEvents) {
-    if (now - ts > DEDUP_WINDOW_MS * 2) recentEvents.delete(k)
-  }
-  if (recentEvents.has(key) && now - recentEvents.get(key)! < DEDUP_WINDOW_MS) {
-    return true
-  }
-  recentEvents.set(key, now)
-  return false
+/**
+ * Generate a deterministic webhook log ID from iccid + time.
+ * Onomondo's double-delivery sends the same payload twice — using a
+ * deterministic ID means both deliveries target the same DB row,
+ * and the upsert naturally deduplicates.
+ */
+function deterministicLogId(iccid: string | undefined, time: string | undefined): string {
+  const key = `onomondo:${iccid ?? 'unknown'}:${time ?? Date.now()}`
+  return createHash('sha256').update(key).digest('hex').slice(0, 25)
 }
 
 /**
@@ -43,14 +38,19 @@ function isDuplicate(key: string): boolean {
  * Returns 200 immediately after validation, then processes in background
  * via after() to avoid Onomondo's 1000ms webhook timeout.
  *
+ * Dedup strategy:
+ * - Deterministic webhook log ID from iccid:time → DB upsert deduplicates
+ *   Onomondo's double-delivery (same payload sent twice within seconds).
+ * - LocationEvent has @@unique([labelId, recordedAt, lat, lng, source])
+ *   as the final safety net against duplicate location records.
+ * - Coordinate dedup in processLocationReport() skips events with
+ *   identical coordinates within 5 minutes.
+ *
  * Authentication: API key via X-API-Key / ?key=, or shared secret header.
  * Rate limit: 120 req/min per API key
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now()
-  const logId = crypto.randomUUID()
-  let logCreated = false
-  let webhookLogParams: WebhookLogCreateParams | null = null
 
   try {
     const apiKey =
@@ -100,14 +100,7 @@ export async function POST(req: NextRequest) {
 
     const rawBody = body as Record<string, unknown>
 
-    // Deduplicate Onomondo's double-delivery (same iccid+time within 30s)
-    const dedupeKey = `${rawBody?.iccid}:${rawBody?.time}`
-    if (isDuplicate(dedupeKey)) {
-      console.info('[webhook:location-update] DEDUP skipped', { iccid: rawBody?.iccid, time: rawBody?.time })
-      return NextResponse.json({ success: true, deduplicated: true })
-    }
-
-    // Log every incoming webhook immediately — raw type and SIM info
+    // Log every incoming webhook — raw type and SIM info
     console.info('[webhook:location-update] INCOMING', {
       type: rawBody?.type,
       iccid: rawBody?.iccid,
@@ -116,25 +109,6 @@ export async function POST(req: NextRequest) {
       hasLocation: !!rawBody?.location,
       networkCountry: (rawBody?.network as Record<string, unknown>)?.country_code,
     })
-
-    // Persist raw webhook for admin debug panel
-    webhookLogParams = {
-      id: logId,
-      endpoint: 'location-update',
-      headers: req.headers,
-      body: rawBody,
-      ipAddress: getClientIp(req),
-      iccid: rawBody?.iccid as string | undefined,
-      eventType: rawBody?.type as string | undefined,
-    }
-    try {
-      await createWebhookLog(webhookLogParams)
-      logCreated = true
-    } catch (err) {
-      console.error('[webhook:location-update] FAILED to persist webhook log', {
-        logId, iccid: rawBody?.iccid, type: rawBody?.type, error: err,
-      })
-    }
 
     const validated = onomondoLocationUpdateSchema.safeParse(body)
     if (!validated.success) {
@@ -150,20 +124,35 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data
 
+    // Deterministic ID: Onomondo double-sends produce the same ID,
+    // so the upsert in after() naturally deduplicates at the DB level.
+    const logId = deterministicLogId(data.iccid, data.time)
+
+    // Prepare webhook log params — persisted in after() to keep sync path fast
+    const webhookLogParams: WebhookLogCreateParams = {
+      id: logId,
+      endpoint: 'location-update',
+      headers: req.headers,
+      body: rawBody,
+      ipAddress: getClientIp(req),
+      iccid: data.iccid,
+      eventType: data.type,
+    }
+
     // Return 200 immediately — Onomondo has a strict 1000ms timeout.
-    // All processing (DB writes, geolocation, geocoding) happens in after().
+    // ALL processing (DB writes, geolocation, geocoding) happens in after().
     after(async () => {
       try {
-        // Persist raw webhook log
-        try {
-          if (webhookLogParams) {
-            await createWebhookLog(webhookLogParams)
-            logCreated = true
+        // Always update lastSeenAt — even null-location webhooks are heartbeats
+        if (data.iccid) {
+          try {
+            await db.label.updateMany({
+              where: { iccid: data.iccid },
+              data: { lastSeenAt: new Date() },
+            })
+          } catch (err) {
+            console.warn('[webhook:location-update] lastSeenAt update failed:', err)
           }
-        } catch (err) {
-          console.error('[webhook:location-update] FAILED to persist webhook log', {
-            logId, iccid: data.iccid, type: data.type, error: err,
-          })
         }
 
         // Auto-promote PENDING → IN_TRANSIT
@@ -240,26 +229,26 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Fallback: use the last known location for this device
+        // Fallback: use the last known location cached on the Label
+        let usingCachedLocation = false
         if (lat === null || lng === null) {
           if (data.iccid) {
-            const lastLocation = await db.locationEvent.findFirst({
-              where: { label: { iccid: data.iccid }, source: 'CELL_TOWER' },
-              orderBy: { recordedAt: 'desc' },
-              select: { latitude: true, longitude: true, accuracyM: true },
+            const label = await db.label.findFirst({
+              where: { iccid: data.iccid },
+              select: { lastLatitude: true, lastLongitude: true },
             })
-            if (lastLocation) {
-              lat = lastLocation.latitude
-              lng = lastLocation.longitude
-              accuracy = lastLocation.accuracyM ?? undefined
-              console.info('[webhook:location-update] using last known location', {
+            if (label?.lastLatitude != null && label?.lastLongitude != null) {
+              lat = label.lastLatitude
+              lng = label.lastLongitude
+              usingCachedLocation = true
+              console.info('[webhook:location-update] using last known location from label', {
                 iccid: data.iccid, lat, lng,
               })
             }
           }
         }
 
-        // If still no coordinates, skip
+        // If still no coordinates, persist webhook log and skip
         if (lat === null || lng === null) {
           console.info('[webhook:location-update] skipped — no coordinates', {
             iccid: data.iccid,
@@ -268,12 +257,7 @@ export async function POST(req: NextRequest) {
             hasLocation: !!loc,
           })
           const result = { success: true, skipped: true, reason: 'No coordinates available' }
-          const skipParams = { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime }
-          if (logCreated) {
-            await updateWebhookLog(logId, skipParams)
-          } else if (webhookLogParams) {
-            await upsertWebhookLog(webhookLogParams, skipParams)
-          }
+          await upsertWebhookLog(webhookLogParams, { statusCode: 200, processingResult: result, durationMs: Date.now() - startTime })
           return
         }
 
@@ -285,31 +269,30 @@ export async function POST(req: NextRequest) {
           recordedAt: data.time,
           source: 'CELL_TOWER',
           skipGeocode: true,
+          skipLocationCache: usingCachedLocation,
         })
 
-        // Geocode + update webhook log
+        // Geocode + persist webhook log with final status
         await geocodeLocationEvent(result.locationId, lat, lng)
 
-        const successParams = { statusCode: 200, processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId }, durationMs: Date.now() - startTime }
-        if (logCreated) {
-          await updateWebhookLog(logId, successParams)
-        } else if (webhookLogParams) {
-          await upsertWebhookLog(webhookLogParams, successParams)
-        }
+        await upsertWebhookLog(webhookLogParams, {
+          statusCode: 200,
+          processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId },
+          durationMs: Date.now() - startTime,
+        })
 
         // Probabilistic pruning of old webhook logs
         if (Math.random() < 0.05) await pruneWebhookLogs()
       } catch (error) {
         console.error('[webhook:location-update] after() processing error:', error)
         try {
-          const errParams = { statusCode: 200, processingResult: { error: String(error) }, durationMs: Date.now() - startTime }
-          if (logCreated) {
-            await updateWebhookLog(logId, errParams)
-          } else if (webhookLogParams) {
-            await upsertWebhookLog(webhookLogParams, errParams)
-          }
+          await upsertWebhookLog(webhookLogParams, {
+            statusCode: 200,
+            processingResult: { error: String(error) },
+            durationMs: Date.now() - startTime,
+          })
         } catch (logErr) {
-          console.error('[webhook:location-update] failed to update webhook log', { logId, error: logErr })
+          console.error('[webhook:location-update] failed to persist webhook log', { logId, error: logErr })
         }
       }
     })

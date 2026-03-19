@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
               batteryPct: true,
               status: true,
               lastSeenAt: true,
+              lastLatitude: true,
+              lastLongitude: true,
             },
           },
           locations: {

@@ -21,6 +21,7 @@ import {
   Send,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
+import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
 import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
@@ -341,15 +342,15 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               )}
             </CardTitle>
             <CardDescription>
-              {latestLocation
-                ? `Last updated ${formatDistanceToNow(new Date(
-                    (() => {
-                      const locTime = new Date(latestLocation.recordedAt).getTime()
-                      const seenTime = shipment.label?.lastSeenAt ? new Date(shipment.label.lastSeenAt).getTime() : 0
-                      return seenTime > locTime ? shipment.label!.lastSeenAt! : latestLocation.recordedAt
-                    })()
-                  ), { addSuffix: true })}`
-                : 'Acquiring signal — first location typically appears within a few minutes'}
+              {(() => {
+                const lastUpdate = getLastUpdateDate({
+                  locationRecordedAt: latestLocation?.recordedAt,
+                  labelLastSeenAt: shipment.label?.lastSeenAt,
+                })
+                return lastUpdate
+                  ? `Last updated ${formatDistanceToNow(lastUpdate, { addSuffix: true })}`
+                  : 'Acquiring signal — first location typically appears within a few minutes'
+              })()}
             </CardDescription>
           </CardHeader>
           <CardContent>

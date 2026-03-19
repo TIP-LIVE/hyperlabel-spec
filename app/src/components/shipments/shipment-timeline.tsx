@@ -6,6 +6,7 @@ import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
+import { formatLocationName } from '@/lib/utils/location-display'
 
 interface LocationEvent {
   id: string
@@ -67,14 +68,8 @@ function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] 
   return groups
 }
 
-/** Build display name from geocoded fields or fallback to coordinates */
 function locationDisplayName(location: LocationEvent): string {
-  if (location.geocodedCity && location.geocodedCountry) {
-    return `${location.geocodedCity}, ${location.geocodedCountry}`
-  }
-  if (location.geocodedCity) return location.geocodedCity
-  if (location.geocodedCountry) return location.geocodedCountry
-  return `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
+  return formatLocationName(location) ?? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
 }
 
 /** More precise display name for expanded detail rows (suburb/area level) */

@@ -35,6 +35,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
             status: true,
             firmwareVersion: true,
             activatedAt: true,
+            lastSeenAt: true,
+            lastLatitude: true,
+            lastLongitude: true,
           },
         },
         locations: {

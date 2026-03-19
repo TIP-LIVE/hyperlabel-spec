@@ -32,6 +32,7 @@ import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
+import { getLastUpdateMs, formatLocationName, getLocationCountryCode } from '@/lib/utils/location-display'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
 function CargoActionsCell({ shipment }: { shipment: CargoRow }) {
@@ -149,6 +150,8 @@ export type CargoRow = {
     batteryPct: number | null
     status: string
     lastSeenAt: string | null
+    lastLatitude: number | null
+    lastLongitude: number | null
   } | null
   latestLocation: {
     id: string
@@ -163,13 +166,10 @@ export type CargoRow = {
 }
 
 function getLastUpdateTime(row: CargoRow): number {
-  const locationTime = row.latestLocation?.receivedAt
-    ? new Date(row.latestLocation.receivedAt).getTime()
-    : 0
-  const labelTime = row.label?.lastSeenAt
-    ? new Date(row.label.lastSeenAt).getTime()
-    : 0
-  return Math.max(locationTime, labelTime)
+  return getLastUpdateMs({
+    locationRecordedAt: row.latestLocation?.recordedAt,
+    labelLastSeenAt: row.label?.lastSeenAt,
+  })
 }
 
 function SortableHeader({ column, label }: { column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void }; label: string }) {
@@ -236,27 +236,41 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
     header: 'Location',
     cell: ({ row }) => {
       const loc = row.original.latestLocation
+      const label = row.original.label
 
-      if (!loc) {
+      // Try location event first, then label's cached coordinates
+      const displaySource = loc ?? (label?.lastLatitude != null ? {
+        latitude: label.lastLatitude,
+        longitude: label.lastLongitude,
+        geocodedCity: null as string | null,
+        geocodedCountry: null as string | null,
+        geocodedCountryCode: null as string | null,
+      } : null)
+
+      if (!displaySource) {
         return <span className="text-muted-foreground text-xs">No data yet</span>
       }
 
-      if (!loc.geocodedCity) {
+      const locationText = formatLocationName(displaySource)
+      const countryCode = getLocationCountryCode(displaySource)
+
+      if (!locationText) {
+        return <span className="text-muted-foreground text-xs">No data yet</span>
+      }
+
+      if (!countryCode) {
         return (
           <span className="text-muted-foreground text-xs">
-            {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
+            {locationText}
           </span>
         )
       }
 
-      const locationText = `${loc.geocodedCity}${loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}`
       return (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-2 max-w-[200px]">
-              {loc.geocodedCountryCode && (
-                <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
-              )}
+              <span className="text-sm shrink-0">{countryCodeToFlag(countryCode)}</span>
               <span className="text-sm truncate">
                 {locationText}
               </span>
