@@ -94,7 +94,7 @@ export function FleetStatsGrid({ stats }: FleetStatsGridProps) {
               />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${card.color}`}>
+              <div className={`text-3xl font-bold tracking-tight ${card.color}`}>
                 {card.value}
               </div>
             </CardContent>

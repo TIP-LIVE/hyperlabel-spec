@@ -188,28 +188,35 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                               {orderShortId}
                             </Link>
                           </td>
-                          <td className="py-3 text-foreground">{order.user.email}</td>
-                          <td className="py-3 text-foreground">{order.quantity}</td>
+                          <td className="py-3">
+                            <Link
+                              href={`/admin/users?q=${encodeURIComponent(order.user.email)}`}
+                              className="text-primary hover:underline"
+                            >
+                              {order.user.email}
+                            </Link>
+                          </td>
+                          <td className="py-3 font-semibold text-foreground">{order.quantity}</td>
                           <td className="py-3">
                             <span
-                              className={
+                              className={`font-semibold ${
                                 order.orderLabels.length < order.quantity
-                                  ? 'text-yellow-400'
+                                  ? 'text-yellow-600 dark:text-yellow-400'
                                   : 'text-foreground'
-                              }
+                              }`}
                             >
                               {order.orderLabels.length}/{order.quantity}
                             </span>
                           </td>
                           <td className="py-3">
                             <span
-                              className={
+                              className={`font-semibold ${
                                 order.dispatchedCount > 0 && order.dispatchedCount < order.orderLabels.length
-                                  ? 'text-blue-400'
+                                  ? 'text-blue-600 dark:text-blue-400'
                                   : order.dispatchedCount === order.orderLabels.length && order.orderLabels.length > 0
-                                  ? 'text-green-500'
+                                  ? 'text-green-600 dark:text-green-500'
                                   : 'text-muted-foreground'
-                              }
+                              }`}
                             >
                               {order.dispatchedCount}/{order.orderLabels.length}
                             </span>

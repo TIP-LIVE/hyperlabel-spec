@@ -80,7 +80,14 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
               <tbody className="divide-y divide-border">
                 {users.map((user) => (
                   <tr key={user.id} className="text-sm">
-                    <td className="py-3 text-foreground">{user.email}</td>
+                    <td className="py-3">
+                            <Link
+                              href={`/admin/orders?q=${encodeURIComponent(user.email)}`}
+                              className="text-primary hover:underline"
+                            >
+                              {user.email}
+                            </Link>
+                          </td>
                     <td className="py-3 text-foreground">
                       {user.firstName || user.lastName
                         ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
@@ -94,8 +101,30 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                         {user.role}
                       </Badge>
                     </td>
-                    <td className="py-3 text-foreground">{user._count.orders}</td>
-                    <td className="py-3 text-foreground">{user._count.shipments}</td>
+                    <td className="py-3">
+                            {user._count.orders > 0 ? (
+                              <Link
+                                href={`/admin/orders?q=${encodeURIComponent(user.email)}`}
+                                className="font-semibold text-primary hover:underline"
+                              >
+                                {user._count.orders}
+                              </Link>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </td>
+                    <td className="py-3">
+                            {user._count.shipments > 0 ? (
+                              <Link
+                                href={`/admin/cargo?q=${encodeURIComponent(user.email)}`}
+                                className="font-semibold text-primary hover:underline"
+                              >
+                                {user._count.shipments}
+                              </Link>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </td>
                     <td className="py-3 text-muted-foreground">
                       {format(new Date(user.createdAt), 'PP')}
                     </td>

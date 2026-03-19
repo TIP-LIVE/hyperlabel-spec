@@ -157,14 +157,31 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
                           </Link>
                           <p className="font-mono text-xs text-muted-foreground">{s.shareCode}</p>
                         </td>
-                        <td className="py-3 text-foreground">{s.user.email}</td>
+                        <td className="py-3">
+                          <Link
+                            href={`/admin/users?q=${encodeURIComponent(s.user.email)}`}
+                            className="text-primary hover:underline"
+                          >
+                            {s.user.email}
+                          </Link>
+                        </td>
                         <td className="py-3">
                           <span className="text-foreground">
                             {s.shipmentLabels.length} label{s.shipmentLabels.length !== 1 ? 's' : ''}
                           </span>
                           {s.shipmentLabels.length > 0 && (
-                            <p className="font-mono text-xs text-muted-foreground">
-                              {s.shipmentLabels.map((sl) => sl.label.deviceId).join(', ')}
+                            <p className="font-mono text-xs">
+                              {s.shipmentLabels.map((sl, i) => (
+                                <span key={sl.label.deviceId}>
+                                  {i > 0 && ', '}
+                                  <Link
+                                    href={`/admin/devices/${sl.label.deviceId}`}
+                                    className="text-primary hover:underline"
+                                  >
+                                    {sl.label.deviceId}
+                                  </Link>
+                                </span>
+                              ))}
                             </p>
                           )}
                         </td>

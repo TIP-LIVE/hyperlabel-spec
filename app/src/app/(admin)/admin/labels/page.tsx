@@ -95,7 +95,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
             >
               <CardContent className="pt-6">
                 <p
-                  className={`text-2xl font-bold ${
+                  className={`text-3xl font-bold tracking-tight ${
                     tab.value === 'ALL'
                       ? 'text-card-foreground'
                       : tab.value === 'INVENTORY'

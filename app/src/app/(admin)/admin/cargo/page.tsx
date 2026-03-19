@@ -155,9 +155,25 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
                           </Link>
                           <p className="font-mono text-xs text-muted-foreground">{s.shareCode}</p>
                         </td>
-                        <td className="py-3 text-foreground">{s.user.email}</td>
                         <td className="py-3">
-                          <span className="font-mono text-foreground">{s.label?.deviceId ?? '—'}</span>
+                          <Link
+                            href={`/admin/users?q=${encodeURIComponent(s.user.email)}`}
+                            className="text-primary hover:underline"
+                          >
+                            {s.user.email}
+                          </Link>
+                        </td>
+                        <td className="py-3">
+                          {s.label?.deviceId ? (
+                            <Link
+                              href={`/admin/devices/${s.label.deviceId}`}
+                              className="font-mono text-primary hover:underline"
+                            >
+                              {s.label.deviceId}
+                            </Link>
+                          ) : (
+                            <span className="font-mono text-muted-foreground">—</span>
+                          )}
                           {s.label?.batteryPct !== null && s.label?.batteryPct !== undefined && (
                             <span
                               className={`ml-2 text-xs ${

@@ -163,7 +163,14 @@ export function LabelsTableWithSelection({
                         />
                       </label>
                     </td>
-                    <td className="py-3 font-mono text-foreground">{label.deviceId}</td>
+                    <td className="py-3">
+                            <Link
+                              href={`/admin/devices/${label.deviceId}`}
+                              className="font-mono text-primary hover:underline"
+                            >
+                              {label.deviceId}
+                            </Link>
+                          </td>
                     <td className="py-3 font-mono text-muted-foreground">{label.imei || '—'}</td>
                     <td className="py-3">
                       <Badge className={statusStyles[label.status]}>{label.status}</Badge>
@@ -181,8 +188,17 @@ export function LabelsTableWithSelection({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="py-3 text-foreground">
-                      {label.orderLabels[0]?.order?.user?.email ?? '—'}
+                    <td className="py-3">
+                      {label.orderLabels[0]?.order?.user?.email ? (
+                        <Link
+                          href={`/admin/users?q=${encodeURIComponent(label.orderLabels[0].order.user.email)}`}
+                          className="text-primary hover:underline"
+                        >
+                          {label.orderLabels[0].order.user.email}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-3 text-muted-foreground">
                       {label.activatedAt

@@ -211,9 +211,16 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
             >
               {name || 'Unnamed Cargo'}
             </Link>
-            <p className="text-xs text-muted-foreground">
-              {row.original.label?.deviceId || '—'}
-            </p>
+            {row.original.label?.deviceId ? (
+              <Link
+                href="/labels"
+                className="text-xs text-muted-foreground hover:text-primary hover:underline"
+              >
+                {row.original.label.deviceId}
+              </Link>
+            ) : (
+              <p className="text-xs text-muted-foreground">—</p>
+            )}
           </div>
         </div>
       )

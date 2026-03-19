@@ -221,7 +221,9 @@ async function LowBatteryLabels() {
         return (
           <div key={label.id} className="flex items-center justify-between rounded-lg px-2 py-1.5">
             <div>
-              <p className="text-sm font-medium text-card-foreground">{label.deviceId}</p>
+              <Link href={`/admin/devices/${label.deviceId}`} className="text-sm font-medium text-primary hover:underline">
+                {label.deviceId}
+              </Link>
               <p className="text-xs text-muted-foreground">
                 {shipment ? (
                   <Link href={`/admin/${shipment.type === 'LABEL_DISPATCH' ? 'dispatch' : 'cargo'}?q=${label.deviceId}`} className="text-primary hover:underline">
