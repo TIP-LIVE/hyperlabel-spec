@@ -214,7 +214,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
             {row.original.label?.deviceId ? (
               <Link
                 href="/labels"
-                className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                className="block text-xs text-muted-foreground hover:text-primary hover:underline"
               >
                 {row.original.label.deviceId}
               </Link>
