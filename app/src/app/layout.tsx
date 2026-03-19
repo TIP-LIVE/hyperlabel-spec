@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ThemeAwareClerkProvider } from '@/components/clerk-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -8,9 +8,16 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
+const suisseIntl = localFont({
+  src: [
+    { path: '../../public/fonts/SuisseIntl-Medium.woff2', weight: '500', style: 'normal' },
+    { path: '../../public/fonts/SuisseIntl-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '../../public/fonts/SuisseIntl-Bold.woff2', weight: '700', style: 'normal' },
+    { path: '../../public/fonts/SuisseIntl-Black.woff2', weight: '900', style: 'normal' },
+  ],
+  variable: '--font-suisse',
+  display: 'swap',
+  fallback: ['Inter', 'system-ui', 'sans-serif'],
 })
 
 export const metadata: Metadata = {
@@ -71,7 +78,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${suisseIntl.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <TooltipProvider delayDuration={300}>
             <ThemeAwareClerkProvider>{children}</ThemeAwareClerkProvider>

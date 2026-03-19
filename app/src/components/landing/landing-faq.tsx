@@ -31,7 +31,7 @@ const faqs = [
   {
     question: 'How do I attach the label to my cargo?',
     answer:
-      'Peel the adhesive backing and stick the label to a clean, flat surface on your shipment. Avoid metal-only surfaces that can block signal. For high-value or fragile cargo, place it where it won’t be damaged in transit.',
+      'Peel the adhesive backing and stick the label to a clean, flat surface on your shipment. Avoid metal-only surfaces that can block signal. For high-value or fragile cargo, place it where it won\u2019t be damaged in transit.',
   },
   {
     question: 'Can I share tracking with my consignee?',
@@ -64,9 +64,9 @@ export function LandingFAQ() {
   return (
     <Accordion type="single" collapsible className="w-full">
       {faqs.map((faq, i) => (
-        <AccordionItem key={i} value={`faq-${i}`}>
-          <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-          <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+        <AccordionItem key={i} value={`faq-${i}`} className="border-white/10">
+          <AccordionTrigger className="text-left text-white">{faq.question}</AccordionTrigger>
+          <AccordionContent className="text-gray-400">{faq.answer}</AccordionContent>
         </AccordionItem>
       ))}
     </Accordion>

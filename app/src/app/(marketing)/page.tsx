@@ -7,21 +7,8 @@ import { MarketingCTA } from '@/components/landing/marketing-cta'
 import { StructuredData } from '@/components/landing/structured-data'
 import { AnimatedSection } from '@/components/landing/animated-section'
 import { CountUp } from '@/components/landing/count-up'
-import {
-  Globe,
-  Battery,
-  Brain,
-  Tag,
-  Share2,
-  Smartphone,
-  ShoppingCart,
-  StickyNote,
-  Radio,
-  MapPin,
-  Mail,
-  Check,
-  X,
-} from 'lucide-react'
+import { IndustriesSection } from '@/components/landing/industries-section'
+import { Check, X, Mail } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,53 +29,50 @@ export default function HomePage() {
       <HeroSection />
 
       {/* 2. Live Tracking Label — No Blind Spots */}
-      <section className="py-20 md:py-28">
+      <section className="py-8 md:py-10">
         <div className="container mx-auto px-4">
           {/* Centered heading */}
           <div className="text-center">
-            <p className="text-sm font-bold italic uppercase tracking-[0.25em] text-gray-400">
+            <p className="text-label-expanded text-white">
               First Ever
             </p>
-            <h2 className="text-headline mt-4 text-4xl text-white md:text-6xl lg:text-7xl">
+            <h2 className="text-headline mt-2 text-3xl text-white md:text-5xl lg:text-[55px]">
               Live Tracking Label
               <br />
-              With No{' '}
-              <span className="text-destructive line-through decoration-destructive">
-                Blind
-              </span>{' '}
+              With <span className="text-[red]">No Blind</span>{' '}
               Spots
             </h2>
-            <p className="mt-6 text-sm font-bold uppercase tracking-[0.25em] text-gray-400">
-              Applicable to any cargo.
+            <p className="text-label-expanded mt-2 text-white">
+              Applicable to any cargo
             </p>
           </div>
 
           {/* Three-column: features | label image | specs */}
-          <div className="mx-auto mt-12 grid max-w-7xl items-center gap-6 lg:grid-cols-[1fr_auto_1fr] lg:gap-12">
+          <div className="mx-auto mt-4 grid max-w-5xl items-center gap-4 lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
             {/* Left — features */}
             <div className="space-y-0">
               {[
-                { title: 'No Scanners Required', subtitle: 'Countries Covered' },
-                { title: 'No Subscription Fees', subtitle: 'Days Battery Life' },
-                { title: '30-Second Activation', subtitle: 'Update Interval' },
-                { title: 'No Return Logistics', subtitle: 'Update Interval' },
-                { title: 'Shareable Tracking Links', subtitle: 'Cat-1 Cellular' },
+                { title: 'No Scanners Required', subtitle: 'Works with any phone' },
+                { title: 'No Subscription Fees', subtitle: 'One-time purchase' },
+                { title: '30-Second Activation', subtitle: 'Scan QR and go' },
+                { title: 'No Return Logistics', subtitle: 'Disposable label' },
+                { title: 'Shareable Tracking Links', subtitle: 'No app needed' },
               ].map((item) => (
-                <div key={item.title} className="border-b border-white/10 py-5">
-                  <p className="text-lg font-bold text-white md:text-xl lg:text-2xl">{item.title}</p>
-                  <p className="text-sm text-gray-500 italic">{item.subtitle}</p>
+                <div key={item.title} className="border-b border-white/20 py-3">
+                  <p className="text-[24px] font-bold leading-[0.9] tracking-[-0.96px] text-white">{item.title}</p>
+                  <p className="mt-1 text-[24px] font-bold leading-[0.9] tracking-[-0.96px] text-white/30">{item.subtitle}</p>
                 </div>
               ))}
             </div>
 
-            {/* Center — TIP label product image */}
-            <div className="flex justify-center">
+            {/* Center — TIP label product image with dimensions */}
+            <div className="relative flex justify-center">
               <Image
                 src="/images/tip-label-3d.webp"
                 alt="TIP tracking label product"
-                width={420}
-                height={420}
-                className="w-[320px] lg:w-[420px] drop-shadow-2xl"
+                width={620}
+                height={620}
+                className="w-[400px] lg:w-[500px] drop-shadow-2xl"
                 priority
               />
             </div>
@@ -100,11 +84,11 @@ export default function HomePage() {
                 { value: '60+', subtitle: 'Days Battery Life' },
                 { value: '2HR', subtitle: 'Update Interval' },
                 { value: 'LTE', subtitle: 'Cat-1 Cellular' },
-                { value: '1', subtitle: 'Minimum Order' },
+                { value: '1', subtitle: 'Miminum Order' },
               ].map((item) => (
-                <div key={item.subtitle} className="border-b border-white/10 py-5 text-right">
-                  <p className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">{item.value}</p>
-                  <p className="text-sm text-gray-500 italic">{item.subtitle}</p>
+                <div key={item.subtitle} className="border-b border-white/20 py-3 text-right">
+                  <p className="text-[24px] font-bold leading-[0.9] tracking-[-0.96px] text-white">{item.value}</p>
+                  <p className="mt-1 text-[24px] font-bold leading-[0.9] tracking-[-0.96px] text-white/30">{item.subtitle}</p>
                 </div>
               ))}
             </div>
@@ -113,53 +97,30 @@ export default function HomePage() {
       </section>
 
       {/* 3. Why TIP — 6 statements on green + bold statement */}
-      <section id="features" className="scroll-mt-20 bg-[#00FF00] py-20 md:py-28">
+      <section id="features" className="scroll-mt-20 bg-[#00FF00] py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-headline text-3xl text-black md:text-5xl">
+          <h2 className="text-headline text-4xl text-black md:text-[55px]">
             Why to TIP your cargo?
           </h2>
           <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              {
-                fill: 'full',
-                text: 'There\u2019s no other door-to-door tracking service',
-              },
-              {
-                fill: 'full',
-                text: 'Every existing service has blind spots',
-              },
-              {
-                fill: 'half-right',
-                text: 'There\u2019s usually 20+ chains in a chain, not connected with each other',
-              },
-              {
-                fill: 'half-left',
-                text: 'Most shipments are blind, other  visible only at part of the way',
-              },
-              {
-                fill: 'full',
-                text: 'Shipment from Temu has better tracking than helicopter engine',
-              },
-              {
-                fill: 'half-right',
-                text: 'Cost of lost shipment exceeds cost of tracking label in 99% of cases',
-              },
-            ].map(({ fill, text }, i) => (
+              { icon: 'eye-01', text: 'There\u2019s no other door-to-door tracking service' },
+              { icon: 'eye-02', text: 'Every existing service has blind spots' },
+              { icon: 'eye-03', text: 'There\u2019s usually 20+ chains in a chain, not connected with each other' },
+              { icon: 'eye-04', text: 'Most shipments are blind, other visible only at part of the way' },
+              { icon: 'eye-05', text: 'Shipment from Temu has better tracking than helicopter engine' },
+              { icon: 'eye-06', text: 'Cost of lost shipment exceeds cost of tracking label in 99% of cases' },
+            ].map(({ icon, text }, i) => (
               <AnimatedSection key={i} delay={i * 100}>
                 <div>
-                  <svg width="48" height="48" viewBox="0 0 48 48" className="mb-4">
-                    <circle cx="24" cy="24" r="20" fill="none" stroke="black" strokeWidth="3" />
-                    {fill === 'full' && (
-                      <circle cx="24" cy="24" r="14" fill="black" />
-                    )}
-                    {fill === 'half-right' && (
-                      <path d="M24 10 A14 14 0 0 1 24 38 Z" fill="black" />
-                    )}
-                    {fill === 'half-left' && (
-                      <path d="M24 10 A14 14 0 0 0 24 38 Z" fill="black" />
-                    )}
-                  </svg>
-                  <p className="text-xl font-bold leading-tight text-black md:text-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/images/${icon}.svg`}
+                    alt=""
+                    className="mb-4 h-12 w-12"
+                    aria-hidden="true"
+                  />
+                  <p className="text-xl font-semibold leading-tight tracking-tight text-black md:text-[30px] md:leading-none">
                     {text}
                   </p>
                 </div>
@@ -167,9 +128,9 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Bold statement — part of the green section */}
-          <div className="mt-16 border-t border-black/20 pt-16">
-            <h2 className="text-headline max-w-4xl text-5xl text-black md:text-7xl lg:text-8xl">
+          {/* Divider + bold statement */}
+          <div className="mt-16 border-t-2 border-black/20 pt-16">
+            <h2 className="text-headline max-w-[941px] text-5xl text-black md:text-7xl lg:text-[90px]">
               TIP is the only way to understand where is your cargo
             </h2>
           </div>
@@ -177,212 +138,172 @@ export default function HomePage() {
       </section>
 
       {/* 4. Full-width photo — hand placing label on box */}
-      <section className="relative">
-        <Image
-          src="/images/tip-box-photo.webp"
-          alt="Hand placing TIP tracking label on a cargo box"
-          width={2560}
-          height={1440}
-          className="w-full object-cover"
-        />
+      <section className="bg-black px-4 md:px-8">
+        <div className="overflow-hidden rounded-[40px]">
+          <Image
+            src="/images/tip-box-photo.webp"
+            alt="Hand placing TIP tracking label on a cargo box"
+            width={2560}
+            height={1440}
+            className="w-full object-cover"
+          />
+        </div>
       </section>
 
       {/* 5. How it works — 4 steps */}
-      <section id="how-it-works" className="scroll-mt-20 border-t border-white/5 py-20 md:py-28">
+      <section id="how-it-works" className="scroll-mt-20 py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
+          <h2 className="text-headline text-4xl text-white md:text-[55px]">
             How to tip your cargo
           </h2>
-          <div className="mt-16 grid gap-10 md:grid-cols-4">
+          <div className="mt-8 grid gap-10 md:grid-cols-4">
             {[
-              { num: '1', icon: ShoppingCart, title: 'Order Label', desc: 'Choose how many labels you need. We ship them within 3-5 business days.' },
-              { num: '2', icon: StickyNote, title: 'Activate & Attach', desc: 'Scan the QR code, enter origin & destination, peel and stick.' },
-              { num: '3', icon: Radio, title: 'Track Anywhere', desc: 'Follow your shipment on a live map. Share a tracking link with anyone.' },
-              { num: '4', icon: MapPin, title: 'Get Delivery Alert', desc: 'Get notified when your cargo arrives. Tracking stops automatically.' },
-            ].map(({ num, icon: Icon, title, desc }, i) => (
+              { num: '1', title: 'Order Label', desc: 'Choose how many labels you need and we ship them to your door within 1-2 business days.', icon: '/images/step-order.svg' },
+              { num: '2', title: 'Activate & Attach', desc: 'Scan the QR code to activate, attach the label to your cargo, and enter origin & destination.', icon: '/images/step-activate.svg' },
+              { num: '3', title: 'Track Anywhere', desc: 'Follow your shipment on a live map. Share a tracking link with anyone — no account needed.', icon: '/images/step-track.svg' },
+              { num: '4', title: 'Get Delivery Alert', desc: 'Get notified when your cargo arrives. The receiver confirms delivery and tracking stops automatically.', icon: '/images/step-delivery.svg' },
+            ].map(({ num, title, desc, icon }, i) => (
               <AnimatedSection key={num} delay={i * 150}>
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#00FF2B]/30 bg-[#00FF2B]/10">
-                    <span className="text-2xl font-bold text-[#00FF2B]">{num}</span>
-                  </div>
-                  <Icon className="mt-4 h-6 w-6 text-gray-500" />
-                  <h3 className="mt-3 text-lg font-semibold text-white">{title}</h3>
-                  <p className="mt-2 text-sm text-gray-400">{desc}</p>
+                <div className="flex h-full flex-col">
+                  <p className="text-[30px] font-semibold leading-none tracking-tight text-white">{num}</p>
+                  <p className="mt-1 text-[30px] font-semibold leading-none tracking-tight text-white">{title}</p>
+                  <p className="mt-2 flex-1 text-sm font-semibold leading-tight tracking-tight text-white/30">{desc}</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={icon} alt="" className="mt-4 h-10 w-10" aria-hidden="true" />
                 </div>
               </AnimatedSection>
             ))}
           </div>
+          <div className="mt-8 h-px bg-white/20" />
         </div>
       </section>
 
       {/* 6. Send to sender */}
-      <section className="border-t border-white/5 py-20 md:py-28">
+      <section className="py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <h2 className="text-headline text-3xl text-white md:text-5xl">
-                And yes, you can send TIP label to your sender to{' '}
-                <span className="underline decoration-[#00FF2B] underline-offset-4">track it from anywhere</span>
-              </h2>
-              <p className="mt-6 text-gray-400">
-                Ship the label to your supplier or factory. They attach it to
-                your cargo and you track it from day one — full visibility from
-                origin to destination.
-              </p>
+          <div className="mb-12 h-px bg-white/20" />
+          <h2 className="text-headline max-w-[805px] text-4xl text-white md:text-[55px]">
+            And yes, you can send TIP label to your sender to{' '}
+            <span className="text-[#00FF2B]">track it from anywhere</span>
+          </h2>
+        </div>
+      </section>
+
+      {/* 7. TIP vs Other Tracking */}
+      <section className="scroll-mt-20 py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-headline text-4xl text-white md:text-[55px]">
+            TIP vs Other Tracking
+          </h2>
+          <div className="mt-8 overflow-x-auto rounded-xl border border-white/10">
+            <table className="w-full min-w-[700px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-5 py-4 text-sm font-semibold text-gray-500">Feature</th>
+                  <th className="border-x border-t border-[#00FF2B] bg-[#00FF2B]/[0.08] px-5 py-4 text-center text-sm font-semibold text-white">
+                    <span className="mb-1 inline-block rounded-full bg-[#00FF2B] px-3 py-0.5 text-xs font-bold text-black">Best Value</span>
+                    <br />TIP
+                  </th>
+                  <th className="px-5 py-4 text-center text-sm font-semibold text-gray-500">Traditional RFID</th>
+                  <th className="px-5 py-4 text-center text-sm font-semibold text-gray-500">Bluetooth Trackers</th>
+                  <th className="px-5 py-4 text-center text-sm font-semibold text-gray-500">Enterprise GPS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {[
+                  { feature: 'No Scanners or Readers Needed', sub: 'Works with any smartphone camera', tip: '✓', rfid: '✗', bt: '✗', gps: '✓' },
+                  { feature: 'No Subscription Fees', sub: 'One-time purchase, everything included', tip: '✓', rfid: '✗', bt: '✗', gps: '✗' },
+                  { feature: 'Instant Activation', sub: 'Ready to track in under 30 seconds', tip: '< 30 sec', rfid: '5-15 min', bt: '2-5 min', gps: '1-5 min' },
+                  { feature: 'No Return Logistics', sub: 'Disposable — no reverse shipping required', tip: '✓', rfid: '✓', bt: '✗', gps: '✗' },
+                  { feature: 'Shareable Tracking Links', sub: 'Anyone can track — no app or account needed', tip: '✓', rfid: '✗', bt: '✗', gps: '✗' },
+                  { feature: 'Global Coverage', sub: 'Track across borders on land, sea, and air', tip: '180+ countries', rfid: 'Facility only', bt: '~30m range', gps: '180+ countries' },
+                  { feature: 'AI Route Intelligence', sub: 'Auto-detect flights, vessels, road transport', tip: '✓', rfid: '✗', bt: '✗', gps: '✗' },
+                  { feature: 'Battery Life', sub: 'Tracking duration per device', tip: '60+ days', rfid: 'No battery', bt: '1-6 months', gps: '10-60 days' },
+                  { feature: 'Cost Per Shipment', sub: 'All-in price to track one shipment', tip: 'From $20', rfid: '$0.10-2 + reader', bt: '$10-30 + gateway', gps: '$100-500+' },
+                ].map((row, i) => (
+                  <tr key={row.feature} className={i % 2 === 0 ? 'bg-white/[0.06]' : 'bg-white/[0.02]'}>
+                    <td className="px-5 py-3">
+                      <p className="text-sm font-semibold text-white">{row.feature}</p>
+                      <p className="text-xs text-gray-500">{row.sub}</p>
+                    </td>
+                    <td className={`border-x border-[#00FF2B] bg-[#00FF2B]/[0.05] px-5 py-3 text-center ${i === 8 ? 'border-b' : ''}`}>
+                      <ComparisonCell value={row.tip} highlight />
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <ComparisonCell value={row.rfid} />
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <ComparisonCell value={row.bt} />
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <ComparisonCell value={row.gps} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {/* Green accent bar at bottom */}
+            <div className="h-1 bg-[#00FF2B]" />
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Dashboard preview — green background */}
+      <section className="bg-[#00FF2B] py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-[608px] text-center">
+            <h2 className="text-headline text-4xl text-black md:text-[55px]">
+              One place to track all of your cargo
+            </h2>
+            <p className="mt-6 text-lg font-medium tracking-tight text-black/70">
+              All that you need to track your cargo in one simple interface
+            </p>
+          </div>
+          <div className="relative mx-auto mt-12 max-w-[1018px]">
+            {/* TIP logo badge */}
+            <div className="absolute left-2 top-2 z-10 rounded-xl bg-[#171717] px-4 py-2">
+              <svg viewBox="0 0 34 34" fill="none" className="inline-block h-5 w-5" aria-hidden="true">
+                <circle cx="16.77" cy="16.77" r="16.77" fill="white" />
+                <circle cx="22.12" cy="11.85" r="6.55" fill="black" />
+              </svg>
             </div>
-            <div className="flex justify-center">
+            <div className="overflow-hidden rounded-[19px] shadow-2xl">
               <Image
-                src="/images/tip-label-3d.webp"
-                alt="TIP tracking label 3D render"
-                width={600}
-                height={600}
-                className="drop-shadow-2xl"
+                src="/images/tip-map-screenshot.webp"
+                alt="TIP dashboard showing shipments on a world map"
+                width={2800}
+                height={1439}
+                className="w-full"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 7. TIP vs Other Tracking */}
-      <section className="scroll-mt-20 border-t border-white/5 py-20 md:py-28">
-        <div className="container mx-auto px-4">
-          <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
-            TIP vs Other Tracking
-          </h2>
-          <div className="mx-auto mt-12 max-w-4xl overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="pb-4 pr-6 text-gray-500">Feature</th>
-                  <th className="pb-4 pr-6 font-semibold text-[#00FF2B]">TIP Label</th>
-                  <th className="pb-4 pr-6 text-gray-500">Customer Trackers</th>
-                  <th className="pb-4 text-gray-500">Enterprise Trackers</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {[
-                  { feature: 'No Scanners Required', tip: true, customer: false, enterprise: true },
-                  { feature: 'No Subscription Fees', tip: true, customer: false, enterprise: false },
-                  { feature: '30-Second Activation', tip: true, customer: false, enterprise: false },
-                  { feature: 'No Return Logistics', tip: true, customer: true, enterprise: false },
-                  { feature: 'Shareable Tracking Links', tip: true, customer: false, enterprise: false },
-                  { feature: 'Global Coverage (180+)', tip: true, customer: false, enterprise: true },
-                  { feature: 'AI Route Detection', tip: true, customer: false, enterprise: false },
-                  { feature: '60+ Day Battery', tip: true, customer: false, enterprise: true },
-                  { feature: 'From $20 / Shipment', tip: true, customer: false, enterprise: false },
-                ].map((row) => (
-                  <tr key={row.feature} className="text-gray-300">
-                    <td className="py-3 pr-6">{row.feature}</td>
-                    <td className="py-3 pr-6">
-                      {row.tip ? (
-                        <Check className="h-5 w-5 text-[#00FF2B]" aria-label="Yes" />
-                      ) : (
-                        <X className="h-5 w-5 text-gray-600" aria-label="No" />
-                      )}
-                    </td>
-                    <td className="py-3 pr-6">
-                      {row.customer ? (
-                        <Check className="h-5 w-5 text-gray-500" aria-label="Yes" />
-                      ) : (
-                        <X className="h-5 w-5 text-gray-600" aria-label="No" />
-                      )}
-                    </td>
-                    <td className="py-3">
-                      {row.enterprise ? (
-                        <Check className="h-5 w-5 text-gray-500" aria-label="Yes" />
-                      ) : (
-                        <X className="h-5 w-5 text-gray-600" aria-label="No" />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+      {/* 9. Industries — interactive layout */}
+      <IndustriesSection />
 
-      {/* 8. Dashboard preview — map screenshot */}
-      <section className="border-t border-white/5 py-20 md:py-28">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-headline text-3xl text-white md:text-5xl">
-            One place to track all of your cargo
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-gray-400">
-            See every shipment on a single map. Filter by status, search by
-            name, and share links — all from one dashboard.
-          </p>
-          <div className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-xl border border-white/10 shadow-2xl">
-            <Image
-              src="/images/tip-map-screenshot.webp"
-              alt="TIP dashboard showing shipments on a world map"
-              width={2800}
-              height={1439}
-              className="w-full"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 9. Industries */}
-      <section className="border-t border-white/5 py-20 md:py-28">
-        <div className="container mx-auto px-4">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <h2 className="text-headline text-3xl text-white md:text-5xl">
-                Businesses heavily benefiting from TIP
-              </h2>
-            </div>
-            <div className="grid gap-4 grid-cols-2">
-              {[
-                { title: 'Electronics', image: '/images/tip-electronics.webp' },
-                { title: 'Pharma & Healthcare', image: '/images/tip-pharma-healthcare.webp' },
-                { title: 'Art & Collectibles', image: '/images/tip-art-collectibles.webp' },
-                { title: 'Air Cargo & Freight', image: '/images/tip-air-cargo-freight.webp' },
-              ].map((industry) => (
-                <div
-                  key={industry.title}
-                  className="group relative overflow-hidden rounded-xl"
-                >
-                  <Image
-                    src={industry.image}
-                    alt={industry.title}
-                    width={1200}
-                    height={1200}
-                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                  <h3 className="absolute bottom-4 left-4 text-lg font-semibold text-white">
-                    {industry.title}
-                  </h3>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 10. Outcomes */}
-      <section className="border-t border-white/5 py-20 md:py-28">
+      {/* 10. Outcomes — green background */}
+      <section className="bg-[#00FF2B] py-16 md:py-20">
         <div className="container mx-auto px-4">
           <AnimatedSection>
-            <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
+            <h2 className="text-headline text-center text-4xl text-black md:text-[55px]">
               TIP outcomes
             </h2>
           </AnimatedSection>
-          <div className="mx-auto mt-16 grid max-w-4xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { end: 30, prefix: '-', suffix: '%', label: 'Damage Claims' },
-              { end: 40, prefix: '-', suffix: '%', label: 'Lost Shipments' },
-              { end: 50, prefix: '+', suffix: '%', label: 'Supply Chain Visibility' },
-              { end: 0, prefix: '', suffix: '%', label: 'Subscription Fees' },
+              { end: 30, prefix: '-', suffix: '%', label: 'amount of mistakes' },
+              { end: 40, prefix: '-', suffix: '%', label: 'operational costs' },
+              { end: 50, prefix: '+', suffix: '%', label: 'accelerate shipment' },
+              { end: 0, prefix: '', suffix: '%', label: 'blind zones' },
             ].map((stat, i) => (
               <AnimatedSection key={stat.label} delay={i * 150}>
-                <div className="text-center">
-                  <p className="text-headline text-5xl text-[#00FF2B] md:text-6xl">
+                <div>
+                  <p className="text-headline text-6xl text-black md:text-7xl lg:text-[88px]">
                     <CountUp end={stat.end} prefix={stat.prefix} suffix={stat.suffix} />
                   </p>
-                  <p className="mt-3 text-sm text-gray-400">{stat.label}</p>
+                  <p className="mt-3 text-2xl font-bold leading-[0.9] tracking-tight text-black/30 md:text-[32px]">{stat.label}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -391,14 +312,15 @@ export default function HomePage() {
       </section>
 
       {/* 11. Pricing */}
-      <section id="pricing" className="scroll-mt-20 border-t border-white/5 py-20 md:py-28">
-        <div className="container mx-auto px-4">
-          <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
+      <section id="pricing" className="scroll-mt-20 bg-[#0A0A0A] py-16 md:py-20">
+        {/* Green accent bar */}
+        <div className="h-1 bg-[#00FF2B]" />
+        <div className="container mx-auto px-4 pt-16">
+          <h2 className="text-headline text-center text-4xl text-white md:text-[55px]">
             Buy TIP Labels
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-gray-400">
-            One-time purchase — no subscription, no hidden fees. Every label
-            includes the same features.
+          <p className="mx-auto mt-4 max-w-[259px] text-center text-sm font-semibold tracking-tight text-white/30">
+            One-time purchase — no subscription, no hidden fees. Every label includes the same features.
           </p>
           <div className="mx-auto mt-16 grid max-w-4xl gap-8 md:grid-cols-3">
             {/* 1 Label */}
@@ -426,7 +348,7 @@ export default function HomePage() {
 
             {/* 5 Labels — Best Value */}
             <div className="rounded-xl border-2 border-[#00FF2B] bg-white/[0.03] p-6">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[#00FF2B]">
+              <div className="mb-2 text-label-expanded text-[#00FF2B]">
                 Best Value
               </div>
               <h3 className="text-lg font-semibold text-white">5 Labels</h3>
@@ -472,13 +394,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 12. FAQ */}
-      <section id="faq" className="scroll-mt-20 border-t border-white/5 py-20 md:py-28">
+      {/* 12. FAQ — dark background */}
+      <section id="faq" className="scroll-mt-20 bg-[#1A1A1A] py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-headline text-center text-3xl text-white md:text-5xl">
+          <h2 className="text-headline text-center text-4xl text-white md:text-[55px]">
             Frequently Asked Questions
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-gray-400">
+          <p className="mx-auto mt-4 max-w-xl text-center text-gray-500">
             Common questions about TIP tracking labels.
           </p>
           <div className="mx-auto mt-12 max-w-2xl">
@@ -488,9 +410,9 @@ export default function HomePage() {
       </section>
 
       {/* 13. Get in Touch CTA */}
-      <section id="contact" className="border-t border-white/5 py-20 md:py-28">
+      <section id="contact" className="bg-black py-16 md:py-20">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-headline text-3xl text-white md:text-5xl">Get in Touch</h2>
+          <h2 className="text-headline text-3xl text-white md:text-[55px]">Get in Touch</h2>
           <p className="mx-auto mt-4 max-w-xl text-gray-400">
             Questions about tracking, orders, or enterprise? We&apos;re here to
             help.
@@ -513,5 +435,20 @@ export default function HomePage() {
       {/* Structured Data */}
       <StructuredData />
     </>
+  )
+}
+
+/** Comparison table cell — renders check/X or text value */
+function ComparisonCell({ value, highlight }: { value: string; highlight?: boolean }) {
+  if (value === '✓') {
+    return <Check className={`mx-auto h-5 w-5 ${highlight ? 'text-[#00FF2B]' : 'text-gray-500'}`} aria-label="Yes" />
+  }
+  if (value === '✗') {
+    return <X className="mx-auto h-5 w-5 text-gray-600" aria-label="No" />
+  }
+  return (
+    <span className={`text-sm font-semibold ${highlight ? 'text-[#00FF2B]' : 'text-gray-400'}`}>
+      {value}
+    </span>
   )
 }

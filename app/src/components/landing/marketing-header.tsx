@@ -12,38 +12,40 @@ const navLinks = [
 
 export function MarketingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-<Logo size="lg" />
+          <Logo size="lg" />
         </Link>
-        <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
+
+        {/* Center nav */}
+        <nav aria-label="Main navigation" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
+              className="text-xs font-semibold text-white transition-colors hover:text-gray-300"
             >
               {link.label}
             </Link>
           ))}
         </nav>
+
+        {/* Right — auth buttons */}
         <div className="flex items-center gap-3">
           <SignedOut>
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="hidden text-gray-400 hover:bg-white/10 hover:text-white sm:inline-flex"
+            <Link
+              href="/sign-in"
+              className="hidden text-xs font-semibold text-white transition-colors hover:text-gray-300 sm:inline-flex"
             >
-              <Link href="/sign-in">Sign In</Link>
-            </Button>
+              Sign In
+            </Link>
           </SignedOut>
           <SignedOut>
             <Button
               size="sm"
               asChild
-              className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
+              className="hidden h-10 rounded-full bg-[#00FF2B] px-6 text-xs font-semibold text-black hover:bg-[#00DD25] sm:inline-flex"
             >
               <Link href="/buy">Get Started</Link>
             </Button>
@@ -52,7 +54,7 @@ export function MarketingHeader() {
             <Button
               size="sm"
               asChild
-              className="hidden rounded-full bg-[#00FF2B] px-5 text-black hover:bg-[#00DD25] sm:inline-flex"
+              className="hidden h-10 rounded-full bg-[#00FF2B] px-6 text-xs font-semibold text-black hover:bg-[#00DD25] sm:inline-flex"
             >
               <Link href="/dashboard">Dashboard</Link>
             </Button>
