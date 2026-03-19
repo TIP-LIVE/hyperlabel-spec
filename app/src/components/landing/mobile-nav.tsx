@@ -32,13 +32,13 @@ export function MobileNav() {
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[85vw] max-w-[400px] border-white/10 bg-black">
+      <SheetContent side="right" className="dark w-[85vw] max-w-[400px] border-white/10 bg-black text-white">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-<Logo size="md" />
+            <Logo size="md" />
           </SheetTitle>
         </SheetHeader>
-        <nav className="mt-8 flex flex-col gap-4">
+        <nav className="mt-8 flex flex-col gap-4 px-4">
           {navLinks.map((link) => (
             <Link
               key={link.href}
