@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, ArrowRight } from 'lucide-react'
-import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig } from '@/lib/status-config'
-import type { ResearchLeadStatus, ResearchPersona } from '@/lib/status-config'
+import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, ArrowRight, Check, Minus, X } from 'lucide-react'
+import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig, scriptStatusStyles, scriptStatusConfig } from '@/lib/status-config'
+import type { ResearchLeadStatus, ResearchPersona, ScriptStatus } from '@/lib/status-config'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -31,6 +31,8 @@ export default async function ResearchDashboardPage() {
     personaCounts,
     pendingTasks,
     recentLeads,
+    scriptCounts,
+    hypotheses,
   ] = await Promise.all([
     db.researchLead.count(),
     db.researchLead.count({ where: { status: 'SOURCED' } }),
@@ -51,9 +53,18 @@ export default async function ResearchDashboardPage() {
       orderBy: { createdAt: 'desc' },
       take: 5,
     }),
+    Promise.all([
+      db.researchScript.count({ where: { status: 'DRAFT' } }),
+      db.researchScript.count({ where: { status: 'IN_REVIEW' } }),
+      db.researchScript.count({ where: { status: 'APPROVED' } }),
+    ]),
+    db.researchHypothesis.findMany({
+      orderBy: { code: 'asc' },
+    }),
   ])
 
   const [consigneeCount, forwarderCount, shipperCount] = personaCounts
+  const [draftScripts, inReviewScripts, approvedScripts] = scriptCounts
 
   const stats = [
     { label: 'Total Leads', value: totalLeads, icon: Users, href: '/admin/research/leads' },
@@ -86,13 +97,22 @@ export default async function ResearchDashboardPage() {
             User research interview pipeline — target: 15-20 interviews across 3 personas
           </p>
         </div>
-        <Link
-          href="/admin/research/leads"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <ClipboardList className="h-4 w-4" />
-          Lead Board
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/research/scripts"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
+          >
+            <FileText className="h-4 w-4" />
+            Scripts
+          </Link>
+          <Link
+            href="/admin/research/leads"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <ClipboardList className="h-4 w-4" />
+            Lead Board
+          </Link>
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -182,6 +202,99 @@ export default async function ResearchDashboardPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Scripts */}
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-card-foreground">Interview Scripts</CardTitle>
+            <Link href="/admin/research/scripts" className="text-sm text-primary hover:underline">
+              View all <ArrowRight className="ml-1 inline h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                { status: 'DRAFT' as ScriptStatus, count: draftScripts },
+                { status: 'IN_REVIEW' as ScriptStatus, count: inReviewScripts },
+                { status: 'APPROVED' as ScriptStatus, count: approvedScripts },
+              ].map(({ status, count }) => (
+                <div key={status} className="flex items-center justify-between">
+                  <Badge className={scriptStatusStyles[status]}>
+                    {scriptStatusConfig[status].label}
+                  </Badge>
+                  <span className="text-lg font-bold text-foreground">{count}</span>
+                </div>
+              ))}
+              {inReviewScripts > 0 && (
+                <div className="border-t border-border pt-3">
+                  <Link
+                    href="/admin/research/scripts?status=IN_REVIEW"
+                    className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline"
+                  >
+                    {inReviewScripts} script{inReviewScripts !== 1 ? 's' : ''} awaiting review
+                  </Link>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Hypotheses */}
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-card-foreground">Hypotheses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {hypotheses.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">No hypotheses yet</p>
+            ) : (
+              <div className="space-y-3">
+                {hypotheses.map((h) => {
+                  const total = h.validating + h.neutral + h.invalidating
+                  return (
+                    <div key={h.id} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {h.code}
+                          </Badge>
+                          <span className="text-sm text-foreground line-clamp-1">
+                            {h.statement}
+                          </span>
+                        </div>
+                      </div>
+                      {total > 0 ? (
+                        <div className="flex items-center gap-2 pl-12">
+                          <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                            {h.validating > 0 && (
+                              <div className="bg-green-500" style={{ width: `${(h.validating / total) * 100}%` }} />
+                            )}
+                            {h.neutral > 0 && (
+                              <div className="bg-gray-400" style={{ width: `${(h.neutral / total) * 100}%` }} />
+                            )}
+                            {h.invalidating > 0 && (
+                              <div className="bg-red-500" style={{ width: `${(h.invalidating / total) * 100}%` }} />
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {h.validating}
+                            <Check className="inline h-2.5 w-2.5 text-green-500 mx-0.5" />
+                            {h.neutral}
+                            <Minus className="inline h-2.5 w-2.5 text-gray-400 mx-0.5" />
+                            {h.invalidating}
+                            <X className="inline h-2.5 w-2.5 text-red-500 mx-0.5" />
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="pl-12 text-xs text-muted-foreground">No signals yet</p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </CardContent>

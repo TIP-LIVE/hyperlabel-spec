@@ -64,6 +64,53 @@ export const updateTaskSchema = z.object({
 })
 
 // ────────────────────────────────────────
+// Script schemas
+// ────────────────────────────────────────
+
+const sectionQuestionSchema = z.object({
+  text: z.string().min(1, 'Question text is required').max(2000),
+  probes: z.array(z.string().max(1000)).default([]),
+})
+
+const scriptSectionSchema = z.object({
+  title: z.string().min(1, 'Section title is required').max(500),
+  duration: z.number().min(0).max(120),
+  questions: z.array(sectionQuestionSchema).default([]),
+})
+
+export const createScriptSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(500),
+  persona: z.enum(['CONSIGNEE', 'FORWARDER', 'SHIPPER']),
+  sections: z.array(scriptSectionSchema).min(1, 'At least one section is required'),
+})
+
+export const updateScriptSchema = createScriptSchema.partial()
+
+export const reviewScriptSchema = z.object({
+  action: z.enum(['submit', 'approve', 'request-changes']),
+  notes: z.string().max(5000).optional().or(z.literal('')),
+})
+
+// ────────────────────────────────────────
+// Hypothesis schemas
+// ────────────────────────────────────────
+
+export const createHypothesisSchema = z.object({
+  code: z.string().min(1, 'Code is required').max(10),
+  statement: z.string().min(1, 'Statement is required').max(2000),
+  successSignal: z.string().min(1, 'Success signal is required').max(2000),
+})
+
+export const updateHypothesisSchema = z.object({
+  statement: z.string().min(1).max(2000).optional(),
+  successSignal: z.string().min(1).max(2000).optional(),
+  validating: z.number().min(0).optional(),
+  neutral: z.number().min(0).optional(),
+  invalidating: z.number().min(0).optional(),
+  verdict: z.string().max(2000).nullable().optional(),
+})
+
+// ────────────────────────────────────────
 // Types
 // ────────────────────────────────────────
 
@@ -72,3 +119,8 @@ export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
 export type MoveLeadInput = z.infer<typeof moveLeadSchema>
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>
+export type CreateScriptInput = z.infer<typeof createScriptSchema>
+export type UpdateScriptInput = z.infer<typeof updateScriptSchema>
+export type ReviewScriptInput = z.infer<typeof reviewScriptSchema>
+export type CreateHypothesisInput = z.infer<typeof createHypothesisSchema>
+export type UpdateHypothesisInput = z.infer<typeof updateHypothesisSchema>

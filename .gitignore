@@ -5,3 +5,12 @@ HyperLabel-Spec-Overview_INTERNAL.html
 .venv-heylead
 .vercel
 .env*.local
+
+# User research recordings & transcripts (private)
+docs/user-research/recordings/
+docs/user-research/transcripts/
+docs/user-research/google-credentials.json
+docs/user-research/google-token.json
+docs/user-research/node_modules/
+docs/user-research/package.json
+docs/user-research/package-lock.json

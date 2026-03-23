@@ -113,3 +113,26 @@ export const researchPersonaStyles: Record<ResearchPersona, string> = {
   FORWARDER: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
   SHIPPER: 'bg-violet-500/20 text-violet-600 dark:text-violet-400',
 }
+
+// ────────────────────────────────────────
+// Research script statuses
+// ────────────────────────────────────────
+
+export type ScriptStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'ARCHIVED'
+
+export const scriptStatusConfig: Record<
+  ScriptStatus,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' }
+> = {
+  DRAFT: { label: 'Draft', variant: 'secondary' },
+  IN_REVIEW: { label: 'In Review', variant: 'default' },
+  APPROVED: { label: 'Approved', variant: 'success' },
+  ARCHIVED: { label: 'Archived', variant: 'secondary' },
+}
+
+export const scriptStatusStyles: Record<ScriptStatus, string> = {
+  DRAFT: 'bg-gray-500/20 text-gray-600 dark:text-gray-400',
+  IN_REVIEW: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+  APPROVED: 'bg-green-500/20 text-green-600 dark:text-green-400',
+  ARCHIVED: 'bg-gray-500/20 text-gray-600 dark:text-gray-400',
+}

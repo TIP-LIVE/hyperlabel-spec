@@ -374,6 +374,20 @@ enum ResearchTaskCategory {
   REVIEW
 }
 
+enum ScriptStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  ARCHIVED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 // ============================================
 // RESEARCH HUB MODELS
 // ============================================
@@ -424,4 +438,39 @@ model ResearchTask {
   @@index([status])
   @@index([leadId])
   @@map("research_tasks")
+}
+
+/// ResearchScript - interview question sets with CEO review workflow
+model ResearchScript {
+  id           String          @id @default(cuid())
+  persona      ResearchPersona
+  version      Int             @default(1)
+  title        String
+  sections     Json            // [{ title, duration, questions: [{ text, probes[] }] }]
+  status       ScriptStatus    @default(DRAFT)
+  reviewedBy   String?         @map("reviewed_by")
+  reviewNotes  String?         @map("review_notes")
+  reviewedAt   DateTime?       @map("reviewed_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  @@index([persona])
+  @@index([status])
+  @@map("research_scripts")
+}
+
+/// ResearchHypothesis - what we're trying to validate through interviews
+model ResearchHypothesis {
+  id            String   @id @default(cuid())
+  code          String   @unique // "H1", "H2", etc.
+  statement     String
+  successSignal String   @map("success_signal")
+  validating    Int      @default(0)
+  neutral       Int      @default(0)
+  invalidating  Int      @default(0)
+  verdict       String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("research_hypotheses")
 }
