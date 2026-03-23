@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2 } from 'lucide-react'
+import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp } from 'lucide-react'
 import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig, scriptStatusStyles, scriptStatusConfig } from '@/lib/status-config'
 import type { ResearchLeadStatus, ResearchPersona, ScriptStatus } from '@/lib/status-config'
 import type { Metadata } from 'next'
@@ -107,6 +107,13 @@ export default async function ResearchDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/admin/research/insights"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
+          >
+            <TrendingUp className="h-4 w-4" />
+            Insights
+          </Link>
           <Link
             href="/admin/research/interviews"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
