@@ -166,8 +166,13 @@ export type CargoRow = {
 }
 
 function getLastUpdateTime(row: CargoRow): number {
+  // Only show a "Last Update" when there is actual location data.
+  // labelLastSeenAt alone (heartbeat webhooks with no location) is misleading
+  // for shipments that were never tracked — it would show a stale timestamp
+  // next to "No data yet".
+  if (!row.latestLocation) return 0
   return getLastUpdateMs({
-    locationRecordedAt: row.latestLocation?.recordedAt,
+    locationRecordedAt: row.latestLocation.recordedAt,
     labelLastSeenAt: row.label?.lastSeenAt,
   })
 }
