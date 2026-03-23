@@ -17,7 +17,8 @@ import {
   Navigation,
   ArrowRight,
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { PublicTrackingMap } from '@/components/maps/public-tracking-map'
 import { PublicTimeline } from '@/components/tracking/public-timeline'
@@ -339,7 +340,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                         labelLastSeenAt: shipment.label?.lastSeenAt,
                       })
                       return lastUpdate
-                        ? `Last updated ${formatDistanceToNow(lastUpdate, { addSuffix: true })}`
+                        ? `Last updated ${timeAgo(lastUpdate)}`
                         : 'The tracking label is connecting. First location typically appears within a few minutes.'
                     })()}
                   </CardDescription>

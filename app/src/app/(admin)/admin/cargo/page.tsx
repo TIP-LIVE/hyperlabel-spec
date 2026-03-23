@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { MapPin, Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { shipmentStatusStyles } from '@/lib/status-config'
@@ -200,7 +200,7 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
                           <Badge className={shipmentStatusStyles[s.status as keyof typeof shipmentStatusStyles] || ''}>{s.status}</Badge>
                         </td>
                         <td className="py-3 text-muted-foreground">
-                          {formatDistanceToNow(new Date(s.createdAt), { addSuffix: true })}
+                          {timeAgo(s.createdAt)}
                         </td>
                       </tr>
                     ))}

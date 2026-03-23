@@ -24,7 +24,8 @@ import {
   X,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
 import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
@@ -438,7 +439,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                 labelLastSeenAt: shipment.label?.lastSeenAt,
               })
               return lastUpdate
-                ? `Last updated ${formatDistanceToNow(lastUpdate, { addSuffix: true })}`
+                ? `Last updated ${timeAgo(lastUpdate)}`
                 : 'Acquiring signal — first location typically appears within a few minutes'
             })()}
           </CardDescription>

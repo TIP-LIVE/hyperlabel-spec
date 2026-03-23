@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 import { useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { getLastUpdateMs, formatLocationName, getLocationCountryCode } from '@/lib/utils/location-display'
@@ -326,7 +326,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+          {timeAgo(timestamp)}
         </span>
       )
     },

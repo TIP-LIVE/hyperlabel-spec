@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import {
   ArrowLeft,
   Battery,
@@ -180,7 +181,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
             <p className="text-xs text-muted-foreground">Last Ping</p>
             <p className="text-lg font-bold text-card-foreground">
               {lastLocation
-                ? formatDistanceToNow(new Date(lastLocation.recordedAt), { addSuffix: true })
+                ? timeAgo(lastLocation.recordedAt)
                 : 'Never'
               }
             </p>
@@ -322,7 +323,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-3 w-3 text-muted-foreground" />
                         <span title={format(new Date(loc.recordedAt), 'PPpp')}>
-                          {formatDistanceToNow(new Date(loc.recordedAt), { addSuffix: true })}
+                          {timeAgo(loc.recordedAt)}
                         </span>
                       </div>
                     </td>

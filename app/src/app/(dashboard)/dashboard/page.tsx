@@ -21,7 +21,7 @@ import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { createClerkClient } from '@clerk/backend'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -469,7 +469,7 @@ export default async function DashboardPage() {
                             {lastUpdate && (
                               <>
                                 <span className="text-muted-foreground/50">·</span>
-                                <span className="shrink-0">{formatDistanceToNow(lastUpdate, { addSuffix: true })}</span>
+                                <span className="shrink-0">{timeAgo(lastUpdate)}</span>
                               </>
                             )}
                           </div>

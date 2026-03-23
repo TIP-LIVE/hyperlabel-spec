@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { getFleetStats, getReportingHistory } from '@/lib/fleet-stats'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { FleetStatsGrid } from '@/components/admin/fleet-stats-grid'
 import { BatteryDistribution } from '@/components/admin/battery-distribution'
@@ -286,9 +286,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                             ) : (
                               <Satellite className="h-3 w-3 text-blue-600 dark:text-blue-400" aria-label="Device" />
                             )}
-                            {formatDistanceToNow(new Date(lastLocation.recordedAt), {
-                              addSuffix: true,
-                            })}
+                            {timeAgo(lastLocation.recordedAt)}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">Never</span>
@@ -297,7 +295,7 @@ export default async function AdminDevicesPage({ searchParams }: PageProps) {
                       <td className="py-3 text-muted-foreground">
                         {label.lastWebhook ? (
                           <span className={label.lastWebhook.statusCode !== 200 ? 'text-red-500' : ''}>
-                            {formatDistanceToNow(new Date(label.lastWebhook.createdAt), { addSuffix: true })}
+                            {timeAgo(label.lastWebhook.createdAt)}
                           </span>
                         ) : (
                           <span>Never</span>

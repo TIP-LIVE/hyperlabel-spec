@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Eye, Share2, MapPin, Truck, Send, Battery } from 'lucide-react'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { getLastUpdateDate, formatLocationName, getLocationCountryCode } from '@/lib/utils/location-display'
@@ -157,7 +157,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(lastUpdate, { addSuffix: true })}
+          {timeAgo(lastUpdate)}
         </span>
       )
     },

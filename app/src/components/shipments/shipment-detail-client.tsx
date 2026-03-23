@@ -20,7 +20,8 @@ import {
   ArrowRight,
   Send,
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
 import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
@@ -266,7 +267,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3 shrink-0" />
               <span>
-                {formatDistanceToNow(new Date(latestLocation.recordedAt), { addSuffix: true })}
+                {timeAgo(latestLocation.recordedAt)}
               </span>
             </div>
           </div>
@@ -349,7 +350,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                   labelLastSeenAt: shipment.label?.lastSeenAt,
                 })
                 return lastUpdate
-                  ? `Last updated ${formatDistanceToNow(lastUpdate, { addSuffix: true })}`
+                  ? `Last updated ${timeAgo(lastUpdate)}`
                   : 'Acquiring signal — first location typically appears within a few minutes'
               })()}
             </CardDescription>

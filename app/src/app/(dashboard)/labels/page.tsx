@@ -9,7 +9,7 @@ import { Package, Battery, Plus, ShoppingCart } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -128,7 +128,7 @@ export default async function LabelsPage() {
                       <p className="font-mono font-medium">{label.deviceId}</p>
                       {label.activatedAt && (
                         <p className="text-xs text-muted-foreground">
-                          Activated {formatDistanceToNow(new Date(label.activatedAt), { addSuffix: true })}
+                          Activated {timeAgo(label.activatedAt)}
                         </p>
                       )}
                     </div>

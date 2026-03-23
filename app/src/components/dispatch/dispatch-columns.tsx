@@ -30,7 +30,7 @@ import {
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
@@ -278,7 +278,7 @@ export const dispatchColumns: ColumnDef<DispatchRow>[] = [
       }
       return (
         <span className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+          {timeAgo(timestamp)}
         </span>
       )
     },

@@ -5,7 +5,7 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation'
 import { GoogleMapsProvider } from '@/components/maps/google-maps-provider'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 
 export interface DashboardShipmentMarker {
   id: string
@@ -121,7 +121,7 @@ function DashboardMapInner({ shipments }: DashboardMapProps) {
             )}
             {selected.lastUpdate && (
               <p className="text-xs text-gray-500">
-                {formatDistanceToNow(new Date(selected.lastUpdate), { addSuffix: true })}
+                {timeAgo(selected.lastUpdate)}
               </p>
             )}
           </div>

@@ -4,7 +4,7 @@ import { useState, Fragment, useCallback } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ChevronRight, ChevronDown, Webhook, Copy, Check } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 
 interface WebhookLogEntry {
   id: string
@@ -132,7 +132,7 @@ export function WebhookLogTable({ logs, iccidToLabel }: { logs: WebhookLogEntry[
                     )}
                   </td>
                   <td className="py-3 text-muted-foreground whitespace-nowrap">
-                    {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
+                    {timeAgo(log.createdAt)}
                   </td>
                   <td className="py-3">
                     <EndpointBadge endpoint={log.endpoint} />

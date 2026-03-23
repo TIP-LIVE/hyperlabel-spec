@@ -3,7 +3,8 @@
 import { GoogleMap, Marker, Polyline, InfoWindow, OverlayView, Circle } from '@react-google-maps/api'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns'
+import { format, differenceInMinutes } from 'date-fns'
+import { timeAgo } from '@/lib/utils/time-ago'
 import { LocateFixed, Radio } from 'lucide-react'
 import { isNullIsland } from '@/lib/validations/device'
 
@@ -828,7 +829,7 @@ export function TrackingMap({
                   marginBottom: '2px',
                 }}
               >
-                {formatDistanceToNow(new Date(selectedLocation.recordedAt), { addSuffix: true })}
+                {timeAgo(selectedLocation.recordedAt)}
               </div>
               <div
                 style={{
