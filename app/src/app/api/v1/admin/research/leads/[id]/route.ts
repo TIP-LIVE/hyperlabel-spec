@@ -21,6 +21,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
       where: { id },
       include: {
         tasks: { orderBy: { createdAt: 'desc' } },
+        emailLogs: { orderBy: { sentAt: 'desc' } },
       },
     })
 

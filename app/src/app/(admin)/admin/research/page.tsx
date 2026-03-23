@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, ArrowRight, Check, Minus, X } from 'lucide-react'
+import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2 } from 'lucide-react'
 import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig, scriptStatusStyles, scriptStatusConfig } from '@/lib/status-config'
 import type { ResearchLeadStatus, ResearchPersona, ScriptStatus } from '@/lib/status-config'
 import type { Metadata } from 'next'
@@ -33,6 +33,7 @@ export default async function ResearchDashboardPage() {
     recentLeads,
     scriptCounts,
     hypotheses,
+    upcomingInterviews,
   ] = await Promise.all([
     db.researchLead.count(),
     db.researchLead.count({ where: { status: 'SOURCED' } }),
@@ -60,6 +61,14 @@ export default async function ResearchDashboardPage() {
     ]),
     db.researchHypothesis.findMany({
       orderBy: { code: 'asc' },
+    }),
+    db.researchInterview.findMany({
+      where: { status: 'SCHEDULED', scheduledAt: { gte: new Date() } },
+      include: {
+        lead: { select: { id: true, name: true, company: true, persona: true } },
+      },
+      orderBy: { scheduledAt: 'asc' },
+      take: 3,
     }),
   ])
 
@@ -98,6 +107,13 @@ export default async function ResearchDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/admin/research/calendar"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
+          >
+            <Calendar className="h-4 w-4" />
+            Calendar
+          </Link>
           <Link
             href="/admin/research/scripts"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
@@ -295,6 +311,68 @@ export default async function ResearchDashboardPage() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Interviews */}
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-card-foreground">Upcoming Interviews</CardTitle>
+            <Link href="/admin/research/calendar" className="text-sm text-primary hover:underline">
+              View all <ArrowRight className="ml-1 inline h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {upcomingInterviews.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No upcoming interviews. Schedule one from a lead&apos;s detail page.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {upcomingInterviews.map((interview) => (
+                  <Link
+                    key={interview.id}
+                    href={`/admin/research/leads/${interview.lead.id}`}
+                    className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">{interview.lead.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {interview.scheduledAt && (
+                          <span className="flex items-center gap-1">
+                            <CalendarClock className="h-3 w-3" />
+                            {new Date(interview.scheduledAt).toLocaleDateString('en-GB', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'short',
+                            })}{' '}
+                            {new Date(interview.scheduledAt).toLocaleTimeString('en-GB', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        )}
+                        {interview.duration && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {interview.duration}m
+                          </span>
+                        )}
+                        {interview.lead.company && (
+                          <span className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3" />
+                            {interview.lead.company}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Badge className={researchPersonaStyles[interview.lead.persona as ResearchPersona]}>
+                      {researchPersonaConfig[interview.lead.persona as ResearchPersona].label}
+                    </Badge>
+                  </Link>
+                ))}
               </div>
             )}
           </CardContent>

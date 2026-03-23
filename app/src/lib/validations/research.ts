@@ -111,6 +111,50 @@ export const updateHypothesisSchema = z.object({
 })
 
 // ────────────────────────────────────────
+// Interview schemas
+// ────────────────────────────────────────
+
+export const scheduleInterviewSchema = z.object({
+  leadId: z.string().min(1, 'Lead is required'),
+  scheduledAt: z.string().datetime({ message: 'Valid datetime is required' }),
+  duration: z.number().min(15).max(180).default(60),
+  notes: z.string().max(5000).optional().or(z.literal('')),
+})
+
+export const updateInterviewSchema = z.object({
+  scheduledAt: z.string().datetime().optional(),
+  duration: z.number().min(15).max(180).optional(),
+  status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  notes: z.any().optional(),
+  keyQuotes: z.any().optional(),
+  hypothesisSignals: z.any().optional(),
+  completedAt: z.string().datetime().nullable().optional(),
+  recordingUrl: z.string().max(2000).optional().or(z.literal('')),
+  transcriptUrl: z.string().max(2000).optional().or(z.literal('')),
+})
+
+// ────────────────────────────────────────
+// Email schemas
+// ────────────────────────────────────────
+
+export const researchEmailTypes = [
+  'outreach',
+  'scheduled',
+  'reminder',
+  'thank_you',
+  'referral',
+] as const
+
+export type ResearchEmailType = (typeof researchEmailTypes)[number]
+
+export const sendResearchEmailSchema = z.object({
+  leadId: z.string().min(1, 'Lead is required'),
+  type: z.enum(researchEmailTypes),
+  subject: z.string().min(1).max(500).optional(),
+  customMessage: z.string().max(5000).optional().or(z.literal('')),
+})
+
+// ────────────────────────────────────────
 // Types
 // ────────────────────────────────────────
 
@@ -124,3 +168,6 @@ export type UpdateScriptInput = z.infer<typeof updateScriptSchema>
 export type ReviewScriptInput = z.infer<typeof reviewScriptSchema>
 export type CreateHypothesisInput = z.infer<typeof createHypothesisSchema>
 export type UpdateHypothesisInput = z.infer<typeof updateHypothesisSchema>
+export type ScheduleInterviewInput = z.infer<typeof scheduleInterviewSchema>
+export type UpdateInterviewInput = z.infer<typeof updateInterviewSchema>
+export type SendResearchEmailInput = z.infer<typeof sendResearchEmailSchema>

@@ -32,7 +32,11 @@ import {
   Pencil,
   Trash2,
   Star,
+  CalendarClock,
+  Clock,
 } from 'lucide-react'
+import { ScheduleInterviewDialog } from './schedule-interview-dialog'
+import { SendEmailDialog } from './send-email-dialog'
 import {
   researchLeadStatusStyles,
   researchLeadStatusConfig,
@@ -56,6 +60,24 @@ interface Task {
   createdAt: string
 }
 
+interface Interview {
+  id: string
+  scheduledAt: string | null
+  completedAt: string | null
+  duration: number | null
+  status: string
+  calendarEventId: string | null
+  createdAt: string
+}
+
+interface EmailLog {
+  id: string
+  type: string
+  subject: string
+  to: string
+  sentAt: string
+}
+
 interface LeadData {
   id: string
   name: string
@@ -74,6 +96,8 @@ interface LeadData {
   createdAt: string
   updatedAt: string
   tasks: Task[]
+  interviews: Interview[]
+  emailLogs: EmailLog[]
 }
 
 interface LeadDetailProps {
@@ -144,6 +168,20 @@ export function LeadDetail({ lead }: LeadDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {lead.email && (
+            <SendEmailDialog
+              leadId={lead.id}
+              leadName={lead.name}
+              leadEmail={lead.email}
+            />
+          )}
+          {lead.email && ['SCREENED', 'SCHEDULED', 'CONTACTED'].includes(lead.status) && (
+            <ScheduleInterviewDialog
+              leadId={lead.id}
+              leadName={lead.name}
+              leadEmail={lead.email}
+            />
+          )}
           <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
             <Pencil className="mr-1.5 h-3.5 w-3.5" />
             {isEditing ? 'Cancel' : 'Edit'}
@@ -309,6 +347,55 @@ export function LeadDetail({ lead }: LeadDetailProps) {
           </Card>
         )}
 
+        {/* Interviews */}
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-card-foreground">Interviews ({lead.interviews.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {lead.interviews.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">No interviews yet</p>
+            ) : (
+              <div className="space-y-2">
+                {lead.interviews.map((interview) => (
+                  <div key={interview.id} className="flex items-center justify-between rounded border border-border p-2">
+                    <div>
+                      {interview.scheduledAt && (
+                        <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                          {new Date(interview.scheduledAt).toLocaleDateString('en-GB', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}{' '}
+                          {new Date(interview.scheduledAt).toLocaleTimeString('en-GB', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      )}
+                      {interview.duration && (
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {interview.duration} minutes
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant={
+                      interview.status === 'COMPLETED' ? 'secondary' :
+                      interview.status === 'CANCELLED' ? 'destructive' :
+                      'outline'
+                    }>
+                      {interview.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Tasks */}
         <Card className="border-border bg-card">
           <CardHeader>
@@ -329,6 +416,42 @@ export function LeadDetail({ lead }: LeadDetailProps) {
                     </div>
                     <Badge variant={task.status === 'DONE' ? 'secondary' : 'outline'}>
                       {task.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Emails */}
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-card-foreground">Emails ({lead.emailLogs.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {lead.emailLogs.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">No emails sent yet</p>
+            ) : (
+              <div className="space-y-2">
+                {lead.emailLogs.map((log) => (
+                  <div key={log.id} className="flex items-center justify-between rounded border border-border p-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {log.subject}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(log.sentAt).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {log.type.replace('_', ' ')}
                     </Badge>
                   </div>
                 ))}

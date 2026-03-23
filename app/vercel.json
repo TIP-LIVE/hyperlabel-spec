@@ -46,6 +46,18 @@
     {
       "path": "/api/cron/watchdog",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/research-reminders",
+      "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/research-followup",
+      "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/research-referral",
+      "schedule": "30 10 * * *"
     }
   ]
 }

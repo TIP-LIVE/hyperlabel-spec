@@ -412,7 +412,9 @@ model ResearchLead {
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
   // Relations
-  tasks ResearchTask[]
+  tasks      ResearchTask[]
+  interviews ResearchInterview[]
+  emailLogs  ResearchEmailLog[]
 
   @@index([status])
   @@index([persona])
@@ -457,6 +459,45 @@ model ResearchScript {
   @@index([persona])
   @@index([status])
   @@map("research_scripts")
+}
+
+/// ResearchInterview - a scheduled or completed interview with a lead
+model ResearchInterview {
+  id                String          @id @default(cuid())
+  leadId            String          @map("lead_id")
+  lead              ResearchLead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  scheduledAt       DateTime?       @map("scheduled_at")
+  completedAt       DateTime?       @map("completed_at")
+  duration          Int?            // minutes
+  calendarEventId   String?         @map("calendar_event_id")
+  recordingUrl      String?         @map("recording_url")
+  transcriptUrl     String?         @map("transcript_url")
+  notes             Json?
+  keyQuotes         Json?           @map("key_quotes")
+  hypothesisSignals Json?           @map("hypothesis_signals")
+  status            InterviewStatus @default(SCHEDULED)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  @@index([leadId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("research_interviews")
+}
+
+/// ResearchEmailLog - tracks all research emails sent to leads
+model ResearchEmailLog {
+  id      String   @id @default(cuid())
+  leadId  String   @map("lead_id")
+  lead    ResearchLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type    String   // outreach, scheduled, reminder, thank_you, referral
+  subject String
+  to      String
+  sentAt  DateTime @default(now()) @map("sent_at")
+
+  @@index([leadId])
+  @@index([type])
+  @@map("research_email_logs")
 }
 
 /// ResearchHypothesis - what we're trying to validate through interviews

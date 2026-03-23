@@ -26,6 +26,8 @@ export default async function ResearchLeadDetailPage({ params }: PageProps) {
     where: { id },
     include: {
       tasks: { orderBy: { createdAt: 'desc' } },
+      interviews: { orderBy: { scheduledAt: 'desc' } },
+      emailLogs: { orderBy: { sentAt: 'desc' } },
     },
   })
 
@@ -43,6 +45,17 @@ export default async function ResearchLeadDetailPage({ params }: PageProps) {
       dueDate: t.dueDate?.toISOString() || null,
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
+    })),
+    interviews: lead.interviews.map((i) => ({
+      ...i,
+      scheduledAt: i.scheduledAt?.toISOString() || null,
+      completedAt: i.completedAt?.toISOString() || null,
+      createdAt: i.createdAt.toISOString(),
+      updatedAt: i.updatedAt.toISOString(),
+    })),
+    emailLogs: lead.emailLogs.map((e) => ({
+      ...e,
+      sentAt: e.sentAt.toISOString(),
     })),
   }
 
