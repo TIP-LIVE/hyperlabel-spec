@@ -115,6 +115,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
       geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
+      eventType: loc.eventType,
     })),
   }
 

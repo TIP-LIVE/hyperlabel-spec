@@ -167,6 +167,7 @@ model LocationEvent {
   receivedAt    DateTime @default(now()) @map("received_at") // When server received
   isOfflineSync Boolean  @default(false) @map("is_offline_sync")
   source        LocationSource @default(GPS) @map("source")
+  eventType     String?  @map("event_type") // Onomondo event type: 'location', 'network-registration', etc.
 
   // Cell tower backup location (from Onomondo)
   cellLatitude  Float?   @map("cell_latitude")

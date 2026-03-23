@@ -23,8 +23,8 @@ import type { WebhookLogCreateParams } from '@/lib/webhook-log'
  * deterministic ID means both deliveries target the same DB row,
  * and the upsert naturally deduplicates.
  */
-function deterministicLogId(iccid: string | undefined, time: string | undefined): string {
-  const key = `onomondo:${iccid ?? 'unknown'}:${time ?? Date.now()}`
+function deterministicLogId(iccid: string | undefined, time: string | undefined, type?: string): string {
+  const key = `onomondo:${iccid ?? 'unknown'}:${time ?? Date.now()}:${type ?? 'unknown'}`
   return createHash('sha256').update(key).digest('hex').slice(0, 25)
 }
 
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
 
     // Deterministic ID: Onomondo double-sends produce the same ID,
     // so the upsert in after() naturally deduplicates at the DB level.
-    const logId = deterministicLogId(data.iccid, data.time)
+    const logId = deterministicLogId(data.iccid, data.time, data.type)
 
     // Prepare webhook log params — persisted in after() to keep sync path fast
     const webhookLogParams: WebhookLogCreateParams = {
@@ -303,6 +303,7 @@ export async function POST(req: NextRequest) {
           source: 'CELL_TOWER',
           skipGeocode: true,
           skipLocationCache: usingCachedLocation,
+          eventType: data.type,
         })
 
         // Geocode + persist webhook log with final status

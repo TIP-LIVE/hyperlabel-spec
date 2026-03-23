@@ -42,6 +42,7 @@ interface LocationPoint {
   geocodedArea: string | null
   geocodedCountry: string | null
   geocodedCountryCode: string | null
+  eventType?: string | null
 }
 
 interface ShipmentData {
@@ -385,6 +386,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                       geocodedArea: loc.geocodedArea,
                       geocodedCountry: loc.geocodedCountry,
                       geocodedCountryCode: loc.geocodedCountryCode,
+                      eventType: loc.eventType,
                     }))}
                   />
                 </CardContent>

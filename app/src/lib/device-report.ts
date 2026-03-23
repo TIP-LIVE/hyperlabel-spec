@@ -39,6 +39,9 @@ export interface LocationReportInput {
   /** Skip updating lastLatitude/lastLongitude/lastAccuracy on the label.
    *  Set when coordinates are recycled from the label's own cache (fallback). */
   skipLocationCache?: boolean
+
+  /** Onomondo event type (e.g. 'location', 'network-registration'). */
+  eventType?: string
 }
 
 export interface LocationReportResult {
@@ -361,6 +364,7 @@ export async function processLocationReport(
       cellLatitude: input.cellLatitude ?? (isCellTowerOnly ? effectiveLat : null),
       cellLongitude: input.cellLongitude ?? (isCellTowerOnly ? effectiveLng : null),
       source: input.source ?? 'GPS',
+      eventType: input.eventType ?? null,
     },
   })
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
-import { MapPin, Radio, ChevronDown } from 'lucide-react'
+import { MapPin, Radio, ChevronDown, Wifi } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
@@ -20,6 +20,7 @@ interface LocationEvent {
   geocodedArea: string | null
   geocodedCountry: string | null
   geocodedCountryCode: string | null
+  eventType?: string | null
 }
 
 interface ShipmentTimelineProps {
@@ -116,16 +117,26 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
 
   /** Render a single location row */
   function renderLocationRow(location: LocationEvent, isLatest: boolean, useDetailName = false) {
+    const isHeartbeat = location.eventType != null && location.eventType !== 'location'
     return (
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
-          <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
+          {isHeartbeat ? (
+            <Wifi className="h-3 w-3 shrink-0 text-green-500" />
+          ) : (
+            <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
+          )}
           <span className="text-sm font-medium truncate">
             {location.geocodedCountryCode && (
               <span className="mr-1">{countryCodeToFlag(location.geocodedCountryCode)}</span>
             )}
             {useDetailName ? detailLocationDisplayName(location) : locationDisplayName(location)}
           </span>
+          {isHeartbeat && (
+            <span className="shrink-0 inline-flex items-center rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-600 dark:text-green-400">
+              Online
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           {format(new Date(location.recordedAt), 'PPp')}
