@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { neonConfig } from '@neondatabase/serverless'
 import ws from 'ws'
@@ -142,9 +142,9 @@ function buildInterviews(leadIds: { sarah: string; marcus: string; elena: string
       completedAt: null,
       duration: 60,
       status: 'SCHEDULED' as const,
-      notes: null,
-      keyQuotes: null,
-      hypothesisSignals: null,
+      notes: Prisma.DbNull,
+      keyQuotes: Prisma.DbNull,
+      hypothesisSignals: Prisma.DbNull,
     },
   ]
 }
