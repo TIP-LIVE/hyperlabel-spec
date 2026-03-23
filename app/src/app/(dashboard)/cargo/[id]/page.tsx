@@ -109,6 +109,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
     shareCode: shipment.shareCode,
     consigneeEmail: shipment.consigneeEmail,
     consigneePhone: shipment.consigneePhone,
+    photoUrls: shipment.photoUrls,
     label: shipment.label ? {
       deviceId: shipment.label.deviceId,
       batteryPct: shipment.label.batteryPct,
@@ -130,6 +131,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
       geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
+      eventType: loc.eventType,
     })),
   }
 

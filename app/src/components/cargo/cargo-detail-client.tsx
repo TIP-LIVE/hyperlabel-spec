@@ -9,6 +9,9 @@ import { Separator } from '@/components/ui/separator'
 import {
   ArrowLeft,
   Battery,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   MapPin,
   Package,
@@ -18,7 +21,9 @@ import {
   RefreshCw,
   Navigation,
   ArrowRight,
+  X,
 } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { formatDistanceToNow, format } from 'date-fns'
 import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
@@ -44,6 +49,7 @@ interface LocationPoint {
   geocodedArea: string | null
   geocodedCountry: string | null
   geocodedCountryCode: string | null
+  eventType?: string | null
 }
 
 interface LabelInfo {
@@ -70,6 +76,7 @@ interface CargoData {
   shareCode: string
   consigneeEmail: string | null
   consigneePhone: string | null
+  photoUrls: string[]
   label: LabelInfo | null
   locations: LocationPoint[]
 }
@@ -116,6 +123,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
   const [shipment, setShipment] = useState<CargoData>(initialData)
   const [totalLocations, setTotalLocations] = useState(initialTotalLocations ?? initialData.locations.length)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const statusInfo = statusConfig[shipment.status]
   const StatusIcon = statusInfo.icon
@@ -536,6 +544,85 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
               </div>
             </CardContent>
           </Card>
+
+          {/* Cargo Photos */}
+          {shipment.photoUrls.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Cargo Photos
+                </CardTitle>
+                <CardDescription>
+                  {shipment.photoUrls.length} photo{shipment.photoUrls.length > 1 ? 's' : ''}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  {shipment.photoUrls.map((url, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setLightboxIndex(i)}
+                      className="relative aspect-square overflow-hidden rounded-lg border bg-muted transition-opacity hover:opacity-80"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Cargo photo ${i + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Photo Lightbox */}
+          <Dialog open={lightboxIndex !== null} onOpenChange={(open) => { if (!open) setLightboxIndex(null) }}>
+            <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none [&>button]:hidden">
+              {lightboxIndex !== null && (
+                <div className="relative flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={shipment.photoUrls[lightboxIndex]}
+                    alt={`Cargo photo ${lightboxIndex + 1}`}
+                    className="max-h-[80vh] w-auto rounded-lg object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIndex(null)}
+                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white transition-colors hover:bg-black/80"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  {shipment.photoUrls.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setLightboxIndex((lightboxIndex - 1 + shipment.photoUrls.length) % shipment.photoUrls.length)}
+                        className="absolute left-2 rounded-full bg-black/60 p-1.5 text-white transition-colors hover:bg-black/80"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLightboxIndex((lightboxIndex + 1) % shipment.photoUrls.length)}
+                        className="absolute right-2 rounded-full bg-black/60 p-1.5 text-white transition-colors hover:bg-black/80"
+                        style={{ top: '50%', transform: 'translateY(-50%)', right: '0.5rem' }}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                        {lightboxIndex + 1} / {shipment.photoUrls.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Delivery Info */}
           {shipment.deliveredAt && (
