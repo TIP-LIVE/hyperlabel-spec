@@ -31,7 +31,7 @@ export function CargoList({ initialStatus }: CargoListProps) {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>(
-    initialStatus && ['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(initialStatus)
+    initialStatus && ['PENDING', 'IN_TRANSIT', 'DELIVERED'].includes(initialStatus)
       ? initialStatus
       : 'all'
   )
@@ -114,10 +114,15 @@ export function CargoList({ initialStatus }: CargoListProps) {
     )
   }, [allShipments])
 
+  const activeShipments = useMemo(
+    () => allShipments.filter((s) => s.status !== 'CANCELLED'),
+    [allShipments]
+  )
+
   const filteredShipments = useMemo(() => {
-    if (statusFilter === 'all') return allShipments
-    return allShipments.filter((s) => s.status === statusFilter)
-  }, [allShipments, statusFilter])
+    if (statusFilter === 'all') return activeShipments
+    return activeShipments.filter((s) => s.status === statusFilter)
+  }, [activeShipments, statusFilter])
 
   if (loading) {
     return (
@@ -150,7 +155,7 @@ export function CargoList({ initialStatus }: CargoListProps) {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses ({allShipments.length})</SelectItem>
+            <SelectItem value="all">All Statuses ({activeShipments.length})</SelectItem>
             <SelectItem value="PENDING">
               Pending{statusCounts.PENDING ? ` (${statusCounts.PENDING})` : ''}
             </SelectItem>
@@ -159,9 +164,6 @@ export function CargoList({ initialStatus }: CargoListProps) {
             </SelectItem>
             <SelectItem value="DELIVERED">
               Delivered{statusCounts.DELIVERED ? ` (${statusCounts.DELIVERED})` : ''}
-            </SelectItem>
-            <SelectItem value="CANCELLED">
-              Cancelled{statusCounts.CANCELLED ? ` (${statusCounts.CANCELLED})` : ''}
             </SelectItem>
           </SelectContent>
         </Select>

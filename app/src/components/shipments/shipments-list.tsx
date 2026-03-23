@@ -23,7 +23,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>(
-    initialStatus && ['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(initialStatus)
+    initialStatus && ['PENDING', 'IN_TRANSIT', 'DELIVERED'].includes(initialStatus)
       ? initialStatus
       : 'all'
   )
@@ -70,9 +70,14 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
     )
   }, [allShipments])
 
+  const activeShipments = useMemo(
+    () => allShipments.filter((s) => s.status !== 'CANCELLED'),
+    [allShipments]
+  )
+
   // Client-side filters
   const filteredShipments = useMemo(() => {
-    let result = allShipments
+    let result = activeShipments
     if (statusFilter !== 'all') {
       result = result.filter((s) => s.status === statusFilter)
     }
@@ -80,7 +85,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
       result = result.filter((s) => s.type === typeFilter)
     }
     return result
-  }, [allShipments, statusFilter, typeFilter])
+  }, [activeShipments, statusFilter, typeFilter])
 
   if (loading) {
     return (
@@ -113,7 +118,7 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses ({allShipments.length})</SelectItem>
+            <SelectItem value="all">All Statuses ({activeShipments.length})</SelectItem>
             <SelectItem value="PENDING">
               Pending{statusCounts.PENDING ? ` (${statusCounts.PENDING})` : ''}
             </SelectItem>
@@ -122,9 +127,6 @@ export function ShipmentsList({ initialStatus }: ShipmentsListProps) {
             </SelectItem>
             <SelectItem value="DELIVERED">
               Delivered{statusCounts.DELIVERED ? ` (${statusCounts.DELIVERED})` : ''}
-            </SelectItem>
-            <SelectItem value="CANCELLED">
-              Cancelled{statusCounts.CANCELLED ? ` (${statusCounts.CANCELLED})` : ''}
             </SelectItem>
           </SelectContent>
         </Select>
