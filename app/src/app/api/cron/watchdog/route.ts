@@ -5,14 +5,15 @@ import { render } from '@react-email/components'
 import { WatchdogReportEmail } from '@/emails/watchdog-report'
 import type { Severity, ReportCategory } from '@/emails/watchdog-report'
 
-const EXPECTED_DAILY_CRONS = [
-  'check-delivery',
-  'check-battery',
-  'check-signals',
-  'check-stuck',
-  'check-reminders',
-  'check-unclaimed-labels',
-  'backfill-geocode',
+/** Expected daily crons with their scheduled hour (UTC) from vercel.json */
+const EXPECTED_DAILY_CRONS: { name: string; scheduledHourUTC: number }[] = [
+  { name: 'check-delivery', scheduledHourUTC: 6 },
+  { name: 'check-battery', scheduledHourUTC: 7 },
+  { name: 'check-signals', scheduledHourUTC: 8 },
+  { name: 'check-stuck', scheduledHourUTC: 9 },
+  { name: 'check-reminders', scheduledHourUTC: 10 },
+  { name: 'check-unclaimed-labels', scheduledHourUTC: 11 },
+  { name: 'backfill-geocode', scheduledHourUTC: 13 },
 ]
 
 const WEEKLY_CRONS = ['cleanup-data'] // Sunday only
@@ -100,9 +101,28 @@ async function buildSchedulerHealth(
   todaysRuns: { jobName: string; status: string; startedAt: Date }[],
   latestByJob: Map<string, { jobName: string; status: string; startedAt: Date }>
 ): Promise<ReportCategory> {
-  const isSunday = new Date().getUTCDay() === 0
-  const expectedCrons = [...EXPECTED_DAILY_CRONS, ...(isSunday ? WEEKLY_CRONS : [])]
-  const missedCrons = expectedCrons.filter((name) => !latestByJob.has(name))
+  const now = new Date()
+  const currentHourUTC = now.getUTCHours()
+  const isSunday = now.getUTCDay() === 0
+
+  // Only expect crons whose scheduled hour has passed (with 15min grace period)
+  const graceMinutes = 15
+  const effectiveMinutes = currentHourUTC * 60 + now.getUTCMinutes()
+  const dueCrons = EXPECTED_DAILY_CRONS.filter(
+    (c) => c.scheduledHourUTC * 60 + graceMinutes <= effectiveMinutes
+  )
+  const pendingCrons = EXPECTED_DAILY_CRONS.filter(
+    (c) => c.scheduledHourUTC * 60 + graceMinutes > effectiveMinutes
+  )
+
+  if (isSunday) {
+    // cleanup-data runs at 03:00 UTC on Sundays
+    if (3 * 60 + graceMinutes <= effectiveMinutes) {
+      dueCrons.push({ name: 'cleanup-data', scheduledHourUTC: 3 })
+    }
+  }
+
+  const missedCrons = dueCrons.filter((c) => !latestByJob.has(c.name))
 
   // Detect orphaned "running" entries (started > 30 min ago, never finished)
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000)
@@ -110,16 +130,21 @@ async function buildSchedulerHealth(
     (r) => r.jobName !== 'watchdog' && r.status === 'running' && r.startedAt < thirtyMinAgo
   )
 
-  const totalExpected = expectedCrons.length
-  const ran = totalExpected - missedCrons.length
+  const totalDue = dueCrons.length
+  const ran = totalDue - missedCrons.length
   const details: string[] = []
 
   if (missedCrons.length > 0) {
-    details.push(`Missed crons: ${missedCrons.join(', ')}`)
+    details.push(`Missed crons: ${missedCrons.map((c) => c.name).join(', ')}`)
   }
   if (orphanedRuns.length > 0) {
     details.push(
       `Timed out/crashed: ${orphanedRuns.map((r) => r.jobName).join(', ')}`
+    )
+  }
+  if (pendingCrons.length > 0) {
+    details.push(
+      `Not yet due: ${pendingCrons.map((c) => `${c.name} (${c.scheduledHourUTC}:00 UTC)`).join(', ')}`
     )
   }
   if (!isSunday) {
@@ -133,7 +158,7 @@ async function buildSchedulerHealth(
   return {
     name: 'Scheduler',
     severity,
-    headline: `${ran}/${totalExpected} crons ran${orphanedRuns.length > 0 ? `, ${orphanedRuns.length} timed out` : ''}`,
+    headline: `${ran}/${totalDue} due crons ran${pendingCrons.length > 0 ? `, ${pendingCrons.length} pending` : ''}${orphanedRuns.length > 0 ? `, ${orphanedRuns.length} timed out` : ''}`,
     details,
   }
 }
