@@ -95,6 +95,25 @@ export async function PATCH(
         where: { id: existing.leadId },
         data: { status: 'COMPLETED' },
       })
+
+      // Auto-create follow-up tasks
+      const leadName = existing.lead.name
+      await db.researchTask.createMany({
+        data: [
+          {
+            title: `Send gift card to ${leadName}`,
+            category: 'GIFT_CARD',
+            status: 'TODO',
+            leadId: existing.leadId,
+          },
+          {
+            title: `Write interview summary for ${leadName}`,
+            category: 'ANALYSIS',
+            status: 'TODO',
+            leadId: existing.leadId,
+          },
+        ],
+      })
     }
 
     // If starting the interview, move to IN_PROGRESS

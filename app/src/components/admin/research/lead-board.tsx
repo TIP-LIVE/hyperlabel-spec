@@ -19,8 +19,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, MoreVertical, ArrowLeft } from 'lucide-react'
+import { Plus, Search, MoreVertical } from 'lucide-react'
 import { LeadCard, type LeadCardData } from './lead-card'
+import { ResearchBreadcrumb } from './research-breadcrumb'
 import {
   researchLeadStatusStyles,
   researchLeadStatusConfig,
@@ -108,18 +109,14 @@ export function LeadBoard({ leads: initialLeads }: LeadBoardProps) {
 
   return (
     <div className="space-y-4">
+      <ResearchBreadcrumb items={[{ label: 'Leads' }]} />
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/research" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Lead Board</h1>
-            <p className="text-sm text-muted-foreground">
-              {initialLeads.length} lead{initialLeads.length !== 1 ? 's' : ''} total
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Lead Board</h1>
+          <p className="text-sm text-muted-foreground">
+            {initialLeads.length} lead{initialLeads.length !== 1 ? 's' : ''} total
+          </p>
         </div>
         <Button asChild>
           <Link href="/admin/research/leads/new">

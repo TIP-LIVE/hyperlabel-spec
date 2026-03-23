@@ -42,5 +42,12 @@ export default async function ResearchLeadsPage({ searchParams }: PageProps) {
     orderBy: { createdAt: 'desc' },
   })
 
-  return <LeadBoard leads={leads} />
+  // Serialize dates for client components
+  const serialized = leads.map((l) => ({
+    ...l,
+    createdAt: l.createdAt.toISOString(),
+    updatedAt: l.updatedAt.toISOString(),
+  }))
+
+  return <LeadBoard leads={serialized} />
 }

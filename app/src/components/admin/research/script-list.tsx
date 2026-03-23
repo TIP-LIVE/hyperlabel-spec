@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { ArrowLeft, Plus, FileText, Clock } from 'lucide-react'
+import { Plus, FileText, Clock } from 'lucide-react'
+import { ResearchBreadcrumb } from './research-breadcrumb'
 import {
   scriptStatusConfig,
   scriptStatusStyles,
@@ -72,18 +73,12 @@ export function ScriptList({ scripts }: ScriptListProps) {
 
   return (
     <div className="space-y-6">
+      <ResearchBreadcrumb items={[{ label: 'Scripts' }]} />
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/research">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Interview Scripts</h1>
-            <p className="text-sm text-muted-foreground">{scripts.length} scripts</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Interview Scripts</h1>
+          <p className="text-sm text-muted-foreground">{scripts.length} scripts</p>
         </div>
         <Button onClick={() => router.push('/admin/research/scripts/new')}>
           <Plus className="mr-2 h-4 w-4" />

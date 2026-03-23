@@ -5,7 +5,8 @@ import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { researchPersonaStyles, researchPersonaConfig } from '@/lib/status-config'
 import type { ResearchPersona } from '@/lib/status-config'
-import { ArrowLeft, CalendarClock, Clock, Building2, Play, FileText } from 'lucide-react'
+import { CalendarClock, Clock, Building2, Play, FileText } from 'lucide-react'
+import { ResearchBreadcrumb } from '@/components/admin/research/research-breadcrumb'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -58,16 +59,12 @@ export default async function InterviewsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/admin/research" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Interviews</h1>
-          <p className="text-muted-foreground">
-            {upcoming.length} upcoming, {past.filter((i) => i.status === 'COMPLETED').length} completed
-          </p>
-        </div>
+      <ResearchBreadcrumb items={[{ label: 'Interviews' }]} />
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Interviews</h1>
+        <p className="text-muted-foreground">
+          {upcoming.length} upcoming, {past.filter((i) => i.status === 'COMPLETED').length} completed
+        </p>
       </div>
 
       {/* Upcoming */}

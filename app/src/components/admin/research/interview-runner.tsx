@@ -125,6 +125,34 @@ export function InterviewRunner({ interview, script, hypotheses }: InterviewRunn
     [interview.id, interview.status]
   )
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (isCompleted) return
+
+    function handleKeyDown(e: KeyboardEvent) {
+      // Don't capture when typing in inputs
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
+
+      if (e.key === 'ArrowLeft' && activeSection > 0) {
+        e.preventDefault()
+        setActiveSection((s) => s - 1)
+      }
+      if (e.key === 'ArrowRight' && activeSection < sections.length - 1) {
+        e.preventDefault()
+        setActiveSection((s) => s + 1)
+      }
+      // Cmd/Ctrl+S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        saveNotes(notes, keyQuotes, hypothesisSignals)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isCompleted, activeSection, sections.length, saveNotes, notes, keyQuotes, hypothesisSignals])
+
   // Auto-save every 30 seconds when notes change
   const scheduleAutoSave = useCallback(() => {
     if (isCompleted) return
@@ -273,6 +301,7 @@ export function InterviewRunner({ interview, script, hypotheses }: InterviewRunn
                 size="sm"
                 onClick={() => setActiveSection(Math.max(0, activeSection - 1))}
                 disabled={activeSection === 0}
+                title="Previous section (Left arrow)"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Prev
@@ -298,6 +327,7 @@ export function InterviewRunner({ interview, script, hypotheses }: InterviewRunn
                 size="sm"
                 onClick={() => setActiveSection(Math.min(sections.length - 1, activeSection + 1))}
                 disabled={activeSection === sections.length - 1}
+                title="Next section (Right arrow)"
               >
                 Next
                 <ChevronRight className="h-4 w-4" />

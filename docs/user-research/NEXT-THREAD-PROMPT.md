@@ -37,7 +37,7 @@ I'm building TIP (tip.live), a cargo tracking SaaS. We're building an internal *
 - 3 cron jobs: `research-reminders`, `research-followup`, `research-referral`
 - Email history on lead detail page
 
-### Week 5 (uncommitted — ready to commit)
+### Week 5 (committed: `6d9aa4d`)
 - Interview API routes: `GET /interviews`, `GET /interviews/[id]`, `PATCH /interviews/[id]`
 - Interview list page (`/admin/research/interviews`) — upcoming + past interviews
 - Interview runner page (`/admin/research/interviews/[id]`) — two-panel layout:
@@ -52,9 +52,34 @@ I'm building TIP (tip.live), a cargo tracking SaaS. We're building an internal *
 - Dashboard updated: upcoming interviews link to runner, Interviews nav button added
 - Lead detail updated: Start/Continue/View links on interview cards
 
+### Week 6 (committed: `be47c28`)
+- Insights dashboard page (`/admin/research/insights`)
+- Hypothesis scorecard with expandable interview signals
+- Quote bank: searchable/filterable quote collection
+- Pain point ranking: auto-derived from quote themes
+- Persona summary cards: lead count, interview count, avg pilot interest, top themes
+- Pilot interest leaderboard: ranked by pilotInterest score
+- Export report button (PDF/CSV)
+- Insights API route aggregating data from completed interviews
+
+### Week 7 (uncommitted — ready to commit)
+- Task CRUD API routes (`/tasks` GET/POST, `/tasks/[id]` GET/PATCH/DELETE)
+- Task board page (`/admin/research/tasks`) — 3-column layout: To Do | In Progress | Done
+- Task card component with category badge, lead link, due date, overdue highlighting
+- Auto-create tasks on triggers:
+  - Interview completed → "Send gift card to [name]" + "Write interview summary for [name]"
+  - Script submitted for review → "Review script: [title]" assigned to Andrii
+- Gift card tracking: "Mark as sent" button on completed lead profiles
+- Stale lead detection: yellow border + warning on leads in CONTACTED >7 days
+- Stale leads cron job (`research-stale-leads`) — weekly alert email
+- Breadcrumb navigation across all research pages
+- Tasks nav button added to dashboard header
+- Dashboard tasks section: live counts (To Do / In Progress / Done) with link to board
+- Keyboard shortcuts for interview runner: arrow keys (section nav), Cmd+S (save)
+
 ## What to Build Next
 
-Start with **Week 6** from the 8-week plan: Insights Dashboard.
+Start with **Week 8** from the 8-week plan: Testing, CEO Review, Launch.
 
 ## Key Files to Read First
 
@@ -91,4 +116,4 @@ Start with **Week 6** from the 8-week plan: Insights Dashboard.
 
 ## Let's Start
 
-Read the Week 6 plan, then build the insights dashboard: hypothesis scorecard, quote bank, pain point ranking, persona summaries, pilot interest leaderboard, and export. After Week 6, continue to Week 7 (Task Management + Polish) and beyond.
+Read the Week 8 plan, then execute: seed demo data, walk through full flow, fix bugs, add Vercel cron entries, update CLAUDE.md, and prepare for CEO walkthrough.

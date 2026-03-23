@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { Building2, User } from 'lucide-react'
+import { AlertTriangle, Building2, User } from 'lucide-react'
 import {
   researchPersonaStyles,
   researchPersonaConfig,
@@ -18,6 +18,7 @@ export interface LeadCardData {
   persona: string
   status: string
   source: string | null
+  updatedAt: string
   _count: { tasks: number }
 }
 
@@ -26,10 +27,14 @@ interface LeadCardProps {
 }
 
 export function LeadCard({ lead }: LeadCardProps) {
+  const isStale =
+    lead.status === 'CONTACTED' &&
+    Date.now() - new Date(lead.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
+
   return (
     <Link
       href={`/admin/research/leads/${lead.id}`}
-      className="block rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+      className={`block rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50 ${isStale ? 'border-yellow-500/50' : 'border-border'}`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <p className="font-medium text-foreground">{lead.name}</p>
@@ -57,6 +62,12 @@ export function LeadCard({ lead }: LeadCardProps) {
         <p className="text-xs text-muted-foreground">
           Source: {lead.source}
         </p>
+      )}
+      {isStale && (
+        <div className="mt-1.5 flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+          <AlertTriangle className="h-3 w-3" />
+          Stale — contacted &gt;7 days ago
+        </div>
       )}
     </Link>
   )

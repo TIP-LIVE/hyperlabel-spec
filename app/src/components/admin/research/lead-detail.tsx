@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  ArrowLeft,
   Building2,
   User,
   Mail,
@@ -38,6 +37,7 @@ import {
 } from 'lucide-react'
 import { ScheduleInterviewDialog } from './schedule-interview-dialog'
 import { SendEmailDialog } from './send-email-dialog'
+import { ResearchBreadcrumb } from './research-breadcrumb'
 import {
   researchLeadStatusStyles,
   researchLeadStatusConfig,
@@ -155,18 +155,17 @@ export function LeadDetail({ lead }: LeadDetailProps) {
 
   return (
     <div className="space-y-6" style={{ opacity: isPending ? 0.6 : 1 }}>
+      <ResearchBreadcrumb items={[
+        { label: 'Leads', href: '/admin/research/leads' },
+        { label: lead.name },
+      ]} />
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/research/leads" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{lead.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {[lead.role, lead.company].filter(Boolean).join(' @ ') || 'No details'}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{lead.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {[lead.role, lead.company].filter(Boolean).join(' @ ') || 'No details'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {lead.email && (
@@ -326,11 +325,38 @@ export function LeadDetail({ lead }: LeadDetailProps) {
                     ))}
                   </div>
                 )}
-                {lead.giftCardSent && (
+                {lead.status === 'COMPLETED' || lead.status === 'ANALYSED' ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Gift card:</span>
+                    {lead.giftCardSent ? (
+                      <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400">
+                        Sent{lead.giftCardType ? ` (${lead.giftCardType})` : ''}
+                      </Badge>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs"
+                        onClick={async () => {
+                          const type = prompt('Gift card type (e.g. "£30 Amazon")?', '£30 Amazon')
+                          if (type === null) return
+                          const res = await fetch(`/api/v1/admin/research/leads/${lead.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ giftCardSent: true, giftCardType: type || '£30 Amazon' }),
+                          })
+                          if (res.ok) startTransition(() => router.refresh())
+                        }}
+                      >
+                        Mark as sent
+                      </Button>
+                    )}
+                  </div>
+                ) : lead.giftCardSent ? (
                   <div className="text-sm">
                     <Badge variant="outline">Gift card sent{lead.giftCardType ? ` (${lead.giftCardType})` : ''}</Badge>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
           </CardContent>

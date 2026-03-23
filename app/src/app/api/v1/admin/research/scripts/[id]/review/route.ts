@@ -78,6 +78,18 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       data: updateData,
     })
 
+    // Auto-create review task when submitting for review
+    if (action === 'submit') {
+      db.researchTask.create({
+        data: {
+          title: `Review script: "${script.title}"`,
+          category: 'REVIEW',
+          status: 'TODO',
+          assignee: 'Andrii',
+        },
+      }).catch(console.error)
+    }
+
     // Send email notifications (non-blocking)
     if (action === 'submit') {
       const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'}/admin/research/scripts/${id}/review`

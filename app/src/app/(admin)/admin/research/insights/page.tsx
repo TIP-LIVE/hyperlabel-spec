@@ -1,9 +1,9 @@
-import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { CheckCircle, Lightbulb, Quote, Users, ArrowLeft, TrendingUp } from 'lucide-react'
+import { CheckCircle, Lightbulb, Quote, Users } from 'lucide-react'
+import { ResearchBreadcrumb } from '@/components/admin/research/research-breadcrumb'
 import { HypothesisScorecard } from '@/components/admin/research/hypothesis-scorecard'
 import { QuoteBank } from '@/components/admin/research/quote-bank'
 import { PersonaSummaries } from '@/components/admin/research/persona-summary'
@@ -167,25 +167,15 @@ export default async function InsightsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <ResearchBreadcrumb items={[{ label: 'Insights' }]} />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/research"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Research Hub
-          </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Research Insights</h1>
+          <p className="text-muted-foreground">
+            Aggregated findings across {stats.totalInterviews} completed interview{stats.totalInterviews !== 1 ? 's' : ''}
+          </p>
         </div>
         <ExportReport data={{ hypotheses: hypothesisDetails, quotes, painPoints, personaSummaries, pilotLeaderboard, stats }} />
-      </div>
-
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Research Insights</h1>
-        <p className="text-muted-foreground">
-          Aggregated findings across {stats.totalInterviews} completed interview{stats.totalInterviews !== 1 ? 's' : ''}
-        </p>
       </div>
 
       {/* Stat Cards */}

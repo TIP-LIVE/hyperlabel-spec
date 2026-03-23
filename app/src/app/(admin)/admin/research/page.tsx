@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp } from 'lucide-react'
+import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp, ListTodo } from 'lucide-react'
 import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig, scriptStatusStyles, scriptStatusConfig } from '@/lib/status-config'
 import type { ResearchLeadStatus, ResearchPersona, ScriptStatus } from '@/lib/status-config'
 import type { Metadata } from 'next'
@@ -29,7 +29,7 @@ export default async function ResearchDashboardPage() {
     declinedCount,
     noShowCount,
     personaCounts,
-    pendingTasks,
+    taskCounts,
     recentLeads,
     scriptCounts,
     hypotheses,
@@ -49,7 +49,11 @@ export default async function ResearchDashboardPage() {
       db.researchLead.count({ where: { persona: 'FORWARDER' } }),
       db.researchLead.count({ where: { persona: 'SHIPPER' } }),
     ]),
-    db.researchTask.count({ where: { status: 'TODO' } }),
+    Promise.all([
+      db.researchTask.count({ where: { status: 'TODO' } }),
+      db.researchTask.count({ where: { status: 'IN_PROGRESS' } }),
+      db.researchTask.count({ where: { status: 'DONE' } }),
+    ]),
     db.researchLead.findMany({
       orderBy: { createdAt: 'desc' },
       take: 5,
@@ -74,6 +78,7 @@ export default async function ResearchDashboardPage() {
 
   const [consigneeCount, forwarderCount, shipperCount] = personaCounts
   const [draftScripts, inReviewScripts, approvedScripts] = scriptCounts
+  const [todoTasks, inProgressTasks, doneTasks] = taskCounts
 
   const stats = [
     { label: 'Total Leads', value: totalLeads, icon: Users, href: '/admin/research/leads' },
@@ -113,6 +118,13 @@ export default async function ResearchDashboardPage() {
           >
             <TrendingUp className="h-4 w-4" />
             Insights
+          </Link>
+          <Link
+            href="/admin/research/tasks"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
+          >
+            <ListTodo className="h-4 w-4" />
+            Tasks
           </Link>
           <Link
             href="/admin/research/interviews"
@@ -439,16 +451,35 @@ export default async function ResearchDashboardPage() {
 
         {/* Tasks Overview */}
         <Card className="border-border bg-card">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-card-foreground">Tasks</CardTitle>
+            <Link href="/admin/research/tasks" className="text-sm text-primary hover:underline">
+              View board <ArrowRight className="ml-1 inline h-3 w-3" />
+            </Link>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between py-4">
-              <div>
-                <p className="text-3xl font-bold text-foreground">{pendingTasks}</p>
-                <p className="text-sm text-muted-foreground">Pending tasks</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ListTodo className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">To Do</span>
+                </div>
+                <span className="text-lg font-bold text-foreground">{todoTasks}</span>
               </div>
-              <p className="text-sm text-muted-foreground">Task board coming in Week 7</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-foreground">In Progress</span>
+                </div>
+                <span className="text-lg font-bold text-foreground">{inProgressTasks}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-foreground">Done</span>
+                </div>
+                <span className="text-lg font-bold text-foreground">{doneTasks}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
