@@ -8,7 +8,7 @@ import {
   rateLimitResponse,
 } from '@/lib/rate-limit'
 import { verifyOnomondoRequest } from '@/lib/onomondo-auth'
-import { createWebhookLog, updateWebhookLog } from '@/lib/webhook-log'
+import { createWebhookLog, updateWebhookLog, upsertWebhookLog } from '@/lib/webhook-log'
 
 const batteryReportSchema = z.object({
   iccid: z.string().min(1),
@@ -32,7 +32,13 @@ export async function POST(req: NextRequest) {
       `onomondo:${apiKey || getClientIp(req)}`,
       RATE_LIMIT_DEVICE
     )
-    if (!rl.success) return rateLimitResponse(rl)
+    if (!rl.success) {
+      upsertWebhookLog(
+        { id: crypto.randomUUID(), endpoint: 'connector', headers: req.headers, body: { _note: 'rate limited — body not parsed' }, ipAddress: getClientIp(req) },
+        { statusCode: 429, processingResult: { error: 'Rate limited' }, durationMs: Date.now() - startTime }
+      ).catch(() => {})
+      return rateLimitResponse(rl)
+    }
 
     const expectedApiKey =
       process.env.ONOMONDO_CONNECTOR_API_KEY || process.env.DEVICE_API_KEY
@@ -46,13 +52,21 @@ export async function POST(req: NextRequest) {
       })
     ) {
       console.warn('[webhook:onomondo:battery] 401 Invalid credentials')
+      upsertWebhookLog(
+        { id: crypto.randomUUID(), endpoint: 'connector', headers: req.headers, body: { _note: 'auth failed — body not parsed' }, ipAddress: getClientIp(req) },
+        { statusCode: 401, processingResult: { error: 'Invalid webhook credentials' }, durationMs: Date.now() - startTime }
+      ).catch(() => {})
       return NextResponse.json({ error: 'Invalid webhook credentials' }, { status: 401 })
     }
 
     let body: unknown
     try {
       body = await req.json()
-    } catch {
+    } catch (err) {
+      upsertWebhookLog(
+        { id: crypto.randomUUID(), endpoint: 'connector', headers: req.headers, body: { _note: 'invalid JSON', error: String(err) }, ipAddress: getClientIp(req) },
+        { statusCode: 400, processingResult: { error: 'Invalid JSON' }, durationMs: Date.now() - startTime }
+      ).catch(() => {})
       return NextResponse.json(
         { error: 'Invalid JSON' },
         { status: 400 }

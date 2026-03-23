@@ -61,6 +61,14 @@ export async function POST(req: NextRequest) {
     )
     if (!rl.success) {
       console.warn('[webhook:location-update] rate limited', { key: apiKey ? '***' : 'none', remaining: rl.remaining })
+      after(async () => {
+        try {
+          await upsertWebhookLog(
+            { id: crypto.randomUUID(), endpoint: 'location-update', headers: req.headers, body: { _note: 'rate limited — body not parsed' }, ipAddress: getClientIp(req) },
+            { statusCode: 429, processingResult: { error: 'Rate limited' }, durationMs: Date.now() - startTime }
+          )
+        } catch {}
+      })
       return rateLimitResponse(rl)
     }
 
@@ -84,6 +92,14 @@ export async function POST(req: NextRequest) {
           !!req.headers.get('x-webhook-secret') ||
           !!req.headers.get('authorization'),
       })
+      after(async () => {
+        try {
+          await upsertWebhookLog(
+            { id: crypto.randomUUID(), endpoint: 'location-update', headers: req.headers, body: { _note: 'auth failed — body not parsed' }, ipAddress: getClientIp(req) },
+            { statusCode: 401, processingResult: { error: 'Invalid webhook credentials' }, durationMs: Date.now() - startTime }
+          )
+        } catch {}
+      })
       return NextResponse.json({ error: 'Invalid webhook credentials' }, { status: 401 })
     }
 
@@ -92,6 +108,14 @@ export async function POST(req: NextRequest) {
       body = await req.json()
     } catch (err) {
       console.warn('[webhook:location-update] invalid JSON body', { error: String(err) })
+      after(async () => {
+        try {
+          await upsertWebhookLog(
+            { id: crypto.randomUUID(), endpoint: 'location-update', headers: req.headers, body: { _note: 'invalid JSON', error: String(err) }, ipAddress: getClientIp(req) },
+            { statusCode: 400, processingResult: { error: 'Invalid JSON' }, durationMs: Date.now() - startTime }
+          )
+        } catch {}
+      })
       return NextResponse.json(
         { error: 'Invalid JSON', details: 'Request body must be valid JSON' },
         { status: 400 }
@@ -115,6 +139,14 @@ export async function POST(req: NextRequest) {
       console.warn('[webhook:location-update] validation failed', {
         errors: validated.error.flatten(),
         body: JSON.stringify(body).slice(0, 500),
+      })
+      after(async () => {
+        try {
+          await upsertWebhookLog(
+            { id: crypto.randomUUID(), endpoint: 'location-update', headers: req.headers, body: rawBody, ipAddress: getClientIp(req), iccid: rawBody?.iccid as string | undefined, eventType: rawBody?.type as string | undefined },
+            { statusCode: 400, processingResult: { error: 'Validation failed', details: validated.error.flatten() }, durationMs: Date.now() - startTime }
+          )
+        } catch {}
       })
       return NextResponse.json(
         { error: 'Validation failed', details: validated.error.flatten() },
@@ -210,7 +242,8 @@ export async function POST(req: NextRequest) {
         if (lat === null || lng === null) {
           if (!isNaN(mcc) && !isNaN(mnc)) {
             try {
-              const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid)
+              const radioType = data.network_type || undefined
+              const resolved = await resolveCellTowerLocation(mcc, mnc, lac, cid, radioType)
               if (resolved) {
                 lat = resolved.lat
                 lng = resolved.lng
