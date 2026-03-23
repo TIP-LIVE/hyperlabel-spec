@@ -222,8 +222,6 @@ export default async function DashboardPage() {
     }
   }
 
-  const now = Date.now()
-
   return (
     <div className="space-y-6">
       <div>
@@ -435,7 +433,7 @@ export default async function DashboardPage() {
                   })
 
                   // Signal freshness: green <1h, yellow <24h, red >24h
-                  const msSinceUpdate = lastUpdate ? now - lastUpdate.getTime() : null
+                  const msSinceUpdate = lastUpdate ? now.getTime() - lastUpdate.getTime() : null
                   const signalColor =
                     msSinceUpdate === null
                       ? 'bg-muted-foreground/30'
