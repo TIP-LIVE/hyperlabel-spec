@@ -34,13 +34,15 @@ function cacheKey(
  * @param mnc Mobile Network Code
  * @param lac Location Area Code (nullable — API can still resolve with just mcc/mnc)
  * @param cid Cell ID
+ * @param radioType Radio type hint (e.g. 'gsm', 'lte', 'wcdma') — improves accuracy
  * @returns Resolved location or null if resolution fails
  */
 export async function resolveCellTowerLocation(
   mcc: number,
   mnc: number,
   lac: number | null,
-  cid: number
+  cid: number,
+  radioType?: string
 ): Promise<CellTowerLocation | null> {
   const key = cacheKey(mcc, mnc, lac, cid)
   if (cache.has(key)) return cache.get(key) ?? null
@@ -56,20 +58,33 @@ export async function resolveCellTowerLocation(
   }
 
   try {
-    // Build cell tower object — omit lac/cid if not available.
-    // Google Geolocation API can still resolve with just mcc/mnc (lower accuracy).
-    const cellTower: Record<string, number> = {
+    // Without a cell ID, Google can only resolve to country level —
+    // which Onomondo already provides. Skip the API call.
+    if (!cid) {
+      cache.set(key, null)
+      return null
+    }
+
+    const cellTower: Record<string, number | string> = {
       mobileCountryCode: mcc,
       mobileNetworkCode: mnc,
+      cellId: cid,
     }
     if (lac !== null) cellTower.locationAreaCode = lac
-    if (cid) cellTower.cellId = cid
+    if (radioType) cellTower.radioType = radioType.toLowerCase()
+
+    const body: Record<string, unknown> = {
+      homeMobileCountryCode: mcc,
+      homeMobileNetworkCode: mnc,
+      cellTowers: [cellTower],
+    }
+    if (radioType) body.radioType = radioType.toLowerCase()
 
     const res = await fetch(`${GOOGLE_GEOLOCATION_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(3000),
-      body: JSON.stringify({ cellTowers: [cellTower] }),
+      body: JSON.stringify(body),
     })
 
     if (!res.ok) {
