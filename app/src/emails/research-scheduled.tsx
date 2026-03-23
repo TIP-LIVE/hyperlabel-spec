@@ -52,7 +52,7 @@ export function ResearchScheduledEmail({
             </Section>
 
             <Text style={paragraph}>
-              Hi {leadName}, your research interview with TIP has been confirmed. We're looking
+              Hi {leadName}, your research interview with TIP has been confirmed. We&apos;re looking
               forward to hearing your perspective!
             </Text>
 
@@ -82,14 +82,14 @@ export function ResearchScheduledEmail({
               <Text style={detailLabel}>What to Expect</Text>
               <Text style={detailValue}>
                 A relaxed conversation about your experience with cargo tracking and logistics.
-                There are no right or wrong answers — we're genuinely curious about your workflow
+                There are no right or wrong answers — we&apos;re genuinely curious about your workflow
                 and the challenges you face.
               </Text>
 
               <Text style={detailLabel}>Consent</Text>
               <Text style={detailValue}>
                 With your permission, we may take notes or record the session for internal use only.
-                We'll ask for your consent at the start of the call.
+                We&apos;ll ask for your consent at the start of the call.
               </Text>
             </Section>
 
@@ -102,7 +102,7 @@ export function ResearchScheduledEmail({
             )}
 
             <Text style={noteText}>
-              Need to reschedule? Just reply to this email and we'll find another time that works.
+              Need to reschedule? Just reply to this email and we&apos;ll find another time that works.
             </Text>
           </Section>
 

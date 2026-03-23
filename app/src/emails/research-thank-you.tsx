@@ -51,7 +51,7 @@ export function ResearchThankYouEmail({
             </Text>
 
             <Text style={paragraph}>
-              We really appreciate your candid feedback — it helps us ensure we're solving real
+              We really appreciate your candid feedback — it helps us ensure we&apos;re solving real
               problems for real people.
             </Text>
 
@@ -66,14 +66,14 @@ export function ResearchThankYouEmail({
               <Text style={detailLabel}>Know someone who might be interested?</Text>
               <Text style={detailValue}>
                 If you know anyone else in logistics who might be open to a similar conversation,
-                we'd love an introduction. We offer the same £30 gift card as a thank you for
+                we&apos;d love an introduction. We offer the same £30 gift card as a thank you for
                 their time.
               </Text>
             </Section>
 
             <Text style={noteText}>
-              If you have any follow-up thoughts or questions, don't hesitate to reply to this
-              email. We'd love to stay in touch.
+              If you have any follow-up thoughts or questions, don&apos;t hesitate to reply to this
+              email. We&apos;d love to stay in touch.
             </Text>
           </Section>
 
