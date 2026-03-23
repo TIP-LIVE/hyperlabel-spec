@@ -279,6 +279,30 @@ async function buildSystemHealth(
   details.push(`Webhooks (24h): ${totalWebhooks} total, ${failedWebhooks} failed`)
   if (failedWebhooks > 0 && severity !== 'critical') severity = 'warning'
 
+  // Battery report pipeline health — check last connector webhook
+  const lastBatteryWebhook = await db.webhookLog.findFirst({
+    where: {
+      endpoint: 'connector',
+      statusCode: 200,
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  })
+  if (!lastBatteryWebhook) {
+    details.push('Battery reports: NEVER received')
+    severity = 'critical'
+  } else {
+    const hoursSinceLastBattery = Math.round(
+      (Date.now() - lastBatteryWebhook.createdAt.getTime()) / (1000 * 60 * 60)
+    )
+    details.push(`Battery reports: last received ${hoursSinceLastBattery}h ago`)
+    if (hoursSinceLastBattery > 48) {
+      severity = 'critical'
+    } else if (hoursSinceLastBattery > 24 && severity !== 'critical') {
+      severity = 'warning'
+    }
+  }
+
   return {
     name: 'System',
     severity,
