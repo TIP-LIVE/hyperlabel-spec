@@ -74,13 +74,13 @@ export function ResearchOutreachEmail({
             <Section style={detailsBox}>
               <Text style={detailLabel}>What to expect</Text>
               <Text style={detailValue}>
-                A friendly 45–60 minute video call where we'll ask about your current experience
+                A friendly 45–60 minute video call where we&apos;ll ask about your current experience
                 with cargo tracking. No sales pitch — just genuine curiosity about your workflow.
               </Text>
 
               <Text style={detailLabel}>Compensation</Text>
               <Text style={detailValue}>
-                As a thank you, we'll send you a £30 Amazon gift card after the interview.
+                As a thank you, we&apos;ll send you a £30 Amazon gift card after the interview.
               </Text>
             </Section>
 
@@ -92,7 +92,7 @@ export function ResearchOutreachEmail({
 
             <Text style={noteText}>
               If you have any questions or would prefer a different time, just reply to this email.
-              We're happy to work around your schedule.
+              We&apos;re happy to work around your schedule.
             </Text>
           </Section>
 
@@ -103,7 +103,7 @@ export function ResearchOutreachEmail({
             </Text>
             <Text style={footerText}>
               You received this because we think your experience in logistics could help shape a
-              better tracking solution. If you're not interested, simply ignore this email.
+              better tracking solution. If you&apos;re not interested, simply ignore this email.
             </Text>
           </Section>
         </Container>

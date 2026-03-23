@@ -25,7 +25,7 @@ export function ResearchReferralEmail({
   return (
     <Html>
       <Head />
-      <Preview>Know someone in logistics? We'd love an introduction</Preview>
+      <Preview>Know someone in logistics? We&apos;d love an introduction</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
@@ -51,13 +51,13 @@ export function ResearchReferralEmail({
             </Text>
 
             <Text style={paragraph}>
-              We're looking to speak with more people in the logistics space — particularly those
+              We&apos;re looking to speak with more people in the logistics space — particularly those
               who deal with cargo tracking, freight forwarding, or receiving shipments. If anyone
-              comes to mind, we'd be very grateful for an introduction.
+              comes to mind, we&apos;d be very grateful for an introduction.
             </Text>
 
             <Section style={detailsBox}>
-              <Text style={detailLabel}>What's in it for them?</Text>
+              <Text style={detailLabel}>What&apos;s in it for them?</Text>
               <Text style={detailValue}>
                 A friendly 45–60 minute conversation about their experience with cargo tracking.
                 No sales pitch — just genuine research. Plus a £30 Amazon gift card as a thank you.
@@ -66,7 +66,7 @@ export function ResearchReferralEmail({
               <Text style={detailLabel}>How to refer</Text>
               <Text style={detailValue}>
                 Simply reply to this email with their name and email address, or forward this
-                message to them directly. We'll take it from there.
+                message to them directly. We&apos;ll take it from there.
               </Text>
             </Section>
 

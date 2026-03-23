@@ -78,7 +78,7 @@ export function ResearchReminderEmail({
             )}
 
             <Text style={noteText}>
-              Need to reschedule? No problem — just reply to this email and we'll find another
+              Need to reschedule? No problem — just reply to this email and we&apos;ll find another
               time.
             </Text>
           </Section>
