@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -64,11 +63,11 @@ export function HeroSection() {
 
         {/* Right — hero video with tracking card overlay */}
         <div className="relative z-10">
-          <div className="relative overflow-hidden rounded-[28px] aspect-[4/3] md:aspect-square lg:max-h-[calc(100dvh-10rem)]">
-            {/* Video — desktop */}
+          <div className="relative overflow-hidden rounded-[28px] aspect-square lg:max-h-[calc(100dvh-10rem)]">
+            {/* Video — plays on all viewports */}
             <video
               ref={videoRef}
-              className="h-full w-full object-cover max-md:hidden"
+              className="h-full w-full object-cover"
               poster="/videos/hero-poster.jpg"
               autoPlay
               muted
@@ -77,18 +76,10 @@ export function HeroSection() {
               preload="auto"
               aria-hidden="true"
             >
+              {/* Mobile: 720p, Desktop: 1080p */}
+              <source src="/videos/hero-720p.mp4" type="video/mp4" media="(max-width: 767px)" />
               <source src="/videos/hero-1080p.mp4" type="video/mp4" />
             </video>
-
-            {/* Mobile — poster fallback */}
-            <Image
-              src="/videos/hero-poster.jpg"
-              alt="TIP cargo tracking visualization"
-              width={800}
-              height={800}
-              className="h-full w-full object-cover md:hidden"
-              priority
-            />
 
           </div>
         </div>
