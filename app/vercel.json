@@ -58,6 +58,10 @@
     {
       "path": "/api/cron/research-referral",
       "schedule": "30 10 * * *"
+    },
+    {
+      "path": "/api/cron/research-stale-leads",
+      "schedule": "0 9 * * 1"
     }
   ]
 }
