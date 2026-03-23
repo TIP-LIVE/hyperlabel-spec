@@ -108,6 +108,13 @@ export default async function ResearchDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/admin/research/interviews"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
+          >
+            <Users className="h-4 w-4" />
+            Interviews
+          </Link>
+          <Link
             href="/admin/research/calendar"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
           >
@@ -334,7 +341,7 @@ export default async function ResearchDashboardPage() {
                 {upcomingInterviews.map((interview) => (
                   <Link
                     key={interview.id}
-                    href={`/admin/research/leads/${interview.lead.id}`}
+                    href={`/admin/research/interviews/${interview.id}`}
                     className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
                   >
                     <div>

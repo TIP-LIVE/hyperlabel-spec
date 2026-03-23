@@ -1,4 +1,4 @@
-# Prompt for Next Thread — Build the Research Hub (Week 4+)
+# Prompt for Next Thread — Build the Research Hub (Week 6+)
 
 Copy everything below into a new Claude Code conversation.
 
@@ -27,44 +27,58 @@ I'm building TIP (tip.live), a cargo tracking SaaS. We're building an internal *
 - Seed script: 6 hypotheses (H1-H6) + 3 interview scripts
 - Dashboard updated with script status + hypothesis scorecard
 
-### Week 3 (uncommitted — ready to commit)
-- Prisma model: `ResearchInterview` (with calendar event tracking, notes, hypothesis signals)
+### Weeks 3-4 (committed: `bbb4095`)
+- Prisma model: `ResearchInterview`, `ResearchEmailLog`
 - Google Calendar service (`lib/google-calendar.ts`) — create/update/delete/list events via OAuth2
-- Calendar events API routes (`/api/v1/admin/research/calendar/events`, `/events/[id]`)
-- Schedule Interview dialog component (date/time picker, duration, notes)
-- Calendar view page (`/admin/research/calendar`) — grouped by date, cancel actions
-- Dashboard updated with "Upcoming Interviews" card + Calendar nav button
-- Lead detail updated with interviews section + "Schedule Interview" button
-- Lead move route auto-cancels Google Calendar events when declining/no-show
-- All schema changes pushed to database
-- Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` added to `.env.local`
+- Calendar events API routes + Schedule Interview dialog
+- Calendar view page (`/admin/research/calendar`)
+- 5 email templates: outreach, scheduled, reminder, thank-you, referral
+- Email send API route + Send Email dialog
+- 3 cron jobs: `research-reminders`, `research-followup`, `research-referral`
+- Email history on lead detail page
+
+### Week 5 (uncommitted — ready to commit)
+- Interview API routes: `GET /interviews`, `GET /interviews/[id]`, `PATCH /interviews/[id]`
+- Interview list page (`/admin/research/interviews`) — upcoming + past interviews
+- Interview runner page (`/admin/research/interviews/[id]`) — two-panel layout:
+  - Left panel: approved script sections with questions and probes, section navigation dots
+  - Right panel: tabbed notes (per-section notes, key quotes, hypothesis signals)
+  - Top bar: lead info, persona badge, timer with play/pause/reset, save/complete buttons
+- Interview timer component with target time tracking and overtime indicator
+- Interview notes component with auto-save (30s), structured note capture
+- Hypothesis signal tracking: per-signal hypothesis selector, validating/neutral/invalidating, evidence
+- Key quote capture with context and theme tagging
+- Auto-transition: completing interview moves lead to COMPLETED status
+- Dashboard updated: upcoming interviews link to runner, Interviews nav button added
+- Lead detail updated: Start/Continue/View links on interview cards
 
 ## What to Build Next
 
-Start with **Week 4** from the 8-week plan: Email Automation.
+Start with **Week 6** from the 8-week plan: Insights Dashboard.
 
 ## Key Files to Read First
 
 ### Spec & Plan
 - `docs/user-research/RESEARCH-HUB-SPEC.md` — Full specification
-- `docs/user-research/RESEARCH-HUB-8-WEEK-PLAN.md` — 8-week plan (Week 4 section)
+- `docs/user-research/RESEARCH-HUB-8-WEEK-PLAN.md` — 8-week plan (Week 6 section)
 
-### Existing Research Code (Week 1-3)
+### Existing Research Code (Week 1-5)
 - `app/prisma/schema.prisma` — Current schema with all research models
-- `app/src/app/(admin)/admin/research/` — Research pages (dashboard, leads, scripts, calendar)
-- `app/src/app/api/v1/admin/research/` — Research API routes (leads, scripts, hypotheses, calendar)
-- `app/src/components/admin/research/` — Research components
-- `app/src/lib/validations/research.ts` — Zod schemas (leads, tasks, scripts, hypotheses, interviews)
+- `app/src/app/(admin)/admin/research/` — Research pages (dashboard, leads, scripts, calendar, interviews)
+- `app/src/app/api/v1/admin/research/` — Research API routes (leads, scripts, hypotheses, calendar, email, interviews)
+- `app/src/components/admin/research/` — Research components (interview-runner, interview-timer, interview-notes, etc.)
+- `app/src/lib/validations/research.ts` — Zod schemas
 - `app/src/lib/google-calendar.ts` — Google Calendar service
 - `app/src/lib/status-config.ts` — Status labels/colors
+- `app/src/emails/` — Email templates (research-*.tsx)
+- `app/src/app/api/cron/research-*/` — Research cron jobs
 
 ### Architecture Patterns
 - `CLAUDE.md` — Project rules, patterns, pitfalls
 - `app/src/lib/auth.ts` — Auth helpers (`requireAdmin()`)
 - `app/src/lib/email.ts` — Email sending (`sendEmail()`)
 - `app/src/lib/cron.ts` — Cron wrapper (`withCronLogging()`)
-- `app/src/emails/base-layout.tsx` — Email base layout
-- `app/src/emails/script-review-request.tsx` — Example research email template
+- `app/src/lib/api-utils.ts` — API error handler (`handleApiError()`)
 
 ## Important Rules
 
@@ -77,4 +91,4 @@ Start with **Week 4** from the 8-week plan: Email Automation.
 
 ## Let's Start
 
-Read the Week 4 plan, then build the email automation: outreach, reminder, thank-you, and referral templates + cron jobs. After Week 4, continue to Week 5 (Interview Runner) and beyond.
+Read the Week 6 plan, then build the insights dashboard: hypothesis scorecard, quote bank, pain point ranking, persona summaries, pilot interest leaderboard, and export. After Week 6, continue to Week 7 (Task Management + Polish) and beyond.

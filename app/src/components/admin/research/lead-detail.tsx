@@ -34,6 +34,7 @@ import {
   Star,
   CalendarClock,
   Clock,
+  Play,
 } from 'lucide-react'
 import { ScheduleInterviewDialog } from './schedule-interview-dialog'
 import { SendEmailDialog } from './send-email-dialog'
@@ -382,13 +383,32 @@ export function LeadDetail({ lead }: LeadDetailProps) {
                         </p>
                       )}
                     </div>
-                    <Badge variant={
-                      interview.status === 'COMPLETED' ? 'secondary' :
-                      interview.status === 'CANCELLED' ? 'destructive' :
-                      'outline'
-                    }>
-                      {interview.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        interview.status === 'COMPLETED' ? 'secondary' :
+                        interview.status === 'CANCELLED' ? 'destructive' :
+                        'outline'
+                      }>
+                        {interview.status}
+                      </Badge>
+                      {['SCHEDULED', 'IN_PROGRESS'].includes(interview.status) && (
+                        <Link
+                          href={`/admin/research/interviews/${interview.id}`}
+                          className="inline-flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                          <Play className="h-3 w-3" />
+                          {interview.status === 'IN_PROGRESS' ? 'Continue' : 'Start'}
+                        </Link>
+                      )}
+                      {interview.status === 'COMPLETED' && (
+                        <Link
+                          href={`/admin/research/interviews/${interview.id}`}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          View
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
