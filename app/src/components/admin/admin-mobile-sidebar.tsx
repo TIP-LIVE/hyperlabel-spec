@@ -22,6 +22,7 @@ import {
   Send,
   Menu,
   Activity,
+  ClipboardList,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
@@ -34,6 +35,7 @@ const navigation = [
   { name: 'Track Cargo', href: '/admin/cargo', icon: Truck },
   { name: 'Devices', href: '/admin/devices', icon: Radio },
   { name: 'Webhooks', href: '/admin/webhooks', icon: Activity },
+  { name: 'Research', href: '/admin/research', icon: ClipboardList },
   { name: 'Users', href: '/admin/users', icon: Users },
 ]
 

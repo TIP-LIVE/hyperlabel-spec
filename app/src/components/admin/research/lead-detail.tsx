@@ -1,0 +1,342 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  ArrowLeft,
+  Building2,
+  User,
+  Mail,
+  Linkedin,
+  ChevronDown,
+  Pencil,
+  Trash2,
+  Star,
+} from 'lucide-react'
+import {
+  researchLeadStatusStyles,
+  researchLeadStatusConfig,
+  researchPersonaStyles,
+  researchPersonaConfig,
+  type ResearchLeadStatus,
+  type ResearchPersona,
+} from '@/lib/status-config'
+
+const ALL_STATUSES: ResearchLeadStatus[] = [
+  'SOURCED', 'CONTACTED', 'SCREENED', 'SCHEDULED',
+  'COMPLETED', 'ANALYSED', 'DECLINED', 'NO_SHOW',
+]
+
+interface Task {
+  id: string
+  title: string
+  status: string
+  category: string
+  dueDate: string | null
+  createdAt: string
+}
+
+interface LeadData {
+  id: string
+  name: string
+  email: string | null
+  linkedIn: string | null
+  company: string | null
+  role: string | null
+  persona: string
+  status: string
+  source: string | null
+  referredBy: string | null
+  screeningNotes: string | null
+  pilotInterest: number | null
+  giftCardSent: boolean
+  giftCardType: string | null
+  createdAt: string
+  updatedAt: string
+  tasks: Task[]
+}
+
+interface LeadDetailProps {
+  lead: LeadData
+}
+
+export function LeadDetail({ lead }: LeadDetailProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [isEditing, setIsEditing] = useState(false)
+  const [editData, setEditData] = useState({
+    name: lead.name,
+    email: lead.email || '',
+    linkedIn: lead.linkedIn || '',
+    company: lead.company || '',
+    role: lead.role || '',
+    source: lead.source || '',
+    screeningNotes: lead.screeningNotes || '',
+    pilotInterest: lead.pilotInterest,
+  })
+
+  async function moveLead(newStatus: string) {
+    const res = await fetch(`/api/v1/admin/research/leads/${lead.id}/move`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    })
+    if (res.ok) {
+      startTransition(() => router.refresh())
+    }
+  }
+
+  async function saveLead() {
+    const res = await fetch(`/api/v1/admin/research/leads/${lead.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editData),
+    })
+    if (res.ok) {
+      setIsEditing(false)
+      startTransition(() => router.refresh())
+    }
+  }
+
+  async function deleteLead() {
+    if (!confirm('Delete this lead? This cannot be undone.')) return
+    const res = await fetch(`/api/v1/admin/research/leads/${lead.id}`, {
+      method: 'DELETE',
+    })
+    if (res.ok) {
+      router.push('/admin/research/leads')
+    }
+  }
+
+  return (
+    <div className="space-y-6" style={{ opacity: isPending ? 0.6 : 1 }}>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/admin/research/leads" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{lead.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              {[lead.role, lead.company].filter(Boolean).join(' @ ') || 'No details'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            {isEditing ? 'Cancel' : 'Edit'}
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive" onClick={deleteLead}>
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+            Delete
+          </Button>
+        </div>
+      </div>
+
+      {/* Status + Move */}
+      <div className="flex items-center gap-4">
+        <Badge className={researchLeadStatusStyles[lead.status as ResearchLeadStatus]}>
+          {researchLeadStatusConfig[lead.status as ResearchLeadStatus].label}
+        </Badge>
+        <Badge className={researchPersonaStyles[lead.persona as ResearchPersona]}>
+          {researchPersonaConfig[lead.persona as ResearchPersona].label}
+        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              Move to <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {ALL_STATUSES.filter((s) => s !== lead.status).map((s) => (
+              <DropdownMenuItem key={s} onClick={() => moveLead(s)}>
+                <Badge className={`mr-2 ${researchLeadStatusStyles[s]}`}>
+                  {researchLeadStatusConfig[s].label}
+                </Badge>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Profile */}
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-card-foreground">Profile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} />
+                </div>
+                <div>
+                  <Label>LinkedIn</Label>
+                  <Input value={editData.linkedIn} onChange={(e) => setEditData({ ...editData, linkedIn: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Company</Label>
+                  <Input value={editData.company} onChange={(e) => setEditData({ ...editData, company: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Role</Label>
+                  <Input value={editData.role} onChange={(e) => setEditData({ ...editData, role: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Source</Label>
+                  <Input value={editData.source} onChange={(e) => setEditData({ ...editData, source: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Pilot Interest (1-5)</Label>
+                  <Select
+                    value={editData.pilotInterest?.toString() || ''}
+                    onValueChange={(v) => setEditData({ ...editData, pilotInterest: v ? parseInt(v) : null })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Not rated" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 - Low</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3 - Medium</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5 - High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Screening Notes</Label>
+                  <Textarea
+                    value={editData.screeningNotes}
+                    onChange={(e) => setEditData({ ...editData, screeningNotes: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+                <Button onClick={saveLead}>Save Changes</Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {lead.email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a href={`mailto:${lead.email}`} className="text-primary hover:underline">{lead.email}</a>
+                  </div>
+                )}
+                {lead.linkedIn && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Linkedin className="h-4 w-4 text-muted-foreground" />
+                    <a href={lead.linkedIn} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      LinkedIn Profile
+                    </a>
+                  </div>
+                )}
+                {lead.company && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground">{lead.company}</span>
+                  </div>
+                )}
+                {lead.role && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground">{lead.role}</span>
+                  </div>
+                )}
+                {lead.source && (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Source:</span>{' '}
+                    <span className="text-foreground">{lead.source}</span>
+                  </div>
+                )}
+                {lead.pilotInterest && (
+                  <div className="flex items-center gap-1 text-sm">
+                    <span className="text-muted-foreground">Pilot interest:</span>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${i < lead.pilotInterest! ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                {lead.giftCardSent && (
+                  <div className="text-sm">
+                    <Badge variant="outline">Gift card sent{lead.giftCardType ? ` (${lead.giftCardType})` : ''}</Badge>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Screening Notes (read-only when not editing) */}
+        {!isEditing && lead.screeningNotes && (
+          <Card className="border-border bg-card">
+            <CardHeader>
+              <CardTitle className="text-card-foreground">Screening Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-sm text-foreground">{lead.screeningNotes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tasks */}
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-card-foreground">Tasks ({lead.tasks.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {lead.tasks.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">No tasks yet</p>
+            ) : (
+              <div className="space-y-2">
+                {lead.tasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between rounded border border-border p-2">
+                    <div>
+                      <p className={`text-sm font-medium ${task.status === 'DONE' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                        {task.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{task.category}</p>
+                    </div>
+                    <Badge variant={task.status === 'DONE' ? 'secondary' : 'outline'}>
+                      {task.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

@@ -337,3 +337,91 @@ model CronExecutionLog {
   @@index([startedAt])
   @@map("cron_execution_logs")
 }
+
+// ============================================
+// RESEARCH HUB ENUMS
+// ============================================
+
+enum ResearchPersona {
+  CONSIGNEE
+  FORWARDER
+  SHIPPER
+}
+
+enum ResearchLeadStatus {
+  SOURCED
+  CONTACTED
+  SCREENED
+  SCHEDULED
+  COMPLETED
+  ANALYSED
+  DECLINED
+  NO_SHOW
+}
+
+enum ResearchTaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum ResearchTaskCategory {
+  OUTREACH
+  SCHEDULING
+  FOLLOW_UP
+  GIFT_CARD
+  ANALYSIS
+  REVIEW
+}
+
+// ============================================
+// RESEARCH HUB MODELS
+// ============================================
+
+/// ResearchLead - people we want to interview for user research
+model ResearchLead {
+  id               String              @id @default(cuid())
+  name             String
+  email            String?
+  linkedIn         String?             @map("linked_in")
+  company          String?
+  role             String?
+  persona          ResearchPersona
+  status           ResearchLeadStatus  @default(SOURCED)
+  source           String?             // linkedin, referral, cold-email, respondent.io, personal-network
+  referredBy       String?             @map("referred_by") // Lead ID of referrer
+  screeningNotes   String?             @map("screening_notes")
+  pilotInterest    Int?                @map("pilot_interest") // 1-5 scale
+  giftCardSent     Boolean             @default(false) @map("gift_card_sent")
+  giftCardType     String?             @map("gift_card_type") // e.g. "amazon-30-gbp"
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  tasks ResearchTask[]
+
+  @@index([status])
+  @@index([persona])
+  @@map("research_leads")
+}
+
+/// ResearchTask - tasks generated during the research process
+model ResearchTask {
+  id          String               @id @default(cuid())
+  title       String
+  description String?
+  status      ResearchTaskStatus   @default(TODO)
+  dueDate     DateTime?            @map("due_date")
+  assignee    String?              // userId
+  category    ResearchTaskCategory
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  leadId String? @map("lead_id")
+  lead   ResearchLead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([leadId])
+  @@map("research_tasks")
+}
