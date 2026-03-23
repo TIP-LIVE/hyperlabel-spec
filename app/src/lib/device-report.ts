@@ -8,6 +8,7 @@ import {
   sendLabelOrphanedNotification,
 } from '@/lib/notifications'
 import { format } from 'date-fns'
+import { haversineDistanceM } from '@/lib/utils/geo'
 import { syncSimLabelToOnomondo } from '@/lib/onomondo'
 import { generateShareCode } from '@/lib/utils/share-code'
 
@@ -337,6 +338,53 @@ export async function processLocationReport(
       locationId: coordDedup.id,
       shipmentId: coordDedup.shipmentId,
       deviceId: label.deviceId,
+    }
+  }
+
+  // Proximity dedup for cell tower events: cell towers have 300-2000m accuracy,
+  // so sub-500m differences within 5 minutes are noise, not movement.
+  // Only applies to CELL_TOWER source — GPS is precise enough for exact dedup.
+  const source = input.source ?? 'GPS'
+  const PROXIMITY_DEDUP_RADIUS_M = 500
+  if (source === 'CELL_TOWER') {
+    const recentEvents = await db.locationEvent.findMany({
+      where: {
+        labelId: label.id,
+        source: 'CELL_TOWER',
+        recordedAt: { gte: new Date(recordedAt.getTime() - COORD_DEDUP_WINDOW_MS) },
+      },
+      orderBy: { recordedAt: 'desc' },
+      take: 5,
+      select: { id: true, shipmentId: true, latitude: true, longitude: true },
+    })
+
+    const proximityMatch = recentEvents.find(
+      (ev) =>
+        ev.latitude !== null &&
+        ev.longitude !== null &&
+        haversineDistanceM(effectiveLat, effectiveLng, ev.latitude, ev.longitude) < PROXIMITY_DEDUP_RADIUS_M
+    )
+
+    if (proximityMatch) {
+      if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
+        await db.label.update({
+          where: { id: label.id },
+          data: { lastSeenAt: receivedAt },
+        })
+      }
+      if (process.env.NODE_ENV !== 'test') {
+        console.info('[Device report] proximity dedup skipped (cell tower within 500m/5min)', {
+          deviceId: label.deviceId,
+          existingId: proximityMatch.id,
+          recordedAt: recordedAt.toISOString(),
+        })
+      }
+      return {
+        success: true,
+        locationId: proximityMatch.id,
+        shipmentId: proximityMatch.shipmentId,
+        deviceId: label.deviceId,
+      }
     }
   }
 

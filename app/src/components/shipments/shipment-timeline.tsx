@@ -69,6 +69,26 @@ function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] 
   return groups
 }
 
+/** Sub-group consecutive events within an expanded group by geocodedArea (or proximity). */
+function groupConsecutiveByArea(events: LocationEvent[]): LocationEvent[][] {
+  if (events.length === 0) return []
+  const groups: LocationEvent[][] = [[events[0]]]
+  for (let i = 1; i < events.length; i++) {
+    const prev = events[i - 1]
+    const curr = events[i]
+    const sameArea =
+      prev.geocodedArea && curr.geocodedArea
+        ? prev.geocodedArea === curr.geocodedArea
+        : isNearby(prev, curr)
+    if (sameArea) {
+      groups[groups.length - 1].push(curr)
+    } else {
+      groups.push([curr])
+    }
+  }
+  return groups
+}
+
 function locationDisplayName(location: LocationEvent): string {
   return formatLocationName(location) ?? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
 }
@@ -217,15 +237,42 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                 </div>
               </button>
 
-              {/* Expanded individual events */}
+              {/* Expanded individual events — sub-grouped by area to reduce cell tower noise */}
               {isExpanded && (
                 <div className="mt-2 space-y-2 sm:space-y-4 border-l-2 border-dashed border-muted-foreground/20 ml-[11px] sm:ml-[15px] pl-6 sm:pl-8">
-                  {group.events.map((location) => (
-                    <div key={location.id} className="min-h-[36px] sm:min-h-[44px]">
-                      {renderLocationRow(location, false, true)}
-                    </div>
-                  ))}
-
+                  {groupConsecutiveByArea(group.events).map((subGroup) => {
+                    if (subGroup.length === 1) {
+                      return (
+                        <div key={subGroup[0].id} className="min-h-[36px] sm:min-h-[44px]">
+                          {renderLocationRow(subGroup[0], false, true)}
+                        </div>
+                      )
+                    }
+                    // Multiple consecutive events in the same area — show one row with count
+                    const newest = subGroup[0]
+                    const oldest = subGroup[subGroup.length - 1]
+                    return (
+                      <div key={newest.id} className="min-h-[36px] sm:min-h-[44px]">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            <span className="text-sm font-medium truncate">
+                              {newest.geocodedCountryCode && (
+                                <span className="mr-1">{countryCodeToFlag(newest.geocodedCountryCode)}</span>
+                              )}
+                              {detailLocationDisplayName(newest)}
+                            </span>
+                            <span className="shrink-0 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                              x{subGroup.length}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateRange(new Date(oldest.recordedAt), new Date(newest.recordedAt))}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
