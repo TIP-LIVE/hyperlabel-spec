@@ -38,7 +38,7 @@ export function ResearchOutreachEmail({
   return (
     <Html>
       <Head />
-      <Preview>TIP Research — We'd love to hear your perspective on cargo tracking</Preview>
+      <Preview>TIP Research — We&apos;d love to hear your perspective on cargo tracking</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
@@ -60,8 +60,8 @@ export function ResearchOutreachEmail({
             ) : (
               <>
                 <Text style={paragraph}>
-                  I'm Denys from TIP — we're building a new way to track cargo shipments
-                  door-to-door using IoT labels. We're currently conducting research interviews
+                  I&apos;m Denys from TIP — we&apos;re building a new way to track cargo shipments
+                  door-to-door using IoT labels. We&apos;re currently conducting research interviews
                   to better understand the challenges people face with shipment visibility.
                 </Text>
 

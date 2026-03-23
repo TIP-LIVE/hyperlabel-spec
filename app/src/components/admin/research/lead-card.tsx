@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Building2, User } from 'lucide-react'
@@ -27,9 +28,10 @@ interface LeadCardProps {
 }
 
 export function LeadCard({ lead }: LeadCardProps) {
+  const [now] = useState(() => Date.now())
   const isStale =
     lead.status === 'CONTACTED' &&
-    Date.now() - new Date(lead.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
+    now - new Date(lead.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
 
   return (
     <Link
