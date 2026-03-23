@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp, ListTodo } from 'lucide-react'
+import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp, ListTodo, Gift, Share2, BarChart3 } from 'lucide-react'
 import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig, scriptStatusStyles, scriptStatusConfig } from '@/lib/status-config'
 import type { ResearchLeadStatus, ResearchPersona, ScriptStatus } from '@/lib/status-config'
 import type { Metadata } from 'next'
@@ -34,6 +34,9 @@ export default async function ResearchDashboardPage() {
     scriptCounts,
     hypotheses,
     upcomingInterviews,
+    giftCardsPending,
+    referralsGenerated,
+    interviewsThisWeek,
   ] = await Promise.all([
     db.researchLead.count(),
     db.researchLead.count({ where: { status: 'SOURCED' } }),
@@ -74,11 +77,35 @@ export default async function ResearchDashboardPage() {
       orderBy: { scheduledAt: 'asc' },
       take: 3,
     }),
+    // Gift cards pending: completed leads without gift card sent
+    db.researchLead.count({
+      where: { status: { in: ['COMPLETED', 'ANALYSED'] }, giftCardSent: false },
+    }),
+    // Referrals generated: leads with referredBy filled
+    db.researchLead.count({
+      where: { referredBy: { not: null } },
+    }),
+    // Interviews completed this week
+    (() => {
+      const now = new Date()
+      const startOfWeek = new Date(now)
+      startOfWeek.setDate(now.getDate() - now.getDay() + 1) // Monday
+      startOfWeek.setHours(0, 0, 0, 0)
+      return db.researchInterview.count({
+        where: { status: 'COMPLETED', completedAt: { gte: startOfWeek } },
+      })
+    })(),
   ])
 
   const [consigneeCount, forwarderCount, shipperCount] = personaCounts
   const [draftScripts, inReviewScripts, approvedScripts] = scriptCounts
   const [todoTasks, inProgressTasks, doneTasks] = taskCounts
+
+  // Completion rate: Completed / (Completed + No-show + Declined)
+  const completionDenominator = completedCount + analysedCount + noShowCount + declinedCount
+  const completionRate = completionDenominator > 0
+    ? Math.round(((completedCount + analysedCount) / completionDenominator) * 100)
+    : 0
 
   const stats = [
     { label: 'Total Leads', value: totalLeads, icon: Users, href: '/admin/research/leads' },
@@ -174,6 +201,54 @@ export default async function ResearchDashboardPage() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border bg-card">
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="rounded-lg bg-green-500/10 p-3">
+              <BarChart3 className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{completionRate}%</p>
+              <p className="text-sm text-muted-foreground">Completion Rate</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="rounded-lg bg-blue-500/10 p-3">
+              <CalendarClock className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{interviewsThisWeek}</p>
+              <p className="text-sm text-muted-foreground">This Week</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="rounded-lg bg-yellow-500/10 p-3">
+              <Gift className="h-5 w-5 text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{giftCardsPending}</p>
+              <p className="text-sm text-muted-foreground">Gift Cards Pending</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="rounded-lg bg-purple-500/10 p-3">
+              <Share2 className="h-5 w-5 text-purple-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{referralsGenerated}</p>
+              <p className="text-sm text-muted-foreground">Referrals</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
