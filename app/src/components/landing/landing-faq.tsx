@@ -64,9 +64,9 @@ export function LandingFAQ() {
   return (
     <Accordion type="single" collapsible className="w-full">
       {faqs.map((faq, i) => (
-        <AccordionItem key={i} value={`faq-${i}`} className="border-white/10">
-          <AccordionTrigger className="text-left text-white">{faq.question}</AccordionTrigger>
-          <AccordionContent className="text-gray-400">{faq.answer}</AccordionContent>
+        <AccordionItem key={i} value={`faq-${i}`} className="border-border">
+          <AccordionTrigger className="text-left text-foreground">{faq.question}</AccordionTrigger>
+          <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
         </AccordionItem>
       ))}
     </Accordion>
