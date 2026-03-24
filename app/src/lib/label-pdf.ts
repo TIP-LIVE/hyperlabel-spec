@@ -1,8 +1,11 @@
 import { PDFDocument, rgb } from 'pdf-lib'
 import QRCode from 'qrcode'
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const fontkit = require('@pdf-lib/fontkit')
+import * as fontkitModule from '@pdf-lib/fontkit'
+
+// Handle CJS/ESM interop — Vercel's bundler may wrap the module with .default
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fontkit = (fontkitModule as any).default || fontkitModule
 
 export interface LabelData {
   deviceId: string // e.g. "w17246198247"
