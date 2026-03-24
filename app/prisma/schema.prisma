@@ -461,6 +461,27 @@ model ResearchScript {
   @@map("research_scripts")
 }
 
+/// ResearchEmailTemplate - email templates with CEO review workflow
+model ResearchEmailTemplate {
+  id           String           @id @default(cuid())
+  type         String           // outreach, scheduled, reminder, thank_you, referral
+  persona      ResearchPersona? // null = all personas, or persona-specific
+  subject      String
+  body         String           // The email body text (plain text, supports line breaks)
+  status       ScriptStatus     @default(DRAFT)
+  reviewedBy   String?          @map("reviewed_by")
+  reviewNotes  String?          @map("review_notes")
+  reviewedAt   DateTime?        @map("reviewed_at")
+  version      Int              @default(1)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  @@unique([type, persona])
+  @@index([type])
+  @@index([status])
+  @@map("research_email_templates")
+}
+
 /// ResearchInterview - a scheduled or completed interview with a lead
 model ResearchInterview {
   id                String          @id @default(cuid())

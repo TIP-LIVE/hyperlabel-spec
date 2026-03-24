@@ -155,6 +155,27 @@ export const sendResearchEmailSchema = z.object({
 })
 
 // ────────────────────────────────────────
+// Email template schemas
+// ────────────────────────────────────────
+
+export const createEmailTemplateSchema = z.object({
+  type: z.enum(researchEmailTypes),
+  persona: z.enum(['CONSIGNEE', 'FORWARDER', 'SHIPPER']).nullable().optional(),
+  subject: z.string().min(1, 'Subject is required').max(500),
+  body: z.string().min(1, 'Body is required').max(10000),
+})
+
+export const updateEmailTemplateSchema = z.object({
+  subject: z.string().min(1).max(500).optional(),
+  body: z.string().min(1).max(10000).optional(),
+})
+
+export const reviewEmailTemplateSchema = z.object({
+  action: z.enum(['submit', 'approve', 'request-changes']),
+  notes: z.string().max(5000).optional().or(z.literal('')),
+})
+
+// ────────────────────────────────────────
 // Types
 // ────────────────────────────────────────
 
@@ -171,3 +192,6 @@ export type UpdateHypothesisInput = z.infer<typeof updateHypothesisSchema>
 export type ScheduleInterviewInput = z.infer<typeof scheduleInterviewSchema>
 export type UpdateInterviewInput = z.infer<typeof updateInterviewSchema>
 export type SendResearchEmailInput = z.infer<typeof sendResearchEmailSchema>
+export type CreateEmailTemplateInput = z.infer<typeof createEmailTemplateSchema>
+export type UpdateEmailTemplateInput = z.infer<typeof updateEmailTemplateSchema>
+export type ReviewEmailTemplateInput = z.infer<typeof reviewEmailTemplateSchema>

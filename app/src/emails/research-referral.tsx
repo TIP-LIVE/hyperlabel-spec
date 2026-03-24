@@ -16,11 +16,13 @@ import * as React from 'react'
 interface ResearchReferralEmailProps {
   leadName: string
   referralLink?: string
+  customMessage?: string
 }
 
 export function ResearchReferralEmail({
   leadName,
   referralLink,
+  customMessage,
 }: ResearchReferralEmailProps) {
   return (
     <Html>
@@ -45,16 +47,22 @@ export function ResearchReferralEmail({
               <Heading style={bannerHeading}>Help Us Learn More</Heading>
             </Section>
 
-            <Text style={paragraph}>
-              Hi {leadName}, thank you again for the great conversation we had recently. Your
-              insights have been incredibly helpful in shaping TIP.
-            </Text>
+            {customMessage ? (
+              <Text style={paragraph}>{customMessage}</Text>
+            ) : (
+              <>
+                <Text style={paragraph}>
+                  Hi {leadName}, thank you again for the great conversation we had recently. Your
+                  insights have been incredibly helpful in shaping TIP.
+                </Text>
 
-            <Text style={paragraph}>
-              We&apos;re looking to speak with more people in the logistics space — particularly those
-              who deal with cargo tracking, freight forwarding, or receiving shipments. If anyone
-              comes to mind, we&apos;d be very grateful for an introduction.
-            </Text>
+                <Text style={paragraph}>
+                  We&apos;re looking to speak with more people in the logistics space — particularly those
+                  who deal with cargo tracking, freight forwarding, or receiving shipments. If anyone
+                  comes to mind, we&apos;d be very grateful for an introduction.
+                </Text>
+              </>
+            )}
 
             <Section style={detailsBox}>
               <Text style={detailLabel}>What&apos;s in it for them?</Text>

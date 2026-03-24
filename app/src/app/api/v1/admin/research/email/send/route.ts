@@ -65,13 +65,34 @@ export async function POST(req: NextRequest) {
     }
 
     const interview = lead.interviews[0]
-    const emailSubject = subject || DEFAULT_SUBJECTS[type]
 
-    // Render the appropriate template
+    // Look up approved email template for this type + persona
+    const emailTemplate = await db.researchEmailTemplate.findFirst({
+      where: {
+        type,
+        status: 'APPROVED',
+        OR: [
+          { persona: lead.persona as 'CONSIGNEE' | 'FORWARDER' | 'SHIPPER' },
+          { persona: null },
+        ],
+      },
+      orderBy: { persona: 'desc' }, // Prefer persona-specific over generic
+    })
+
+    if (!emailTemplate) {
+      return NextResponse.json(
+        { error: `No approved email template found for "${type}" emails. Please create and get one approved first.` },
+        { status: 400 }
+      )
+    }
+
+    const emailSubject = subject || emailTemplate.subject
+
+    // Render the appropriate template with approved body
     const html = await renderTemplate(type, {
       lead,
       interview,
-      customMessage,
+      customMessage: emailTemplate.body,
     })
 
     // Send the email
@@ -152,6 +173,7 @@ async function renderTemplate(
           leadName: ctx.lead.name,
           date: formatDate(ctx.interview?.scheduledAt),
           duration: ctx.interview?.duration || 60,
+          customMessage: ctx.customMessage,
         })
       )
 
@@ -161,6 +183,7 @@ async function renderTemplate(
           leadName: ctx.lead.name,
           date: formatDate(ctx.interview?.scheduledAt),
           duration: ctx.interview?.duration || 60,
+          customMessage: ctx.customMessage,
         })
       )
 
@@ -171,6 +194,7 @@ async function renderTemplate(
           giftCardNote: ctx.lead.giftCardType
             ? `A ${ctx.lead.giftCardType} gift card will be sent to you separately.`
             : 'Your £30 Amazon gift card will be sent to you shortly.',
+          customMessage: ctx.customMessage,
         })
       )
 
@@ -178,6 +202,7 @@ async function renderTemplate(
       return render(
         ResearchReferralEmail({
           leadName: ctx.lead.name,
+          customMessage: ctx.customMessage,
         })
       )
   }

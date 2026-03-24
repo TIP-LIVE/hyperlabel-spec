@@ -173,6 +173,7 @@ export function LeadDetail({ lead }: LeadDetailProps) {
               leadId={lead.id}
               leadName={lead.name}
               leadEmail={lead.email}
+              leadPersona={lead.persona}
             />
           )}
           {lead.email && ['SCREENED', 'SCHEDULED', 'CONTACTED'].includes(lead.status) && (

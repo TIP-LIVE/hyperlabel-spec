@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Mail } from 'lucide-react'
+import { Mail, AlertTriangle } from 'lucide-react'
 
 const EMAIL_TYPE_OPTIONS = [
   { value: 'outreach', label: 'Outreach', description: 'Initial research invitation' },
@@ -32,18 +33,18 @@ const EMAIL_TYPE_OPTIONS = [
   { value: 'referral', label: 'Referral', description: 'Referral request (48h after)' },
 ] as const
 
-const DEFAULT_SUBJECTS: Record<string, string> = {
-  outreach: "TIP Research \u2014 We'd love to hear your perspective",
-  scheduled: 'Your interview with TIP is confirmed',
-  reminder: 'Reminder: Your interview with TIP is tomorrow',
-  thank_you: 'Thank you for your time \u2014 TIP Research',
-  referral: "Know someone in logistics? We'd love an introduction",
+interface ApprovedTemplate {
+  id: string
+  subject: string
+  body: string
+  persona: string | null
 }
 
 interface SendEmailDialogProps {
   leadId: string
   leadName: string
   leadEmail: string | null
+  leadPersona: string
   trigger?: React.ReactNode
 }
 
@@ -51,6 +52,7 @@ export function SendEmailDialog({
   leadId,
   leadName,
   leadEmail,
+  leadPersona,
   trigger,
 }: SendEmailDialogProps) {
   const router = useRouter()
@@ -60,11 +62,50 @@ export function SendEmailDialog({
   const [success, setSuccess] = useState(false)
   const [type, setType] = useState<string>('')
   const [subject, setSubject] = useState('')
-  const [customMessage, setCustomMessage] = useState('')
+  const [approvedTemplate, setApprovedTemplate] = useState<ApprovedTemplate | null>(null)
+  const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [noTemplate, setNoTemplate] = useState(false)
+
+  useEffect(() => {
+    if (!type) {
+      setApprovedTemplate(null)
+      setNoTemplate(false)
+      return
+    }
+
+    setLoadingTemplate(true)
+    setNoTemplate(false)
+    setApprovedTemplate(null)
+
+    fetch(`/api/v1/admin/research/email-templates?type=${type}&status=APPROVED`)
+      .then((res) => res.json())
+      .then((data) => {
+        const templates = data.templates || []
+        // Prefer persona-specific template, fallback to generic
+        const match =
+          templates.find((t: ApprovedTemplate) => t.persona === leadPersona) ||
+          templates.find((t: ApprovedTemplate) => t.persona === null) ||
+          templates[0]
+
+        if (match) {
+          setApprovedTemplate(match)
+          setSubject(match.subject)
+          setNoTemplate(false)
+        } else {
+          setNoTemplate(true)
+          setSubject('')
+        }
+      })
+      .catch(() => {
+        setNoTemplate(true)
+      })
+      .finally(() => {
+        setLoadingTemplate(false)
+      })
+  }, [type, leadPersona])
 
   function handleTypeChange(value: string) {
     setType(value)
-    setSubject(DEFAULT_SUBJECTS[value] || '')
     setError(null)
     setSuccess(false)
   }
@@ -83,7 +124,6 @@ export function SendEmailDialog({
           leadId,
           type,
           subject: subject || undefined,
-          customMessage: customMessage || undefined,
         }),
       })
 
@@ -99,7 +139,8 @@ export function SendEmailDialog({
         setOpen(false)
         setType('')
         setSubject('')
-        setCustomMessage('')
+        setApprovedTemplate(null)
+        setNoTemplate(false)
         setSuccess(false)
         router.refresh()
       }, 1500)
@@ -147,8 +188,46 @@ export function SendEmailDialog({
               </Select>
             </div>
 
-            {type && (
+            {type && !loadingTemplate && noTemplate && (
+              <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-yellow-600 dark:text-yellow-400">
+                      No approved template
+                    </p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      No approved email template found for this type.{' '}
+                      <Link href="/admin/research/email-templates/new" className="text-primary hover:underline">
+                        Create one
+                      </Link>{' '}
+                      and get it approved first.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {type && loadingTemplate && (
+              <p className="text-sm text-muted-foreground">Loading template...</p>
+            )}
+
+            {type && approvedTemplate && (
               <>
+                <div className="rounded-lg border border-border bg-muted/50 p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className="text-xs">Approved Template</Badge>
+                    {approvedTemplate.persona ? (
+                      <Badge variant="outline" className="text-xs">{approvedTemplate.persona}</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">All Personas</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-3 mt-1">
+                    {approvedTemplate.body}
+                  </p>
+                </div>
+
                 <div>
                   <Label htmlFor="subject">Subject</Label>
                   <Input
@@ -159,23 +238,6 @@ export function SendEmailDialog({
                     className="mt-1"
                   />
                 </div>
-
-                {type === 'outreach' && (
-                  <div>
-                    <Label htmlFor="customMessage">Custom Message (optional)</Label>
-                    <Textarea
-                      id="customMessage"
-                      value={customMessage}
-                      onChange={(e) => setCustomMessage(e.target.value)}
-                      placeholder="Add a personal touch to the outreach email..."
-                      rows={4}
-                      className="mt-1"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      If provided, this replaces the default outreach text.
-                    </p>
-                  </div>
-                )}
               </>
             )}
 
@@ -192,7 +254,7 @@ export function SendEmailDialog({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !type || !leadEmail}>
+            <Button type="submit" disabled={loading || !type || !leadEmail || noTemplate || loadingTemplate}>
               {loading ? 'Sending...' : 'Send Email'}
             </Button>
           </DialogFooter>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp, ListTodo, Gift, Share2, BarChart3 } from 'lucide-react'
+import { Users, UserCheck, CalendarClock, CheckCircle, ClipboardList, FileText, Calendar, ArrowRight, Check, Minus, X, Clock, Building2, TrendingUp, ListTodo, Gift, Share2, BarChart3, Mail } from 'lucide-react'
 import { researchLeadStatusStyles, researchPersonaStyles, researchPersonaConfig, scriptStatusStyles, scriptStatusConfig } from '@/lib/status-config'
 import type { ResearchLeadStatus, ResearchPersona, ScriptStatus } from '@/lib/status-config'
 import type { Metadata } from 'next'
@@ -33,6 +33,7 @@ export default async function ResearchDashboardPage() {
     recentLeads,
     scriptCounts,
     hypotheses,
+    emailTemplateCounts,
     upcomingInterviews,
     giftCardsPending,
     referralsGenerated,
@@ -69,6 +70,11 @@ export default async function ResearchDashboardPage() {
     db.researchHypothesis.findMany({
       orderBy: { code: 'asc' },
     }),
+    Promise.all([
+      db.researchEmailTemplate.count({ where: { status: 'DRAFT' } }),
+      db.researchEmailTemplate.count({ where: { status: 'IN_REVIEW' } }),
+      db.researchEmailTemplate.count({ where: { status: 'APPROVED' } }),
+    ]),
     db.researchInterview.findMany({
       where: { status: 'SCHEDULED', scheduledAt: { gte: new Date() } },
       include: {
@@ -99,6 +105,7 @@ export default async function ResearchDashboardPage() {
 
   const [consigneeCount, forwarderCount, shipperCount] = personaCounts
   const [draftScripts, inReviewScripts, approvedScripts] = scriptCounts
+  const [draftEmailTemplates, inReviewEmailTemplates, approvedEmailTemplates] = emailTemplateCounts
   const [todoTasks, inProgressTasks, doneTasks] = taskCounts
 
   // Completion rate: Completed / (Completed + No-show + Declined)
@@ -173,6 +180,13 @@ export default async function ResearchDashboardPage() {
           >
             <FileText className="h-4 w-4" />
             Scripts
+          </Link>
+          <Link
+            href="/admin/research/email-templates"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent/50"
+          >
+            <Mail className="h-4 w-4" />
+            Emails
           </Link>
           <Link
             href="/admin/research/leads"
@@ -353,6 +367,42 @@ export default async function ResearchDashboardPage() {
                     className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline"
                   >
                     {inReviewScripts} script{inReviewScripts !== 1 ? 's' : ''} awaiting review
+                  </Link>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Email Templates */}
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-card-foreground">Email Templates</CardTitle>
+            <Link href="/admin/research/email-templates" className="text-sm text-primary hover:underline">
+              View all <ArrowRight className="ml-1 inline h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                { status: 'DRAFT' as ScriptStatus, count: draftEmailTemplates },
+                { status: 'IN_REVIEW' as ScriptStatus, count: inReviewEmailTemplates },
+                { status: 'APPROVED' as ScriptStatus, count: approvedEmailTemplates },
+              ].map(({ status, count }) => (
+                <div key={status} className="flex items-center justify-between">
+                  <Badge className={scriptStatusStyles[status]}>
+                    {scriptStatusConfig[status].label}
+                  </Badge>
+                  <span className="text-lg font-bold text-foreground">{count}</span>
+                </div>
+              ))}
+              {inReviewEmailTemplates > 0 && (
+                <div className="border-t border-border pt-3">
+                  <Link
+                    href="/admin/research/email-templates?status=IN_REVIEW"
+                    className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline"
+                  >
+                    {inReviewEmailTemplates} template{inReviewEmailTemplates !== 1 ? 's' : ''} awaiting review
                   </Link>
                 </div>
               )}

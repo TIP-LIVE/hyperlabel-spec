@@ -15,11 +15,13 @@ import * as React from 'react'
 interface ResearchThankYouEmailProps {
   leadName: string
   giftCardNote?: string
+  customMessage?: string
 }
 
 export function ResearchThankYouEmail({
   leadName,
   giftCardNote,
+  customMessage,
 }: ResearchThankYouEmailProps) {
   return (
     <Html>
@@ -44,16 +46,22 @@ export function ResearchThankYouEmail({
               <Heading style={bannerHeading}>Thank You!</Heading>
             </Section>
 
-            <Text style={paragraph}>
-              Hi {leadName}, thank you so much for taking the time to speak with us. Your insights
-              about cargo tracking and logistics are incredibly valuable and will directly shape
-              how we build TIP.
-            </Text>
+            {customMessage ? (
+              <Text style={paragraph}>{customMessage}</Text>
+            ) : (
+              <>
+                <Text style={paragraph}>
+                  Hi {leadName}, thank you so much for taking the time to speak with us. Your insights
+                  about cargo tracking and logistics are incredibly valuable and will directly shape
+                  how we build TIP.
+                </Text>
 
-            <Text style={paragraph}>
-              We really appreciate your candid feedback — it helps us ensure we&apos;re solving real
-              problems for real people.
-            </Text>
+                <Text style={paragraph}>
+                  We really appreciate your candid feedback — it helps us ensure we&apos;re solving real
+                  problems for real people.
+                </Text>
+              </>
+            )}
 
             {giftCardNote && (
               <Section style={detailsBox}>

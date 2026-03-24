@@ -18,6 +18,7 @@ interface ResearchReminderEmailProps {
   date: string
   duration: number
   meetingLink?: string
+  customMessage?: string
 }
 
 export function ResearchReminderEmail({
@@ -25,6 +26,7 @@ export function ResearchReminderEmail({
   date,
   duration,
   meetingLink,
+  customMessage,
 }: ResearchReminderEmailProps) {
   return (
     <Html>
@@ -49,10 +51,14 @@ export function ResearchReminderEmail({
               <Heading style={bannerHeading}>Interview Reminder</Heading>
             </Section>
 
-            <Text style={paragraph}>
-              Hi {leadName}, just a friendly reminder that your research interview with TIP is
-              coming up tomorrow.
-            </Text>
+            {customMessage ? (
+              <Text style={paragraph}>{customMessage}</Text>
+            ) : (
+              <Text style={paragraph}>
+                Hi {leadName}, just a friendly reminder that your research interview with TIP is
+                coming up tomorrow.
+              </Text>
+            )}
 
             <Section style={detailsBox}>
               <Text style={detailLabel}>Date & Time</Text>

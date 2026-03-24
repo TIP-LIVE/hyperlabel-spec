@@ -19,6 +19,7 @@ interface ResearchScheduledEmailProps {
   duration: number
   meetingLink?: string
   notes?: string
+  customMessage?: string
 }
 
 export function ResearchScheduledEmail({
@@ -27,6 +28,7 @@ export function ResearchScheduledEmail({
   duration,
   meetingLink,
   notes,
+  customMessage,
 }: ResearchScheduledEmailProps) {
   return (
     <Html>
@@ -51,10 +53,14 @@ export function ResearchScheduledEmail({
               <Heading style={bannerHeading}>Interview Confirmed</Heading>
             </Section>
 
-            <Text style={paragraph}>
-              Hi {leadName}, your research interview with TIP has been confirmed. We&apos;re looking
-              forward to hearing your perspective!
-            </Text>
+            {customMessage ? (
+              <Text style={paragraph}>{customMessage}</Text>
+            ) : (
+              <Text style={paragraph}>
+                Hi {leadName}, your research interview with TIP has been confirmed. We&apos;re looking
+                forward to hearing your perspective!
+              </Text>
+            )}
 
             <Section style={detailsBox}>
               <Text style={detailLabel}>Date & Time</Text>
