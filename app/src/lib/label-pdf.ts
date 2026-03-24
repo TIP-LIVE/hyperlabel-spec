@@ -39,6 +39,8 @@ function drawQrCode(
   const modules = qr.modules
   const moduleCount = modules.size
   const moduleSize = size / moduleCount
+  // Overlap each cell by 0.5pt to eliminate visible seams between rectangles
+  const overlap = 0.5
 
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
@@ -46,9 +48,9 @@ function drawQrCode(
         // PDF y-axis is bottom-up, QR row 0 is top
         page.drawRectangle({
           x: x + col * moduleSize,
-          y: y + (moduleCount - 1 - row) * moduleSize,
-          width: moduleSize,
-          height: moduleSize,
+          y: y + (moduleCount - 1 - row) * moduleSize - overlap,
+          width: moduleSize + overlap,
+          height: moduleSize + overlap,
           color: QR_COLOR,
         })
       }
