@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Load template and font
     const cwd = process.cwd()
     const templatePath = path.resolve(cwd, 'public/label/TIP-Label-noQR-10x15cm.pdf')
-    const fontPath = path.resolve(cwd, 'public/fonts/SuisseIntl-Bold.otf')
+    const fontPath = path.resolve(cwd, 'public/fonts/SuisseIntl-SemiBold.otf')
 
     console.log('[generate-labels] cwd:', cwd)
     console.log('[generate-labels] templatePath:', templatePath, 'exists:', fs.existsSync(templatePath))
