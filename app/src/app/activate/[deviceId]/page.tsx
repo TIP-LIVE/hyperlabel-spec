@@ -22,10 +22,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ActivateLabelPage({ params }: PageProps) {
   const { deviceId: rawDeviceId } = await params
-  const deviceId = decodeURIComponent(rawDeviceId).toUpperCase()
+  const decoded = decodeURIComponent(rawDeviceId)
+  // w-prefix IDs stay lowercase (w17246198247), others uppercase (TIP-001, HL-001234)
+  const deviceId = /^w\d/i.test(decoded) ? decoded.toLowerCase() : decoded.toUpperCase()
 
-  // Validate device ID format (TIP-001, TIP-123, HL-001234)
-  if (!/^(TIP-\d+|HL-\d{6})$/i.test(deviceId)) {
+  // Validate device ID format (TIP-001, TIP-123, HL-001234, w17246198247)
+  if (!/^(TIP-\d+|HL-\d{6}|W\d{8,})$/i.test(deviceId)) {
     return (
       <ActivateLayout>
         <Card className="max-w-md">

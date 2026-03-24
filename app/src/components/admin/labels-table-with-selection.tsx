@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
-import { Building2, Plus } from 'lucide-react'
+import { Building2, Plus, QrCode } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const statusStyles: Record<string, string> = {
@@ -95,6 +95,12 @@ export function LabelsTableWithSelection({
               {selectedIds.size > 0
                 ? `Assign to org(s) (${selectedIds.size})`
                 : 'Assign to org(s)'}
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/labels/generate">
+              <QrCode className="mr-2 h-4 w-4" />
+              Generate PDFs
             </Link>
           </Button>
           <Button asChild>

@@ -11,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
   '/track/(.*)', // Public tracking pages
   '/claim/(.*)', // Public label claim pages (24h window)
   '/activate/(.*)', // Physical label QR scan
+  '/w/(.*)', // Short label QR redirect → /activate/w{code}
   '/privacy', // Privacy policy
   '/terms', // Terms of service
   '/how-it-works', // Marketing: feature descriptions
