@@ -17,7 +17,7 @@ export interface LabelData {
 const LAYOUT = {
   urlText: { x: 128, y: 147, fontSize: 28 },
   serialText: { x: 128, y: 84, fontSize: 28 },
-  qrCode: { x: 745, y: 62, size: 195 },
+  qrCode: { x: 745, y: 52, size: 195 },
   textColor: rgb(0x66 / 255, 1, 0), // #66FF00
 }
 
