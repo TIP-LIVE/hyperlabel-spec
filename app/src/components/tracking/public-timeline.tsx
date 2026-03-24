@@ -31,14 +31,14 @@ interface LocationGroup {
   representative: LocationEvent
 }
 
-/** Check if two coordinates are within ~500m of each other (fallback for un-geocoded records) */
+/** Check if two coordinates are within ~3km of each other (cell tower bouncing range) */
 function isNearby(a: LocationEvent, b: LocationEvent): boolean {
   const dlat = Math.abs(a.latitude - b.latitude)
   const dlng = Math.abs(a.longitude - b.longitude)
-  return dlat < 0.005 && dlng < 0.005
+  return dlat < 0.03 && dlng < 0.03
 }
 
-/** Group consecutive locations by geocoded city name, falling back to spatial proximity */
+/** Group consecutive locations by geocoded city name or spatial proximity */
 function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] {
   if (locations.length === 0) return []
 
@@ -49,10 +49,9 @@ function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] 
     const prev = current.representative
     const curr = locations[i]
 
-    const sameGroup =
-      prev.geocodedCity && curr.geocodedCity
-        ? prev.geocodedCity === curr.geocodedCity
-        : isNearby(prev, curr)
+    // Same city, or close enough coordinates (handles cell tower bouncing across city/county borders)
+    const sameCity = prev.geocodedCity && curr.geocodedCity && prev.geocodedCity === curr.geocodedCity
+    const sameGroup = sameCity || isNearby(prev, curr)
 
     if (sameGroup) {
       current.events.push(curr)

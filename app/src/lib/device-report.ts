@@ -342,16 +342,19 @@ export async function processLocationReport(
   }
 
   // Proximity dedup for cell tower events: cell towers have 300-2000m accuracy,
-  // so sub-500m differences within 5 minutes are noise, not movement.
+  // so sub-3km differences within 60 minutes are noise, not movement.
   // Only applies to CELL_TOWER source — GPS is precise enough for exact dedup.
+  // Radius is 3km (towers near county borders can be several km apart) and window
+  // is 60 minutes (devices often report once per hour).
   const source = input.source ?? 'GPS'
-  const PROXIMITY_DEDUP_RADIUS_M = 500
+  const PROXIMITY_DEDUP_RADIUS_M = 3000
+  const CELL_TOWER_DEDUP_WINDOW_MS = 60 * 60 * 1000
   if (source === 'CELL_TOWER') {
     const recentEvents = await db.locationEvent.findMany({
       where: {
         labelId: label.id,
         source: 'CELL_TOWER',
-        recordedAt: { gte: new Date(recordedAt.getTime() - COORD_DEDUP_WINDOW_MS) },
+        recordedAt: { gte: new Date(recordedAt.getTime() - CELL_TOWER_DEDUP_WINDOW_MS) },
       },
       orderBy: { recordedAt: 'desc' },
       take: 5,
