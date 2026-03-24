@@ -1,6 +1,8 @@
 import { PDFDocument, rgb } from 'pdf-lib'
-import * as fontkit from '@pdf-lib/fontkit'
 import QRCode from 'qrcode'
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fontkit = require('@pdf-lib/fontkit')
 
 export interface LabelData {
   deviceId: string // e.g. "w17246198247"
