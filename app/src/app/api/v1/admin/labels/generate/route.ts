@@ -74,12 +74,49 @@ export async function POST(req: NextRequest) {
     }
 
     // Load template and font
-    const templateBytes = fs.readFileSync(
-      path.resolve(process.cwd(), 'public/label/TIP-Label-noQR-10x15cm.pdf')
-    )
-    const fontBytes = fs.readFileSync(
-      path.resolve(process.cwd(), 'public/fonts/SuisseIntl-Bold.otf')
-    )
+    const cwd = process.cwd()
+    const templatePath = path.resolve(cwd, 'public/label/TIP-Label-noQR-10x15cm.pdf')
+    const fontPath = path.resolve(cwd, 'public/fonts/SuisseIntl-Bold.otf')
+
+    console.log('[generate-labels] cwd:', cwd)
+    console.log('[generate-labels] templatePath:', templatePath, 'exists:', fs.existsSync(templatePath))
+    console.log('[generate-labels] fontPath:', fontPath, 'exists:', fs.existsSync(fontPath))
+
+    if (!fs.existsSync(templatePath)) {
+      // On Vercel, try .next/server/app path or list directories for debugging
+      const publicDir = path.resolve(cwd, 'public')
+      const publicExists = fs.existsSync(publicDir)
+      let publicContents: string[] = []
+      if (publicExists) {
+        try { publicContents = fs.readdirSync(publicDir) } catch {}
+      }
+      console.log('[generate-labels] public/ exists:', publicExists, 'contents:', publicContents)
+
+      // Try alternative paths on Vercel
+      const altPaths = [
+        path.resolve(cwd, '.next/server/app/public/label/TIP-Label-noQR-10x15cm.pdf'),
+        path.resolve('/var/task/public/label/TIP-Label-noQR-10x15cm.pdf'),
+        path.resolve('/var/task/.next/server/app/public/label/TIP-Label-noQR-10x15cm.pdf'),
+      ]
+      for (const alt of altPaths) {
+        console.log('[generate-labels] alt path:', alt, 'exists:', fs.existsSync(alt))
+      }
+
+      return NextResponse.json(
+        { error: 'Template file not found on server', debug: { cwd, templatePath, publicExists, publicContents } },
+        { status: 500 }
+      )
+    }
+
+    if (!fs.existsSync(fontPath)) {
+      return NextResponse.json(
+        { error: 'Font file not found on server', debug: { cwd, fontPath } },
+        { status: 500 }
+      )
+    }
+
+    const templateBytes = fs.readFileSync(templatePath)
+    const fontBytes = fs.readFileSync(fontPath)
 
     // Generate PDF
     const pdfBytes = await generateLabelPdf(labels, templateBytes, fontBytes)
