@@ -15,10 +15,10 @@ export interface LabelData {
 // Layout constants (page is 1000x1500 points)
 // Positions match the reference PDF (TIP-Label-withQR-asreference-10x15cm.pdf)
 const LAYOUT = {
-  urlText: { x: 128, y: 145, fontSize: 28 },
-  serialText: { x: 128, y: 82, fontSize: 28 },
+  urlText: { x: 128, y: 147, fontSize: 28 },
+  serialText: { x: 128, y: 84, fontSize: 28 },
   qrCode: { x: 745, y: 62, size: 195 },
-  textColor: rgb(0, 1, 0x2b / 255), // #00FF2B brand neon green
+  textColor: rgb(0x66 / 255, 1, 0), // #66FF00
 }
 
 export async function generateLabelPdf(
@@ -43,7 +43,7 @@ export async function generateLabelPdf(
       width: 400,
       margin: 0,
       color: {
-        dark: '#00FF2B',
+        dark: '#66FF00',
         light: '#00000000',
       },
       errorCorrectionLevel: 'M',
