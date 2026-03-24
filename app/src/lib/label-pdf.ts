@@ -17,8 +17,8 @@ export interface LabelData {
 const LAYOUT = {
   urlText: { x: 128, y: 145, fontSize: 28 },
   serialText: { x: 128, y: 82, fontSize: 28 },
-  qrCode: { x: 725, y: 62, size: 195 },
-  textColor: rgb(0, 1, 0), // #00FF00 neon green
+  qrCode: { x: 745, y: 62, size: 195 },
+  textColor: rgb(0, 1, 0x2b / 255), // #00FF2B brand neon green
 }
 
 export async function generateLabelPdf(
@@ -43,7 +43,7 @@ export async function generateLabelPdf(
       width: 400,
       margin: 0,
       color: {
-        dark: '#00FF00',
+        dark: '#00FF2B',
         light: '#00000000',
       },
       errorCorrectionLevel: 'M',
