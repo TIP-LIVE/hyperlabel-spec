@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       path.resolve(process.cwd(), 'public/label/TIP-Label-noQR-10x15cm.pdf')
     )
     const fontBytes = fs.readFileSync(
-      path.resolve(process.cwd(), '../Fonts/SuisseIntl-Bold.otf')
+      path.resolve(process.cwd(), 'public/fonts/SuisseIntl-Bold.otf')
     )
 
     // Generate PDF
