@@ -103,7 +103,7 @@ export default async function DashboardPage() {
   try {
     const [active, total, delivered, lowBattery, recent] = await Promise.all([
       db.shipment.count({
-        where: { ...where, status: 'IN_TRANSIT' },
+        where: { ...where, status: 'IN_TRANSIT', type: 'CARGO_TRACKING' },
       }),
       user
         ? db.label.count({
