@@ -14,11 +14,46 @@ export interface LabelData {
 
 // Layout constants (page is 1000x1500 points)
 // Positions match the reference PDF (TIP-Label-withQR-asreference-10x15cm.pdf)
+const QR_COLOR = rgb(0x66 / 255, 1, 0) // #66FF00
+
 const LAYOUT = {
   urlText: { x: 128, y: 147, fontSize: 28 },
   serialText: { x: 128, y: 84, fontSize: 28 },
   qrCode: { x: 745, y: 62, size: 195 },
-  textColor: rgb(0x66 / 255, 1, 0), // #66FF00
+  textColor: QR_COLOR,
+}
+
+/**
+ * Draw QR code using native PDF rectangles for exact color control.
+ * The qrcode library's PNG color option produces incorrect colors (#00FF00 instead of #66FF00).
+ */
+function drawQrCode(
+  page: ReturnType<PDFDocument['getPages']>[0],
+  url: string,
+  x: number,
+  y: number,
+  size: number
+) {
+  // Generate QR matrix data
+  const qr = QRCode.create(url, { errorCorrectionLevel: 'M' })
+  const modules = qr.modules
+  const moduleCount = modules.size
+  const moduleSize = size / moduleCount
+
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      if (modules.get(row, col)) {
+        // PDF y-axis is bottom-up, QR row 0 is top
+        page.drawRectangle({
+          x: x + col * moduleSize,
+          y: y + (moduleCount - 1 - row) * moduleSize,
+          width: moduleSize,
+          height: moduleSize,
+          color: QR_COLOR,
+        })
+      }
+    }
+  }
 }
 
 export async function generateLabelPdf(
@@ -37,22 +72,9 @@ export async function generateLabelPdf(
     const [copiedPage] = await outputDoc.copyPages(templateDoc, [0])
     outputDoc.addPage(copiedPage)
 
-    // Generate QR code as PNG
-    const qrPng = await QRCode.toBuffer(`https://${label.url}`, {
-      type: 'png',
-      width: 400,
-      margin: 0,
-      color: {
-        dark: '#66FF00',
-        light: '#000000',
-      },
-      errorCorrectionLevel: 'M',
-    })
-
-    // Embed QR code image
-    const qrImage = await outputDoc.embedPng(qrPng)
+    // Draw QR code as native PDF rectangles (exact #66FF00 color)
     const { x, y, size } = LAYOUT.qrCode
-    copiedPage.drawImage(qrImage, { x, y, width: size, height: size })
+    drawQrCode(copiedPage, `https://${label.url}`, x, y, size)
 
     // Draw URL text
     copiedPage.drawText(label.url, {
