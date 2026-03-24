@@ -37,7 +37,7 @@ export function LabelGeneratorForm() {
         const error = await res.json()
         setResult({
           success: false,
-          message: error.error || 'Generation failed',
+          message: error.stack ? `${error.error}\n${error.stack}` : (error.error || 'Generation failed'),
         })
         return
       }
