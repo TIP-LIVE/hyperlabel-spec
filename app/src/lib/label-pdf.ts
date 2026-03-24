@@ -44,7 +44,7 @@ export async function generateLabelPdf(
       margin: 0,
       color: {
         dark: '#66FF00',
-        light: '#00000000',
+        light: '#000000',
       },
       errorCorrectionLevel: 'M',
     })
