@@ -3,6 +3,7 @@ import {
   asPDFNumber,
   PDFDocument,
   PDFOperator,
+  PDFOperatorNames,
   pushGraphicsState,
   popGraphicsState,
   rgb,
@@ -85,22 +86,22 @@ function drawTextAsOutlines(
   const ops: PDFOperator[] = [
     pushGraphicsState(),
     // Translate to position and flip Y (opentype Y-down → PDF Y-up)
-    PDFOperator.of('cm', [n(1), n(0), n(0), n(-1), n(x), n(y)]),
+    PDFOperator.of(PDFOperatorNames.ConcatTransformationMatrix, [n(1), n(0), n(0), n(-1), n(x), n(y)]),
     // Set fill color to #66FF00 using DeviceRGB operator
-    PDFOperator.of('rg', [n(0x66 / 255), n(1), n(0)]),
+    PDFOperator.of(PDFOperatorNames.NonStrokingColorRgb, [n(0x66 / 255), n(1), n(0)]),
   ]
 
   for (const cmd of path.commands) {
     switch (cmd.type) {
       case 'M':
-        ops.push(PDFOperator.of('m', [n(cmd.x), n(cmd.y)]))
+        ops.push(PDFOperator.of(PDFOperatorNames.MoveTo, [n(cmd.x), n(cmd.y)]))
         break
       case 'L':
-        ops.push(PDFOperator.of('l', [n(cmd.x), n(cmd.y)]))
+        ops.push(PDFOperator.of(PDFOperatorNames.LineTo, [n(cmd.x), n(cmd.y)]))
         break
       case 'C':
         ops.push(
-          PDFOperator.of('c', [
+          PDFOperator.of(PDFOperatorNames.AppendBezierCurve, [
             n(cmd.x1),
             n(cmd.y1),
             n(cmd.x2),
@@ -112,16 +113,16 @@ function drawTextAsOutlines(
         break
       case 'Q':
         ops.push(
-          PDFOperator.of('v', [n(cmd.x1), n(cmd.y1), n(cmd.x), n(cmd.y)])
+          PDFOperator.of(PDFOperatorNames.CurveToReplicateInitialPoint, [n(cmd.x1), n(cmd.y1), n(cmd.x), n(cmd.y)])
         )
         break
       case 'Z':
-        ops.push(PDFOperator.of('h', []))
+        ops.push(PDFOperator.of(PDFOperatorNames.ClosePath, []))
         break
     }
   }
 
-  ops.push(PDFOperator.of('f', [])) // fill path
+  ops.push(PDFOperator.of(PDFOperatorNames.FillNonZero, [])) // fill path
   ops.push(popGraphicsState())
 
   page.pushOperators(...ops)
