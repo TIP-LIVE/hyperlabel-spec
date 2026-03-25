@@ -7,6 +7,7 @@ import {
   Hr,
   Html,
   Img,
+  Link,
   Preview,
   Section,
   Text,
@@ -92,7 +93,7 @@ export function ResearchReminderEmail({
           <Hr style={hr} />
           <Section style={footer}>
             <Text style={footerText}>
-              TIP — Door-to-door cargo tracking
+              <Link href="https://tip.live" style={footerLink}>tip.live</Link> — Door-to-door cargo tracking
             </Text>
           </Section>
         </Container>
@@ -222,6 +223,11 @@ const footerText = {
   fontSize: '12px',
   lineHeight: '16px',
   margin: '8px 0',
+}
+
+const footerLink = {
+  color: '#8898aa',
+  textDecoration: 'underline',
 }
 
 export default ResearchReminderEmail
