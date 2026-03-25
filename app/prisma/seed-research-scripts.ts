@@ -138,6 +138,30 @@ const consigneeSections = [
         text: 'The accuracy is city/district level, not street level. Is that useful, or do you need more precision?',
         probes: ['Would you want your customers to see this dashboard too?', 'Would you use this for every shipment, or only high-value ones?'],
       },
+      {
+        text: 'Beyond location, do you need additional sensors on your cargo — for example shock detection, door/opening sensor, temperature, or humidity?',
+        probes: ['Which of these would be most critical for your cargo type?', 'Are there compliance or insurance reasons that require specific sensor data?'],
+      },
+      {
+        text: 'Where would you like to receive tracking data and notifications? (email, Telegram bot, WhatsApp, API, CLI, other)',
+        probes: ['Do you already use any of these channels for business alerts?', 'Would you want different channels for different alert types?'],
+      },
+      {
+        text: 'Which notifications about your cargo are most important to you? (departure, arrival, delays, customs clearance, delivery confirmation)',
+        probes: ['Are there any notifications you\'d find annoying or unnecessary?', 'Would you want real-time alerts or periodic summaries?'],
+      },
+      {
+        text: 'Do you need to identify the specific flight or vessel when your cargo is in transit?',
+        probes: ['Would knowing the carrier/flight/vessel help you coordinate with your warehouse or customers?'],
+      },
+      {
+        text: 'Do you use more than one supply chain route to receive the same type of cargo?',
+        probes: ['If you have multiple routes, do they have different visibility challenges?'],
+      },
+      {
+        text: 'Do you use any CRM or logistics management system that you\'d want integrated with tracking data?',
+        probes: ['What system is it?', 'What kind of integration would be most useful — automatic updates, reports, alerts?'],
+      },
     ],
   },
   {
@@ -152,6 +176,14 @@ const consigneeSections = [
       { text: 'Who in your company would approve this purchase?', probes: [] },
       { text: 'Would you expense it per shipment, or would it need a budget line?', probes: [] },
       { text: 'What would prevent you from buying this?', probes: [] },
+      {
+        text: 'If you\'ve used 10+ labels, would you be interested in sending them back to us for compensation or recycling?',
+        probes: ['Would a prepaid return envelope make this easier?', 'Would a discount on next order be more attractive than cash compensation?'],
+      },
+      {
+        text: 'Where would be the most convenient place for you to buy labels? (online checkout, marketplace, through your forwarder, in-store)',
+        probes: ['Would you prefer to order online and have them shipped, or pick up locally?', 'Would buying through your existing forwarder or carrier be easier?'],
+      },
     ],
   },
   {
@@ -221,6 +253,34 @@ const forwarderSections = [
       { text: 'Would this fit into your existing warehouse or pickup workflow?', probes: ['Would you charge clients extra for this, or include it in your service?'] },
       { text: 'Would you want access to the tracking dashboard too, or is this purely for the client?', probes: ['Does city-level accuracy (not street-level) still have value for you?'] },
       { text: 'Would you recommend this to your clients?', probes: ['What would make you NOT want to deal with this?'] },
+      {
+        text: 'Do your clients ever need additional sensors — shock detection, opening sensors, temperature, or humidity monitoring?',
+        probes: ['Which cargo types drive this need?', 'Is this a compliance requirement or a nice-to-have?'],
+      },
+      {
+        text: 'Where would your clients want to receive tracking notifications? (email, Telegram, WhatsApp, API, their own systems)',
+        probes: ['Do different clients have different channel preferences?'],
+      },
+      {
+        text: 'Which notifications would be most valuable for your clients? (departure, arrival, delays, customs, delivery)',
+        probes: ['Are there notifications that would help YOU operationally vs ones that are client-facing?'],
+      },
+      {
+        text: 'Do your clients need to identify the specific flight or vessel carrying their cargo?',
+        probes: ['Is this information you already provide, or would it be new value?'],
+      },
+      {
+        text: 'Do your clients typically use a single supply chain route, or multiple routes for the same cargo type?',
+        probes: ['How does route variation affect your ability to provide visibility?'],
+      },
+      {
+        text: 'Do you or your clients use any CRM or logistics management systems that would need to integrate with tracking data?',
+        probes: ['What are the most common systems you see?', 'Would API access be enough, or do you need a native integration?'],
+      },
+      {
+        text: 'If clients accumulate 10+ used labels, would you help facilitate sending them back for compensation?',
+        probes: ['Could this be part of your service offering?'],
+      },
     ],
   },
   {
@@ -231,6 +291,10 @@ const forwarderSections = [
       { text: 'Would you prefer to resell labels at a markup, or just handle activation as a service?', probes: [] },
       { text: 'Would better tracking help you win new clients?', probes: [] },
       { text: 'How many of your clients do you think would use this?', probes: ['Would you trial this with one client to start?'] },
+      {
+        text: 'What would be the most convenient sales channel for labels? (online checkout, through you as a reseller, marketplace, at origin warehouse)',
+        probes: ['Would your clients prefer to buy directly or through you?'],
+      },
     ],
   },
   {
@@ -304,6 +368,38 @@ const shipperSections = [
       { text: 'What problems do you foresee?', probes: [] },
       { text: 'Would you want to integrate this into your systems, or keep it separate?', probes: [] },
       { text: 'Would you co-sell this with your logistics services?', probes: ['Would you want bulk pricing to offer this to all your clients?'] },
+      {
+        text: 'Do your clients ever request additional sensors — shock, opening, temperature, humidity monitoring?',
+        probes: ['Which cargo types or industries drive the most demand for environmental monitoring?'],
+      },
+      {
+        text: 'Through which channels would your clients want to receive tracking data? (email, Telegram, WhatsApp, API, integrated into their systems)',
+        probes: ['Do you see API access as essential, or would a dashboard and email notifications suffice?'],
+      },
+      {
+        text: 'Which notifications do your clients value most? (departure, arrival, delays, customs clearance, delivery confirmation)',
+        probes: ['Are there notification types that carriers typically can\'t provide today?'],
+      },
+      {
+        text: 'Do your clients need to identify the specific flight or vessel when cargo is in transit?',
+        probes: ['How important is this data for their operations vs just knowing the city/country?'],
+      },
+      {
+        text: 'Do your clients typically use a single supply chain route or multiple routes?',
+        probes: ['How does route diversity affect the value of a tracking solution?'],
+      },
+      {
+        text: 'What CRM or logistics management systems are most common among your clients?',
+        probes: ['Would integration with those systems be a deal-maker or deal-breaker?'],
+      },
+      {
+        text: 'Would you help manage label returns if clients accumulate used labels for compensation?',
+        probes: ['Could label return logistics be part of your service offering?'],
+      },
+      {
+        text: 'Where would be the most natural sales point for these labels in the supply chain?',
+        probes: ['Would embedding label purchase into existing checkout flows (e.g., booking a shipment) increase adoption?'],
+      },
     ],
   },
   {
