@@ -1,11 +1,13 @@
-import { PDFDocument, rgb } from 'pdf-lib'
+import * as opentype from 'opentype.js'
+import {
+  asPDFNumber,
+  PDFDocument,
+  PDFOperator,
+  pushGraphicsState,
+  popGraphicsState,
+  rgb,
+} from 'pdf-lib'
 import QRCode from 'qrcode'
-
-import * as fontkitModule from '@pdf-lib/fontkit'
-
-// Handle CJS/ESM interop — Vercel's bundler may wrap the module with .default
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fontkit = (fontkitModule as any).default || fontkitModule
 
 export interface LabelData {
   deviceId: string // e.g. "w17246198247"
@@ -58,17 +60,90 @@ function drawQrCode(
   }
 }
 
+const n = asPDFNumber
+
+/**
+ * Draw text as outlined vector paths using raw PDF operators.
+ * Uses opentype.js to extract glyph outlines, then emits PDF path operators
+ * directly. This bypasses drawSvgPath which has color issues on copied pages
+ * with custom color spaces (the template uses a non-DeviceRGB color space).
+ *
+ * Result: factory can print without needing the font file ("convert all
+ * fonts to outlines").
+ */
+function drawTextAsOutlines(
+  page: ReturnType<PDFDocument['getPages']>[0],
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  font: opentype.Font
+) {
+  const path = font.getPath(text, 0, 0, fontSize)
+  if (path.commands.length === 0) return
+
+  const ops: PDFOperator[] = [
+    pushGraphicsState(),
+    // Translate to position and flip Y (opentype Y-down → PDF Y-up)
+    PDFOperator.of('cm', [n(1), n(0), n(0), n(-1), n(x), n(y)]),
+    // Set fill color to #66FF00 using DeviceRGB operator
+    PDFOperator.of('rg', [n(0x66 / 255), n(1), n(0)]),
+  ]
+
+  for (const cmd of path.commands) {
+    switch (cmd.type) {
+      case 'M':
+        ops.push(PDFOperator.of('m', [n(cmd.x), n(cmd.y)]))
+        break
+      case 'L':
+        ops.push(PDFOperator.of('l', [n(cmd.x), n(cmd.y)]))
+        break
+      case 'C':
+        ops.push(
+          PDFOperator.of('c', [
+            n(cmd.x1),
+            n(cmd.y1),
+            n(cmd.x2),
+            n(cmd.y2),
+            n(cmd.x),
+            n(cmd.y),
+          ])
+        )
+        break
+      case 'Q':
+        ops.push(
+          PDFOperator.of('v', [n(cmd.x1), n(cmd.y1), n(cmd.x), n(cmd.y)])
+        )
+        break
+      case 'Z':
+        ops.push(PDFOperator.of('h', []))
+        break
+    }
+  }
+
+  ops.push(PDFOperator.of('f', [])) // fill path
+  ops.push(popGraphicsState())
+
+  page.pushOperators(...ops)
+}
+
 export async function generateLabelPdf(
   labels: LabelData[],
   templateBytes: Uint8Array | Buffer,
   fontBytes: Uint8Array | Buffer
 ): Promise<Uint8Array> {
   const templateDoc = await PDFDocument.load(templateBytes)
-
   const outputDoc = await PDFDocument.create()
-  outputDoc.registerFontkit(fontkit)
 
-  const font = await outputDoc.embedFont(fontBytes)
+  // Parse font with opentype.js for path extraction (no font embedding)
+  const font = opentype.parse(
+    fontBytes instanceof Buffer
+      ? fontBytes.buffer.slice(
+          fontBytes.byteOffset,
+          fontBytes.byteOffset + fontBytes.byteLength
+        )
+      : fontBytes.buffer
+  )
 
   for (const label of labels) {
     const [copiedPage] = await outputDoc.copyPages(templateDoc, [0])
@@ -78,23 +153,25 @@ export async function generateLabelPdf(
     const { x, y, size } = LAYOUT.qrCode
     drawQrCode(copiedPage, `https://${label.url}`, x, y, size)
 
-    // Draw URL text
-    copiedPage.drawText(label.url, {
-      x: LAYOUT.urlText.x,
-      y: LAYOUT.urlText.y,
-      size: LAYOUT.urlText.fontSize,
-      font,
-      color: LAYOUT.textColor,
-    })
+    // Draw URL text as outlines
+    drawTextAsOutlines(
+      copiedPage,
+      label.url,
+      LAYOUT.urlText.x,
+      LAYOUT.urlText.y,
+      LAYOUT.urlText.fontSize,
+      font
+    )
 
-    // Draw serial number
-    copiedPage.drawText(label.deviceId, {
-      x: LAYOUT.serialText.x,
-      y: LAYOUT.serialText.y,
-      size: LAYOUT.serialText.fontSize,
-      font,
-      color: LAYOUT.textColor,
-    })
+    // Draw serial number as outlines
+    drawTextAsOutlines(
+      copiedPage,
+      label.deviceId,
+      LAYOUT.serialText.x,
+      LAYOUT.serialText.y,
+      LAYOUT.serialText.fontSize,
+      font
+    )
   }
 
   return outputDoc.save()
