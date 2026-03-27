@@ -74,3 +74,37 @@ export function formatLocationName(loc: LocationDisplayInput): string | null {
 export function getLocationCountryCode(loc: LocationDisplayInput): string | null {
   return loc.geocodedCountryCode ?? null
 }
+
+/**
+ * Thin a list of location events so that only one event per time window is kept.
+ * Within each window, the latest event (by recordedAt) is retained.
+ *
+ * Events MUST be sorted newest-first (descending recordedAt).
+ * The output preserves that sort order.
+ *
+ * Algorithm: walk from newest to oldest. Each kept event "claims" a window
+ * stretching windowMs into the past. Any event whose recordedAt falls inside
+ * that window is dropped; the next event outside it starts a new window.
+ *
+ * @param events  Sorted newest-first
+ * @param windowMs  Window size in milliseconds (default 2 hours)
+ */
+export function thinToTimeWindow<T extends { recordedAt: Date }>(
+  events: T[],
+  windowMs = 2 * 60 * 60 * 1000,
+): T[] {
+  if (events.length <= 1) return events
+
+  const result: T[] = [events[0]] // always keep the most recent
+  let lastKeptTime = new Date(events[0].recordedAt).getTime()
+
+  for (let i = 1; i < events.length; i++) {
+    const t = new Date(events[i].recordedAt).getTime()
+    if (lastKeptTime - t >= windowMs) {
+      result.push(events[i])
+      lastKeptTime = t
+    }
+  }
+
+  return result
+}

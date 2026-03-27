@@ -6,7 +6,7 @@ import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
-import { formatLocationName } from '@/lib/utils/location-display'
+import { formatLocationName, thinToTimeWindow } from '@/lib/utils/location-display'
 
 interface LocationEvent {
   id: string
@@ -128,7 +128,8 @@ function detailLocationDisplayName(location: LocationEvent): string {
 export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
-  const groups = useMemo(() => groupConsecutiveLocations(locations), [locations])
+  const thinnedLocations = useMemo(() => thinToTimeWindow(locations), [locations])
+  const groups = useMemo(() => groupConsecutiveLocations(thinnedLocations), [thinnedLocations])
 
   const toggleGroup = (index: number) => {
     setExpandedGroups((prev) => {
