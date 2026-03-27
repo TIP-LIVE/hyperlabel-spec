@@ -69,24 +69,43 @@ function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] 
   return groups
 }
 
-/** Sub-group consecutive events within an expanded group by geocodedArea (or proximity). */
-function groupConsecutiveByArea(events: LocationEvent[]): LocationEvent[][] {
+/**
+ * Aggregate events within an expanded city group by geocodedArea (or proximity).
+ * Unlike consecutive grouping, this merges ALL events for the same area into one
+ * sub-group — eliminating the noisy A→B→A→B pattern caused by cell tower jitter.
+ * Groups are ordered by first appearance (newest first, matching parent sort).
+ */
+function groupByArea(events: LocationEvent[]): LocationEvent[][] {
   if (events.length === 0) return []
-  const groups: LocationEvent[][] = [[events[0]]]
-  for (let i = 1; i < events.length; i++) {
-    const prev = events[i - 1]
-    const curr = events[i]
-    const sameArea =
-      prev.geocodedArea && curr.geocodedArea
-        ? prev.geocodedArea === curr.geocodedArea
-        : isNearby(prev, curr)
-    if (sameArea) {
-      groups[groups.length - 1].push(curr)
-    } else {
-      groups.push([curr])
+
+  const groups: { key: string; events: LocationEvent[] }[] = []
+
+  for (const event of events) {
+    const areaKey = event.geocodedArea ?? null
+    let matched = false
+
+    for (const group of groups) {
+      if (areaKey && group.key === areaKey) {
+        group.events.push(event)
+        matched = true
+        break
+      }
+      if (!areaKey && isNearby(event, group.events[0])) {
+        group.events.push(event)
+        matched = true
+        break
+      }
+    }
+
+    if (!matched) {
+      groups.push({
+        key: areaKey || `${event.latitude.toFixed(3)},${event.longitude.toFixed(3)}`,
+        events: [event],
+      })
     }
   }
-  return groups
+
+  return groups.map((g) => g.events)
 }
 
 function locationDisplayName(location: LocationEvent): string {
@@ -240,7 +259,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
               {/* Expanded individual events — sub-grouped by area to reduce cell tower noise */}
               {isExpanded && (
                 <div className="mt-2 space-y-2 sm:space-y-4 border-l-2 border-dashed border-muted-foreground/20 ml-[11px] sm:ml-[15px] pl-6 sm:pl-8">
-                  {groupConsecutiveByArea(group.events).map((subGroup) => {
+                  {groupByArea(group.events).map((subGroup) => {
                     if (subGroup.length === 1) {
                       return (
                         <div key={subGroup[0].id} className="min-h-[36px] sm:min-h-[44px]">

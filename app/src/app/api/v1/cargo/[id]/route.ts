@@ -79,11 +79,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         }))
       : shipment.locations
 
-    // Deduplicate locations that share the same recordedAt + coordinates + source
-    // (handles Onomondo double-sends already stored in DB)
+    // Deduplicate locations by recordedAt timestamp.
+    // When multiple events share the same time but different coordinates
+    // (cell tower jitter), keep only the first one (most recent by DB order).
+    // This also handles Onomondo double-sends already stored in DB.
     const seen = new Set<string>()
     const deduped = finalLocations.filter((loc) => {
-      const key = `${loc.recordedAt.toISOString()}|${loc.latitude}|${loc.longitude}|${loc.source}`
+      const key = loc.recordedAt.toISOString()
       if (seen.has(key)) return false
       seen.add(key)
       return true
