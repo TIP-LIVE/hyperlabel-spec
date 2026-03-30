@@ -38,11 +38,20 @@ The webhook endpoint (`app/src/app/api/v1/device/onomondo/location-update/route.
 #### 1. ALWAYS return 200 within 1000ms
 Onomondo has a **strict 1000ms timeout** and a circuit breaker that stops ALL webhook delivery after repeated failures. If the response is slow, devices silently stop reporting.
 
-**Pattern**: Auth + validate + return 200 immediately. ALL processing in `after()`.
+**Pattern**: Rate limit → Auth → Validate → Return 200 immediately. ALL processing in `after()`.
 ```
-Request → Auth (sync) → Validate (sync) → Return 200 (~20ms)
-                                            └→ after(): DB writes, geolocation, geocoding
+Request → Rate limit (120/min per key) → Auth → Zod validate → Return 200 (~20ms)
+                                                                 └→ after():
+                                                                     1. Update label.lastSeenAt (heartbeat)
+                                                                     2. Auto-promote PENDING → IN_TRANSIT
+                                                                     3. Resolve coordinates (fallback chain)
+                                                                     4. processLocationReport() → LocationEvent
+                                                                     5. Deferred geocoding (async)
+                                                                     6. Upsert webhook log
+                                                                     7. Probabilistic log pruning (5% chance)
 ```
+
+**Auth**: Accepts `X-API-Key` header, `?key=` query param, or shared secret headers (`X-Onomondo-Webhook-Secret`, `X-Webhook-Secret`, `Authorization`). Checked against `ONOMONDO_WEBHOOK_API_KEY`, `ONOMONDO_CONNECTOR_API_KEY`, or `DEVICE_API_KEY` env vars.
 
 #### 2. DB writes MUST succeed — geocoding can fail
 `processLocationReport()` (creates LocationEvent) and `label.lastSeenAt` update are critical. Reverse geocoding (city name lookup) is non-critical. If you restructure the handler:
@@ -50,7 +59,7 @@ Request → Auth (sync) → Validate (sync) → Return 200 (~20ms)
 - **Deferrable**: Geocoding, webhook log pruning
 
 #### 3. Onomondo sends every webhook TWICE
-In-memory dedup with 30-second window on `iccid:time` key. This fires before any processing.
+Deterministic webhook log ID: `SHA256(onomondo:{iccid}:{time}:{type})[0:25]` — same payload always produces the same ID, so DB upsert naturally deduplicates at the webhook log level.
 
 #### 4. Use ICCID, never IMEI, for cell tower events
 IMEI identifies the physical device. ICCID identifies the SIM. When a SIM moves to a different device, IMEI-based lookup routes to the wrong label. Always resolve labels by ICCID for Onomondo events.
@@ -60,6 +69,17 @@ Onomondo's API sends coordinates as strings sometimes, numbers other times. The 
 
 #### 6. Accept ALL event types
 Onomondo sends `location`, `network-registration`, `network-deregistration`, `usage`, etc. The `location` field is optional (only present on `location` type events). Non-location events still update `lastSeenAt` as heartbeats and can auto-promote PENDING → IN_TRANSIT shipments.
+
+#### 8. Webhook Payload Structure (validated in `lib/validations/device.ts`)
+```
+{ type, iccid, imei, sim_id, time, ipv4, session_id, sim_label,
+  network: { name, country, country_code, mcc, mnc },
+  network_type,  // radio hint: GSM, LTE, etc.
+  location: {    // OPTIONAL — absent on non-location events
+    cell_id, location_area_code, accuracy,
+    lat, lng   // string OR number, can be null
+  } }
+```
 
 #### 7. Webhook logging uses retry + upsert fallback
 If `createWebhookLog()` fails (Neon hiccup), the handler retries once, then uses `upsertWebhookLog()` at every exit path to guarantee the log is eventually persisted.
@@ -82,9 +102,18 @@ lastUpdate = Math.max(
 
 **Key rule**: When location events are deduplicated (same coordinates), `lastSeenAt` MUST still be updated so the "Last Update" column stays fresh.
 
-### Location Event Deduplication
+### Location Event Deduplication (Multi-Layer)
 
-Current strategy: **5-minute exact coordinate dedup**. If the same label reports the identical lat/lng within 5 minutes, skip creating a new LocationEvent but still update `lastSeenAt`.
+Four layers of dedup, each catching what the previous missed:
+
+| Layer | Scope | Mechanism |
+|-------|-------|-----------|
+| Webhook log ID | Onomondo double-sends | Deterministic SHA256 of `iccid:time:type` → same payload = same DB upsert |
+| Exact coordinate dedup | Same label, same lat/lng within 5 min | Skips new LocationEvent, still updates `lastSeenAt` |
+| Proximity dedup (cell tower only) | Same label, 3km radius within 60 min | Haversine distance — adjacent towers don't create new events |
+| DB unique constraint | Final safety net | `@@unique([labelId, recordedAt, lat, lng, source])` |
+
+**Key rule**: ALL dedup layers still update `lastSeenAt` so "Last Update" stays fresh.
 
 Previous attempts that failed:
 - 30min/1km heuristic dedup — too aggressive for infrequent reporters (reverted)
@@ -98,12 +127,58 @@ When Onomondo provides coordinates, use them directly. Fallback chain:
 3. Last known location for this device (heartbeat with stale coords)
 4. Skip if no coordinates available
 
-### Geocoding (Reverse)
+### Geocoding (Reverse) — 3-Tier Cache
 
-Uses Nominatim for reverse geocoding (lat/lng → city name). Has rate limits (1 req/sec).
+`lib/geocoding.ts` resolves lat/lng → city/area/country with a fallback chain:
+1. **In-memory cache** — keyed by `{lat.toFixed(3)},{lng.toFixed(3)}`
+2. **DB neighbor lookup** — finds nearby already-geocoded LocationEvents (±0.0005° ≈ 50m)
+3. **Nominatim API** — OpenStreetMap reverse geocode (2s timeout, zoom 14 for suburb detail)
+
+Additional rules:
 - Failed geocodes are retried by daily `backfill-geocode` cron (200 records/batch)
 - Nominatim calls use retry-with-backoff (3 attempts, 1.5s/3s delays)
 - Null island (0, 0) coordinates are rejected before geocoding
+- Geocoding is always deferred (`skipGeocode: true` in webhook, async call after LocationEvent creation)
+
+### Location Report Processing (`lib/device-report.ts`)
+
+`processLocationReport()` is the shared function that creates LocationEvents. Key behaviors:
+
+#### Device Resolution (by priority)
+1. By `deviceId` (most reliable)
+2. By ICCID — preferred for cell tower events (SIMs move between devices)
+3. By IMEI — fallback only
+
+If no label found, **auto-registers** a new label (`TIP-001`, `TIP-002`, etc.) with status `ACTIVE`.
+
+#### Orphaned Device Detection
+If a label reports location but has no active shipment and status is `SOLD`:
+- Sets label to `ACTIVE`, generates a `claimToken` (48h expiry)
+- Sends notification to purchaser with claim link
+- Tracks `firstUnlinkedReportAt` for monitoring
+
+#### Auto-Delivery Detection
+When `IN_TRANSIT`, checks if last 2+ locations (within 30 min) are all within **1500m** of destination. Generous threshold accounts for cell tower accuracy (500-1000m). Auto-sets `DELIVERED` and sends notifications.
+
+#### Offline Sync Detection
+If `recordedAt` is >5 min before `receivedAt`, marks event as `isOfflineSync` (buffered report from offline period). Shown in UI with "Synced" badge.
+
+### Location History Display & Grouping
+
+Timeline components (`shipment-timeline.tsx`, `public-timeline.tsx`) transform raw LocationEvents into a readable history:
+
+#### Step 1: Time-Window Thinning (`lib/utils/location-display.ts`)
+For long shipments, thin events to **one per 2-hour window**. Keeps the most recent event, then jumps back 2h+. Prevents timeline overwhelm from hourly cell reports.
+
+#### Step 2: Consecutive City Grouping
+Groups consecutive events by same city:
+- If geocoded → group by `geocodedCity`
+- If not geocoded → group by spatial proximity (< 500m / ~0.005°)
+
+Result: collapsed entry like **"Berlin, Germany (x5)"** instead of 5 separate items.
+
+#### Step 3: Expandable Area Sub-Grouping
+On expand, events within a city group are further grouped by `geocodedArea` (suburb/neighborhood). This merges A→B→A→B cell tower jitter into clean area groups ordered by first appearance.
 
 ---
 

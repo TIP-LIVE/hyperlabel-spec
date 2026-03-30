@@ -14,3 +14,8 @@ docs/user-research/google-token.json
 docs/user-research/node_modules/
 docs/user-research/package.json
 docs/user-research/package-lock.json
+# Env snapshots with secrets
+.env.vercel-check
+
+# node_modules
+node_modules/
