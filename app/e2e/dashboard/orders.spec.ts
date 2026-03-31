@@ -6,7 +6,7 @@ test.describe('Orders Page', () => {
     const isOrders = page.url().includes('/orders')
     if (isOrders) {
       await expect(
-        page.getByRole('heading', { name: /orders/i })
+        page.getByRole('heading', { name: 'Orders', exact: true })
       ).toBeVisible()
     }
   })

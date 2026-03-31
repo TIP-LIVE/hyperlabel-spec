@@ -16,8 +16,8 @@ test.describe('Configure settings', () => {
     if (isSettings) {
       await expect(page.getByText('Account Overview')).toBeVisible()
       await expect(page.getByText('Your account information')).toBeVisible()
-      await expect(page.getByText('Email')).toBeVisible()
-      await expect(page.getByText('Name')).toBeVisible()
+      await expect(page.getByText('Email', { exact: true }).first()).toBeVisible()
+      await expect(page.getByText('Name', { exact: true }).first()).toBeVisible()
       await expect(page.getByText('Member since')).toBeVisible()
     }
   })
@@ -38,7 +38,7 @@ test.describe('Configure settings', () => {
     const isSettings = page.url().includes('/settings')
     if (isSettings) {
       await expect(page.getByText('Data & Privacy')).toBeVisible()
-      await expect(page.getByText('Export Your Data')).toBeVisible()
+      await expect(page.getByText('Export Your Data').first()).toBeVisible()
       await expect(
         page.getByText(/Download a copy of all your data.*as JSON/)
       ).toBeVisible()

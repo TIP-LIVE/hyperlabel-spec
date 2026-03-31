@@ -1,48 +1,48 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Shipments Page', () => {
-  test('shipments page loads with heading', async ({ page }) => {
-    await page.goto('/shipments')
-    const isShipments = page.url().includes('/shipments')
-    if (isShipments) {
+  test('cargo page loads with heading', async ({ page }) => {
+    await page.goto('/cargo')
+    const isCargo = page.url().includes('/cargo')
+    if (isCargo) {
       await expect(
-        page.getByRole('heading', { name: /shipments/i })
+        page.getByRole('heading', { name: 'Track Cargo', exact: true })
       ).toBeVisible()
     }
   })
 
-  test('shows empty state or shipments list', async ({ page }) => {
-    await page.goto('/shipments')
-    const isShipments = page.url().includes('/shipments')
-    if (isShipments) {
-      // Should show either "No shipments yet" empty state or "All Shipments" table
-      const emptyState = page.getByText(/no shipments yet/i)
-      const shipmentsTable = page.getByRole('heading', {
-        name: /all shipments/i,
-      })
-      const hasContent =
-        (await emptyState.isVisible().catch(() => false)) ||
-        (await shipmentsTable.isVisible().catch(() => false))
-      expect(hasContent).toBeTruthy()
+  test('shows cargo shipments section', async ({ page }) => {
+    await page.goto('/cargo')
+    const isCargo = page.url().includes('/cargo')
+    if (isCargo) {
+      // Cargo Shipments card is always present
+      await expect(page.getByText('Cargo Shipments')).toBeVisible()
+      // Status filter dropdown is always present (either loaded or skeleton)
+      // Wait for client component to load
+      await page.waitForLoadState('networkidle')
+      const statusFilter = page.getByRole('combobox').first()
+      const hasFilter = await statusFilter.isVisible().catch(() => false)
+      const noResults = await page.getByText('No results.').isVisible().catch(() => false)
+      expect(hasFilter || noResults).toBeTruthy()
     }
   })
 
-  test('new shipment page loads with heading', async ({ page }) => {
-    await page.goto('/shipments/new')
-    const isNewShipment = page.url().includes('/shipments/new')
-    if (isNewShipment) {
+  test('new cargo page loads with heading', async ({ page }) => {
+    await page.goto('/cargo/new')
+    const isNewCargo = page.url().includes('/cargo/new')
+    if (isNewCargo) {
       await expect(
-        page.getByRole('heading', { name: /new shipment/i })
+        page.getByRole('heading', { name: /new cargo shipment/i })
       ).toBeVisible()
     }
   })
 
-  test('new shipment page has shipment details section', async ({ page }) => {
-    await page.goto('/shipments/new')
-    const isNewShipment = page.url().includes('/shipments/new')
-    if (isNewShipment) {
+  test('new cargo page has cargo essentials section', async ({ page }) => {
+    await page.goto('/cargo/new')
+    const isNewCargo = page.url().includes('/cargo/new')
+    if (isNewCargo) {
       await expect(
-        page.getByRole('heading', { name: /shipment details/i })
+        page.getByText('Cargo Essentials')
       ).toBeVisible()
     }
   })

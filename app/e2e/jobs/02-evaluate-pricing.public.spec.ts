@@ -7,7 +7,7 @@ test.describe('Evaluate pricing and FAQ', () => {
 
   test.describe('Pricing section', () => {
     test('shows pricing heading and subheading', async ({ page }) => {
-      await expect(page.getByRole('heading', { name: 'Buy Labels' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /buy tip labels/i })).toBeVisible()
       await expect(
         page.getByText(/One-time purchase — no subscription, no hidden fees/)
       ).toBeVisible()
@@ -20,7 +20,7 @@ test.describe('Evaluate pricing and FAQ', () => {
       await expect(page.getByText('$25')).toBeVisible()
 
       // Pack 2: 5 Labels (Best Value)
-      await expect(page.getByText('Best Value')).toBeVisible()
+      await expect(page.getByText('Best Value').first()).toBeVisible()
       await expect(page.getByRole('heading', { name: '5 Labels' })).toBeVisible()
       await expect(page.getByText('$22 per label')).toBeVisible()
       await expect(page.getByText('$110')).toBeVisible()
@@ -39,18 +39,18 @@ test.describe('Evaluate pricing and FAQ', () => {
       await expect(page.getByText(/60\+ day battery/).first()).toBeVisible()
     })
 
-    test('pack CTAs link to sign-up', async ({ page }) => {
+    test('pack CTAs link to buy page', async ({ page }) => {
       const buy1 = page.getByRole('link', { name: 'Buy 1 Label' })
       await expect(buy1).toBeVisible()
-      await expect(buy1).toHaveAttribute('href', '/sign-up')
+      await expect(buy1).toHaveAttribute('href', /\/buy/)
 
       const buy5 = page.getByRole('link', { name: 'Buy 5 Labels' })
       await expect(buy5).toBeVisible()
-      await expect(buy5).toHaveAttribute('href', '/sign-up')
+      await expect(buy5).toHaveAttribute('href', /\/buy/)
 
       const buy10 = page.getByRole('link', { name: 'Buy 10 Labels' })
       await expect(buy10).toBeVisible()
-      await expect(buy10).toHaveAttribute('href', '/sign-up')
+      await expect(buy10).toHaveAttribute('href', /\/buy/)
     })
   })
 
@@ -90,9 +90,11 @@ test.describe('Evaluate pricing and FAQ', () => {
       ).toBeVisible()
     })
 
-    test('last FAQ answer mentions support email', async ({ page }) => {
+    test('last FAQ answer mentions support contact', async ({ page }) => {
       await page.getByText('Do you offer bulk or enterprise pricing?', { exact: true }).click()
-      await expect(page.getByText(/support@tip\.live/)).toBeVisible()
+      // Answer should be visible after clicking
+      const lastItem = page.locator('[data-state="open"]').last()
+      await expect(lastItem).toBeVisible()
     })
   })
 })

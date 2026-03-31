@@ -18,38 +18,40 @@ test.describe('First-time user onboarding', () => {
     }
   })
 
-  test('dashboard shows onboarding wizard or recent shipments', async ({ page }) => {
+  test('dashboard shows onboarding wizard or shipment tracker', async ({ page }) => {
     await page.goto('/dashboard')
     const isDashboard = page.url().includes('/dashboard')
     if (isDashboard) {
-      await expect(page.getByText('Recent Shipments')).toBeVisible()
-      await expect(page.getByText('Your most recent cargo shipments')).toBeVisible()
-
-      // Either onboarding wizard or shipment list
+      // Either onboarding wizard (no labels), labels-ready state, or live shipment tracker
       const onboarding = page.getByText("Welcome! Here's how to get started")
       const hasLabels = page.getByText(/label.* ready/)
-      const shipmentList = page.locator('[class*="hover:bg-accent"]').first()
+      const shipmentTracker = page.getByText('Live Shipment Tracker').or(
+        page.locator('[class*="hover:bg-accent"]').first()
+      )
 
       const hasContent =
         (await onboarding.isVisible().catch(() => false)) ||
         (await hasLabels.isVisible().catch(() => false)) ||
-        (await shipmentList.isVisible().catch(() => false))
+        (await shipmentTracker.isVisible().catch(() => false))
       expect(hasContent).toBeTruthy()
     }
   })
 
   test('shipments empty state has correct wording', async ({ page }) => {
-    await page.goto('/shipments')
-    const isShipments = page.url().includes('/shipments')
+    // /shipments redirects to /cargo
+    await page.goto('/cargo')
+    const isShipments = page.url().includes('/cargo')
     if (isShipments) {
-      await expect(page.getByRole('heading', { name: /shipments/i })).toBeVisible()
-      await expect(page.getByText('Track and manage your cargo shipments')).toBeVisible()
+      await expect(page.getByRole('heading', { name: /track cargo/i })).toBeVisible()
+      await expect(page.getByText('Attach tracking labels to your cargo and monitor journeys in real time')).toBeVisible()
 
-      const emptyState = page.getByText('No shipments yet')
-      const dataState = page.getByRole('heading', { name: /all shipments/i })
+      // Wait for client component to load, then check for table or empty state
+      await page.waitForLoadState('networkidle')
+      const noResults = page.getByText('No results.')
+      const hasShipments = page.getByRole('combobox').first()
       const hasContent =
-        (await emptyState.isVisible().catch(() => false)) ||
-        (await dataState.isVisible().catch(() => false))
+        (await noResults.isVisible().catch(() => false)) ||
+        (await hasShipments.isVisible().catch(() => false))
       expect(hasContent).toBeTruthy()
     }
   })
@@ -58,7 +60,7 @@ test.describe('First-time user onboarding', () => {
     await page.goto('/labels')
     const isLabels = page.url().includes('/labels')
     if (isLabels) {
-      await expect(page.getByRole('heading', { name: /labels/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Labels', exact: true })).toBeVisible()
 
       const emptyState = page.getByText('No labels yet')
       const dataState = page.getByText(/Your labels \(\d+\)/)
@@ -73,7 +75,7 @@ test.describe('First-time user onboarding', () => {
     await page.goto('/orders')
     const isOrders = page.url().includes('/orders')
     if (isOrders) {
-      await expect(page.getByRole('heading', { name: /orders/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible()
       await expect(page.getByText('View your label orders and purchase history')).toBeVisible()
 
       const emptyState = page.getByText('No orders yet')

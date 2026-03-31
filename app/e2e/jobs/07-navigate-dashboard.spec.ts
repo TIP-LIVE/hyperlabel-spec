@@ -6,9 +6,10 @@ test.describe('Navigate the dashboard', () => {
     const isDashboard = page.url().includes('/dashboard')
     if (isDashboard) {
       await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Shipments' })).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Labels' })).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Orders' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Track Cargo' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Label Dispatch' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Labels', exact: true }).first()).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Orders', exact: true }).first()).toBeVisible()
       await expect(page.getByRole('link', { name: 'Addresses' })).toBeVisible()
       await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
     }
@@ -18,20 +19,20 @@ test.describe('Navigate the dashboard', () => {
     await page.goto('/dashboard')
     const isDashboard = page.url().includes('/dashboard')
     if (isDashboard) {
-      // Shipments
-      await page.getByRole('link', { name: 'Shipments' }).click()
-      await expect(page).toHaveURL(/\/shipments/)
-      await expect(page.getByRole('heading', { name: /shipments/i })).toBeVisible()
+      // Track Cargo
+      await page.getByRole('link', { name: 'Track Cargo' }).click()
+      await expect(page).toHaveURL(/\/cargo/)
+      await expect(page.getByRole('heading', { name: /track cargo/i })).toBeVisible()
 
       // Labels
-      await page.getByRole('link', { name: 'Labels' }).click()
+      await page.getByRole('link', { name: 'Labels', exact: true }).first().click()
       await expect(page).toHaveURL(/\/labels/)
-      await expect(page.getByRole('heading', { name: /labels/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Labels', exact: true })).toBeVisible()
 
       // Orders
-      await page.getByRole('link', { name: 'Orders' }).click()
+      await page.getByRole('link', { name: 'Orders', exact: true }).first().click()
       await expect(page).toHaveURL(/\/orders/)
-      await expect(page.getByRole('heading', { name: /orders/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible()
 
       // Addresses
       await page.getByRole('link', { name: 'Addresses' }).click()
@@ -68,13 +69,13 @@ test.describe('Navigate the dashboard', () => {
     }
   })
 
-  test('New Shipment button is visible in header', async ({ page }) => {
+  test('New Shipment dropdown button is visible in header', async ({ page }) => {
     await page.goto('/dashboard')
     const isDashboard = page.url().includes('/dashboard')
     if (isDashboard) {
-      const newShipment = page.getByRole('link', { name: /new shipment/i })
+      // "New Shipment" is a dropdown trigger button (not a link)
+      const newShipment = page.getByRole('button', { name: /new shipment/i })
       await expect(newShipment).toBeVisible()
-      await expect(newShipment).toHaveAttribute('href', '/shipments/new')
     }
   })
 })

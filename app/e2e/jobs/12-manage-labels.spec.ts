@@ -5,7 +5,7 @@ test.describe('Manage labels', () => {
     await page.goto('/labels')
     const isLabels = page.url().includes('/labels')
     if (isLabels) {
-      await expect(page.getByRole('heading', { name: /labels/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Labels', exact: true })).toBeVisible()
       await expect(
         page.getByText(/device IDs, battery, and status/)
       ).toBeVisible()
@@ -29,7 +29,7 @@ test.describe('Manage labels', () => {
           page.getByText('Labels you own will appear here')
         ).toBeVisible()
         await expect(
-          page.getByRole('link', { name: /buy labels/i })
+          page.getByRole('link', { name: /buy labels/i }).first()
         ).toBeVisible()
       }
 

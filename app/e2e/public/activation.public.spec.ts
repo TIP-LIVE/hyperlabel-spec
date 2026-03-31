@@ -5,18 +5,16 @@ test.describe('Label Activation Page', () => {
     page,
   }) => {
     await page.goto('/activate/INVALID-ID')
-    await expect(
-      page.getByRole('heading', { name: /invalid label/i })
-    ).toBeVisible()
+    // CardTitle renders as a div, not a heading element
+    await expect(page.getByText(/invalid label/i)).toBeVisible()
   })
 
   test('shows label not found for unknown valid device ID', async ({
     page,
   }) => {
     await page.goto('/activate/TIP-999')
-    await expect(
-      page.getByRole('heading', { name: /label not found/i })
-    ).toBeVisible()
+    // CardTitle renders as a div, not a heading element
+    await expect(page.getByText(/label not found/i)).toBeVisible()
   })
 
   test('page loads without errors', async ({ page }) => {

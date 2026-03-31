@@ -50,9 +50,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isPlatformAdmin = dbUser?.role === 'admin'
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen overflow-x-hidden bg-muted">
       {/* Sidebar - Desktop */}
-      <aside className="fixed inset-y-0 left-0 z-50 flex hidden w-64 flex-col border-r border-border bg-card xl:flex">
+      <aside className="fixed inset-y-0 left-0 z-50 flex hidden w-64 flex-col border-r border-border bg-card lg:flex">
         {/* Logo */}
         <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
           <Logo size="lg" />
@@ -75,19 +75,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </aside>
 
       {/* Main content */}
-      <div className="xl:pl-64">
+      <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="xl:sticky xl:top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 xl:px-6">
+        <header className="lg:sticky lg:top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
           {/* Mobile menu button */}
           <MobileSidebar />
 
           {/* Mobile logo */}
-          <Link href="/dashboard" className="xl:hidden">
+          <Link href="/dashboard" className="lg:hidden">
             <Logo size="md" />
           </Link>
 
           {/* Greeting - Desktop */}
-          <div className="hidden xl:block">
+          <div className="hidden lg:block">
             <p className="text-sm text-muted-foreground">
               Welcome back, <span className="font-medium text-foreground">{firstName}</span>
             </p>
@@ -111,7 +111,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 afterLeaveOrganizationUrl="/org-selection"
                 appearance={{
                   elements: {
-                    rootBox: 'hidden xl:flex',
+                    rootBox: 'hidden lg:flex',
                     organizationSwitcherTrigger:
                       'rounded-lg border border-border px-3 py-1.5 text-sm !text-foreground',
                     organizationSwitcherPopoverCard: 'bg-popover border border-border shadow-lg',
@@ -142,7 +142,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         {/* Page content */}
-        <main className="p-4 xl:p-6">{children}</main>
+        <main className="p-4 lg:p-6">{children}</main>
       </div>
     </div>
   )

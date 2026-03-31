@@ -1,5 +1,9 @@
 import dns from 'node:dns'
 import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
+
+// Load .env.local for test credentials (CLERK_TEST_EMAIL, CLERK_TEST_PASSWORD, etc.)
+dotenv.config({ path: '.env.local' })
 
 // Node 20+ prefers IPv6 by default; force IPv4 so localhost resolves to 127.0.0.1
 dns.setDefaultResultOrder('ipv4first')
@@ -22,7 +26,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: isCI ? 1 : undefined,
+  workers: 1,
   reporter: isCI ? 'github' : 'html',
   timeout: 30_000,
   use: {

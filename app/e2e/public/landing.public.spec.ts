@@ -18,16 +18,14 @@ test.describe('Landing Page', () => {
   })
 
   test('sign-in page loads with Clerk component', async ({ page }) => {
-    await page.goto('/sign-in')
-    // Clerk renders a sign-in form; wait for the page to settle
-    await page.waitForLoadState('networkidle')
-    // The page should contain an email input or the Clerk sign-in UI
+    const response = await page.goto('/sign-in')
+    expect(response?.status()).not.toBe(500)
     await expect(page).toHaveURL(/sign-in/)
   })
 
   test('sign-up page loads with Clerk component', async ({ page }) => {
-    await page.goto('/sign-up')
-    await page.waitForLoadState('networkidle')
+    const response = await page.goto('/sign-up')
+    expect(response?.status()).not.toBe(500)
     await expect(page).toHaveURL(/sign-up/)
   })
 

@@ -21,13 +21,13 @@ test.describe('Buy Labels Page', () => {
     }
   })
 
-  test('shows order and checkout section', async ({ page }) => {
+  test('shows label quantity options', async ({ page }) => {
     await page.goto('/buy')
     const isBuy = page.url().includes('/buy')
     if (isBuy) {
-      await expect(
-        page.getByRole('heading', { name: /order & checkout/i })
-      ).toBeVisible()
+      await expect(page.getByText('1 Label')).toBeVisible()
+      await expect(page.getByText('5 Labels')).toBeVisible()
+      await expect(page.getByText('10 Labels')).toBeVisible()
     }
   })
 })

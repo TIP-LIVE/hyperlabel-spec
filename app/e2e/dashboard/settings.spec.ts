@@ -15,9 +15,7 @@ test.describe('Settings Page', () => {
     await page.goto('/settings')
     const isSettings = page.url().includes('/settings')
     if (isSettings) {
-      await expect(
-        page.getByRole('heading', { name: /account overview/i })
-      ).toBeVisible()
+      await expect(page.getByText('Account Overview')).toBeVisible()
     }
   })
 
@@ -25,9 +23,7 @@ test.describe('Settings Page', () => {
     await page.goto('/settings')
     const isSettings = page.url().includes('/settings')
     if (isSettings) {
-      await expect(
-        page.getByRole('heading', { name: /data & privacy/i })
-      ).toBeVisible()
+      await expect(page.getByText('Data & Privacy')).toBeVisible()
     }
   })
 })

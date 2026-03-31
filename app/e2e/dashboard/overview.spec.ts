@@ -26,12 +26,12 @@ test.describe('Dashboard Overview', () => {
     const isDashboard = page.url().includes('/dashboard')
     if (isDashboard) {
       await expect(
-        page.getByRole('link', { name: /shipments/i })
+        page.getByRole('link', { name: 'Track Cargo' })
       ).toBeVisible()
-      await expect(page.getByRole('link', { name: /labels/i })).toBeVisible()
-      await expect(page.getByRole('link', { name: /orders/i })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Labels', exact: true }).first()).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Orders', exact: true }).first()).toBeVisible()
       await expect(
-        page.getByRole('link', { name: /settings/i })
+        page.getByRole('link', { name: 'Settings' })
       ).toBeVisible()
     }
   })

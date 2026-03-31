@@ -4,7 +4,8 @@ test.describe('Check label status via activation URL', () => {
   test('invalid device ID format shows Invalid Label error', async ({ page }) => {
     await page.goto('/activate/INVALID-ID')
 
-    await expect(page.getByRole('heading', { name: 'Invalid Label' })).toBeVisible()
+    // CardTitle is a div, not a heading — use getByText
+    await expect(page.getByText('Invalid Label')).toBeVisible()
     await expect(page.getByText(/is not a valid TIP tracking label ID/)).toBeVisible()
     await expect(page.getByText('TIP-001')).toBeVisible()
     await expect(page.getByText('HL-001234')).toBeVisible()
@@ -17,7 +18,8 @@ test.describe('Check label status via activation URL', () => {
   test('unknown valid device ID shows Label Not Found', async ({ page }) => {
     await page.goto('/activate/TIP-999')
 
-    await expect(page.getByRole('heading', { name: 'Label Not Found' })).toBeVisible()
+    // CardTitle is a div, not a heading — use getByText
+    await expect(page.getByText('Label Not Found')).toBeVisible()
     await expect(page.getByText('TIP-999')).toBeVisible()
     await expect(page.getByText(/It may not have been registered yet/)).toBeVisible()
     await expect(page.getByText(/contact us for help/)).toBeVisible()

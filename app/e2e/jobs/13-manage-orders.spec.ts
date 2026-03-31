@@ -5,7 +5,7 @@ test.describe('Manage orders', () => {
     await page.goto('/orders')
     const isOrders = page.url().includes('/orders')
     if (isOrders) {
-      await expect(page.getByRole('heading', { name: /orders/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible()
       await expect(page.getByText('View your label orders and purchase history')).toBeVisible()
 
       const buyLabels = page.getByRole('link', { name: /buy labels/i }).first()
