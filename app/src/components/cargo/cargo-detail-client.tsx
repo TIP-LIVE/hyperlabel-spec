@@ -283,6 +283,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                 currentName={shipment.name}
                 currentOrigin={shipment.originAddress}
                 currentDestination={shipment.destinationAddress}
+                currentPhotoUrls={shipment.photoUrls}
                 apiBasePath="/api/v1/cargo"
               />
             )}

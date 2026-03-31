@@ -46,6 +46,7 @@ export const updateShipmentSchema = z.object({
   shareEnabled: z.boolean().optional(),
   status: z.enum(['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED']).optional(),
   consigneePhone: z.string().max(30).optional(),
+  photoUrls: z.array(z.string().url().or(z.string().startsWith('/'))).max(5).optional(),
 })
 
 export type CreateShipmentInput = z.infer<typeof createShipmentSchema>

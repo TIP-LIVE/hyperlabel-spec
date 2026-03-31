@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
     // Create Stripe Checkout session with retry on connection errors
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
-      payment_method_types: ['card'],
       ...(user.email ? { customer_email: user.email } : {}),
       client_reference_id: user.id,
       line_items: [
