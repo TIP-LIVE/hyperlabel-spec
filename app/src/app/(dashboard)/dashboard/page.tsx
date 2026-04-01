@@ -96,7 +96,7 @@ export default async function DashboardPage() {
   try {
     const [active, total, delivered, lowBattery, recent] = await Promise.all([
       db.shipment.count({
-        where: { ...where, status: 'IN_TRANSIT', type: 'CARGO_TRACKING' },
+        where: { ...where, status: { in: ['IN_TRANSIT', 'PENDING'] }, type: 'CARGO_TRACKING' },
       }),
       user
         ? db.label.count({
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
           })
         : 0,
       db.shipment.findMany({
-        where: { ...where, status: { in: ['IN_TRANSIT', 'PENDING'] } },
+        where: { ...where, status: { in: ['IN_TRANSIT', 'PENDING'] }, type: 'CARGO_TRACKING' },
         include: {
           label: {
             select: { deviceId: true, batteryPct: true, lastSeenAt: true, status: true },
@@ -176,8 +176,8 @@ export default async function DashboardPage() {
       name: 'Active Shipments',
       value: activeShipments.toString(),
       icon: Truck,
-      description: 'Currently in transit',
-      href: '/shipments?status=IN_TRANSIT',
+      description: 'Pending or in transit',
+      href: '/shipments',
     },
     {
       name: 'Total Labels',
