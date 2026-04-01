@@ -177,7 +177,7 @@ export default async function DashboardPage() {
       value: activeShipments.toString(),
       icon: Truck,
       description: 'Pending or in transit',
-      href: '/shipments',
+      href: '/cargo',
     },
     {
       name: 'Total Labels',
@@ -191,7 +191,7 @@ export default async function DashboardPage() {
       value: deliveredThisMonth.toString(),
       icon: MapPin,
       description: 'This month',
-      href: '/shipments?status=DELIVERED',
+      href: '/cargo?status=DELIVERED',
     },
     {
       name: 'Low Battery',
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
       icon: Battery,
       description: lowBatteryLabels > 0 ? 'Needs attention' : 'All good',
       alert: lowBatteryLabels > 0,
-      href: '/shipments',
+      href: '/cargo',
     },
   ]
 
@@ -405,7 +405,7 @@ export default async function DashboardPage() {
                 <CardDescription>Shipments currently in transit or pending pickup</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/shipments">
+                <Link href="/cargo">
                   View all
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
@@ -439,7 +439,7 @@ export default async function DashboardPage() {
                   return (
                     <Link
                       key={shipment.id}
-                      href={`/shipments/${shipment.id}`}
+                      href={`/cargo/${shipment.id}`}
                       className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
                     >
                       <div className="flex items-center gap-3">
