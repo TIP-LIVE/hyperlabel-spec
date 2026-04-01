@@ -179,10 +179,7 @@ export function orgScopedWhere(
   additionalFilters?: Record<string, unknown>
 ): Record<string, unknown> {
   return {
-    OR: [
-      { orgId: context.orgId },
-      { userId: context.user.id },
-    ],
+    orgId: context.orgId,
     ...additionalFilters,
   }
 }
