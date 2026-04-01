@@ -38,13 +38,10 @@ export default async function OrdersPage() {
   }> = []
 
   if (user) {
-    // Show records from the active org AND the user's own records
-    const where: Record<string, unknown> = {
-      OR: [
-        ...(orgId ? [{ orgId }] : []),
-        { userId: user.id },
-      ],
-    }
+    // B2B: org is top-level — all org members see same orders
+    const where: Record<string, unknown> = orgId
+      ? { orgId }
+      : { userId: user.id }
 
     orders = await db.order.findMany({
       where,

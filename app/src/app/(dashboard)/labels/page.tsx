@@ -39,13 +39,10 @@ export default async function LabelsPage() {
     redirect('/sign-in')
   }
 
-  // Show labels from active org AND user's own records
-  const orderFilter: Record<string, unknown> = {
-    OR: [
-      ...(orgId ? [{ orgId }] : []),
-      ...(user ? [{ userId: user.id }] : []),
-    ],
-  }
+  // B2B: org is top-level — all org members see same labels
+  const orderFilter: Record<string, unknown> = orgId
+    ? { orgId }
+    : user ? { userId: user.id } : {}
 
   const labels = user
     ? await db.label.findMany({

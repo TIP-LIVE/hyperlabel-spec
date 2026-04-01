@@ -51,21 +51,14 @@ export default async function DashboardPage() {
     redirect('/sign-in')
   }
 
-  // B2B: org is top-level — all org members see same shipments and labels
-  // Use OR to match both org-level and user-level records (some data predates org setup)
-  const where: Record<string, unknown> = {
-    OR: [
-      ...(orgId ? [{ orgId }] : []),
-      ...(user ? [{ userId: user.id }] : []),
-    ],
-  }
+  // B2B: org is top-level — all org members see same data
+  const where: Record<string, unknown> = orgId
+    ? { orgId }
+    : user ? { userId: user.id } : {}
 
-  const orderFilter: Record<string, unknown> = {
-    OR: [
-      ...(orgId ? [{ orgId }] : []),
-      ...(user ? [{ userId: user.id }] : []),
-    ],
-  }
+  const orderFilter: Record<string, unknown> = orgId
+    ? { orgId }
+    : user ? { userId: user.id } : {}
 
   if (process.env.NODE_ENV !== 'test') {
     console.info('[Dashboard] orgId:', orgId ?? 'none', 'orgRole:', orgRole ?? 'none', 'orderFilter:', JSON.stringify(orderFilter))
