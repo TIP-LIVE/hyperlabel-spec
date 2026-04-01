@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
-import { format } from 'date-fns'
+import { formatDateTime } from '@/lib/utils/format-date'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { ToggleRoleButton } from '@/components/admin/toggle-role-button'
 import type { Metadata } from 'next'
@@ -126,7 +126,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                             )}
                           </td>
                     <td className="py-3 text-muted-foreground">
-                      {format(new Date(user.createdAt), 'PP')}
+                      {formatDateTime(user.createdAt)}
                     </td>
                     <td className="py-3">
                       <ToggleRoleButton userId={user.id} currentRole={user.role} />

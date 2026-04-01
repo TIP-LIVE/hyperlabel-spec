@@ -24,7 +24,7 @@ import {
   X,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { format } from 'date-fns'
+import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
 import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
@@ -637,7 +637,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                   <div>
                     <p className="text-sm text-muted-foreground">Delivered</p>
                     <p className="font-medium">
-                      {format(new Date(shipment.deliveredAt), 'PPP')}
+                      {formatDateTimeFull(shipment.deliveredAt)}
                     </p>
                   </div>
                   <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -713,7 +713,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                     <div>
                       <p className="text-sm text-muted-foreground">Activated</p>
                       <p className="font-medium">
-                        {format(new Date(shipment.label.activatedAt), 'PPP')}
+                        {formatDateTimeFull(shipment.label.activatedAt)}
                       </p>
                     </div>
                   </>

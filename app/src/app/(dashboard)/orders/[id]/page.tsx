@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Package, MapPin, Truck, Receipt } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateTimeFull } from '@/lib/utils/format-date'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -101,7 +101,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Order Details</h1>
           <p className="text-sm text-muted-foreground">
-            Placed on {format(new Date(order.createdAt), 'PPP')}
+            Placed on {formatDateTimeFull(order.createdAt)}
           </p>
         </div>
         <Badge variant={status.variant} className="text-sm">
@@ -191,7 +191,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             {order.shippedAt && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipped on</span>
-                <span>{format(new Date(order.shippedAt), 'PPP')}</span>
+                <span>{formatDateTimeFull(order.shippedAt)}</span>
               </div>
             )}
 

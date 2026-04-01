@@ -9,6 +9,7 @@ import { ArrowLeft, Package, MapPin, Truck, CreditCard, User, Send } from 'lucid
 import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
 import { shipmentStatusStyles } from '@/lib/status-config'
 import { format } from 'date-fns'
+import { formatDateTime } from '@/lib/utils/format-date'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -270,7 +271,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
                     <div>
                       <span className="text-sm text-card-foreground">{d.name || 'Unnamed dispatch'}</span>
                       <p className="text-xs text-muted-foreground">
-                        {d._count.shipmentLabels} label{d._count.shipmentLabels !== 1 ? 's' : ''} · {format(new Date(d.createdAt), 'PP')}
+                        {d._count.shipmentLabels} label{d._count.shipmentLabels !== 1 ? 's' : ''} · {formatDateTime(d.createdAt)}
                       </p>
                     </div>
                   </div>

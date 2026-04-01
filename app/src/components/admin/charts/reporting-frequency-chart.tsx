@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
+import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { useTheme } from 'next-themes'
 
 export interface ReportingDay {
@@ -64,7 +65,7 @@ export function ReportingFrequencyChart({ data }: ReportingFrequencyChartProps) 
                 }}
                 labelFormatter={(_v, payload) => {
                   if (payload?.[0]?.payload?.date) {
-                    return format(new Date(payload[0].payload.date), 'PPP')
+                    return formatDateTimeFull(payload[0].payload.date)
                   }
                   return ''
                 }}

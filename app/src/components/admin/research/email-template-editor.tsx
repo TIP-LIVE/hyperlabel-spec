@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDateTime } from '@/lib/utils/format-date'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -249,7 +250,7 @@ export function EmailTemplateEditor({ template }: EmailTemplateEditorProps) {
               <p className="mt-1 text-sm text-foreground">{template.reviewNotes}</p>
               {template.reviewedBy && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  — {template.reviewedBy}, {template.reviewedAt ? new Date(template.reviewedAt).toLocaleDateString() : ''}
+                  — {template.reviewedBy}, {template.reviewedAt ? formatDateTime(template.reviewedAt) : ''}
                 </p>
               )}
             </div>

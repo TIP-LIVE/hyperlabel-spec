@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
+import { formatDateTime } from '@/lib/utils/format-date'
 import { Building2, Plus, QrCode } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -208,7 +208,7 @@ export function LabelsTableWithSelection({
                     </td>
                     <td className="py-3 text-muted-foreground">
                       {label.activatedAt
-                        ? format(new Date(label.activatedAt), 'PP')
+                        ? formatDateTime(label.activatedAt)
                         : '—'}
                     </td>
                   </tr>

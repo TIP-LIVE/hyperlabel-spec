@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { StatCard } from '@/components/ui/stat-card'
 import { db } from '@/lib/db'
 import { Users, Package, ShoppingCart, Radio, AlertTriangle, ArrowRight } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateTime } from '@/lib/utils/format-date'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -178,7 +178,7 @@ async function RecentOrders() {
           <div>
             <p className="text-sm font-medium text-card-foreground">{order.user.email}</p>
             <p className="text-xs text-muted-foreground">
-              {order.quantity} labels · {format(new Date(order.createdAt), 'PP')}
+              {order.quantity} labels · {formatDateTime(order.createdAt)}
             </p>
           </div>
           <span

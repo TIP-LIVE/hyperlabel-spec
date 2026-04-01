@@ -18,6 +18,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatDateTime, formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
 import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { PublicTrackingMap } from '@/components/maps/public-tracking-map'
@@ -534,7 +535,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                     <p className="font-medium">{statusInfo.label}</p>
                     <p className="text-sm text-muted-foreground">
                       {shipment.status === 'DELIVERED' && shipment.deliveredAt
-                        ? `Delivered ${format(new Date(shipment.deliveredAt), 'PPP')}`
+                        ? `Delivered ${formatDateTimeFull(shipment.deliveredAt)}`
                         : shipment.status === 'IN_TRANSIT'
                           ? 'On the way to destination'
                           : shipment.status === 'CANCELLED'
@@ -573,7 +574,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Created</span>
                   <span className="text-sm">
-                    {format(new Date(shipment.createdAt), 'PP')}
+                    {formatDateTime(shipment.createdAt)}
                   </span>
                 </div>
               </CardContent>

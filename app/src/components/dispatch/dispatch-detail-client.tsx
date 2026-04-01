@@ -25,7 +25,7 @@ import {
   XCircle,
   Tag,
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
@@ -339,7 +339,7 @@ export function DispatchDetailClient({ initialData, trackingUrl, isAdmin }: Disp
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Created</p>
-                  <p>{format(new Date(shipment.createdAt), 'PPP')}</p>
+                  <p>{formatDateTimeFull(shipment.createdAt)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Labels</p>
@@ -350,7 +350,7 @@ export function DispatchDetailClient({ initialData, trackingUrl, isAdmin }: Disp
                     <p className="text-xs text-muted-foreground">Delivered</p>
                     <p className="flex items-center gap-1.5">
                       <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                      {format(new Date(shipment.deliveredAt), 'PPP')}
+                      {formatDateTimeFull(shipment.deliveredAt)}
                     </p>
                   </div>
                 )}

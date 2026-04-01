@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
-import { format } from 'date-fns'
+import { formatDateTime } from '@/lib/utils/format-date'
 import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
 import { Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
@@ -225,7 +225,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             <Badge className={orderStatusStyles[order.status as keyof typeof orderStatusStyles]}>{order.status}</Badge>
                           </td>
                           <td className="py-3 text-muted-foreground">
-                            {format(new Date(order.createdAt), 'PP')}
+                            {formatDateTime(order.createdAt)}
                           </td>
                           <td className="py-3">
                             {(order.status === 'PAID' || order.status === 'SHIPPED') && order.hasUndispatched && (

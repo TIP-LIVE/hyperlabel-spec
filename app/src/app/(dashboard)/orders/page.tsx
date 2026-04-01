@@ -9,7 +9,7 @@ import { Package, ShoppingCart, Truck } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
-import { format } from 'date-fns'
+import { formatDateTime, formatDateTimeFull } from '@/lib/utils/format-date'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -117,7 +117,7 @@ export default async function OrdersPage() {
                           {order.quantity} Label{order.quantity > 1 ? 's' : ''}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(order.createdAt), 'PPP')}
+                          {formatDateTimeFull(order.createdAt)}
                         </p>
                       </div>
                     </div>
@@ -136,7 +136,7 @@ export default async function OrdersPage() {
                       )}
                       {order.shippedAt && !order.trackingNumber && (
                         <p className="text-xs text-muted-foreground">
-                          Shipped {format(new Date(order.shippedAt), 'PP')}
+                          Shipped {formatDateTime(order.shippedAt)}
                         </p>
                       )}
                     </div>

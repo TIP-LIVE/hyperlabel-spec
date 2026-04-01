@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { format } from 'date-fns'
+import { formatDateTime } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
 import {
   ArrowLeft,
@@ -234,7 +235,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
             <div>
               <p className="text-xs text-muted-foreground">Activated</p>
               <p className="text-sm text-foreground">
-                {label.activatedAt ? format(new Date(label.activatedAt), 'PP') : '—'}
+                {label.activatedAt ? formatDateTime(label.activatedAt) : '—'}
               </p>
             </div>
             {orgIds.length > 0 && (
@@ -414,7 +415,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                         {shipment.name || 'Unnamed shipment'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(shipment.createdAt), 'PP')}
+                        {formatDateTime(shipment.createdAt)}
                         {shipment.destinationAddress && (
                           <> &rarr; {shipment.destinationAddress}</>
                         )}
@@ -424,7 +425,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2">
                     {shipment.deliveredAt && (
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(shipment.deliveredAt), 'PP')}
+                        {formatDateTime(shipment.deliveredAt)}
                       </span>
                     )}
                     <Badge className={shipmentStatusColors[shipment.status]}>

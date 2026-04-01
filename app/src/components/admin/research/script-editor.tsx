@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { formatDateTime } from '@/lib/utils/format-date'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -358,7 +359,7 @@ export function ScriptEditor({ script }: ScriptEditorProps) {
               <p className="mt-1 text-sm text-foreground">{script.reviewNotes}</p>
               {script.reviewedBy && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  — {script.reviewedBy}, {script.reviewedAt ? new Date(script.reviewedAt).toLocaleDateString() : ''}
+                  — {script.reviewedBy}, {script.reviewedAt ? formatDateTime(script.reviewedAt) : ''}
                 </p>
               )}
             </div>

@@ -8,6 +8,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Building2 } from 'lucide-react'
+import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { PageHeader } from '@/components/ui/page-header'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { NotificationPreferences } from '@/components/settings/notification-preferences'
@@ -87,11 +88,7 @@ export default async function SettingsPage() {
           <div>
             <Label className="text-muted-foreground">Member since</Label>
             <p className="font-medium">
-              {new Date(displayUser.createdAt).toLocaleDateString('en-GB', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {formatDateTimeFull(displayUser.createdAt)}
             </p>
           </div>
         </CardContent>

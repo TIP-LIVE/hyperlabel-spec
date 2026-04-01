@@ -1,3 +1,5 @@
+import { formatDateTime } from './format-date'
+
 /**
  * Precise relative time formatter.
  * Replaces date-fns formatDistanceToNow which uses coarse buckets
@@ -26,9 +28,5 @@ export function timeAgo(date: Date | string | number): string {
   if (days === 1) return '1 day ago'
   if (days < 7) return `${days} days ago`
 
-  return new Date(then).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+  return formatDateTime(then)
 }

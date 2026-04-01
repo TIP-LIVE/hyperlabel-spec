@@ -1,6 +1,7 @@
 'use client'
 
 import { Download } from 'lucide-react'
+import { formatDateTimeFull } from '@/lib/utils/format-date'
 
 interface ExportData {
   hypotheses: Array<{
@@ -50,7 +51,7 @@ interface ExportData {
 
 function generateMarkdown(data: ExportData): string {
   const lines: string[] = []
-  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const date = formatDateTimeFull(new Date())
 
   lines.push(`# TIP Research Report`)
   lines.push(`_Generated: ${date}_`)

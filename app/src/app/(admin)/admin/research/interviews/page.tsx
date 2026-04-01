@@ -7,6 +7,7 @@ import { researchPersonaStyles, researchPersonaConfig } from '@/lib/status-confi
 import type { ResearchPersona } from '@/lib/status-config'
 import { CalendarClock, Clock, Building2, Play, FileText } from 'lucide-react'
 import { ResearchBreadcrumb } from '@/components/admin/research/research-breadcrumb'
+import { formatDateTime } from '@/lib/utils/format-date'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -172,11 +173,7 @@ export default async function InterviewsPage() {
                       {interview.completedAt && (
                         <span>
                           Completed{' '}
-                          {new Date(interview.completedAt).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
+                          {formatDateTime(interview.completedAt)}
                         </span>
                       )}
                       {interview.duration && (
