@@ -69,7 +69,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
           </div>
           <div>
             <Link
-              href={`/shipments/${row.original.id}`}
+              href={`/${isDispatch ? 'dispatch' : 'cargo'}/${row.original.id}`}
               className="font-medium hover:underline"
             >
               {name || (isDispatch ? 'Unnamed Dispatch' : 'Unnamed Cargo')}
@@ -180,7 +180,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href={`/shipments/${shipment.id}`}>
+              <Link href={`/${shipment.type === 'LABEL_DISPATCH' ? 'dispatch' : 'cargo'}/${shipment.id}`}>
                 <Eye className="mr-2 h-4 w-4" />
                 View details
               </Link>

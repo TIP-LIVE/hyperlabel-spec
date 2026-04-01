@@ -113,7 +113,7 @@ function DashboardMapInner({ shipments }: DashboardMapProps) {
         >
           <div
             className="cursor-pointer p-1"
-            onClick={() => router.push(`/shipments/${selected.id}`)}
+            onClick={() => router.push(`/cargo/${selected.id}`)}
           >
             <p className="font-medium text-sm text-gray-900">{selected.name}</p>
             {selected.locationName && (

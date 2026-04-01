@@ -384,7 +384,7 @@ function CargoTrackingForm({
       if (res.ok) {
         const { shipment } = await res.json()
         toast.success('Shipment created successfully!')
-        router.push(`/shipments/${shipment.id}`)
+        router.push(`/cargo/${shipment.id}`)
       } else {
         let errorMessage = 'Failed to create shipment'
         try {
@@ -721,7 +721,7 @@ function LabelDispatchForm({
       if (res.ok) {
         const { shipment } = await res.json()
         toast.success('Label dispatch created successfully!')
-        router.push(`/shipments/${shipment.id}`)
+        router.push(`/dispatch/${shipment.id}`)
       } else {
         let errorMessage = 'Failed to create dispatch'
         try {

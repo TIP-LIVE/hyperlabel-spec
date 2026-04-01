@@ -350,7 +350,7 @@ export async function sendShareLinkReminderNotification(params: {
 
   if (params.reminderType === 'unused_labels') {
     subject = `📋 You have ${params.labelCount} unused tracking label${params.labelCount === 1 ? '' : 's'}`
-    const newShipmentUrl = `${APP_URL}/shipments/new`
+    const newShipmentUrl = `${APP_URL}/cargo/new`
     html = await render(
       UnusedLabelsReminderEmail({
         userName: name,

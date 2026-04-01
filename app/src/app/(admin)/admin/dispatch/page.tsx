@@ -150,7 +150,7 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
                       <tr key={s.id} className="text-sm">
                         <td className="py-3">
                           <Link
-                            href={`/shipments/${s.id}`}
+                            href={`/dispatch/${s.id}`}
                             className="font-medium text-primary hover:underline"
                           >
                             {s.name || 'Untitled'}

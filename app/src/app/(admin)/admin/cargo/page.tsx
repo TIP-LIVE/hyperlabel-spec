@@ -148,7 +148,7 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
                       <tr key={s.id} className="text-sm">
                         <td className="py-3">
                           <Link
-                            href={`/shipments/${s.id}`}
+                            href={`/cargo/${s.id}`}
                             className="font-medium text-primary hover:underline"
                           >
                             {s.name || 'Untitled'}
