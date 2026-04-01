@@ -23,7 +23,9 @@ setup('authenticate as user', async ({ page }) => {
   await page.goto('http://localhost:3000/sign-in')
   await page.waitForLoadState('domcontentloaded')
   // Wait for Clerk to initialize
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await page.waitForFunction(() => typeof (window as any).Clerk !== 'undefined', { timeout: 15_000 })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await page.waitForFunction(() => (window as any).Clerk?.loaded, { timeout: 10_000 })
 
   // Sign in programmatically via Clerk backend API (no UI interaction, no OTP)
