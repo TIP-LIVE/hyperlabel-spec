@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { BatteryTrendChart } from '@/components/admin/charts/battery-trend-chart'
 import { getOnomonodoSimByIccid } from '@/lib/onomondo'
+import { createClerkClient } from '@clerk/backend'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -115,8 +116,20 @@ export default async function DeviceDetailPage({ params }: PageProps) {
     (referenceTime - new Date(lastLocation.recordedAt).getTime()) / (1000 * 60 * 60) > 24
   const isLowBattery = label.batteryPct !== null && label.batteryPct < 20 && label.batteryPct > 0
 
-  // Count unique orgs
-  const orgIds = [...new Set(label.orderLabels.map((ol) => ol.order.orgId).filter(Boolean))]
+  // Resolve org names from Clerk
+  const orgIds = [...new Set(label.orderLabels.map((ol) => ol.order.orgId).filter(Boolean))] as string[]
+  const orgNames: Record<string, string> = {}
+  if (orgIds.length > 0) {
+    try {
+      const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! })
+      const { data: clerkOrgs } = await clerk.organizations.getOrganizationList({ limit: 100 })
+      for (const org of clerkOrgs) {
+        orgNames[org.id] = org.name
+      }
+    } catch (err) {
+      console.error('[DeviceDetail] Clerk client error:', err)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -238,14 +251,24 @@ export default async function DeviceDetailPage({ params }: PageProps) {
                 {label.activatedAt ? formatDateTime(label.activatedAt) : '—'}
               </p>
             </div>
-            {orgIds.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground">Organizations</p>
-                <p className="text-sm text-foreground">
-                  {orgIds.length} org{orgIds.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
+            <div>
+              <p className="text-xs text-muted-foreground">Organisation</p>
+              {orgIds.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {orgIds.map((orgId) => (
+                    <Link
+                      key={orgId}
+                      href={`/admin/labels?org=${encodeURIComponent(orgId)}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {orgNames[orgId] ?? orgId}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">—</p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
