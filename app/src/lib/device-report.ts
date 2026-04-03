@@ -222,6 +222,8 @@ export async function processLocationReport(
 
   // Detect orphaned device activity: label is reporting but has no shipment
   // Generate a claim token so the shipper can create a shipment via a public link
+  // NOTE: Do NOT promote to ACTIVE here — keep SOLD so the label stays in the
+  // "available labels" dropdown. The cargo creation flow handles SOLD → ACTIVE.
   if (!activeShipment && !label.claimToken && label.status === 'SOLD') {
     const claimToken = generateShareCode()
     const claimExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h window
@@ -229,8 +231,6 @@ export async function processLocationReport(
     await db.label.update({
       where: { id: label.id },
       data: {
-        status: 'ACTIVE',
-        activatedAt: new Date(),
         claimToken,
         claimExpiresAt,
         firstUnlinkedReportAt: new Date(),
