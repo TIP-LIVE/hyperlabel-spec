@@ -26,6 +26,8 @@ export type LabelRow = {
   orderLabels: Array<{
     order: { id: string; user: { email: string | null } } | null
   }>
+  orgId: string | null
+  orgName: string | null
 }
 
 interface LabelsTableWithSelectionProps {
@@ -35,6 +37,8 @@ interface LabelsTableWithSelectionProps {
   page: number
   statusFilter?: string
   totalPages: number
+  orgFilter?: string
+  orgFilterName?: string
 }
 
 export function LabelsTableWithSelection({
@@ -44,6 +48,8 @@ export function LabelsTableWithSelection({
   page,
   statusFilter,
   totalPages,
+  orgFilter,
+  orgFilterName,
 }: LabelsTableWithSelectionProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -112,6 +118,24 @@ export function LabelsTableWithSelection({
         </div>
       </div>
 
+      {orgFilter && (
+        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
+          <Building2 className="h-4 w-4 text-primary" />
+          <span>
+            Filtered by organisation: <strong>{orgFilterName}</strong>
+          </span>
+          <Link
+            href={`/admin/labels?${new URLSearchParams({
+              ...(q ? { q } : {}),
+              ...(statusFilter ? { status: statusFilter } : {}),
+            }).toString()}`}
+            className="ml-2 rounded bg-muted px-2 py-0.5 text-xs text-foreground hover:bg-accent"
+          >
+            Clear filter
+          </Link>
+        </div>
+      )}
+
       <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="text-card-foreground">Labels ({totalCount})</CardTitle>
@@ -145,6 +169,7 @@ export function LabelsTableWithSelection({
                   <th className="pb-3 font-medium">IMEI</th>
                   <th className="pb-3 font-medium">Status</th>
                   <th className="pb-3 font-medium">Battery</th>
+                  <th className="pb-3 font-medium">Organisation</th>
                   <th className="pb-3 font-medium">Owner</th>
                   <th className="pb-3 font-medium">Activated</th>
                 </tr>
@@ -195,6 +220,18 @@ export function LabelsTableWithSelection({
                       )}
                     </td>
                     <td className="py-3">
+                      {label.orgName ? (
+                        <Link
+                          href={`/admin/labels?org=${encodeURIComponent(label.orgId!)}`}
+                          className="text-primary hover:underline"
+                        >
+                          {label.orgName}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="py-3">
                       {label.orderLabels[0]?.order?.user?.email ? (
                         <Link
                           href={`/admin/users?q=${encodeURIComponent(label.orderLabels[0].order.user.email)}`}
@@ -215,7 +252,7 @@ export function LabelsTableWithSelection({
                 ))}
                 {labels.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
                       {q ? 'No labels match your search' : 'No labels in inventory'}
                     </td>
                   </tr>
@@ -235,6 +272,7 @@ export function LabelsTableWithSelection({
                     href={`/admin/labels?${new URLSearchParams({
                       ...(q ? { q } : {}),
                       ...(statusFilter ? { status: statusFilter } : {}),
+                      ...(orgFilter ? { org: orgFilter } : {}),
                       page: String(page - 1),
                     }).toString()}`}
                     className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"
@@ -247,6 +285,7 @@ export function LabelsTableWithSelection({
                     href={`/admin/labels?${new URLSearchParams({
                       ...(q ? { q } : {}),
                       ...(statusFilter ? { status: statusFilter } : {}),
+                      ...(orgFilter ? { org: orgFilter } : {}),
                       page: String(page + 1),
                     }).toString()}`}
                     className="rounded bg-muted px-3 py-1 text-sm text-foreground hover:bg-accent"

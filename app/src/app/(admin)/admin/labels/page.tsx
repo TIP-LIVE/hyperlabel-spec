@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { db } from '@/lib/db'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { LabelsTableWithSelection } from '@/components/admin/labels-table-with-selection'
+import { createClerkClient } from '@clerk/backend'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -13,18 +14,35 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-  searchParams: Promise<{ q?: string; status?: string; page?: string }>
+  searchParams: Promise<{ q?: string; status?: string; page?: string; org?: string }>
 }
 
 export default async function AdminLabelsPage({ searchParams }: PageProps) {
-  const { q, status: statusFilter, page: pageStr } = await searchParams
+  const { q, status: statusFilter, page: pageStr, org: orgFilter } = await searchParams
   const page = Math.max(1, parseInt(pageStr || '1', 10) || 1)
   const perPage = 25
+
+  // Fetch all organisations from Clerk for name display
+  const orgNames: Record<string, string> = {}
+  try {
+    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! })
+    const { data: clerkOrgs } = await clerk.organizations.getOrganizationList({ limit: 100 })
+    for (const org of clerkOrgs) {
+      orgNames[org.id] = org.name
+    }
+  } catch (err) {
+    console.error('[AdminLabels] Clerk client error:', err)
+  }
 
   const where: Record<string, unknown> = {}
 
   if (statusFilter && statusFilter !== 'ALL') {
     where.status = statusFilter
+  }
+
+  // Filter by organisation
+  if (orgFilter) {
+    where.orderLabels = { some: { order: { orgId: orgFilter } } }
   }
 
   if (q) {
@@ -41,7 +59,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
       include: {
         orderLabels: {
           take: 1,
-          include: { order: { select: { id: true, user: { select: { email: true } } } } },
+          include: { order: { select: { id: true, orgId: true, user: { select: { email: true } } } } },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -71,15 +89,20 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
 
   const currentStatus = statusFilter || 'ALL'
 
-  const labelRows = labels.map((label) => ({
-    id: label.id,
-    deviceId: label.deviceId,
-    imei: label.imei,
-    status: label.status,
-    batteryPct: label.batteryPct,
-    activatedAt: label.activatedAt,
-    orderLabels: label.orderLabels,
-  }))
+  const labelRows = labels.map((label) => {
+    const orgId = label.orderLabels[0]?.order?.orgId ?? null
+    return {
+      id: label.id,
+      deviceId: label.deviceId,
+      imei: label.imei,
+      status: label.status,
+      batteryPct: label.batteryPct,
+      activatedAt: label.activatedAt,
+      orderLabels: label.orderLabels,
+      orgId,
+      orgName: orgId ? (orgNames[orgId] ?? orgId) : null,
+    }
+  })
 
   return (
     <div className="space-y-6">
@@ -125,6 +148,8 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
         page={page}
         statusFilter={statusFilter}
         totalPages={totalPages}
+        orgFilter={orgFilter}
+        orgFilterName={orgFilter ? (orgNames[orgFilter] ?? orgFilter) : undefined}
       />
     </div>
   )
