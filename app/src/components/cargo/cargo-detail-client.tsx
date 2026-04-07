@@ -32,6 +32,7 @@ import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
+import { LabelPreview } from '@/components/cargo/label-preview'
 import { toast } from 'sonner'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { isNullIsland } from '@/lib/validations/device'
@@ -668,6 +669,15 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* Physical Label Preview + print-ready PDF download */}
+          {shipment.label && (
+            <LabelPreview
+              shipmentId={shipment.id}
+              deviceId={shipment.label.deviceId}
+              displayId={shipment.label.displayId}
+            />
           )}
 
           {/* Label Info */}
