@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import QRCode from 'qrcode'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Download, Printer } from 'lucide-react'
@@ -13,38 +12,40 @@ interface LabelPreviewProps {
 }
 
 /**
- * Renders a faithful on-screen preview of the physical TIP label sticker
- * and a button to download the exact print-ready PDF.
- *
- * Preview layout mirrors the constants in lib/label-pdf.ts so what users
- * see here matches what the factory prints.
+ * Shows a WYSIWYG preview of the physical TIP label sticker by rendering
+ * the real print-ready PDF inline in an <object>, plus a download button.
+ * The same endpoint serves both: ?inline=1 for preview, no query for download.
  */
 export function LabelPreview({ shipmentId, deviceId, displayId }: LabelPreviewProps) {
-  // Canonical bare URL form (the /w/ prefix was dropped — tip.live/{displayId} works).
-  // Falls back to numeric portion of deviceId only when displayId is missing.
   const serial = displayId || deviceId
-  const urlKey = displayId || deviceId.replace(/^[a-zA-Z]+-?/, '')
-  const url = `tip.live/${urlKey}`
+  const previewUrl = `/api/v1/shipments/${shipmentId}/label-pdf?inline=1#view=FitH&toolbar=0&navpanes=0`
 
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
+  // Fetch PDF as a blob so we get proper auth (cookies) and can embed via blob URL.
   useEffect(() => {
     let cancelled = false
-    QRCode.toDataURL(`https://${url}`, {
-      errorCorrectionLevel: 'M',
-      margin: 0,
-      color: { dark: '#66FF00', light: '#00000000' },
-      width: 512,
-    })
-      .then((d) => {
-        if (!cancelled) setQrDataUrl(d)
-      })
-      .catch(() => {})
+    let createdUrl: string | null = null
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/v1/shipments/${shipmentId}/label-pdf?inline=1`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const blob = await res.blob()
+        if (cancelled) return
+        createdUrl = URL.createObjectURL(blob)
+        setPdfBlobUrl(createdUrl)
+      } catch (e) {
+        console.error('[label-preview] load failed', e)
+        if (!cancelled) setLoadError(true)
+      }
+    })()
     return () => {
       cancelled = true
+      if (createdUrl) URL.revokeObjectURL(createdUrl)
     }
-  }, [url])
+  }, [shipmentId])
 
   async function handleDownload() {
     setDownloading(true)
@@ -76,44 +77,36 @@ export function LabelPreview({ shipmentId, deviceId, displayId }: LabelPreviewPr
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Sticker preview — 10x15 aspect ratio, black bg, #66FF00 ink */}
+        {/* Inline PDF preview — exact rendering of the print-ready file */}
         <div
-          className="relative w-full overflow-hidden rounded-xl bg-black shadow-inner"
+          className="relative w-full overflow-hidden rounded-xl border bg-muted"
           style={{ aspectRatio: '10 / 15' }}
-          aria-label="Physical label preview"
         >
-          {/* QR code — positioned from PDF coords (x=745, y=62, size=195 in 1000x1500pt).
-              PDF y is bottom-up, so convert to bottom-%. */}
-          <div
-            className="absolute"
-            style={{
-              left: '74.5%', // 745/1000
-              bottom: '4.13%', // 62/1500
-              width: '19.5%', // 195/1000
-              aspectRatio: '1 / 1',
-            }}
-          >
-            {qrDataUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={qrDataUrl} alt="" className="h-full w-full" />
-            )}
-          </div>
-
-          {/* URL text — PDF x=128, y=147 */}
-          <div
-            className="absolute font-mono text-[11px] font-semibold leading-none sm:text-xs"
-            style={{ left: '12.8%', bottom: '9.8%', color: '#66FF00' }}
-          >
-            {url}
-          </div>
-
-          {/* Serial number — PDF x=128, y=84 */}
-          <div
-            className="absolute font-mono text-[11px] font-semibold leading-none sm:text-xs"
-            style={{ left: '12.8%', bottom: '5.6%', color: '#66FF00' }}
-          >
-            {serial}
-          </div>
+          {pdfBlobUrl && !loadError && (
+            <object
+              data={`${pdfBlobUrl}#view=FitH&toolbar=0&navpanes=0&scrollbar=0`}
+              type="application/pdf"
+              className="h-full w-full"
+              aria-label="Physical label preview"
+            >
+              {/* Fallback for browsers that refuse PDF embed: show an iframe */}
+              <iframe
+                src={previewUrl}
+                className="h-full w-full border-0"
+                title="Physical label preview"
+              />
+            </object>
+          )}
+          {!pdfBlobUrl && !loadError && (
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+              Loading preview…
+            </div>
+          )}
+          {loadError && (
+            <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-xs text-muted-foreground">
+              Preview unavailable — use Download below.
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-muted-foreground">

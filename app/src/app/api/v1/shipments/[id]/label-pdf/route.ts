@@ -15,11 +15,12 @@ import { generateLabelPdf, type LabelData } from '@/lib/label-pdf'
  * Access: owner (org match) or admin.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+    const inline = req.nextUrl.searchParams.get('inline') === '1'
 
     const user = await getCurrentUser()
     if (!user) {
@@ -85,8 +86,9 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${filename}"`,
         'Content-Length': String(pdfBytes.length),
+        'Cache-Control': 'private, max-age=300',
       },
     })
   } catch (error) {
