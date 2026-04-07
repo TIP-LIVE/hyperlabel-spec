@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { db } from '@/lib/db'
+import { isDisplayId } from '@/lib/label-id'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Package, Truck, Clock, AlertTriangle } from 'lucide-react'
@@ -24,10 +25,15 @@ export default async function ActivateLabelPage({ params }: PageProps) {
   const { deviceId: rawDeviceId } = await params
   const decoded = decodeURIComponent(rawDeviceId)
   // w-prefix IDs stay lowercase (w17246198247), others uppercase (TIP-001, HL-001234)
-  const deviceId = /^w\d/i.test(decoded) ? decoded.toLowerCase() : decoded.toUpperCase()
+  // 9-digit displayId (NNNNNYYYY) stays as-is
+  const deviceId = isDisplayId(decoded)
+    ? decoded
+    : /^w\d/i.test(decoded)
+      ? decoded.toLowerCase()
+      : decoded.toUpperCase()
 
-  // Validate device ID format (TIP-001, TIP-123, HL-001234, w17246198247)
-  if (!/^(TIP-\d+|HL-\d{6}|W\d{8,})$/i.test(deviceId)) {
+  // Validate device ID format (TIP-001, TIP-123, HL-001234, w17246198247, or 9-digit displayId)
+  if (!/^(TIP-\d+|HL-\d{6}|W\d{8,}|\d{9})$/i.test(deviceId)) {
     return (
       <ActivateLayout>
         <Card className="max-w-md">
@@ -49,9 +55,9 @@ export default async function ActivateLabelPage({ params }: PageProps) {
     )
   }
 
-  // Look up the label
-  const label = await db.label.findUnique({
-    where: { deviceId },
+  // Look up the label by either legacy deviceId or new displayId
+  const label = await db.label.findFirst({
+    where: isDisplayId(deviceId) ? { displayId: deviceId } : { deviceId },
     include: {
       shipments: {
         where: {

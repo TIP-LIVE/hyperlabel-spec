@@ -73,6 +73,7 @@ interface ShipmentData {
   createdAt: string
   label: {
     deviceId: string
+    displayId: string | null
     batteryPct: number | null
     lastSeenAt: string | null
   } | null

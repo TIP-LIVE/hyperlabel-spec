@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { generateLabelPdf, type LabelData } from '@/lib/label-pdf'
+import { allocateNextCounter, formatDisplayId } from '@/lib/label-id'
 import { z } from 'zod'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       const deviceId = `${prefix}${num}`
       labels.push({
         deviceId,
+        displayId: null, // populated below after counter allocation
         url: `tip.live/w/${num}`,
       })
     }
@@ -65,11 +67,22 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      await db.label.createMany({
-        data: labels.map((l) => ({
-          deviceId: l.deviceId,
-          status: 'INVENTORY' as const,
-        })),
+      // Allocate sequential counters inside a transaction so concurrent
+      // generate requests don't collide on the unique counter constraint.
+      await db.$transaction(async (tx) => {
+        const startCounter = await allocateNextCounter(tx)
+        await tx.label.createMany({
+          data: labels.map((l, idx) => ({
+            deviceId: l.deviceId,
+            counter: startCounter + idx,
+            // displayId stays null until IMEI is known
+            status: 'INVENTORY' as const,
+          })),
+        })
+        // Reflect counters on the in-memory labels for the PDF output filename
+        for (let i = 0; i < labels.length; i++) {
+          labels[i].displayId = formatDisplayId(startCounter + i, null) // still null
+        }
       })
     }
 

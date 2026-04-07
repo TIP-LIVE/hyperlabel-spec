@@ -11,7 +11,8 @@ import {
 import QRCode from 'qrcode'
 
 export interface LabelData {
-  deviceId: string // e.g. "w17246198247"
+  deviceId: string // legacy internal handle, e.g. "w17246198247"
+  displayId?: string | null // NNNNNYYYY user-facing ID (preferred on sticker)
   url: string // e.g. "tip.live/w/17246198247"
 }
 
@@ -164,10 +165,10 @@ export async function generateLabelPdf(
       font
     )
 
-    // Draw serial number as outlines
+    // Draw serial number as outlines (prefer new displayId, fall back to deviceId)
     drawTextAsOutlines(
       copiedPage,
-      label.deviceId,
+      label.displayId || label.deviceId,
       LAYOUT.serialText.x,
       LAYOUT.serialText.y,
       LAYOUT.serialText.fontSize,

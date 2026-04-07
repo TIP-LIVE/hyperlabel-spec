@@ -11,6 +11,7 @@ import { format } from 'date-fns'
 import { haversineDistanceM } from '@/lib/utils/geo'
 import { syncSimLabelToOnomondo } from '@/lib/onomondo'
 import { generateShareCode } from '@/lib/utils/share-code'
+import { allocateNextCounter, formatDisplayId } from '@/lib/label-id'
 
 /** Input shape for the shared location report processing logic. */
 export interface LocationReportInput {
@@ -175,15 +176,20 @@ export async function processLocationReport(
   // Auto-register: if no label found but IMEI/ICCID provided, create one
   if (!label && (input.imei || input.iccid)) {
     const nextDeviceId = await generateNextDeviceId()
-    const newLabel = await db.label.create({
-      data: {
-        deviceId: nextDeviceId,
-        imei: input.imei || null,
-        iccid: input.iccid || null,
-        status: 'ACTIVE',
-        activatedAt: new Date(),
-      },
-      include: shipmentInclude,
+    const newLabel = await db.$transaction(async (tx) => {
+      const counter = await allocateNextCounter(tx)
+      return tx.label.create({
+        data: {
+          deviceId: nextDeviceId,
+          counter,
+          displayId: formatDisplayId(counter, input.imei ?? null),
+          imei: input.imei || null,
+          iccid: input.iccid || null,
+          status: 'ACTIVE',
+          activatedAt: new Date(),
+        },
+        include: shipmentInclude,
+      })
     })
     label = newLabel
     if (process.env.NODE_ENV !== 'test') {
@@ -210,9 +216,14 @@ export async function processLocationReport(
   // The auto-register branch writes imei on new labels, but when a label is
   // resolved by ICCID (or pre-created manually as SOLD inventory) the imei
   // field stays null. Persist whatever the device is currently reporting.
-  const identifierUpdates: { imei?: string; iccid?: string } = {}
+  const identifierUpdates: { imei?: string; iccid?: string; displayId?: string } = {}
   if (input.imei && input.imei !== label.imei) {
     identifierUpdates.imei = input.imei
+    // Also (re)compute displayId now that we know the IMEI
+    if (label.counter != null && !label.displayId) {
+      const next = formatDisplayId(label.counter, input.imei)
+      if (next) identifierUpdates.displayId = next
+    }
   }
   if (input.iccid && input.iccid !== label.iccid) {
     identifierUpdates.iccid = input.iccid

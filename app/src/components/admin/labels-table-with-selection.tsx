@@ -19,6 +19,7 @@ const statusStyles: Record<string, string> = {
 export type LabelRow = {
   id: string
   deviceId: string
+  displayId: string | null
   imei: string | null
   status: string
   batteryPct: number | null
@@ -199,8 +200,13 @@ export function LabelsTableWithSelection({
                               href={`/admin/devices/${label.deviceId}`}
                               className="font-mono text-primary hover:underline"
                             >
-                              {label.deviceId}
+                              {label.displayId || label.deviceId}
                             </Link>
+                            {label.displayId && (
+                              <div className="font-mono text-xs text-muted-foreground">
+                                {label.deviceId}
+                              </div>
+                            )}
                           </td>
                     <td className="py-3 font-mono text-muted-foreground">{label.imei || '—'}</td>
                     <td className="py-3">

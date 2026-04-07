@@ -48,6 +48,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
   if (q) {
     where.OR = [
       { deviceId: { contains: q, mode: 'insensitive' } },
+      { displayId: { contains: q } },
       { imei: { contains: q, mode: 'insensitive' } },
       { orderLabels: { some: { order: { user: { email: { contains: q, mode: 'insensitive' } } } } } },
     ]
@@ -94,6 +95,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
     return {
       id: label.id,
       deviceId: label.deviceId,
+      displayId: label.displayId,
       imei: label.imei,
       status: label.status,
       batteryPct: label.batteryPct,

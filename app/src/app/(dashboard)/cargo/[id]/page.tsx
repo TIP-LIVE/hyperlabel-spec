@@ -40,6 +40,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
         select: {
           id: true,
           deviceId: true,
+          displayId: true,
           batteryPct: true,
           status: true,
           firmwareVersion: true,
@@ -112,6 +113,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
     photoUrls: shipment.photoUrls,
     label: shipment.label ? {
       deviceId: shipment.label.deviceId,
+      displayId: shipment.label.displayId,
       batteryPct: shipment.label.batteryPct,
       status: shipment.label.status,
       firmwareVersion: shipment.label.firmwareVersion,
