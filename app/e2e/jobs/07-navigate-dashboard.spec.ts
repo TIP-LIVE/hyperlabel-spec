@@ -8,8 +8,6 @@ test.describe('Navigate the dashboard', () => {
       await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible()
       await expect(page.getByRole('link', { name: 'Track Cargo' })).toBeVisible()
       await expect(page.getByRole('link', { name: 'Label Dispatch' })).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Labels', exact: true }).first()).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Orders', exact: true }).first()).toBeVisible()
       await expect(page.getByRole('link', { name: 'Addresses' })).toBeVisible()
       await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
     }
@@ -24,15 +22,10 @@ test.describe('Navigate the dashboard', () => {
       await expect(page).toHaveURL(/\/cargo/)
       await expect(page.getByRole('heading', { name: /track cargo/i })).toBeVisible()
 
-      // Labels
-      await page.getByRole('link', { name: 'Labels', exact: true }).first().click()
-      await expect(page).toHaveURL(/\/labels/)
-      await expect(page.getByRole('heading', { name: 'Labels', exact: true })).toBeVisible()
-
-      // Orders
-      await page.getByRole('link', { name: 'Orders', exact: true }).first().click()
-      await expect(page).toHaveURL(/\/orders/)
-      await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible()
+      // Label Dispatch
+      await page.getByRole('link', { name: 'Label Dispatch' }).click()
+      await expect(page).toHaveURL(/\/dispatch/)
+      await expect(page.getByRole('heading', { name: /label dispatch/i })).toBeVisible()
 
       // Addresses
       await page.getByRole('link', { name: 'Addresses' }).click()

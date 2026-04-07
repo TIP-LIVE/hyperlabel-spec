@@ -15,7 +15,7 @@ import { SectionCard } from '@/components/ui/section-card'
 import { useSavedAddress } from '@/components/addresses/address-input-with-saved'
 import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
 import { AddressInput } from '@/components/ui/address-input'
-import { MultiLabelSelector } from '@/components/shipments/multi-label-selector'
+import { LabelSelectionTable } from '@/components/dispatch/label-selection-table'
 import { ShareReceiverLinkModal } from '@/components/dispatch/share-receiver-link-modal'
 import {
   Select,
@@ -170,10 +170,10 @@ export function CreateDispatchForm() {
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
-          {/* Multi-Label Selector */}
+          {/* Labels selection table */}
           <div className="space-y-1.5">
             <Label>Labels to Dispatch</Label>
-            <MultiLabelSelector
+            <LabelSelectionTable
               selectedIds={selectedLabelIds}
               onChange={setSelectedLabelIds}
             />

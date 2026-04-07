@@ -185,12 +185,9 @@ export const dispatchColumns: ColumnDef<DispatchRow>[] = [
             >
               {name || 'Unnamed Dispatch'}
             </Link>
-            <Link
-              href="/labels"
-              className="text-xs text-muted-foreground hover:text-primary hover:underline"
-            >
+            <span className="text-xs text-muted-foreground">
               {labelCount} label{labelCount !== 1 ? 's' : ''}
-            </Link>
+            </span>
           </div>
         </div>
       )

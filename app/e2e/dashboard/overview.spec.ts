@@ -28,8 +28,7 @@ test.describe('Dashboard Overview', () => {
       await expect(
         page.getByRole('link', { name: 'Track Cargo' })
       ).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Labels', exact: true }).first()).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Orders', exact: true }).first()).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Label Dispatch' })).toBeVisible()
       await expect(
         page.getByRole('link', { name: 'Settings' })
       ).toBeVisible()

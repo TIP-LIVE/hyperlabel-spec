@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useOrganization } from '@clerk/nextjs'
-import { LayoutDashboard, Package, ShoppingCart, BookUser, Settings, Building2, Truck, Send } from 'lucide-react'
+import { LayoutDashboard, BookUser, Settings, Building2, Truck, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isClerkConfigured } from '@/lib/clerk-config'
 
@@ -11,8 +11,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Track Cargo', href: '/cargo', icon: Truck },
   { name: 'Label Dispatch', href: '/dispatch', icon: Send },
-  { name: 'Labels', href: '/labels', icon: Package },
-  { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Addresses', href: '/address-book', icon: BookUser },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]

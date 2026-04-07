@@ -47,12 +47,20 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
         title="Label Dispatch"
         description="Ship multiple labels from your warehouse to customer locations"
         action={
-          <Button asChild>
-            <Link href="/dispatch/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Dispatch
-            </Link>
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/labels">All labels</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/orders">Order history</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dispatch/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Dispatch
+              </Link>
+            </Button>
+          </>
         }
       />
 

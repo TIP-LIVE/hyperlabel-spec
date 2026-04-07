@@ -73,8 +73,6 @@ test.describe('Sidebar navigation', () => {
     await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'Track Cargo' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Label Dispatch' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Labels', exact: true }).first()).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Orders', exact: true }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'Addresses' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
   })
@@ -87,20 +85,12 @@ test.describe('Sidebar navigation', () => {
     await expect(page.getByRole('heading', { name: 'Track Cargo', exact: true })).toBeVisible()
   })
 
-  test('clicking Labels navigates to /labels', async ({ page }) => {
+  test('clicking Label Dispatch navigates to /dispatch', async ({ page }) => {
     await page.goto('/dashboard')
     await page.waitForLoadState('domcontentloaded')
-    await page.getByRole('link', { name: 'Labels', exact: true }).first().click()
-    await expect(page).toHaveURL(/\/labels/, { timeout: 8_000 })
-    await expect(page.getByRole('heading', { name: 'Labels', exact: true })).toBeVisible()
-  })
-
-  test('clicking Orders navigates to /orders', async ({ page }) => {
-    await page.goto('/dashboard')
-    await page.waitForLoadState('domcontentloaded')
-    await page.getByRole('link', { name: 'Orders', exact: true }).first().click()
-    await expect(page).toHaveURL(/\/orders/, { timeout: 8_000 })
-    await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible()
+    await page.getByRole('link', { name: 'Label Dispatch' }).click()
+    await expect(page).toHaveURL(/\/dispatch/, { timeout: 8_000 })
+    await expect(page.getByRole('heading', { name: 'Label Dispatch', exact: true })).toBeVisible()
   })
 
   test('clicking Addresses navigates to /address-book', async ({ page }) => {

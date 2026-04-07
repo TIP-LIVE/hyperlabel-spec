@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { OrganizationSwitcher } from '@clerk/nextjs'
-import { Package, ShoppingCart, BookUser, Settings, LayoutDashboard, Menu, Truck, Send } from 'lucide-react'
+import { BookUser, Settings, LayoutDashboard, Menu, Truck, Send } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { cn } from '@/lib/utils'
@@ -21,8 +21,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Track Cargo', href: '/cargo', icon: Truck },
   { name: 'Label Dispatch', href: '/dispatch', icon: Send },
-  { name: 'Labels', href: '/labels', icon: Package },
-  { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Addresses', href: '/address-book', icon: BookUser },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
