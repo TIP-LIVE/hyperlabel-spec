@@ -14,11 +14,11 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'TIP — Door-to-Door Cargo Tracking',
   description:
-    'Attach a tracking label to your shipment and follow it from pickup to delivery. Real-time location, delivery alerts, shareable links — in 180+ countries.',
+    'Buy tracking labels, dispatch them anywhere in the world, and follow your cargo door-to-door. Real-time location, delivery alerts, shareable links — in 180+ countries.',
   openGraph: {
     title: 'TIP — Door-to-Door Cargo Tracking',
     description:
-      'Attach a tracking label to your shipment and follow it from pickup to delivery. Real-time location, delivery alerts, shareable links — in 180+ countries.',
+      'Buy tracking labels, dispatch them anywhere in the world, and follow your cargo door-to-door. Real-time location, delivery alerts, shareable links — in 180+ countries.',
   },
 }
 
@@ -158,10 +158,10 @@ export default function HomePage() {
           </h2>
           <div className="mt-8 grid gap-10 md:grid-cols-4">
             {[
-              { num: '1', title: 'Order Label', desc: 'Choose how many labels you need and we ship them to your door within 1-2 business days.', icon: '/images/step-order.svg' },
-              { num: '2', title: 'Activate & Attach', desc: 'Scan the QR code to activate, attach the label to your cargo, and enter origin & destination.', icon: '/images/step-activate.svg' },
-              { num: '3', title: 'Track Anywhere', desc: 'Follow your shipment on a live map. Share a tracking link with anyone — no account needed.', icon: '/images/step-track.svg' },
-              { num: '4', title: 'Get Delivery Alert', desc: 'Get notified when your cargo arrives. The receiver confirms delivery and tracking stops automatically.', icon: '/images/step-delivery.svg' },
+              { num: '1', title: 'Buy Labels', desc: 'Choose how many labels you need. Your order is reserved at our warehouse, ready to dispatch.', icon: '/images/step-order.svg' },
+              { num: '2', title: 'Dispatch Anywhere', desc: 'Tell us where to ship the labels — your office, a forwarder, or directly to your supplier in 180+ countries.', icon: '/images/step-activate.svg' },
+              { num: '3', title: 'Activate & Track', desc: 'The receiver pulls the tab to activate. Tracking starts automatically — no app, no setup.', icon: '/images/step-track.svg' },
+              { num: '4', title: 'Door to Door', desc: 'Follow your cargo on a live map and share a tracking link with anyone — no account needed.', icon: '/images/step-delivery.svg' },
             ].map(({ num, title, desc, icon }, i) => (
               <AnimatedSection key={num} delay={i * 150}>
                 <div className="flex h-full flex-col">

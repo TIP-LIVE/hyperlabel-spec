@@ -15,6 +15,7 @@ import { NotificationPreferences } from '@/components/settings/notification-pref
 import { DataExportButton } from '@/components/settings/data-export-button'
 import { DeleteAccountButton } from '@/components/settings/delete-account-button'
 import { OrgLabelSettings } from '@/components/settings/org-label-settings'
+import { DefaultDispatchAddressSetting } from '@/components/settings/default-dispatch-address'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -119,6 +120,7 @@ export default async function SettingsPage() {
                 <Separator />
                 <div className="space-y-4">
                   <OrgLabelSettings />
+                  <DefaultDispatchAddressSetting />
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Team Settings</Label>

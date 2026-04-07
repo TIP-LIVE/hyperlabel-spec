@@ -40,9 +40,9 @@ export function HeroSection() {
             Cargo Tracking
           </h1>
           <p className="mt-3 max-w-[485px] text-lg font-medium leading-normal tracking-tight text-white/70 md:mt-4">
-            Stick a tracking label on your shipment and follow it from pickup to
-            delivery. Real-time location, delivery alerts, shareable links — in
-            180+ countries.
+            Buy tracking labels, dispatch them anywhere in the world, and follow
+            your cargo door-to-door. Real-time location, delivery alerts, shareable
+            links — in 180+ countries.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-6 md:mt-10">
             <Button

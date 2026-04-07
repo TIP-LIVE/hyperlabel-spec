@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -33,6 +33,7 @@ import { ShareLinkButton } from '@/components/shipments/share-link-button'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
 import { LabelPreview } from '@/components/cargo/label-preview'
+import { WaitingForSignal } from '@/components/cargo/waiting-for-signal'
 import { toast } from 'sonner'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
 import { isNullIsland } from '@/lib/validations/device'
@@ -216,6 +217,50 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
     )
   }, [])
 
+  const refetch = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/cargo/${shipment.id}`, { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      const fresh = data.shipment
+      if (!fresh) return
+      if (data.totalLocations != null) setTotalLocations(data.totalLocations)
+      setShipment((prev) => ({
+        ...prev,
+        status: fresh.status,
+        deliveredAt: fresh.deliveredAt ?? null,
+        label: fresh.label
+          ? {
+              ...prev.label,
+              ...fresh.label,
+              activatedAt: fresh.label.activatedAt ?? prev.label?.activatedAt ?? null,
+              lastSeenAt: fresh.label.lastSeenAt ?? prev.label?.lastSeenAt ?? null,
+            }
+          : prev.label,
+        locations: (fresh.locations as LocationPoint[]).map((l) => ({
+          ...l,
+          recordedAt: typeof l.recordedAt === 'string' ? l.recordedAt : new Date(l.recordedAt).toISOString(),
+          receivedAt: l.receivedAt
+            ? (typeof l.receivedAt === 'string' ? l.receivedAt : new Date(l.receivedAt).toISOString())
+            : undefined,
+        })),
+      }))
+    } catch {}
+  }, [shipment.id])
+
+  // Listen for the WaitingForSignal poller's success event so we can refetch
+  // and reveal the map + timeline once the first location arrives.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ shipmentId: string }>).detail
+      if (detail?.shipmentId === shipment.id) {
+        void refetch()
+      }
+    }
+    window.addEventListener('cargo:first-signal', handler)
+    return () => window.removeEventListener('cargo:first-signal', handler)
+  }, [shipment.id, refetch])
+
   const loadMore = useCallback(async () => {
     setLoadingMore(true)
     try {
@@ -348,6 +393,11 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
           </div>
         </div>
       </div>
+
+      {/* Waiting for first signal — Phase 4 of the onboarding journey */}
+      {shipment.locations.length === 0 && isActive && (
+        <WaitingForSignal shipmentId={shipment.id} initialLocationCount={0} />
+      )}
 
       {/* Current Location Hero Banner */}
       {latestLocation && (

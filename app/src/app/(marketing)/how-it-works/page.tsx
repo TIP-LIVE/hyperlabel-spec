@@ -30,7 +30,8 @@ export default function FeaturesPage() {
             Built for Simplicity
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-400">
-            Five core capabilities that make cargo tracking as simple as sticking a label.
+            Buy. Dispatch. Activate. Track. Five core capabilities that make door-to-door
+            cargo visibility as simple as 1-2-3.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Button
@@ -86,16 +87,16 @@ export default function FeaturesPage() {
         muted
       />
 
-      {/* Feature 3: Instant 30-Second Activation */}
+      {/* Feature 3: Buy → Dispatch → Activate → Track */}
       <FeatureSection
         icon={Zap}
-        title="Instant 30-Second Activation"
-        subtitle="Scan. Peel. Stick. Done."
-        description="TIP labels ship pre-configured and pre-charged. There is no setup process — scan the QR code with your phone to activate, peel off the backing, and attach the label to your cargo. The label begins transmitting within seconds. No charging cycles, no Bluetooth pairing, no app downloads, no IT integration, and no training sessions required. Anyone in your team can activate a label on the first try."
+        title="Buy. Dispatch. Activate. Track."
+        subtitle="Four steps from order to door-to-door visibility"
+        description="TIP labels are held in our warehouse, ready to ship. After buying, you tell us where to dispatch them — your office, a forwarder, or directly to your supplier in 180+ countries. The receiver pulls the activation tab and sticks the label on the cargo. From the very next signal, you can follow the shipment door-to-door on a live map. No charging cycles, no app downloads, no IT integration, and no training sessions required. The whole flow takes minutes per label."
         specs={[
           { label: 'Activation time', value: '< 30 seconds' },
-          { label: 'Charging needed', value: 'No' },
-          { label: 'Pairing needed', value: 'No' },
+          { label: 'Worldwide dispatch', value: '180+ countries' },
+          { label: 'Receiver setup', value: 'Pull tab' },
           { label: 'App download', value: 'Not needed' },
           { label: 'IT integration', value: 'Not needed' },
           { label: 'Training', value: 'Not needed' },

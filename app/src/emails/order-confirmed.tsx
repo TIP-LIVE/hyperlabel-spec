@@ -20,8 +20,8 @@ export function OrderConfirmedEmail({
       <Heading style={heading}>Order Confirmed!</Heading>
 
       <Text style={paragraph}>
-        Thank you for your purchase! Your tracking label{quantity > 1 ? 's are' : ' is'} now
-        available in your dashboard.
+        Thank you for your purchase! Your label{quantity > 1 ? 's are' : ' is'} reserved at
+        our warehouse, ready to be dispatched wherever you need them.
       </Text>
 
       <Section style={detailsBox}>
@@ -40,15 +40,22 @@ export function OrderConfirmedEmail({
       </Text>
 
       <Section style={stepsList}>
-        <Text style={stepItem}>1. Your labels are now in your dashboard</Text>
-        <Text style={stepItem}>2. Create a shipment and assign a label to it</Text>
-        <Text style={stepItem}>3. Share the tracking link with your shipper</Text>
-        <Text style={stepItem}>4. Track your cargo in real-time until delivery</Text>
+        <Text style={stepItem}>1. Your order is being prepared at our warehouse</Text>
+        <Text style={stepItem}>
+          2. Tell us where to dispatch the label{quantity > 1 ? 's' : ''} — your office,
+          a forwarder, a supplier, anywhere
+        </Text>
+        <Text style={stepItem}>
+          3. We physically ship the label{quantity > 1 ? 's' : ''} to that address
+          (3–5 business days)
+        </Text>
+        <Text style={stepItem}>4. The receiver activates a label and sticks it on the cargo</Text>
+        <Text style={stepItem}>5. Track door-to-door in real time</Text>
       </Section>
 
       <Section style={buttonContainer}>
         <Button style={button} href={dashboardUrl}>
-          Go to Dashboard
+          Set Up Dispatch
         </Button>
       </Section>
     </BaseLayout>
