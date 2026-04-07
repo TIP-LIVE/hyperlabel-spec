@@ -20,19 +20,26 @@ const mockDb = vi.mocked(db)
 const ARGS = { userId: 'db-user-001', orgId: 'org_test_001' }
 
 /**
- * Helper: configure all four parallel queries with sensible defaults.
+ * Helper: configure all five parallel queries with sensible defaults.
  * Tests can override individual responses afterwards.
+ *
+ * Note: shipment.findFirst is called twice in resolveUserPhase, in source
+ * order — first for firstPendingCargo, then for hasReportingCargo. We use
+ * mockResolvedValueOnce so each call gets its own value.
  */
 function setupMocks(opts: {
   order?: unknown
   dispatches?: unknown[]
   activeCargoCount?: number
   firstPendingCargo?: unknown
+  hasReportingCargo?: unknown
 } = {}) {
   mockDb.order.findFirst.mockResolvedValue((opts.order ?? null) as never)
   mockDb.shipment.findMany.mockResolvedValue((opts.dispatches ?? []) as never)
   mockDb.shipment.count.mockResolvedValue((opts.activeCargoCount ?? 0) as never)
-  mockDb.shipment.findFirst.mockResolvedValue((opts.firstPendingCargo ?? null) as never)
+  mockDb.shipment.findFirst
+    .mockResolvedValueOnce((opts.firstPendingCargo ?? null) as never)
+    .mockResolvedValueOnce((opts.hasReportingCargo ?? null) as never)
 }
 
 function makeOrderRow(undispatchedCount: number, dispatchedCount: number = 0) {
@@ -234,12 +241,13 @@ describe('resolveUserPhase', () => {
   })
 
   describe('Phase 5 — live cargo', () => {
-    it('returns phase 5 when active cargo exists and the first cargo has locations', async () => {
+    it('returns phase 5 when at least one active cargo has reported a location', async () => {
       setupMocks({
         order: makeOrderRow(0, 5),
         dispatches: [makeDispatch({ status: 'DELIVERED', addressSubmittedAt: new Date() })],
         activeCargoCount: 2,
-        firstPendingCargo: null, // every active cargo already has at least one LocationEvent
+        firstPendingCargo: null,
+        hasReportingCargo: { id: 'cargo-reporting-001' },
       })
 
       const result = await resolveUserPhase(ARGS)
@@ -247,6 +255,24 @@ describe('resolveUserPhase', () => {
       expect(result.phase).toBe(5)
       expect(result.activeCargoCount).toBe(2)
       expect(result.firstPendingCargoId).toBeNull()
+    })
+
+    it('returns phase 5 even when a sibling cargo is still waiting for first signal', async () => {
+      // Power-user case: many active shipments, one freshly created with no
+      // locations yet, but at least one other is already reporting. The
+      // journey card must NOT come back from the dead.
+      setupMocks({
+        order: makeOrderRow(0, 8),
+        dispatches: [makeDispatch({ status: 'DELIVERED', addressSubmittedAt: new Date() })],
+        activeCargoCount: 8,
+        firstPendingCargo: { id: 'cargo-fresh-001' },
+        hasReportingCargo: { id: 'cargo-reporting-007' },
+      })
+
+      const result = await resolveUserPhase(ARGS)
+
+      expect(result.phase).toBe(5)
+      expect(result.firstPendingCargoId).toBe('cargo-fresh-001')
     })
 
     it('cargo state always wins over delivered dispatches', async () => {
@@ -258,6 +284,7 @@ describe('resolveUserPhase', () => {
         ],
         activeCargoCount: 1,
         firstPendingCargo: null,
+        hasReportingCargo: { id: 'cargo-reporting-002' },
       })
 
       const result = await resolveUserPhase(ARGS)

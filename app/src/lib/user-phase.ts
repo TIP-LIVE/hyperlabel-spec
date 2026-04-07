@@ -53,7 +53,7 @@ export async function resolveUserPhase({ userId, orgId }: Args): Promise<UserPha
   const orderWhere = orgId ? { orgId } : { userId }
   const shipmentWhere = orgId ? { orgId } : { userId }
 
-  const [latestOrderRow, dispatches, activeCargoCount, firstPendingCargo] =
+  const [latestOrderRow, dispatches, activeCargoCount, firstPendingCargo, hasReportingCargo] =
     await Promise.all([
       db.order.findFirst({
         where: { ...orderWhere, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] } },
@@ -116,6 +116,16 @@ export async function resolveUserPhase({ userId, orgId }: Args): Promise<UserPha
         select: { id: true },
         orderBy: { createdAt: 'desc' },
       }),
+      // Any active cargo that has already reported a location → user is fully onboarded
+      db.shipment.findFirst({
+        where: {
+          ...shipmentWhere,
+          type: 'CARGO_TRACKING',
+          status: { in: ['PENDING', 'IN_TRANSIT'] },
+          locations: { some: {} },
+        },
+        select: { id: true },
+      }),
     ])
 
   // Compute undispatched count on the latest order
@@ -152,9 +162,12 @@ export async function resolveUserPhase({ userId, orgId }: Args): Promise<UserPha
   // Phase computation — ordered by priority (live state wins)
   let phase: UserPhase = 0
 
-  if (activeCargoCount > 0) {
-    // Active live cargo overrides everything
-    phase = firstPendingCargo ? 4 : 5
+  if (hasReportingCargo) {
+    // At least one active cargo is reporting → fully onboarded, hide journey
+    phase = 5
+  } else if (activeCargoCount > 0) {
+    // Active cargo exists but none have reported yet → waiting for first signal
+    phase = 4
   } else if (dispatches.some((d) => d.status === 'DELIVERED')) {
     // A dispatch has landed — user should be creating cargo shipments
     phase = 3
