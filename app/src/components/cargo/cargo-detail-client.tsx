@@ -751,7 +751,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
 
       {/* Physical Label Preview + print-ready PDF download (full-width, bottom of page) */}
       {shipment.label && (
-        <div className="mx-auto w-full max-w-md">
+        <div className="w-full max-w-md">
           <LabelPreview
             shipmentId={shipment.id}
             deviceId={shipment.label.deviceId}
