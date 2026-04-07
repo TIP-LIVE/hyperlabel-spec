@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Package } from 'lucide-react'
 import { TrackingPageClient } from '@/components/tracking/tracking-page-client'
+import { loadPublicTrackingData } from '@/lib/public-tracking'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -29,34 +30,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicTrackingPage({ params }: PageProps) {
   const { code } = await params
 
-  const shipment = await db.shipment.findUnique({
+  const exists = await db.shipment.findUnique({
     where: { shareCode: code },
-    include: {
-      label: {
-        select: {
-          deviceId: true,
-          displayId: true,
-          batteryPct: true,
-          lastSeenAt: true,
-        },
-      },
-      shipmentLabels: {
-        select: { labelId: true },
-      },
-      locations: {
-        where: { source: 'CELL_TOWER' },
-        orderBy: { recordedAt: 'desc' },
-        take: 100,
-      },
-    },
+    select: { id: true, shareEnabled: true },
   })
+  if (!exists) notFound()
 
-  if (!shipment) {
-    notFound()
-  }
-
-  // Check if sharing is enabled
-  if (!shipment.shareEnabled) {
+  if (!exists.shareEnabled) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
         <Card className="max-w-md">
@@ -77,48 +57,8 @@ export default async function PublicTrackingPage({ params }: PageProps) {
     )
   }
 
-  // Serialize for client component (Dates → strings)
-  const serializedData = {
-    id: shipment.id,
-    type: shipment.type,
-    name: shipment.name,
-    status: shipment.status,
-    labelCount: shipment.shipmentLabels?.length ?? (shipment.label ? 1 : 0),
-    originAddress: shipment.originAddress,
-    originLat: shipment.originLat,
-    originLng: shipment.originLng,
-    destinationAddress: shipment.destinationAddress,
-    destinationLat: shipment.destinationLat,
-    destinationLng: shipment.destinationLng,
-    destinationName: shipment.destinationName,
-    destinationLine1: shipment.destinationLine1,
-    destinationLine2: shipment.destinationLine2,
-    destinationCity: shipment.destinationCity,
-    destinationState: shipment.destinationState,
-    destinationPostalCode: shipment.destinationPostalCode,
-    destinationCountry: shipment.destinationCountry,
-    addressSubmittedAt: shipment.addressSubmittedAt?.toISOString() ?? null,
-    consigneeEmail: shipment.consigneeEmail,
-    consigneePhone: shipment.consigneePhone,
-    deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
-    createdAt: shipment.createdAt.toISOString(),
-    label: shipment.label ? { deviceId: shipment.label.deviceId, displayId: shipment.label.displayId, batteryPct: shipment.label.batteryPct, lastSeenAt: shipment.label.lastSeenAt?.toISOString() ?? null } : null,
-    locations: shipment.locations.map((loc) => ({
-      id: loc.id,
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      recordedAt: loc.recordedAt.toISOString(),
-      receivedAt: loc.receivedAt.toISOString(),
-      batteryPct: loc.batteryPct,
-      accuracyM: loc.accuracyM,
-      isOfflineSync: loc.isOfflineSync,
-      geocodedCity: loc.geocodedCity,
-      geocodedArea: loc.geocodedArea,
-      geocodedCountry: loc.geocodedCountry,
-      geocodedCountryCode: loc.geocodedCountryCode,
-      eventType: loc.eventType,
-    })),
-  }
+  const serializedData = await loadPublicTrackingData({ shareCode: code })
+  if (!serializedData) notFound()
 
   return <TrackingPageClient code={code} initialData={serializedData} />
 }

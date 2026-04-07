@@ -5,6 +5,8 @@ import { isDisplayId } from '@/lib/label-id'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { isClerkConfigured } from '@/lib/clerk-config'
+import { loadPublicTrackingData } from '@/lib/public-tracking'
+import { TrackingPageClient } from '@/components/tracking/tracking-page-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Package, Truck, Clock, AlertTriangle } from 'lucide-react'
@@ -121,6 +123,13 @@ export default async function ActivateLabelPage({ params }: PageProps) {
           redirect(`/cargo/${label.displayId || activeShipment.id}`)
         }
       }
+    }
+    // Anonymous viewer (e.g. phone QR scan): render the public tracking page
+    // INLINE — keep the bare /NNNNNYYYY in the address bar instead of
+    // redirecting to /track/{shareCode}.
+    const trackingData = await loadPublicTrackingData({ id: activeShipment.id })
+    if (trackingData) {
+      return <TrackingPageClient code={activeShipment.shareCode} initialData={trackingData} />
     }
     redirect(`/track/${activeShipment.shareCode}`)
   }
