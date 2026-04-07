@@ -746,19 +746,17 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
               />
             </CardContent>
           </Card>
+
+          {/* Physical Label Preview + print-ready PDF download — last widget in sidebar */}
+          {shipment.label && (
+            <LabelPreview
+              shipmentId={shipment.id}
+              deviceId={shipment.label.deviceId}
+              displayId={shipment.label.displayId}
+            />
+          )}
         </div>
       </div>
-
-      {/* Physical Label Preview + print-ready PDF download (full-width, bottom of page) */}
-      {shipment.label && (
-        <div className="w-full max-w-md">
-          <LabelPreview
-            shipmentId={shipment.id}
-            deviceId={shipment.label.deviceId}
-            displayId={shipment.label.displayId}
-          />
-        </div>
-      )}
     </div>
   )
 }
