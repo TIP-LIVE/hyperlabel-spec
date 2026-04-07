@@ -30,7 +30,7 @@ vi.mock('@/lib/db', () => {
     label: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
     shipment: { findUnique: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), count: vi.fn(), deleteMany: vi.fn() },
     shipmentLabel: { findMany: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
-    locationEvent: { create: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    locationEvent: { create: vi.fn(), findMany: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
     order: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), count: vi.fn(), deleteMany: vi.fn() },
     orderLabel: { createMany: vi.fn(), deleteMany: vi.fn() },
     savedAddress: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },

@@ -37,7 +37,9 @@ vi.mock('@/lib/db', () => {
     locationEvent: {
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
-    $transaction: vi.fn(),
+    // Interactive-transaction callback runs against the same mockDb so the
+    // create/update mocks set up by tests apply inside tx blocks too.
+    $transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) => fn(mockDb)),
   }
   return { db: mockDb }
 })
