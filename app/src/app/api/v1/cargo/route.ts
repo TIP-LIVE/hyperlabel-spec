@@ -166,45 +166,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Label is already assigned to an active shipment' }, { status: 400 })
     }
 
-    const shipment = await db.shipment.create({
-      data: {
-        type: 'CARGO_TRACKING',
-        name,
-        originAddress,
-        originLat: originLat ?? null,
-        originLng: originLng ?? null,
-        destinationAddress,
-        destinationLat: destinationLat ?? null,
-        destinationLng: destinationLng ?? null,
-        shareCode,
-        userId: context.user.id,
-        orgId: context.orgId,
-        labelId: label.id,
-        status: 'PENDING',
-        consigneeEmail: consigneeEmail || null,
-        consigneePhone: consigneePhone || null,
-        photoUrls: photoUrls || [],
-      },
-      include: {
-        label: {
-          select: { id: true, deviceId: true, batteryPct: true, status: true },
+    // Create shipment + backfill locations + activate label atomically.
+    // Previously these ran as 3 separate calls, which could leave a label
+    // stuck in SOLD with an IN_TRANSIT shipment if the label.update failed
+    // transiently (see TIP-008 incident, Apr 2026).
+    const shipment = await db.$transaction(async (tx) => {
+      const s = await tx.shipment.create({
+        data: {
+          type: 'CARGO_TRACKING',
+          name,
+          originAddress,
+          originLat: originLat ?? null,
+          originLng: originLng ?? null,
+          destinationAddress,
+          destinationLat: destinationLat ?? null,
+          destinationLng: destinationLng ?? null,
+          shareCode,
+          userId: context.user.id,
+          orgId: context.orgId,
+          labelId: label.id,
+          status: 'PENDING',
+          consigneeEmail: consigneeEmail || null,
+          consigneePhone: consigneePhone || null,
+          photoUrls: photoUrls || [],
         },
-      },
-    })
-
-    // Backfill pre-shipment location data
-    await db.locationEvent.updateMany({
-      where: { labelId: label.id, shipmentId: null },
-      data: { shipmentId: shipment.id },
-    })
-
-    // Update label status to ACTIVE if it was SOLD
-    if (label.status === 'SOLD') {
-      await db.label.update({
-        where: { id: label.id },
-        data: { status: 'ACTIVE', activatedAt: new Date() },
+        include: {
+          label: {
+            select: { id: true, deviceId: true, batteryPct: true, status: true },
+          },
+        },
       })
-    }
+
+      await tx.locationEvent.updateMany({
+        where: { labelId: label.id, shipmentId: null },
+        data: { shipmentId: s.id },
+      })
+
+      if (label.status === 'SOLD') {
+        await tx.label.update({
+          where: { id: label.id },
+          data: { status: 'ACTIVE', activatedAt: new Date() },
+        })
+      }
+
+      return s
+    })
 
     // Send notifications (fire and forget)
     sendLabelActivatedNotification({

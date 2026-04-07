@@ -206,6 +206,35 @@ export async function processLocationReport(
     throw new LocationReportError('Device not found', 404)
   }
 
+  // Backfill/update identifiers on the resolved label.
+  // The auto-register branch writes imei on new labels, but when a label is
+  // resolved by ICCID (or pre-created manually as SOLD inventory) the imei
+  // field stays null. Persist whatever the device is currently reporting.
+  const identifierUpdates: { imei?: string; iccid?: string } = {}
+  if (input.imei && input.imei !== label.imei) {
+    identifierUpdates.imei = input.imei
+  }
+  if (input.iccid && input.iccid !== label.iccid) {
+    identifierUpdates.iccid = input.iccid
+  }
+  if (Object.keys(identifierUpdates).length > 0) {
+    try {
+      await db.label.update({
+        where: { id: label.id },
+        data: identifierUpdates,
+      })
+      Object.assign(label, identifierUpdates)
+    } catch (err) {
+      // Non-critical: log and continue. Most likely a unique-constraint race
+      // (another label already claimed this imei); dedup will resolve later.
+      console.warn('[Device report] failed to backfill label identifiers', {
+        labelId: label.id,
+        updates: identifierUpdates,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
   // Get the active shipment (if any)
   const activeShipment =
     label.shipments[0] || label.shipmentLabels[0]?.shipment
