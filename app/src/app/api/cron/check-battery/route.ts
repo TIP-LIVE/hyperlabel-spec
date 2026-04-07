@@ -31,13 +31,19 @@ export const GET = withCronLogging('check-battery', async () => {
       // Check threshold: send at 20% and 10%
       const threshold = label.batteryPct! <= 10 ? 'critical_10' : 'warning_20'
 
-      // Check if we already sent this threshold notification
+      // Check if we already sent this threshold notification for this
+      // shipment — scoped to the org when present, else the owning user.
       const recentNotification = await db.notification.findFirst({
         where: {
-          userId: shipment.userId,
           type: 'low_battery',
           sentAt: { gte: oneDayAgo },
-          message: { contains: threshold },
+          AND: [
+            { message: { contains: threshold } },
+            { message: { contains: shipment.id } },
+          ],
+          ...(shipment.orgId
+            ? { orgId: shipment.orgId }
+            : { userId: shipment.userId, orgId: null }),
         },
       })
 
@@ -45,6 +51,8 @@ export const GET = withCronLogging('check-battery', async () => {
 
       await sendLowBatteryNotification({
         userId: shipment.userId,
+        orgId: shipment.orgId,
+        shipmentId: shipment.id,
         shipmentName: shipment.name || 'Unnamed Shipment',
         deviceId: label.deviceId,
         shareCode: shipment.shareCode,

@@ -1,4 +1,5 @@
 import { render } from '@react-email/components'
+import { createClerkClient } from '@clerk/backend'
 import { isEmailConfigured, sendEmail, type EmailType } from './email'
 import { db } from './db'
 import { reverseGeocode } from './geocoding'
@@ -36,6 +37,16 @@ async function formatLocation(lat: number, lng: number): Promise<string> {
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
 }
 
+const PREF_FIELD_BY_TYPE: Record<EmailType, 'notifyLabelActivated' | 'notifyLowBattery' | 'notifyNoSignal' | 'notifyDelivered' | 'notifyOrderShipped' | 'notifyShipmentStuck' | 'notifyReminders'> = {
+  label_activated: 'notifyLabelActivated',
+  low_battery: 'notifyLowBattery',
+  no_signal: 'notifyNoSignal',
+  shipment_delivered: 'notifyDelivered',
+  order_shipped: 'notifyOrderShipped',
+  shipment_stuck: 'notifyShipmentStuck',
+  reminders: 'notifyReminders',
+}
+
 // Check if user has enabled a specific notification type
 async function shouldSendNotification(
   userId: string,
@@ -61,28 +72,101 @@ async function shouldSendNotification(
     return { enabled: false, email: null }
   }
 
-  const prefMap: Record<EmailType, boolean> = {
-    label_activated: user.notifyLabelActivated,
-    low_battery: user.notifyLowBattery,
-    no_signal: user.notifyNoSignal,
-    shipment_delivered: user.notifyDelivered,
-    order_shipped: user.notifyOrderShipped,
-    shipment_stuck: user.notifyShipmentStuck,
-    reminders: user.notifyReminders,
-  }
-
-  return { enabled: prefMap[emailType], email: user.email }
+  return { enabled: user[PREF_FIELD_BY_TYPE[emailType]], email: user.email }
 }
 
-// Record notification in database
+/**
+ * Fetch Clerk user IDs for all members of an organization.
+ * Returns empty array if Clerk is not configured or fetch fails.
+ */
+async function getOrgMemberClerkIds(orgId: string): Promise<string[]> {
+  if (!process.env.CLERK_SECRET_KEY) return []
+  try {
+    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+    const { data } = await clerk.organizations.getOrganizationMembershipList({
+      organizationId: orgId,
+      limit: 100,
+    })
+    return data
+      .map((m) => m.publicUserData?.userId)
+      .filter((id): id is string => Boolean(id))
+  } catch (err) {
+    console.error('[Notifications] Failed to fetch org members:', err)
+    return []
+  }
+}
+
+export type NotificationRecipient = { userId: string; email: string }
+
+/**
+ * Resolve the list of users who should receive a notification for a shipment.
+ *
+ * - If `orgId` is set: returns all members of the org (from Clerk) whose DB
+ *   preference for this email type is enabled, plus the owner as a fallback.
+ * - If `orgId` is null: returns just the owner (personal ownership).
+ *
+ * All returned users have email and the relevant preference enabled.
+ */
+async function resolveRecipients(
+  ownerUserId: string,
+  orgId: string | null | undefined,
+  emailType: EmailType
+): Promise<NotificationRecipient[]> {
+  if (!isEmailConfigured()) return []
+
+  const prefField = PREF_FIELD_BY_TYPE[emailType]
+
+  if (!orgId) {
+    const { enabled, email } = await shouldSendNotification(ownerUserId, emailType)
+    if (!enabled || !email) return []
+    return [{ userId: ownerUserId, email }]
+  }
+
+  const clerkIds = await getOrgMemberClerkIds(orgId)
+
+  const users = await db.user.findMany({
+    where: {
+      OR: [
+        { id: ownerUserId },
+        ...(clerkIds.length > 0 ? [{ clerkId: { in: clerkIds } }] : []),
+      ],
+    },
+    select: {
+      id: true,
+      email: true,
+      notifyLabelActivated: true,
+      notifyLowBattery: true,
+      notifyNoSignal: true,
+      notifyDelivered: true,
+      notifyOrderShipped: true,
+      notifyShipmentStuck: true,
+      notifyReminders: true,
+    },
+  })
+
+  const seen = new Set<string>()
+  const recipients: NotificationRecipient[] = []
+  for (const u of users) {
+    if (seen.has(u.id)) continue
+    seen.add(u.id)
+    if (!u.email) continue
+    if (!u[prefField]) continue
+    recipients.push({ userId: u.id, email: u.email })
+  }
+  return recipients
+}
+
+// Record notification in database (one row per recipient so per-user inbox works)
 async function recordNotification(
   userId: string,
   type: string,
-  metadata: Record<string, unknown>
+  metadata: Record<string, unknown>,
+  orgId?: string | null
 ): Promise<void> {
   await db.notification.create({
     data: {
       userId,
+      orgId: orgId ?? null,
       type,
       message: JSON.stringify(metadata),
     },
@@ -94,12 +178,14 @@ async function recordNotification(
  */
 export async function sendLabelActivatedNotification(params: {
   userId: string
+  orgId?: string | null
   shipmentName: string
   deviceId: string
   shareCode: string
+  shipmentId?: string
 }): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'label_activated')
-  if (!enabled || !email) return
+  const recipients = await resolveRecipients(params.userId, params.orgId, 'label_activated')
+  if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
   const activatedAt = format(new Date(), 'PPpp')
@@ -113,16 +199,18 @@ export async function sendLabelActivatedNotification(params: {
     })
   )
 
-  await sendEmail({
-    to: email,
-    subject: `Label Activated: ${params.shipmentName}`,
-    html,
-  })
-
-  await recordNotification(params.userId, 'label_activated', {
-    shipmentName: params.shipmentName,
-    deviceId: params.deviceId,
-  })
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `Label Activated: ${params.shipmentName}`,
+      html,
+    })
+    await recordNotification(r.userId, 'label_activated', {
+      shipmentName: params.shipmentName,
+      deviceId: params.deviceId,
+      shipmentId: params.shipmentId,
+    }, params.orgId)
+  }
 }
 
 /**
@@ -130,13 +218,15 @@ export async function sendLabelActivatedNotification(params: {
  */
 export async function sendLowBatteryNotification(params: {
   userId: string
+  orgId?: string | null
+  shipmentId?: string
   shipmentName: string
   deviceId: string
   shareCode: string
   batteryLevel: number
 }): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'low_battery')
-  if (!enabled || !email) return
+  const recipients = await resolveRecipients(params.userId, params.orgId, 'low_battery')
+  if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
 
@@ -154,16 +244,15 @@ export async function sendLowBatteryNotification(params: {
       ? `⚠️ Critical Battery: ${params.shipmentName}`
       : `🔋 Low Battery: ${params.shipmentName}`
 
-  await sendEmail({
-    to: email,
-    subject,
-    html,
-  })
-
-  await recordNotification(params.userId, 'low_battery', {
-    shipmentName: params.shipmentName,
-    batteryLevel: params.batteryLevel,
-  })
+  for (const r of recipients) {
+    await sendEmail({ to: r.email, subject, html })
+    await recordNotification(r.userId, 'low_battery', {
+      shipmentName: params.shipmentName,
+      batteryLevel: params.batteryLevel,
+      shipmentId: params.shipmentId,
+      threshold: params.batteryLevel <= 10 ? 'critical_10' : 'warning_20',
+    }, params.orgId)
+  }
 }
 
 /**
@@ -171,14 +260,16 @@ export async function sendLowBatteryNotification(params: {
  */
 export async function sendNoSignalNotification(params: {
   userId: string
+  orgId?: string | null
+  shipmentId?: string
   shipmentName: string
   deviceId: string
   shareCode: string
   lastSeenAt: Date
   lastLocation?: { lat: number; lng: number }
 }): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'no_signal')
-  if (!enabled || !email) return
+  const recipients = await resolveRecipients(params.userId, params.orgId, 'no_signal')
+  if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
 
@@ -194,16 +285,18 @@ export async function sendNoSignalNotification(params: {
     })
   )
 
-  await sendEmail({
-    to: email,
-    subject: `📡 No Signal: ${params.shipmentName}`,
-    html,
-  })
-
-  await recordNotification(params.userId, 'no_signal', {
-    shipmentName: params.shipmentName,
-    lastSeenAt: params.lastSeenAt.toISOString(),
-  })
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `📡 No Signal: ${params.shipmentName}`,
+      html,
+    })
+    await recordNotification(r.userId, 'no_signal', {
+      shipmentName: params.shipmentName,
+      lastSeenAt: params.lastSeenAt.toISOString(),
+      shipmentId: params.shipmentId,
+    }, params.orgId)
+  }
 }
 
 /**
@@ -211,13 +304,15 @@ export async function sendNoSignalNotification(params: {
  */
 export async function sendShipmentDeliveredNotification(params: {
   userId: string
+  orgId?: string | null
+  shipmentId?: string
   shipmentName: string
   deviceId: string
   shareCode: string
   destination: string
 }): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'shipment_delivered')
-  if (!enabled || !email) return
+  const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_delivered')
+  if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
   const deliveredAt = format(new Date(), 'PPpp')
@@ -232,16 +327,18 @@ export async function sendShipmentDeliveredNotification(params: {
     })
   )
 
-  await sendEmail({
-    to: email,
-    subject: `✅ Delivered: ${params.shipmentName}`,
-    html,
-  })
-
-  await recordNotification(params.userId, 'shipment_delivered', {
-    shipmentName: params.shipmentName,
-    destination: params.destination,
-  })
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `✅ Delivered: ${params.shipmentName}`,
+      html,
+    })
+    await recordNotification(r.userId, 'shipment_delivered', {
+      shipmentName: params.shipmentName,
+      destination: params.destination,
+      shipmentId: params.shipmentId,
+    }, params.orgId)
+  }
 }
 
 /**
@@ -386,14 +483,16 @@ export async function sendShareLinkReminderNotification(params: {
  */
 export async function sendShipmentStuckNotification(params: {
   userId: string
+  orgId?: string | null
+  shipmentId?: string
   shipmentName: string
   deviceId: string
   shareCode: string
   lastLocation: { lat: number; lng: number }
   stuckSinceHours: number
 }): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'shipment_stuck')
-  if (!enabled || !email) return
+  const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_stuck')
+  if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
 
@@ -407,19 +506,20 @@ export async function sendShipmentStuckNotification(params: {
     })
   )
 
-  await sendEmail({
-    to: email,
-    subject: `⚠️ Shipment Stuck: "${params.shipmentName}" hasn't moved in ${params.stuckSinceHours}h`,
-    html,
-  })
-
-  await recordNotification(params.userId, 'shipment_stuck', {
-    shipmentName: params.shipmentName,
-    deviceId: params.deviceId,
-    shipmentId: params.shareCode,
-    lastLocation: params.lastLocation,
-    stuckSinceHours: params.stuckSinceHours,
-  })
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `⚠️ Shipment Stuck: "${params.shipmentName}" hasn't moved in ${params.stuckSinceHours}h`,
+      html,
+    })
+    await recordNotification(r.userId, 'shipment_stuck', {
+      shipmentName: params.shipmentName,
+      deviceId: params.deviceId,
+      shipmentId: params.shipmentId ?? params.shareCode,
+      lastLocation: params.lastLocation,
+      stuckSinceHours: params.stuckSinceHours,
+    }, params.orgId)
+  }
 }
 
 /**
@@ -651,10 +751,10 @@ export async function sendLabelOrphanedNotification(params: {
 }): Promise<void> {
   if (!isEmailConfigured()) return
 
-  // Find the label purchaser via OrderLabel → Order
+  // Find the label purchaser via OrderLabel → Order (also grabs orgId)
   const orderLabel = await db.orderLabel.findFirst({
     where: { labelId: params.labelId },
-    include: { order: { select: { userId: true } } },
+    include: { order: { select: { userId: true, orgId: true } } },
   })
 
   if (!orderLabel) {
@@ -663,8 +763,9 @@ export async function sendLabelOrphanedNotification(params: {
   }
 
   const userId = orderLabel.order.userId
-  const { enabled, email } = await shouldSendNotification(userId, 'label_activated')
-  if (!enabled || !email) return
+  const orgId = orderLabel.order.orgId
+  const recipients = await resolveRecipients(userId, orgId, 'label_activated')
+  if (recipients.length === 0) return
 
   const claimUrl = `${APP_URL}/claim/${params.claimToken}`
   const detectedAt = format(new Date(), 'PPpp')
@@ -683,16 +784,17 @@ export async function sendLabelOrphanedNotification(params: {
     })
   )
 
-  await sendEmail({
-    to: email,
-    subject: `⚠️ Label ${params.deviceId} activated without a shipment`,
-    html,
-  })
-
-  await recordNotification(userId, 'label_orphaned', {
-    deviceId: params.deviceId,
-    claimToken: params.claimToken,
-  })
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `⚠️ Label ${params.deviceId} activated without a shipment`,
+      html,
+    })
+    await recordNotification(r.userId, 'label_orphaned', {
+      deviceId: params.deviceId,
+      claimToken: params.claimToken,
+    }, orgId)
+  }
 }
 
 /**
@@ -700,13 +802,14 @@ export async function sendLabelOrphanedNotification(params: {
  */
 export async function sendAutoShipmentCreatedNotification(params: {
   userId: string
+  orgId?: string | null
   deviceId: string
   shipmentName: string
   shareCode: string
   locationCount: number
 }): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'label_activated')
-  if (!enabled || !email) return
+  const recipients = await resolveRecipients(params.userId, params.orgId, 'label_activated')
+  if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
   const createdAt = format(new Date(), 'PPpp')
@@ -721,14 +824,15 @@ export async function sendAutoShipmentCreatedNotification(params: {
     })
   )
 
-  await sendEmail({
-    to: email,
-    subject: `📦 Shipment auto-created for label ${params.deviceId}`,
-    html,
-  })
-
-  await recordNotification(params.userId, 'auto_shipment_created', {
-    deviceId: params.deviceId,
-    shipmentName: params.shipmentName,
-  })
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `📦 Shipment auto-created for label ${params.deviceId}`,
+      html,
+    })
+    await recordNotification(r.userId, 'auto_shipment_created', {
+      deviceId: params.deviceId,
+      shipmentName: params.shipmentName,
+    }, params.orgId)
+  }
 }

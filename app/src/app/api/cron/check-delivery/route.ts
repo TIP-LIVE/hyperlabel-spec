@@ -71,9 +71,11 @@ export const GET = withCronLogging('check-delivery', async () => {
         },
       })
 
-      // Send notification
+      // Send notification (org-wide if shipment belongs to an org)
       await sendShipmentDeliveredNotification({
         userId: shipment.userId,
+        orgId: shipment.orgId,
+        shipmentId: shipment.id,
         shipmentName: shipment.name || 'Unnamed Shipment',
         deviceId: shipment.label.deviceId,
         shareCode: shipment.shareCode,

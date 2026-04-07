@@ -114,11 +114,15 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // Send notification to shipper (owner)
-    if (shipment.user.notifyDelivered) {
+    // Send notification to shipper (owner) + org members.
+    // Note: we always call here — the resolver applies per-recipient
+    // notifyDelivered preference filtering internally.
+    {
       try {
         await sendShipmentDeliveredNotification({
           userId: shipment.user.id,
+          orgId: shipment.orgId,
+          shipmentId: shipment.id,
           shipmentName: shipment.name || 'Shipment',
           deviceId: shipment.label?.deviceId ?? 'unknown',
           shareCode: code,

@@ -166,6 +166,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
       sendShipmentDeliveredNotification({
         userId: existing.userId,
+        orgId: existing.orgId,
+        shipmentId: existing.id,
         shipmentName: existing.name || 'Unnamed Shipment',
         deviceId,
         shareCode: existing.shareCode,

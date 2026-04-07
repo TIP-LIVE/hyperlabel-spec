@@ -231,9 +231,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }, { status: 409 })
     }
 
-    // Send label activated notification to owner (fire and forget)
+    // Send label activated notification to owner + org members (fire and forget)
     sendLabelActivatedNotification({
       userId: ownerId,
+      orgId,
+      shipmentId: shipment.id,
       shipmentName: shipment.name || 'Unnamed Cargo',
       deviceId: label.deviceId,
       shareCode: shipment.shareCode,

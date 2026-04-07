@@ -104,9 +104,10 @@ export const GET = withCronLogging('check-unclaimed-labels', async () => {
       },
     })
 
-    // Notify purchaser (fire-and-forget)
+    // Notify purchaser + org members (fire-and-forget)
     sendAutoShipmentCreatedNotification({
       userId: ownerId,
+      orgId,
       deviceId: label.deviceId,
       shipmentName,
       shareCode: shipment.shareCode,

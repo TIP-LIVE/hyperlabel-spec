@@ -102,6 +102,7 @@ export async function processLocationReport(
     status: true,
     shareCode: true,
     userId: true,
+    orgId: true,
     originAddress: true,
     destinationAddress: true,
     destinationLat: true,
@@ -594,6 +595,8 @@ export async function processLocationReport(
 
         sendShipmentDeliveredNotification({
           userId: activeShipment.userId,
+          orgId: activeShipment.orgId,
+          shipmentId: activeShipment.id,
           shipmentName: activeShipment.name || 'Unnamed Shipment',
           deviceId: label.deviceId,
           shareCode: activeShipment.shareCode,

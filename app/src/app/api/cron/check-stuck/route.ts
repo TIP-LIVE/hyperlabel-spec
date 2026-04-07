@@ -78,13 +78,16 @@ export const GET = withCronLogging('check-stuck', async () => {
       const newestTime = recentLocations[0].recordedAt.getTime()
       const stuckDurationHours = (newestTime - oldestTime) / (60 * 60 * 1000)
       if (stuckDurationHours < 48) continue
-      // Check if we already sent a stuck notification in the last 48h
+      // Check if we already sent a stuck notification in the last 48h for
+      // this shipment — scoped to org when present, else the owning user.
       const recentNotification = await db.notification.findFirst({
         where: {
-          userId: shipment.userId,
           type: 'shipment_stuck',
           sentAt: { gte: twoDaysAgo },
           message: { contains: shipment.id },
+          ...(shipment.orgId
+            ? { orgId: shipment.orgId }
+            : { userId: shipment.userId, orgId: null }),
         },
       })
 
@@ -94,6 +97,8 @@ export const GET = withCronLogging('check-stuck', async () => {
 
       await sendShipmentStuckNotification({
         userId: shipment.userId,
+        orgId: shipment.orgId,
+        shipmentId: shipment.id,
         shipmentName: shipment.name || 'Unnamed Shipment',
         deviceId: shipment.label.deviceId,
         shareCode: shipment.shareCode,

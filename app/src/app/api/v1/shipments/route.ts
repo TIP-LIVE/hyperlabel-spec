@@ -220,9 +220,11 @@ async function createCargoTracking(
     return s
   })
 
-  // Send label activated notification to shipper (fire and forget)
+  // Send label activated notification to shipper + org (fire and forget)
   sendLabelActivatedNotification({
     userId: context.user.id,
+    orgId: context.orgId,
+    shipmentId: shipment.id,
     shipmentName: shipment.name || 'Unnamed Cargo',
     deviceId: label.deviceId,
     shareCode: shipment.shareCode,

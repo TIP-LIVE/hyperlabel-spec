@@ -25,6 +25,7 @@ export const GET = withCronLogging('check-signals', async () => {
     },
     include: {
       user: { select: { id: true } },
+      // orgId already selected by default (scalar field on Shipment)
       label: {
         select: {
           deviceId: true,
@@ -43,13 +44,16 @@ export const GET = withCronLogging('check-signals', async () => {
     if (!shipment.label) continue
     const lastLocation = shipment.label.locations[0]
 
-    // Check if we already sent a no-signal notification in the last 48h
+    // Check if we already sent a no-signal notification in the last 48h for
+    // this shipment — scoped to the org when present, else the owning user.
     const recentNotification = await db.notification.findFirst({
       where: {
-        userId: shipment.userId,
         type: 'no_signal',
         sentAt: { gte: fortyEightHoursAgo },
         message: { contains: shipment.id },
+        ...(shipment.orgId
+          ? { orgId: shipment.orgId }
+          : { userId: shipment.userId, orgId: null }),
       },
     })
 
@@ -57,6 +61,8 @@ export const GET = withCronLogging('check-signals', async () => {
 
     await sendNoSignalNotification({
       userId: shipment.userId,
+      orgId: shipment.orgId,
+      shipmentId: shipment.id,
       shipmentName: shipment.name || 'Unnamed Shipment',
       deviceId: shipment.label.deviceId,
       shareCode: shipment.shareCode,
