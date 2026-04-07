@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
-import { MapPin, Loader2, X, Search, CheckCircle2, Navigation, Sparkles } from 'lucide-react'
-import { toast } from 'sonner'
+import { MapPin, Loader2, X, Search, CheckCircle2, Sparkles } from 'lucide-react'
 
 interface AddressResult {
   displayName: string
@@ -34,7 +33,6 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [isSelected, setIsSelected] = useState(false)
   const [noResults, setNoResults] = useState(false)
-  const [geoLoading, setGeoLoading] = useState(false)
   const [normalizing, setNormalizing] = useState(false)
   const [normalized, setNormalized] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -154,62 +152,6 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
     }
   }
 
-  const handleUseMyLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser')
-      return
-    }
-
-    setGeoLoading(true)
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18`,
-            { headers: { 'User-Agent': 'TIP-Cargo-Tracking/1.0 (tip.live)' } }
-          )
-          if (res.ok) {
-            const data = await res.json()
-            const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            setQuery(address)
-            setIsSelected(true)
-            onAddressSelect(address, latitude, longitude)
-          } else {
-            const fallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            setQuery(fallback)
-            setIsSelected(true)
-            onAddressSelect(fallback, latitude, longitude)
-          }
-        } catch {
-          const fallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-          setQuery(fallback)
-          setIsSelected(true)
-          onAddressSelect(fallback, latitude, longitude)
-        } finally {
-          setGeoLoading(false)
-        }
-      },
-      (error: GeolocationPositionError) => {
-        setGeoLoading(false)
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            toast.error('Location access denied. Please enable location permissions in your browser settings.')
-            break
-          case error.POSITION_UNAVAILABLE:
-            toast.error('Location unavailable. Please try again or enter the address manually.')
-            break
-          case error.TIMEOUT:
-            toast.error('Location request timed out. Please try again.')
-            break
-          default:
-            toast.error('Could not determine your location. Please enter the address manually.')
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }, [onAddressSelect])
-
   // AI-powered address normalization
   const handleNormalize = useCallback(async () => {
     if (!query || query.length < 5 || isSelected) return
@@ -239,8 +181,6 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
       setNormalizing(false)
     }
   }, [query, isSelected, searchAddress, onAddressSelect])
-
-  const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -277,23 +217,8 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3 mt-1.5">
-        {supportsGeolocation && !isSelected && query.length === 0 && (
-          <button
-            type="button"
-            onClick={handleUseMyLocation}
-            disabled={geoLoading}
-            className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
-          >
-            {geoLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Navigation className="h-3 w-3" />
-            )}
-            {geoLoading ? 'Getting location...' : 'Use my current location'}
-          </button>
-        )}
-        {!isSelected && !normalized && query.length >= 5 && (
+      {!isSelected && !normalized && query.length >= 5 && (
+        <div className="flex items-center gap-3 mt-1.5">
           <button
             type="button"
             onClick={handleNormalize}
@@ -307,8 +232,8 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
             )}
             {normalizing ? 'Cleaning up...' : 'Clean up with AI'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Dropdown */}
       {isOpen && (
