@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { stripe, isStripeConfigured } from '@/lib/stripe'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Package, ArrowRight, AlertTriangle } from 'lucide-react'
+import { CheckCircle, Package, ArrowRight, AlertTriangle, Send } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -52,7 +52,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
           </div>
           <CardTitle className="text-2xl">Order Confirmed!</CardTitle>
           <CardDescription>
-            Thank you for your purchase. Your tracking labels are ready in your dashboard.
+            Your labels are reserved in our warehouse. Next, tell us where to ship them.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -65,7 +65,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                   {sessionError ? 'Your Tracking Labels' : `${quantity} Tracking Label${quantity > 1 ? 's' : ''}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Available in your dashboard now
+                  Reserved in our warehouse, ready to ship
                 </p>
               </div>
             </div>
@@ -89,19 +89,19 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   1
                 </span>
-                <span>Your labels are now in your dashboard</span>
+                <span>Tell us where to send your labels (3-5 business days)</span>
               </li>
               <li className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   2
                 </span>
-                <span>Create a shipment and assign a label to it</span>
+                <span>We ship them — the receiver activates on arrival</span>
               </li>
               <li className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   3
                 </span>
-                <span>Share the tracking link with your shipper and track in real-time</span>
+                <span>Attach to cargo and track door-to-door in real-time</span>
               </li>
             </ol>
           </div>
@@ -109,13 +109,14 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
           {/* Actions */}
           <div className="flex flex-col gap-2">
             <Button asChild>
-              <Link href="/dashboard">
-                Go to Dashboard
+              <Link href="/dispatch/new">
+                <Send className="mr-2 h-4 w-4" />
+                Set up dispatch
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/orders">View Orders</Link>
+              <Link href="/dashboard">Go to Dashboard</Link>
             </Button>
           </div>
 
