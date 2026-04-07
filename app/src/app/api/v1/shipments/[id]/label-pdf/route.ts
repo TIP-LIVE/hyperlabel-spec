@@ -52,13 +52,16 @@ export async function GET(
       }
     }
 
-    // Build URL the same way the batch generator does: tip.live/w/{number}.
-    // The number portion is the deviceId with its leading prefix (e.g. "w") stripped.
-    const numberPart = shipment.label.deviceId.replace(/^[a-zA-Z]+/, '')
+    // Use the canonical bare URL form (tip.live/{displayId}) — the /w/ prefix
+    // was dropped and the bare form is what we show users everywhere else.
+    // Fallback to the numeric portion of deviceId when displayId is missing.
+    const urlKey =
+      shipment.label.displayId ||
+      shipment.label.deviceId.replace(/^[a-zA-Z]+-?/, '')
     const labelData: LabelData = {
       deviceId: shipment.label.deviceId,
       displayId: shipment.label.displayId,
-      url: `tip.live/w/${numberPart}`,
+      url: `tip.live/${urlKey}`,
     }
 
     const cwd = process.cwd()

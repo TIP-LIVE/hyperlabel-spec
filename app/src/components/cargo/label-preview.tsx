@@ -20,9 +20,11 @@ interface LabelPreviewProps {
  * see here matches what the factory prints.
  */
 export function LabelPreview({ shipmentId, deviceId, displayId }: LabelPreviewProps) {
-  const numberPart = deviceId.replace(/^[a-zA-Z]+/, '')
-  const url = `tip.live/w/${numberPart}`
+  // Canonical bare URL form (the /w/ prefix was dropped — tip.live/{displayId} works).
+  // Falls back to numeric portion of deviceId only when displayId is missing.
   const serial = displayId || deviceId
+  const urlKey = displayId || deviceId.replace(/^[a-zA-Z]+-?/, '')
+  const url = `tip.live/${urlKey}`
 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
@@ -80,13 +82,14 @@ export function LabelPreview({ shipmentId, deviceId, displayId }: LabelPreviewPr
           style={{ aspectRatio: '10 / 15' }}
           aria-label="Physical label preview"
         >
-          {/* QR code — top-right area, ~19.5% of canvas, offset to match PDF coords */}
+          {/* QR code — positioned from PDF coords (x=745, y=62, size=195 in 1000x1500pt).
+              PDF y is bottom-up, so convert to bottom-%. */}
           <div
             className="absolute"
             style={{
-              right: '6%',
-              top: '4.1%',
-              width: '19.5%',
+              left: '74.5%', // 745/1000
+              bottom: '4.13%', // 62/1500
+              width: '19.5%', // 195/1000
               aspectRatio: '1 / 1',
             }}
           >
@@ -96,17 +99,20 @@ export function LabelPreview({ shipmentId, deviceId, displayId }: LabelPreviewPr
             )}
           </div>
 
-          {/* Text block — bottom-left, in #66FF00 */}
+          {/* URL text — PDF x=128, y=147 */}
           <div
-            className="absolute font-mono text-[11px] font-semibold leading-tight sm:text-xs"
-            style={{
-              left: '12.8%',
-              bottom: '5.6%',
-              color: '#66FF00',
-            }}
+            className="absolute font-mono text-[11px] font-semibold leading-none sm:text-xs"
+            style={{ left: '12.8%', bottom: '9.8%', color: '#66FF00' }}
           >
-            <div>{url}</div>
-            <div className="mt-1">{serial}</div>
+            {url}
+          </div>
+
+          {/* Serial number — PDF x=128, y=84 */}
+          <div
+            className="absolute font-mono text-[11px] font-semibold leading-none sm:text-xs"
+            style={{ left: '12.8%', bottom: '5.6%', color: '#66FF00' }}
+          >
+            {serial}
           </div>
         </div>
 
