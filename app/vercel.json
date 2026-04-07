@@ -66,10 +66,6 @@
     {
       "path": "/api/cron/research-gift-cards",
       "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/cron/sync-utec-battery",
-      "schedule": "17 */2 * * *"
     }
   ]
 }
