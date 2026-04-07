@@ -55,7 +55,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <aside className="fixed inset-y-0 left-0 z-50 flex hidden w-64 flex-col border-r border-border bg-card lg:flex">
         {/* Logo */}
         <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
-          <Logo size="lg" />
+          <Link href="/dashboard">
+            <Logo size="lg" />
+          </Link>
         </div>
 
         {/* Navigation - grows to fill so CTA stays at bottom */}
