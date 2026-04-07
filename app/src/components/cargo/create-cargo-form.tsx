@@ -361,12 +361,19 @@ export function CreateCargoForm() {
             ) : labels.length === 0 ? (
               <div className="rounded-lg border border-dashed p-4 text-center">
                 <Package className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  No available labels. Purchase labels first.
+                <p className="mt-2 text-sm font-medium">No activated labels yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Remove the pull tab on a label to activate it, or dispatch labels if they
+                  haven&apos;t arrived yet.
                 </p>
-                <Button variant="outline" className="mt-3" asChild>
-                  <a href="/buy">Buy Labels</a>
-                </Button>
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/dispatch/new">Dispatch Labels</a>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/buy">Buy Labels</a>
+                  </Button>
+                </div>
               </div>
             ) : (
               <Select

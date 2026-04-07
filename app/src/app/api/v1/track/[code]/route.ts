@@ -48,6 +48,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         destinationPostalCode: true,
         destinationCountry: true,
         addressSubmittedAt: true,
+        shareLinkExpiresAt: true,
         consigneeEmail: true,
         consigneePhone: true,
         deliveredAt: true,
@@ -103,6 +104,17 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       if (new Date() > expiryDate) {
         return NextResponse.json({ error: 'Tracking link has expired' }, { status: 410 })
       }
+    }
+
+    // Check pre-submission share link expiry (14 days for LABEL_DISPATCH with
+    // no receiver details submitted yet)
+    if (
+      shipment.type === 'LABEL_DISPATCH' &&
+      !shipment.addressSubmittedAt &&
+      shipment.shareLinkExpiresAt &&
+      new Date() > shipment.shareLinkExpiresAt
+    ) {
+      return NextResponse.json({ error: 'Share link has expired' }, { status: 410 })
     }
 
     // Backfill orphaned label locations that weren't linked at shipment creation

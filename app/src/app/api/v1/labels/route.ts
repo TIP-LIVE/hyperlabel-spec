@@ -34,6 +34,28 @@ export async function GET(req: NextRequest) {
       where.status = status
     }
 
+    // When querying SOLD labels for cargo-shipment creation, only include
+    // labels that have physically reached a delivery location — i.e. the
+    // dispatch shipment containing them is DELIVERED, or the label is
+    // already ACTIVE (activated in the wild). This prevents users from
+    // assigning warehouse-resident labels to a cargo shipment.
+    if (status === 'SOLD') {
+      where.OR = [
+        { status: 'ACTIVE' },
+        {
+          shipmentLabels: {
+            some: {
+              shipment: {
+                type: 'LABEL_DISPATCH',
+                status: 'DELIVERED',
+              },
+            },
+          },
+        },
+      ]
+      delete where.status
+    }
+
     const labels = await db.label.findMany({
       where,
       select: {

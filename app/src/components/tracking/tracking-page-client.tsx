@@ -183,13 +183,14 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
 
   // Optimistic update after shipper submits address
   const handleAddressSubmitted = useCallback((data: ShipperAddressInput) => {
-    const formatted = [data.name, data.line1, data.line2, data.city, data.state, data.postalCode, getCountryName(data.country)]
+    const fullName = `${data.firstName} ${data.lastName}`.trim()
+    const formatted = [fullName, data.line1, data.line2, data.city, data.state, data.postalCode, getCountryName(data.country)]
       .filter(Boolean)
       .join(', ')
     setShipment((prev) => ({
       ...prev,
       destinationAddress: formatted,
-      destinationName: data.name,
+      destinationName: fullName,
       destinationLine1: data.line1,
       destinationLine2: data.line2 || null,
       destinationCity: data.city,

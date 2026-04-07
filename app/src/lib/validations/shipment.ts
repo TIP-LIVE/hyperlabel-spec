@@ -27,6 +27,21 @@ export const createDispatchShipmentSchema = z.object({
   name: z.string().min(1, 'Dispatch name is required').max(200),
   labelIds: z.array(z.string().min(1)).min(1, 'Select at least one label'),
   ...addressFields,
+  // Receiver details (optional here — if omitted, a share link is issued so
+  // the receiver can fill them in via the public /track/[code] page)
+  receiverFirstName: z.string().max(100).optional().or(z.literal('')),
+  receiverLastName: z.string().max(100).optional().or(z.literal('')),
+  receiverEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
+  receiverPhone: z.string().max(30).optional().or(z.literal('')),
+  destinationLine1: z.string().max(300).optional().or(z.literal('')),
+  destinationLine2: z.string().max(300).optional().or(z.literal('')),
+  destinationCity: z.string().max(100).optional().or(z.literal('')),
+  destinationState: z.string().max(100).optional().or(z.literal('')),
+  destinationPostalCode: z.string().max(20).optional().or(z.literal('')),
+  destinationCountry: z.string().length(2).optional().or(z.literal('')),
+  // When true, buyer is intentionally leaving receiver details blank and will
+  // share the link with the receiver. Sets shareLinkExpiresAt to createdAt + 14d.
+  askReceiver: z.boolean().optional().default(false),
 })
 
 /** Combined create schema — accepts either type */

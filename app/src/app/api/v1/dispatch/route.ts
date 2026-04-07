@@ -129,6 +129,39 @@ export async function POST(req: NextRequest) {
     const destinationAddress = data.destinationAddress?.trim() || null
     const { labelIds, name, originLat, originLng, destinationLat, destinationLng } = data
 
+    // Normalize receiver fields (empty string → null)
+    const receiverFirstName = data.receiverFirstName?.trim() || null
+    const receiverLastName = data.receiverLastName?.trim() || null
+    const receiverEmail = data.receiverEmail?.trim() || null
+    const receiverPhone = data.receiverPhone?.trim() || null
+    const destinationLine1 = data.destinationLine1?.trim() || null
+    const destinationLine2 = data.destinationLine2?.trim() || null
+    const destinationCity = data.destinationCity?.trim() || null
+    const destinationState = data.destinationState?.trim() || null
+    const destinationPostalCode = data.destinationPostalCode?.trim() || null
+    const destinationCountry = data.destinationCountry?.trim() || null
+
+    // A dispatch is "complete" (ready to ship) when it has a receiver name +
+    // address line1 + city + postal + country + email. Otherwise the buyer is
+    // asking the receiver to fill in the rest via the public share link.
+    const hasReceiverDetails = Boolean(
+      data.askReceiver === false &&
+        receiverFirstName &&
+        receiverLastName &&
+        destinationLine1 &&
+        destinationCity &&
+        destinationPostalCode &&
+        destinationCountry &&
+        receiverEmail,
+    )
+    const now = new Date()
+    const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
+    const shareLinkExpiresAt = hasReceiverDetails ? null : new Date(now.getTime() + FOURTEEN_DAYS_MS)
+    const addressSubmittedAt = hasReceiverDetails ? now : null
+    const destinationName = hasReceiverDetails && receiverFirstName && receiverLastName
+      ? `${receiverFirstName} ${receiverLastName}`
+      : null
+
     // Verify all labels exist and are available
     const labels = await db.label.findMany({
       where: { id: { in: labelIds } },
@@ -180,6 +213,19 @@ export async function POST(req: NextRequest) {
           destinationAddress,
           destinationLat: destinationLat ?? null,
           destinationLng: destinationLng ?? null,
+          destinationName,
+          destinationLine1,
+          destinationLine2,
+          destinationCity,
+          destinationState,
+          destinationPostalCode,
+          destinationCountry,
+          receiverFirstName,
+          receiverLastName,
+          consigneeEmail: receiverEmail,
+          consigneePhone: receiverPhone,
+          addressSubmittedAt,
+          shareLinkExpiresAt,
           shareCode,
           userId: context.user.id,
           orgId: context.orgId,
@@ -208,7 +254,8 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    return NextResponse.json({ shipment }, { status: 201 })
+    const shareLink = hasReceiverDetails ? null : `/track/${shareCode}`
+    return NextResponse.json({ shipment, shareLink, awaitingReceiverDetails: !hasReceiverDetails }, { status: 201 })
   } catch (error) {
     return handleApiError(error, 'creating dispatch')
   }

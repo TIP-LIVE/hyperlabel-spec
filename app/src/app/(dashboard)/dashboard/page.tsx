@@ -10,7 +10,9 @@ import { DashboardMap } from '@/components/dashboard/dashboard-map'
 import { shipmentStatusConfig } from '@/lib/status-config'
 import { formatLocationName, getLastUpdateDate, getLocationCountryCode } from '@/lib/utils/location-display'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
-import { Package, MapPin, Truck, Battery, ArrowRight, ShoppingCart, QrCode, Radio, CheckCircle, AlertCircle, Send, ChevronDown } from 'lucide-react'
+import { Package, MapPin, Truck, Battery, ArrowRight, AlertCircle, Send, ChevronDown } from 'lucide-react'
+import { JourneyCard } from '@/components/dashboard/journey-card'
+import { resolveUserPhase } from '@/lib/user-phase'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,7 +131,7 @@ export default async function DashboardPage() {
           })
         : 0,
       db.shipment.findMany({
-        where: { ...where, status: { in: ['IN_TRANSIT', 'PENDING'] }, type: 'CARGO_TRACKING' },
+        where: { ...where, status: { in: ['IN_TRANSIT', 'PENDING'] } },
         include: {
           label: {
             select: { deviceId: true, batteryPct: true, lastSeenAt: true, status: true },
@@ -170,6 +172,14 @@ export default async function DashboardPage() {
     }
     dbError = true
   }
+
+  // Resolve which phase of the first-impression journey the user is in
+  const phaseData = user
+    ? await resolveUserPhase({ userId: user.id, orgId }).catch((err) => {
+        console.error('[Dashboard] phase resolution failed:', err)
+        return null
+      })
+    : null
 
   const stats = [
     {
@@ -233,18 +243,38 @@ export default async function DashboardPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/cargo/new">
-                    <Truck className="mr-2 h-4 w-4" />
-                    Track Cargo
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dispatch/new">
-                    <Send className="mr-2 h-4 w-4" />
-                    Label Dispatch
-                  </Link>
-                </DropdownMenuItem>
+                {/* Phase 0-2 users need Dispatch first; Phase 3+ need Track Cargo first */}
+                {phaseData && (phaseData.phase === 0 || phaseData.phase === 1 || phaseData.phase === '1b' || phaseData.phase === 2) ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dispatch/new">
+                        <Send className="mr-2 h-4 w-4" />
+                        Label Dispatch
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/cargo/new">
+                        <Truck className="mr-2 h-4 w-4" />
+                        Track Cargo
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/cargo/new">
+                        <Truck className="mr-2 h-4 w-4" />
+                        Track Cargo
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dispatch/new">
+                        <Send className="mr-2 h-4 w-4" />
+                        Label Dispatch
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -281,99 +311,11 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      {/* Journey card (first-impression experience) — hide once live cargo exists */}
+      {phaseData && phaseData.phase !== 5 && <JourneyCard phaseData={phaseData} />}
+
       {/* Live Shipment Tracker */}
-      {recentShipments.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            {totalLabels > 0 ? (
-              <div className="py-8 text-center">
-                <div className="mx-auto max-w-sm space-y-4">
-                  <h3 className="text-lg font-semibold">You have {totalLabels} label{totalLabels === 1 ? '' : 's'} ready</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Create a shipment to attach a label and start tracking your cargo in real-time.
-                  </p>
-                  <div className="flex gap-2 justify-center">
-                    <Button asChild>
-                      <Link href="/cargo/new">
-                        <Truck className="mr-2 h-4 w-4" />
-                        Track Cargo
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild>
-                      <Link href="/dispatch/new">
-                        <Send className="mr-2 h-4 w-4" />
-                        Label Dispatch
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-            <div className="py-8">
-              <div className="mb-6 text-center">
-                <h3 className="text-lg font-semibold">Welcome! Here&apos;s how to get started</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Follow these steps to start tracking your cargo in real-time
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-4 rounded-lg border p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <ShoppingCart className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">1. Buy tracking labels</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      Order tracking labels — they&apos;ll arrive at your door within 3-5 business days.
-                    </p>
-                  </div>
-                  <Button size="sm" asChild>
-                    <Link href="/buy">Buy Labels</Link>
-                  </Button>
-                </div>
-
-                <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <QrCode className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">2. Create a shipment</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      Scan the QR code or select a label, enter origin & destination, and attach the label to your cargo.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <Radio className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">3. Track in real-time</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      Watch your cargo on a live map. Share the tracking link with anyone — no account needed.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 rounded-lg border border-dashed p-4 opacity-60">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">4. Confirm delivery</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      The receiver confirms delivery on arrival. You get notified instantly.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
+      {recentShipments.length === 0 ? null : (
         <>
           {/* Overview Map */}
           <DashboardMap

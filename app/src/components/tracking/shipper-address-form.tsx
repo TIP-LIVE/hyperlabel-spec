@@ -40,7 +40,8 @@ export function ShipperAddressForm({ shareCode, onSubmitted }: ShipperAddressFor
   } = useForm<ShipperAddressInput>({
     resolver: zodResolver(shipperAddressSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       line1: '',
       line2: '',
       city: '',
@@ -126,13 +127,22 @@ export function ShipperAddressForm({ shareCode, onSubmitted }: ShipperAddressFor
             )}
           </div>
 
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="shipper-name">Full Name</Label>
-            <Input id="shipper-name" placeholder={fmt.name} {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+          {/* First + Last Name */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="shipper-first">First Name</Label>
+              <Input id="shipper-first" placeholder="Jane" {...register('firstName')} />
+              {errors.firstName && (
+                <p className="text-sm text-destructive">{errors.firstName.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shipper-last">Last Name</Label>
+              <Input id="shipper-last" placeholder="Doe" {...register('lastName')} />
+              {errors.lastName && (
+                <p className="text-sm text-destructive">{errors.lastName.message}</p>
+              )}
+            </div>
           </div>
 
           {/* Address lines */}

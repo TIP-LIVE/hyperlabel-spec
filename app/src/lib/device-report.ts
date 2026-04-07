@@ -501,6 +501,17 @@ export async function processLocationReport(
   if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
     labelUpdateData.lastSeenAt = receivedAt
   }
+  // First in-the-wild location for a label that has an assigned owner (any
+  // shipment) → stamp activatedAt and promote SOLD → ACTIVE. This gives us a
+  // clean "first reported from the field" timestamp independent of whether a
+  // cargo shipment was pre-created. Orphaned SOLD labels (no active shipment)
+  // are intentionally skipped — they go through the claim-token flow above.
+  if (activeShipment && !label.activatedAt) {
+    labelUpdateData.activatedAt = receivedAt
+    if (label.status === 'SOLD') {
+      labelUpdateData.status = 'ACTIVE'
+    }
+  }
   if (input.battery !== undefined) {
     labelUpdateData.batteryPct = input.battery
   }

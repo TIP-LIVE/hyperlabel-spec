@@ -324,6 +324,53 @@ These rules were learned through 14 failed attempts:
 
 ---
 
+## First-Impression Journey (Onboarding Model)
+
+**The mental model is non-obvious and is the source of most onboarding bugs:**
+
+TIP holds labels in a warehouse and physically dispatches them to wherever the user says. **Users do NOT receive labels at their own address by default.** Label Dispatch (`LABEL_DISPATCH` shipment type) is **step 2 of onboarding**, not an advanced feature. The canonical flow is:
+
+```
+1. Buy labels → 2. Dispatch labels → 3. Receive + activate → 4. Track cargo
+```
+
+Receivers are often not the buyer, and the buyer often doesn't know the receiver's address yet. The dispatch form has an **"I don't know these details yet — I'll ask the receiver"** toggle that creates a blank dispatch and gives the buyer a public share link. The receiver fills in their own details via `/track/[shareCode]` with no Clerk auth.
+
+### The 6 phases (resolved by `lib/user-phase.ts`)
+
+| Phase | Condition | Active step |
+|---|---|---|
+| 0 | No orders | 1 — Buy Labels |
+| 1 | Order:PAID, undispatched labels | 2 — "Where should we send your labels?" |
+| 1b | LABEL_DISPATCH PENDING with `addressSubmittedAt == null` | 2 — Awaiting receiver details |
+| 2 | LABEL_DISPATCH PENDING (with details) or IN_TRANSIT | 2 — In transit to receiver |
+| 3 | LABEL_DISPATCH DELIVERED, no CARGO_TRACKING yet | 3 — Activate + attach |
+| 4 | CARGO_TRACKING PENDING with no LocationEvent | 4 — Waiting for first signal |
+| 5 | Active CARGO_TRACKING with reports | Journey card hidden |
+
+`resolveUserPhase({ userId, orgId })` is the single source of truth — called once on `/dashboard`. The journey card (`components/dashboard/journey-card.tsx`) renders the 4-step timeline with phase-specific content for the active step.
+
+### Critical rules
+
+1. **Never assume the user has labels in hand.** Copy like "Stick a label on your cargo" or "Scan the QR or select a label" is wrong as a step-2 instruction. Labels are at TIP's warehouse until physically dispatched.
+2. **Never filter dashboard shipment queries to `type: 'CARGO_TRACKING'`** — dispatches must appear on the dashboard map and active list.
+3. **`/api/v1/labels?status=SOLD` filters out warehouse-resident labels** — only returns `ACTIVE` labels OR `SOLD` labels whose dispatch is `DELIVERED`. Don't reintroduce warehouse-label leakage.
+4. **`Shipment.shareCode` works for both shipment types.** Reuse the existing `/track/[code]` route for `LABEL_DISPATCH` — do not build a parallel `/d/[code]` flow.
+5. **Receiver-fill expiry**: blank dispatches get `shareLinkExpiresAt = createdAt + 14 days`. Public GET returns 410 past expiry. `check-stale-dispatches` cron sends reminder on day 7 and auto-cancels on day 14.
+6. **`sendDispatchDetailsSubmitted`** must always fire when receiver completes the form — it's the only "unauthorized change detection" signal. Non-optional.
+7. **Receiver name is split** into `Shipment.receiverFirstName` + `receiverLastName`. The submit-address handler concatenates into legacy `destinationName` for backwards compatibility.
+8. **`Label.activatedAt`** is now stamped on first location report when the label has any active shipment (cargo OR dispatch), in addition to the existing cargo-creation path. The user's mental model is "physical activation = first signal in the wild."
+9. **"New Shipment" dropdown** order is phase-dependent: Dispatch first for phases 0-2, Track Cargo first for phases 3+. Never lock to one order.
+
+### Schema additions (April 2026)
+
+- `Shipment.receiverFirstName`, `Shipment.receiverLastName`, `Shipment.shareLinkExpiresAt`
+- `OrgSettings.defaultDispatchAddressId` → `SavedAddress.id` (UI to set this is not yet built)
+
+### Site content needing a copy pass
+
+The dashboard onboarding was fixed but **external pages and emails still describe the product as if the user already has labels in hand.** See the dedicated plan in `docs/site-content-update-plan.md` for the full audit + suggested copy.
+
 ## Research Hub
 
 Internal tool at `/admin/research` for managing user interviews across 3 personas (Consignee, Forwarder, Shipper).

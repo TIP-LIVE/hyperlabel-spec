@@ -19,6 +19,8 @@ import PendingShipmentReminderEmail from '@/emails/pending-shipment-reminder'
 import ConsigneeTrackingEmail from '@/emails/consignee-tracking'
 import ConsigneeInTransitEmail from '@/emails/consignee-in-transit'
 import ConsigneeDeliveredEmail from '@/emails/consignee-delivered'
+import DispatchDetailsRequestedEmail from '@/emails/dispatch-details-requested'
+import DispatchDetailsSubmittedEmail from '@/emails/dispatch-details-submitted'
 import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
@@ -834,5 +836,103 @@ export async function sendAutoShipmentCreatedNotification(params: {
       deviceId: params.deviceId,
       shipmentName: params.shipmentName,
     }, params.orgId)
+  }
+}
+
+/**
+ * Receiver-collaboration: send the share link to the receiver's email
+ * so they can fill in their delivery details.
+ */
+export async function sendDispatchDetailsRequested(params: {
+  receiverEmail: string
+  senderName: string
+  shareCode: string
+  note?: string | null
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const completeUrl = `${APP_URL}/track/${params.shareCode}`
+
+  const html = await render(
+    DispatchDetailsRequestedEmail({
+      senderName: params.senderName,
+      completeUrl,
+      note: params.note ?? null,
+    })
+  )
+
+  await sendEmail({
+    to: params.receiverEmail,
+    subject: `📦 ${params.senderName} needs your delivery address for TIP labels`,
+    html,
+  })
+}
+
+/**
+ * Buyer notification: receiver has submitted their delivery details.
+ * This is the main "unauthorized-change detection" signal — always fire.
+ */
+export async function sendDispatchDetailsSubmitted(params: {
+  shipmentId: string
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const shipment = await db.shipment.findUnique({
+    where: { id: params.shipmentId },
+    select: {
+      id: true,
+      name: true,
+      userId: true,
+      orgId: true,
+      receiverFirstName: true,
+      receiverLastName: true,
+      consigneeEmail: true,
+      destinationAddress: true,
+      destinationLine1: true,
+      destinationCity: true,
+      destinationPostalCode: true,
+      destinationCountry: true,
+    },
+  })
+  if (!shipment) return
+
+  // Ride on the order_shipped pref — closest semantic match; this also means
+  // buyers who disabled order emails won't get spammed.
+  const recipients = await resolveRecipients(shipment.userId, shipment.orgId, 'order_shipped')
+  if (recipients.length === 0) return
+
+  const receiverName = [shipment.receiverFirstName, shipment.receiverLastName]
+    .filter(Boolean)
+    .join(' ') || 'Receiver'
+  const address =
+    shipment.destinationAddress ||
+    [shipment.destinationLine1, shipment.destinationCity, shipment.destinationPostalCode, shipment.destinationCountry]
+      .filter(Boolean)
+      .join(', ')
+
+  const dispatchUrl = `${APP_URL}/dispatch/${shipment.id}`
+  const cancelUrl = `${APP_URL}/dispatch/${shipment.id}?cancel=1`
+
+  const html = await render(
+    DispatchDetailsSubmittedEmail({
+      dispatchName: shipment.name || 'Label Dispatch',
+      receiverName,
+      receiverEmail: shipment.consigneeEmail || '',
+      destinationAddress: address,
+      dispatchUrl,
+      cancelUrl,
+    })
+  )
+
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `✅ Receiver submitted delivery details for ${shipment.name || 'your dispatch'}`,
+      html,
+    })
+    await recordNotification(r.userId, 'dispatch_details_submitted', {
+      shipmentId: shipment.id,
+      receiverName,
+    }, shipment.orgId ?? undefined)
   }
 }
