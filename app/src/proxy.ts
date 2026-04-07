@@ -52,6 +52,14 @@ const hasClerkKey =
 // Always wrap with clerkMiddleware so auth() calls in pages don't throw.
 // When Clerk isn't configured (CI/test), skip auth logic but still register the middleware.
 const proxy = clerkMiddleware(async (auth, req) => {
+  // Short URL: tip.live/NNNNNYYYY → /activate/NNNNNYYYY (rewrite, URL stays pretty)
+  const displayIdMatch = /^\/(\d{9})$/.exec(req.nextUrl.pathname)
+  if (displayIdMatch) {
+    const url = req.nextUrl.clone()
+    url.pathname = `/activate/${displayIdMatch[1]}`
+    return NextResponse.rewrite(url)
+  }
+
   if (!hasClerkKey) return
 
   if (isPublicRoute(req)) return

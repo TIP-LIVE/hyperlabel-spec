@@ -97,7 +97,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
   // Falls back to /track/{shareCode} if the label has no displayId yet.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const trackingUrl = shipment.label?.displayId
-    ? `${appUrl}/w/${shipment.label.displayId}`
+    ? `${appUrl}/${shipment.label.displayId}`
     : `${appUrl}/track/${shipment.shareCode}`
 
   const serializedData = {
