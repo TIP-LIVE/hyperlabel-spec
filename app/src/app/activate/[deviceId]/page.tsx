@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { isDisplayId } from '@/lib/label-id'
+import { getCurrentUser } from '@/lib/auth'
+import { auth } from '@clerk/nextjs/server'
+import { isClerkConfigured } from '@/lib/clerk-config'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Package, Truck, Clock, AlertTriangle } from 'lucide-react'
@@ -69,6 +72,8 @@ export default async function ActivateLabelPage({ params }: PageProps) {
           id: true,
           shareCode: true,
           status: true,
+          userId: true,
+          orgId: true,
         },
       },
     },
@@ -100,9 +105,23 @@ export default async function ActivateLabelPage({ params }: PageProps) {
     )
   }
 
-  // Label has an active shipment with sharing enabled — redirect to tracking
+  // Label has an active shipment with sharing enabled — route to internal
+  // dashboard page if the viewer is the owner, else public tracking page.
   const activeShipment = label.shipments[0]
   if (activeShipment && (activeShipment.status === 'PENDING' || activeShipment.status === 'IN_TRANSIT' || activeShipment.status === 'DELIVERED')) {
+    if (isClerkConfigured()) {
+      const currentUser = await getCurrentUser().catch(() => null)
+      if (currentUser) {
+        const { orgId } = await auth()
+        const isOwner =
+          (activeShipment.orgId && activeShipment.orgId === orgId) ||
+          (!activeShipment.orgId && activeShipment.userId === currentUser.id) ||
+          currentUser.role === 'admin'
+        if (isOwner) {
+          redirect(`/cargo/${label.displayId || activeShipment.id}`)
+        }
+      }
+    }
     redirect(`/track/${activeShipment.shareCode}`)
   }
 
