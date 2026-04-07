@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'New Label Dispatch',
-  description: 'Ship labels from your warehouse to a customer location',
+  description: 'Tell us where to send your purchased labels',
 }
 
 export default function NewDispatchPage() {
@@ -12,7 +12,7 @@ export default function NewDispatchPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">New Label Dispatch</h1>
         <p className="text-muted-foreground">
-          Ship multiple labels from your warehouse to a customer location
+          Tell us where to send your purchased labels — your own address, a receiver, or anywhere else
         </p>
       </div>
 

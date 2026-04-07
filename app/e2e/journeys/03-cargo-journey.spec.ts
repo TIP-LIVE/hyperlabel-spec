@@ -104,7 +104,7 @@ test.describe('Label Dispatch', () => {
     if (isDispatch) {
       await expect(page.getByRole('heading', { name: /new label dispatch/i })).toBeVisible()
       await expect(
-        page.getByText('Ship multiple labels from your warehouse to a customer location')
+        page.getByText(/tell us where to send your purchased labels/i)
       ).toBeVisible()
     }
   })

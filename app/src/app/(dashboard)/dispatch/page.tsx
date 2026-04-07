@@ -45,7 +45,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
     <div className="space-y-6">
       <PageHeader
         title="Label Dispatch"
-        description="Ship multiple labels from your warehouse to customer locations"
+        description="We'll ship your purchased labels from our warehouse to any address you choose"
         action={
           <>
             <Button variant="ghost" size="sm" asChild>
@@ -68,7 +68,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
         <EmptyState
           icon={Send}
           title="No dispatches yet"
-          description="Ship labels from your warehouse to customer locations. Buy labels first, then create a dispatch with destination details."
+          description="Tell us where to send your labels. Buy labels first, then create a dispatch with the destination details."
           action={
             <>
               <Button variant="outline" asChild>
@@ -90,7 +90,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
         <Card>
           <CardHeader>
             <CardTitle>Label Dispatches</CardTitle>
-            <CardDescription>Track label shipments from warehouse to customers</CardDescription>
+            <CardDescription>Track labels in transit from our warehouse to your chosen destinations</CardDescription>
           </CardHeader>
           <CardContent>
             <DispatchList initialStatus={initialStatus} />

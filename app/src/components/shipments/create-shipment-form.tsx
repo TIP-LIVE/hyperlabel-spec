@@ -143,7 +143,7 @@ export function CreateShipmentForm() {
       <p className="text-sm text-muted-foreground">
         {shipmentType === 'CARGO_TRACKING'
           ? 'Attach a single tracking label to your cargo and monitor its journey in real time.'
-          : 'Ship multiple labels from your warehouse to a customer location.'}
+          : "Tell us where to send your purchased labels — we'll ship them from our warehouse to the address you choose."}
       </p>
 
       {shipmentType === 'CARGO_TRACKING' ? (
