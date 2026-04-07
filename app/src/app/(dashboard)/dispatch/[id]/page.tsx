@@ -33,6 +33,12 @@ export default async function DispatchDetailPage({ params }: PageProps) {
     redirect('/sign-in')
   }
 
+  // Admins always go to the admin view — keeps mutation controls behind the
+  // (admin) route group instead of conditionally rendered in the customer view.
+  if (user?.role === 'admin') {
+    redirect(`/admin/dispatch/${id}`)
+  }
+
   const shipment = await db.shipment.findUnique({
     where: { id },
     include: {
@@ -112,5 +118,5 @@ export default async function DispatchDetailPage({ params }: PageProps) {
     })),
   }
 
-  return <DispatchDetailClient initialData={serializedData} trackingUrl={trackingUrl} isAdmin={user?.role === 'admin'} />
+  return <DispatchDetailClient initialData={serializedData} trackingUrl={trackingUrl} />
 }
