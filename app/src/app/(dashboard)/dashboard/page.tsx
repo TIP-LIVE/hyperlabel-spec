@@ -296,20 +296,22 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Link key={stat.name} href={stat.href}>
-            <StatCard
-              title={stat.name}
-              value={stat.value}
-              icon={stat.icon}
-              description={stat.description}
-              alert={stat.alert}
-            />
-          </Link>
-        ))}
-      </div>
+      {/* Stats — hidden in empty state to keep first impression clean */}
+      {(activeShipments > 0 || totalLabels > 0 || deliveredThisMonth > 0 || lowBatteryLabels > 0) && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <Link key={stat.name} href={stat.href}>
+              <StatCard
+                title={stat.name}
+                value={stat.value}
+                icon={stat.icon}
+                description={stat.description}
+                alert={stat.alert}
+              />
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Journey card (first-impression experience) — hide once live cargo exists */}
       {phaseData && phaseData.phase !== 5 && <JourneyCard phaseData={phaseData} />}
