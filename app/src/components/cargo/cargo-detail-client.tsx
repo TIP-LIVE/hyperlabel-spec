@@ -691,9 +691,6 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                   <div>
                     <p className="text-sm text-muted-foreground">Device ID</p>
                     <p className="font-mono font-medium">{shipment.label.displayId || shipment.label.deviceId}</p>
-                    {shipment.label.displayId && (
-                      <p className="font-mono text-xs text-muted-foreground">{shipment.label.deviceId}</p>
-                    )}
                   </div>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </div>

@@ -202,11 +202,6 @@ export function LabelsTableWithSelection({
                             >
                               {label.displayId || label.deviceId}
                             </Link>
-                            {label.displayId && (
-                              <div className="font-mono text-xs text-muted-foreground">
-                                {label.deviceId}
-                              </div>
-                            )}
                           </td>
                     <td className="py-3 font-mono text-muted-foreground">{label.imei || '—'}</td>
                     <td className="py-3">
