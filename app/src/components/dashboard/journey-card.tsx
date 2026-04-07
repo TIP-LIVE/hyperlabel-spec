@@ -85,81 +85,6 @@ function copyLink(url: string) {
     .catch(() => toast.error('Could not copy'))
 }
 
-function MiniMapPreview() {
-  return (
-    <div className="mt-2 overflow-hidden rounded-md border bg-background/40">
-      <div className="relative">
-        <svg
-          viewBox="0 0 400 130"
-          xmlns="http://www.w3.org/2000/svg"
-          className="block h-auto w-full"
-          aria-hidden="true"
-        >
-          {/* Dot grid background — globe feel */}
-          <defs>
-            <pattern id="journeyDotGrid" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="0.9" className="fill-muted-foreground/30" />
-            </pattern>
-          </defs>
-          <rect width="400" height="130" fill="url(#journeyDotGrid)" />
-
-          {/* Faint latitude curves — suggest globe curvature without committing to geography */}
-          <g fill="none" strokeWidth="0.6" className="stroke-muted-foreground/20">
-            <path d="M0,40 Q200,30 400,40" />
-            <path d="M0,70 Q200,60 400,70" />
-            <path d="M0,100 Q200,90 400,100" />
-          </g>
-
-          {/* Route — gentle arc across the canvas */}
-          <path
-            d="M70,80 C 150,20 260,20 330,75"
-            fill="none"
-            strokeWidth="1.6"
-            strokeDasharray="4 3"
-            strokeLinecap="round"
-            className="stroke-primary/70"
-          />
-
-          {/* Origin pin */}
-          <g>
-            <circle cx="70" cy="80" r="7" className="fill-primary/20" />
-            <circle cx="70" cy="80" r="3.5" className="fill-primary" />
-          </g>
-
-          {/* Current position — pulsing hero pin, roughly mid-route */}
-          <g>
-            <circle cx="200" cy="32" className="fill-primary/15">
-              <animate attributeName="r" values="9;16;9" dur="2.4s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.6;0;0.6" dur="2.4s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="200" cy="32" r="7" className="fill-primary/30" />
-            <circle cx="200" cy="32" r="4" className="fill-primary" />
-          </g>
-
-          {/* Destination — outline only */}
-          <circle
-            cx="330"
-            cy="75"
-            r="5"
-            fill="none"
-            strokeWidth="1.6"
-            strokeDasharray="2 2"
-            className="stroke-primary/60"
-          />
-        </svg>
-
-        {/* Caption */}
-        <div className="absolute bottom-1.5 left-2 flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Live preview
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function JourneyCard({ phaseData }: Props) {
   const { phase, latestOrder, pendingDispatches, firstPendingCargoId } = phaseData
 
@@ -363,13 +288,10 @@ export function JourneyCard({ phaseData }: Props) {
               </div>
             )}
             {steps[3].state === 'upcoming' && (
-              <>
-                <p className="text-muted-foreground">
-                  Share a public tracking link with the receiver. Auto-delivery when the cargo
-                  arrives.
-                </p>
-                <MiniMapPreview />
-              </>
+              <p className="text-muted-foreground">
+                Share a public tracking link with the receiver. Auto-delivery when the cargo
+                arrives.
+              </p>
             )}
           </StepRow>
         </div>
