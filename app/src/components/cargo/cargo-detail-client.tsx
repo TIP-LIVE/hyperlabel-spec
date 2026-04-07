@@ -680,7 +680,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Device ID</p>
+                    <p className="text-sm text-muted-foreground">Label ID</p>
                     <p className="font-mono font-medium">{shipment.label.displayId || shipment.label.deviceId}</p>
                   </div>
                   <Package className="h-4 w-4 text-muted-foreground" />
