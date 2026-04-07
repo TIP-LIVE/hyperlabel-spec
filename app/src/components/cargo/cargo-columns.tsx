@@ -147,6 +147,7 @@ export type CargoRow = {
   label: {
     id: string
     deviceId: string
+    displayId: string | null
     batteryPct: number | null
     status: string
     lastSeenAt: string | null
@@ -217,7 +218,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
               {name || 'Unnamed Cargo'}
             </Link>
             <p className="text-xs text-muted-foreground">
-              {row.original.label?.deviceId || '—'}
+              {row.original.label?.displayId || row.original.label?.deviceId || '—'}
             </p>
           </div>
         </div>

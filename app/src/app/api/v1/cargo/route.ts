@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
             select: {
               id: true,
               deviceId: true,
+              displayId: true,
               iccid: true,
               batteryPct: true,
               status: true,
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
         },
         include: {
           label: {
-            select: { id: true, deviceId: true, batteryPct: true, status: true },
+            select: { id: true, deviceId: true, displayId: true, batteryPct: true, status: true },
           },
         },
       })
@@ -212,9 +213,11 @@ export async function POST(req: NextRequest) {
       return s
     })
 
-    // Send notifications (fire and forget)
+    // Send notifications (fire and forget) — org-wide when in an org
     sendLabelActivatedNotification({
       userId: context.user.id,
+      orgId: context.orgId,
+      shipmentId: shipment.id,
       shipmentName: shipment.name || 'Unnamed Cargo',
       deviceId: label.deviceId,
       shareCode: shipment.shareCode,
