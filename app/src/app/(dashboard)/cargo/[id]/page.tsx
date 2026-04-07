@@ -14,8 +14,8 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const shipment = await db.shipment.findUnique({
-    where: { id },
+  const shipment = await db.shipment.findFirst({
+    where: /^\d{9}$/.test(id) ? { label: { displayId: id } } : { id },
     select: { name: true },
   })
 
@@ -33,8 +33,12 @@ export default async function CargoDetailPage({ params }: PageProps) {
     redirect('/sign-in')
   }
 
-  const shipment = await db.shipment.findUnique({
-    where: { id },
+  // Accept either the cuid shipment.id OR the 9-digit label displayId
+  const isDisplayId = /^\d{9}$/.test(id)
+  const shipment = await db.shipment.findFirst({
+    where: isDisplayId
+      ? { label: { displayId: id }, type: 'CARGO_TRACKING' }
+      : { id },
     include: {
       label: {
         select: {

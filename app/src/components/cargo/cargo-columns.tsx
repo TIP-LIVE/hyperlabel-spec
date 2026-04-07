@@ -212,7 +212,7 @@ export const cargoColumns: ColumnDef<CargoRow>[] = [
           </div>
           <div>
             <Link
-              href={`/cargo/${row.original.id}`}
+              href={`/cargo/${row.original.label?.displayId || row.original.id}`}
               className="font-medium hover:underline"
             >
               {name || 'Unnamed Cargo'}
