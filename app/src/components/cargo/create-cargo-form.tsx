@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -368,7 +369,7 @@ export function CreateCargoForm() {
                 </p>
                 <div className="mt-3 flex flex-wrap justify-center gap-2">
                   <Button variant="outline" size="sm" asChild>
-                    <a href="/dispatch/new">Dispatch Labels</a>
+                    <Link href="/dispatch/new">Dispatch Labels</Link>
                   </Button>
                   <Button variant="outline" size="sm" asChild>
                     <a href="/buy">Buy Labels</a>
