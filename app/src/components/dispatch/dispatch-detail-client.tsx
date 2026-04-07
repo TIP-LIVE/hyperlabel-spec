@@ -49,6 +49,7 @@ interface LocationPoint {
 
 interface LabelInfo {
   deviceId: string
+  displayId: string | null
   batteryPct: number | null
   status: string
   firmwareVersion: string | null
@@ -277,7 +278,7 @@ export function DispatchDetailClient({ initialData, trackingUrl, isAdmin }: Disp
                     className="flex items-center justify-between rounded-md border px-3 py-2"
                   >
                     <div>
-                      <p className="font-mono text-sm font-medium">{label.deviceId}</p>
+                      <p className="font-mono text-sm font-medium">{label.displayId || label.deviceId}</p>
                       <p className="text-xs text-muted-foreground">{label.status}</p>
                     </div>
                     {label.batteryPct !== null && (

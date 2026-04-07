@@ -89,6 +89,7 @@ type DispatchFormData = {
 type AvailableLabel = {
   id: string
   deviceId: string
+  displayId: string | null
   batteryPct: number | null
 }
 
@@ -453,7 +454,7 @@ function CargoTrackingForm({
               <SelectContent>
                 {labels.map((label) => (
                   <SelectItem key={label.id} value={label.id}>
-                    {label.deviceId}
+                    {label.displayId || label.deviceId}
                     {label.batteryPct !== null && ` (${label.batteryPct}% battery)`}
                   </SelectItem>
                 ))}

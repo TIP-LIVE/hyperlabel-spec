@@ -42,6 +42,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
             select: {
               id: true,
               deviceId: true,
+              displayId: true,
               batteryPct: true,
               status: true,
               firmwareVersion: true,
@@ -88,6 +89,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
     shareCode: shipment.shareCode,
     shipmentLabels: shipment.shipmentLabels.map((sl) => ({
       deviceId: sl.label.deviceId,
+      displayId: sl.label.displayId,
       batteryPct: sl.label.batteryPct,
       status: sl.label.status,
       firmwareVersion: sl.label.firmwareVersion,

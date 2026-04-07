@@ -125,7 +125,54 @@ Labels are resolved from the webhook payload in priority order:
 2. **By ICCID** — preferred for Onomondo events (SIMs move between devices; IMEI would route to the wrong label)
 3. **By IMEI** — fallback only
 
-If no label found, **auto-registers** a new one with sequential ID (`TIP-001`, `TIP-002`, ...) and status `ACTIVE`.
+If no label found, **auto-registers** a new one (see below).
+
+**IMEI vs ICCID priority twist:** If IMEI matches a label but that label has **no active shipment**, the system continues checking ICCID. The ICCID-matched label wins if it has an active shipment — because SIM cards (ICCID) are more reliable identifiers than physical devices (IMEI) when SIMs get swapped between devices.
+
+### Auto-Registration of New Labels
+
+When a device reports in and no existing label matches any of the three lookup strategies, the system automatically creates a new label. This happens when:
+
+1. The webhook contains an **IMEI or ICCID** identifier
+2. **No label was found** by deviceId, IMEI, or ICCID lookups
+3. The webhook has **valid coordinates** (passed validation, not null island)
+
+#### What Gets Created
+
+```
+Label {
+  deviceId:    "TIP-XXX"        // sequential ID (see below)
+  imei:        <from webhook>   // or null if not provided
+  iccid:       <from webhook>   // or null if not provided
+  status:      ACTIVE
+  activatedAt: <current time>
+}
+```
+
+The new label is **unowned** — not linked to any user, org, or shipment. It becomes available in the admin labels inventory.
+
+#### Sequential Device ID Generation
+
+The `generateNextDeviceId()` function creates the next `TIP-XXX` identifier:
+
+1. Query the DB for the **highest existing** `TIP-XXX` deviceId (lexicographic sort)
+2. Extract the numeric part and **increment by 1**
+3. **Zero-pad to 3 digits** (e.g., `TIP-001`, `TIP-042`, `TIP-123`)
+
+Example: if `TIP-042` is the highest in the DB → next auto-registered label gets `TIP-043`.
+
+#### Post-Registration: Onomondo Sync
+
+If the webhook includes an **ICCID**, the system fires a **fire-and-forget** call to `syncSimLabelToOnomondo()`. This updates the SIM's label in the Onomondo dashboard to match the new `TIP-XXX` ID, so operators can identify the device in both systems.
+
+#### What Happens Next
+
+After auto-registration, the location report continues processing normally:
+- The new `LocationEvent` is created and linked to the label
+- `lastSeenAt` is updated
+- If the label later gets linked to a shipment, all prior orphaned `LocationEvent` records are **backfilled** with the `shipmentId`
+
+If the label is later purchased (status set to `SOLD`) and starts reporting without a shipment, the **orphaned device detection** kicks in (see below).
 
 ### Deduplication (4 Layers)
 

@@ -44,6 +44,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
             select: {
               id: true,
               deviceId: true,
+              displayId: true,
               status: true,
               batteryPct: true,
               activatedAt: true,
@@ -75,6 +76,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
     return {
       id: ol.label.id,
       deviceId: ol.label.deviceId,
+      displayId: ol.label.displayId,
       status: ol.label.status,
       batteryPct: ol.label.batteryPct,
       activatedAt: ol.label.activatedAt,
@@ -159,6 +161,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
               labels={labelsWithDispatch.map((l) => ({
                 id: l.id,
                 deviceId: l.deviceId,
+                displayId: l.displayId ?? null,
                 status: l.status,
                 inActiveDispatch: l.inActiveDispatch || !!l.dispatchStatus,
                 dispatchStatus: l.dispatchStatus,

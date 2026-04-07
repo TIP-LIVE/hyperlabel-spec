@@ -65,6 +65,7 @@ type CargoFormData = {
 type AvailableLabel = {
   id: string
   deviceId: string
+  displayId: string | null
   batteryPct: number | null
 }
 
@@ -378,7 +379,7 @@ export function CreateCargoForm() {
                 <SelectContent>
                   {labels.map((label) => (
                     <SelectItem key={label.id} value={label.id}>
-                      {label.deviceId}
+                      {label.displayId || label.deviceId}
                       {label.batteryPct !== null && ` (${label.batteryPct}% battery)`}
                     </SelectItem>
                   ))}

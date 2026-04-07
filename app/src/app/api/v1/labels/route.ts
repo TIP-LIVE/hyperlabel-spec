@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         deviceId: true,
+        displayId: true,
         status: true,
         batteryPct: true,
         activatedAt: true,

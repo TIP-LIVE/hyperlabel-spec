@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 interface LabelInfo {
   id: string
   deviceId: string
+  displayId: string | null
   status: string
   inActiveDispatch: boolean
   dispatchStatus?: string
@@ -149,7 +150,7 @@ export function CreateDispatchButton({ orderId, orderShortId, labels }: CreateDi
                       disabled={!isAvailable}
                     />
                     <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="font-mono text-sm text-foreground">{label.deviceId}</span>
+                    <span className="font-mono text-sm text-foreground">{label.displayId || label.deviceId}</span>
                     {label.inActiveDispatch && (
                       <Badge variant="outline" className="ml-auto text-xs">
                         {label.dispatchStatus === 'IN_TRANSIT' ? 'In Transit' : 'Dispatched'}

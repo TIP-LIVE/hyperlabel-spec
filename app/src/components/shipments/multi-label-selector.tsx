@@ -7,6 +7,7 @@ import { Loader2, Package, ChevronDown, ChevronRight } from 'lucide-react'
 type AvailableLabel = {
   id: string
   deviceId: string
+  displayId: string | null
   status: string
   batteryPct: number | null
 }
@@ -173,7 +174,7 @@ export function MultiLabelSelector({ selectedIds, onChange }: MultiLabelSelector
                           checked={isSelected}
                           onCheckedChange={() => toggleLabel(label.id)}
                         />
-                        <span className="flex-1 text-sm">{label.deviceId}</span>
+                        <span className="flex-1 text-sm">{label.displayId || label.deviceId}</span>
                         {label.batteryPct !== null && (
                           <span className="text-xs text-muted-foreground">
                             {label.batteryPct}%

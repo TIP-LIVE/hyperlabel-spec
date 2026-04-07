@@ -29,6 +29,7 @@ export type ShipmentRow = {
   label: {
     id: string
     deviceId: string
+    displayId: string | null
     batteryPct: number | null
     status: string
     lastSeenAt: string | null
@@ -37,6 +38,7 @@ export type ShipmentRow = {
     label: {
       id: string
       deviceId: string
+      displayId: string | null
       batteryPct: number | null
       status: string
       lastSeenAt: string | null
@@ -77,7 +79,7 @@ export const shipmentColumns: ColumnDef<ShipmentRow>[] = [
             <p className="text-xs text-muted-foreground">
               {isDispatch
                 ? `${labelCount} label${labelCount !== 1 ? 's' : ''}`
-                : row.original.label?.deviceId || '—'}
+                : row.original.label?.displayId || row.original.label?.deviceId || '—'}
             </p>
           </div>
         </div>

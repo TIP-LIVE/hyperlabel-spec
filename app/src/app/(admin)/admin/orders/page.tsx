@@ -49,6 +49,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
               select: {
                 id: true,
                 deviceId: true,
+                displayId: true,
                 status: true,
                 shipmentLabels: {
                   where: {
@@ -100,6 +101,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       return {
         id: ol.label.id,
         deviceId: ol.label.deviceId,
+        displayId: ol.label.displayId,
         status: ol.label.status,
         inActiveDispatch: !!(activeDispatch || deliveredDispatch),
         dispatchStatus: (activeDispatch || deliveredDispatch)?.shipment.status,

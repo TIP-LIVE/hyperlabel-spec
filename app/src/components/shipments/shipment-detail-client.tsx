@@ -198,7 +198,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
             <p className="text-sm text-muted-foreground">
               {shipment.type === 'LABEL_DISPATCH'
                 ? `${shipment.shipmentLabels?.length || 0} labels`
-                : shipment.label?.deviceId || '—'}
+                : shipment.label?.displayId || shipment.label?.deviceId || '—'}
             </p>
           </div>
         </div>
@@ -551,7 +551,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                       className="flex items-center justify-between rounded-md border px-3 py-2"
                     >
                       <div>
-                        <p className="font-mono text-sm font-medium">{label.deviceId}</p>
+                        <p className="font-mono text-sm font-medium">{label.displayId || label.deviceId}</p>
                         <p className="text-xs text-muted-foreground">{label.status}</p>
                       </div>
                       {label.batteryPct !== null && (

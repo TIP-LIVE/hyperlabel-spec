@@ -269,7 +269,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
               {shipment.name || 'Unnamed Cargo'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {shipment.label?.deviceId || '—'}
+              {shipment.label?.displayId || shipment.label?.deviceId || '—'}
             </p>
           </div>
         </div>
