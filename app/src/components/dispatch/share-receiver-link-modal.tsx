@@ -29,7 +29,9 @@ interface Props {
 export function ShareReceiverLinkModal({ shipmentId, shareLink, onClose }: Props) {
   const [copied, setCopied] = useState(false)
   const [email, setEmail] = useState('')
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(
+    "Hi! Please add your shipping address so I can send you the TIP tracking labels."
+  )
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
 
