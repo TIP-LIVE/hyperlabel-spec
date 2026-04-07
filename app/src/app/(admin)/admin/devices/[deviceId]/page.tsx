@@ -136,11 +136,11 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       {/* Back link + header */}
       <div>
         <Link
-          href="/admin/devices"
+          href="/admin/labels"
           className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to devices
+          Back to labels
         </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold font-mono text-foreground">{label.deviceId}</h1>

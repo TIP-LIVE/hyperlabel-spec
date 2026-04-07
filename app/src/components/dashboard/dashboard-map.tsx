@@ -3,7 +3,6 @@
 import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api'
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { useTheme } from 'next-themes'
-import { useRouter } from 'next/navigation'
 import { GoogleMapsProvider } from '@/components/maps/google-maps-provider'
 import { timeAgo } from '@/lib/utils/time-ago'
 
@@ -48,7 +47,6 @@ const darkStyles: google.maps.MapTypeStyle[] = [
 
 function DashboardMapInner({ shipments }: DashboardMapProps) {
   const { resolvedTheme } = useTheme()
-  const router = useRouter()
   const isDark = resolvedTheme === 'dark'
   const mapRef = useRef<google.maps.Map | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -111,9 +109,9 @@ function DashboardMapInner({ shipments }: DashboardMapProps) {
           position={{ lat: selected.latitude, lng: selected.longitude }}
           onCloseClick={() => setSelectedId(null)}
         >
-          <div
-            className="cursor-pointer p-1"
-            onClick={() => router.push(`/cargo/${selected.id}`)}
+          <a
+            href={`/cargo/${selected.id}`}
+            className="block cursor-pointer p-1 no-underline"
           >
             <p className="font-medium text-sm text-gray-900">{selected.name}</p>
             {selected.locationName && (
@@ -124,7 +122,7 @@ function DashboardMapInner({ shipments }: DashboardMapProps) {
                 {timeAgo(selected.lastUpdate)}
               </p>
             )}
-          </div>
+          </a>
         </InfoWindow>
       )}
     </GoogleMap>
