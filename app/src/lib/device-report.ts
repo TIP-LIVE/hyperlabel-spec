@@ -6,6 +6,8 @@ import {
   sendConsigneeInTransitNotification,
   sendConsigneeDeliveredNotification,
   sendLabelOrphanedNotification,
+  sendDispatchInTransitNotification,
+  sendDispatchDeliveredNotification,
 } from '@/lib/notifications'
 import { format } from 'date-fns'
 import { haversineDistanceM } from '@/lib/utils/geo'
@@ -98,6 +100,7 @@ export async function processLocationReport(
   // Shipment select fields (reused for all lookup strategies)
   const shipmentSelect = {
     id: true,
+    type: true,
     name: true,
     status: true,
     shareCode: true,
@@ -539,6 +542,13 @@ export async function processLocationReport(
     })
     console.info(`[Device report] shipment ${activeShipment.id} status: PENDING → IN_TRANSIT (${label.deviceId})`)
 
+    if (activeShipment.type === 'LABEL_DISPATCH') {
+      // Dispatch buyer notification — "Your TIP labels are on their way"
+      sendDispatchInTransitNotification({ shipmentId: activeShipment.id }).catch((err) =>
+        console.error('Failed to send dispatch in-transit notification:', err)
+      )
+    }
+
     if (activeShipment.consigneeEmail) {
       sendConsigneeInTransitNotification({
         consigneeEmail: activeShipment.consigneeEmail,
@@ -604,18 +614,25 @@ export async function processLocationReport(
         })
         console.info(`[Device report] shipment ${activeShipment.id} status: IN_TRANSIT → DELIVERED (${label.deviceId}, distance=${Math.round(distance)}m)`)
 
-        sendShipmentDeliveredNotification({
-          userId: activeShipment.userId,
-          orgId: activeShipment.orgId,
-          shipmentId: activeShipment.id,
-          shipmentName: activeShipment.name || 'Unnamed Shipment',
-          deviceId: label.deviceId,
-          shareCode: activeShipment.shareCode,
-          destination:
-            activeShipment.destinationAddress || 'Destination',
-        }).catch((err) =>
-          console.error('Failed to send delivery notification:', err)
-        )
+        if (activeShipment.type === 'LABEL_DISPATCH') {
+          // Dispatch buyer notification — "Your TIP labels have arrived, time to activate"
+          sendDispatchDeliveredNotification({ shipmentId: activeShipment.id }).catch((err) =>
+            console.error('Failed to send dispatch delivered notification:', err)
+          )
+        } else {
+          sendShipmentDeliveredNotification({
+            userId: activeShipment.userId,
+            orgId: activeShipment.orgId,
+            shipmentId: activeShipment.id,
+            shipmentName: activeShipment.name || 'Unnamed Shipment',
+            deviceId: label.deviceId,
+            shareCode: activeShipment.shareCode,
+            destination:
+              activeShipment.destinationAddress || 'Destination',
+          }).catch((err) =>
+            console.error('Failed to send delivery notification:', err)
+          )
+        }
 
         if (activeShipment.consigneeEmail) {
           sendConsigneeDeliveredNotification({

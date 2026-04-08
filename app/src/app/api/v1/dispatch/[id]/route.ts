@@ -7,7 +7,9 @@ import { format } from 'date-fns'
 import {
   sendConsigneeInTransitNotification,
   sendConsigneeDeliveredNotification,
-  sendShipmentDeliveredNotification,
+  sendDispatchInTransitNotification,
+  sendDispatchDeliveredNotification,
+  sendDispatchCancelledNotification,
 } from '@/lib/notifications'
 
 interface RouteParams {
@@ -79,15 +81,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const existing = await db.shipment.findUnique({
-      where: { id },
-      include: {
-        shipmentLabels: {
-          include: { label: { select: { deviceId: true } } },
-          take: 1,
-        },
-      },
-    })
+    const existing = await db.shipment.findUnique({ where: { id } })
 
     if (!existing || existing.type !== 'LABEL_DISPATCH') {
       return NextResponse.json({ error: 'Dispatch not found' }, { status: 404 })
@@ -149,31 +143,30 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     })
 
     // Send notifications on status changes (fire-and-forget)
-    if (validated.data.status === 'IN_TRANSIT' && existing.consigneeEmail) {
-      sendConsigneeInTransitNotification({
-        consigneeEmail: existing.consigneeEmail,
-        shipmentName: existing.name || 'Shipment',
-        shareCode: existing.shareCode,
-        originAddress: existing.originAddress,
-        destinationAddress: existing.destinationAddress,
-      }).catch((err) =>
-        console.error('Failed to send consignee in-transit notification:', err)
+    if (validated.data.status === 'IN_TRANSIT') {
+      // Owner/buyer notification — "Your TIP labels are on their way"
+      sendDispatchInTransitNotification({ shipmentId: existing.id }).catch((err) =>
+        console.error('Failed to send dispatch in-transit notification:', err)
       )
+
+      // Receiver-facing tracking email (only if we have their address)
+      if (existing.consigneeEmail) {
+        sendConsigneeInTransitNotification({
+          consigneeEmail: existing.consigneeEmail,
+          shipmentName: existing.name || 'Shipment',
+          shareCode: existing.shareCode,
+          originAddress: existing.originAddress,
+          destinationAddress: existing.destinationAddress,
+        }).catch((err) =>
+          console.error('Failed to send consignee in-transit notification:', err)
+        )
+      }
     }
 
     if (validated.data.status === 'DELIVERED') {
-      const deviceId = existing.shipmentLabels[0]?.label.deviceId || 'Unknown'
-
-      sendShipmentDeliveredNotification({
-        userId: existing.userId,
-        orgId: existing.orgId,
-        shipmentId: existing.id,
-        shipmentName: existing.name || 'Unnamed Shipment',
-        deviceId,
-        shareCode: existing.shareCode,
-        destination: existing.destinationAddress || 'Destination',
-      }).catch((err) =>
-        console.error('Failed to send delivery notification:', err)
+      // Owner/buyer notification — "Your TIP labels have arrived, time to activate"
+      sendDispatchDeliveredNotification({ shipmentId: existing.id }).catch((err) =>
+        console.error('Failed to send dispatch delivered notification:', err)
       )
 
       if (existing.consigneeEmail) {
@@ -187,6 +180,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
           console.error('Failed to send consignee delivery notification:', err)
         )
       }
+    }
+
+    if (validated.data.status === 'CANCELLED') {
+      // Owner/buyer notification — "Your dispatch has been cancelled"
+      sendDispatchCancelledNotification({ shipmentId: existing.id }).catch((err) =>
+        console.error('Failed to send dispatch cancelled notification:', err)
+      )
     }
 
     return NextResponse.json({ shipment })
@@ -239,6 +239,11 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       where: { id },
       data: { status: 'CANCELLED' },
     })
+
+    // Owner/buyer notification — "Your dispatch has been cancelled"
+    sendDispatchCancelledNotification({ shipmentId: existing.id }).catch((err) =>
+      console.error('Failed to send dispatch cancelled notification:', err)
+    )
 
     return NextResponse.json({ success: true })
   } catch (error) {

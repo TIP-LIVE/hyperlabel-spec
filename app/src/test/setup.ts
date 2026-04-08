@@ -53,6 +53,8 @@ vi.mock('@/lib/notifications', () => ({
   sendConsigneeInTransitNotification: vi.fn().mockResolvedValue(undefined),
   sendConsigneeDeliveredNotification: vi.fn().mockResolvedValue(undefined),
   sendShipmentDeliveredNotification: vi.fn().mockResolvedValue(undefined),
+  sendDispatchInTransitNotification: vi.fn().mockResolvedValue(undefined),
+  sendDispatchDeliveredNotification: vi.fn().mockResolvedValue(undefined),
   sendOrderConfirmedNotification: vi.fn().mockResolvedValue(undefined),
   sendLowInventoryAlert: vi.fn().mockResolvedValue(undefined),
   sendLowBatteryNotification: vi.fn().mockResolvedValue(undefined),

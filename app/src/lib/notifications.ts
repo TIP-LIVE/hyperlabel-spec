@@ -21,6 +21,9 @@ import ConsigneeInTransitEmail from '@/emails/consignee-in-transit'
 import ConsigneeDeliveredEmail from '@/emails/consignee-delivered'
 import DispatchDetailsRequestedEmail from '@/emails/dispatch-details-requested'
 import DispatchDetailsSubmittedEmail from '@/emails/dispatch-details-submitted'
+import DispatchInTransitEmail from '@/emails/dispatch-in-transit'
+import DispatchDeliveredEmail from '@/emails/dispatch-delivered'
+import DispatchCancelledEmail from '@/emails/dispatch-cancelled'
 import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
@@ -934,5 +937,203 @@ export async function sendDispatchDetailsSubmitted(params: {
       shipmentId: shipment.id,
       receiverName,
     }, shipment.orgId ?? undefined)
+  }
+}
+
+const SUPPORT_EMAIL = 'support@tip.live'
+
+// Shared fetch for dispatch-owner notifications. Pulls just enough shipment
+// fields to render the owner-facing emails, and returns null if the shipment
+// is missing (e.g. deleted between PATCH and notification dispatch).
+async function loadDispatchForOwnerEmail(shipmentId: string) {
+  const shipment = await db.shipment.findUnique({
+    where: { id: shipmentId },
+    select: {
+      id: true,
+      name: true,
+      userId: true,
+      orgId: true,
+      receiverFirstName: true,
+      receiverLastName: true,
+      destinationAddress: true,
+      destinationLine1: true,
+      destinationCity: true,
+      destinationPostalCode: true,
+      destinationCountry: true,
+      shipmentLabels: { select: { labelId: true } },
+    },
+  })
+  if (!shipment) return null
+
+  const receiverName =
+    [shipment.receiverFirstName, shipment.receiverLastName].filter(Boolean).join(' ') ||
+    'your receiver'
+  const address =
+    shipment.destinationAddress ||
+    [
+      shipment.destinationLine1,
+      shipment.destinationCity,
+      shipment.destinationPostalCode,
+      shipment.destinationCountry,
+    ]
+      .filter(Boolean)
+      .join(', ') ||
+    'the delivery address'
+
+  return { shipment, receiverName, address }
+}
+
+/**
+ * Notify the dispatch owner (buyer) that their labels have started shipping
+ * to the receiver. Fires when a platform admin marks a LABEL_DISPATCH as
+ * IN_TRANSIT (either from PENDING or as a reactivation from DELIVERED).
+ *
+ * Rides on the `notifyOrderShipped` preference — matches the precedent set
+ * by `sendDispatchDetailsSubmitted`.
+ */
+export async function sendDispatchInTransitNotification(params: {
+  shipmentId: string
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const loaded = await loadDispatchForOwnerEmail(params.shipmentId)
+  if (!loaded) return
+  const { shipment, receiverName, address } = loaded
+
+  const recipients = await resolveRecipients(shipment.userId, shipment.orgId, 'order_shipped')
+  if (recipients.length === 0) return
+
+  const dispatchUrl = `${APP_URL}/dispatch/${shipment.id}`
+  const dispatchName = shipment.name || 'Label Dispatch'
+
+  const html = await render(
+    DispatchInTransitEmail({
+      dispatchName,
+      receiverName,
+      destinationAddress: address,
+      dispatchUrl,
+    })
+  )
+
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `🚛 Your TIP labels for "${dispatchName}" are on their way`,
+      html,
+    })
+    await recordNotification(
+      r.userId,
+      'dispatch_in_transit',
+      {
+        shipmentId: shipment.id,
+        dispatchName,
+        receiverName,
+      },
+      shipment.orgId ?? undefined
+    )
+  }
+}
+
+/**
+ * Notify the dispatch owner (buyer) that their labels have been delivered
+ * to the receiver. Fires when a platform admin marks a LABEL_DISPATCH as
+ * DELIVERED.
+ *
+ * Uses the `notifyDelivered` preference so it's in line with cargo
+ * delivery notifications.
+ */
+export async function sendDispatchDeliveredNotification(params: {
+  shipmentId: string
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const loaded = await loadDispatchForOwnerEmail(params.shipmentId)
+  if (!loaded) return
+  const { shipment, receiverName, address } = loaded
+
+  const recipients = await resolveRecipients(shipment.userId, shipment.orgId, 'shipment_delivered')
+  if (recipients.length === 0) return
+
+  const cargoUrl = `${APP_URL}/cargo/new`
+  const dispatchName = shipment.name || 'Label Dispatch'
+  const deliveredAt = format(new Date(), 'PPpp')
+
+  const html = await render(
+    DispatchDeliveredEmail({
+      dispatchName,
+      receiverName,
+      destinationAddress: address,
+      deliveredAt,
+      cargoUrl,
+    })
+  )
+
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `✅ Your TIP labels for "${dispatchName}" have arrived`,
+      html,
+    })
+    await recordNotification(
+      r.userId,
+      'dispatch_delivered',
+      {
+        shipmentId: shipment.id,
+        dispatchName,
+        receiverName,
+      },
+      shipment.orgId ?? undefined
+    )
+  }
+}
+
+/**
+ * Notify the dispatch owner (buyer) that their dispatch has been cancelled.
+ * Fires on admin-initiated CANCELLED status (via PATCH or DELETE).
+ *
+ * Rides on the `notifyOrderShipped` preference so buyers who opted out of
+ * order-level operational emails also opt out of this one.
+ */
+export async function sendDispatchCancelledNotification(params: {
+  shipmentId: string
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const loaded = await loadDispatchForOwnerEmail(params.shipmentId)
+  if (!loaded) return
+  const { shipment } = loaded
+
+  const recipients = await resolveRecipients(shipment.userId, shipment.orgId, 'order_shipped')
+  if (recipients.length === 0) return
+
+  const dispatchListUrl = `${APP_URL}/dispatch`
+  const dispatchName = shipment.name || 'Label Dispatch'
+  const labelCount = shipment.shipmentLabels.length
+
+  const html = await render(
+    DispatchCancelledEmail({
+      dispatchName,
+      labelCount,
+      dispatchListUrl,
+      supportEmail: SUPPORT_EMAIL,
+    })
+  )
+
+  for (const r of recipients) {
+    await sendEmail({
+      to: r.email,
+      subject: `Your dispatch "${dispatchName}" has been cancelled`,
+      html,
+    })
+    await recordNotification(
+      r.userId,
+      'dispatch_cancelled',
+      {
+        shipmentId: shipment.id,
+        dispatchName,
+        labelCount,
+      },
+      shipment.orgId ?? undefined
+    )
   }
 }

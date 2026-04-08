@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Truck, CheckCircle, RefreshCw, MoreHorizontal, XCircle } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
 import { toast } from 'sonner'
 
@@ -18,11 +19,18 @@ interface DispatchAdminActionsProps {
   shipmentId: string
   shipmentName: string | null
   status: DispatchStatus
+  addressSubmittedAt: string | null
 }
 
-export function DispatchAdminActions({ shipmentId, shipmentName, status }: DispatchAdminActionsProps) {
+export function DispatchAdminActions({
+  shipmentId,
+  shipmentName,
+  status,
+  addressSubmittedAt,
+}: DispatchAdminActionsProps) {
   const [cancelOpen, setCancelOpen] = useState(false)
   const isActive = status === 'PENDING' || status === 'IN_TRANSIT'
+  const missingReceiverAddress = status === 'PENDING' && !addressSubmittedAt
 
   async function patchStatus(nextStatus: DispatchStatus, successMsg: string, errorMsg: string) {
     try {
@@ -41,17 +49,33 @@ export function DispatchAdminActions({ shipmentId, shipmentName, status }: Dispa
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {status === 'PENDING' && (
-        <Button
-          variant="default"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => patchStatus('IN_TRANSIT', 'Dispatch marked as in transit', 'Failed to update status')}
-        >
-          <Truck className="h-3.5 w-3.5" />
-          Mark as In Transit
-        </Button>
-      )}
+      {status === 'PENDING' &&
+        (missingReceiverAddress ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0}>
+                <Button variant="default" size="sm" className="gap-1.5 pointer-events-none" disabled>
+                  <Truck className="h-3.5 w-3.5" />
+                  Mark as In Transit
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              Waiting on the receiver to submit their delivery address. Fill it in via Edit first, or wait for
+              them to use the share link.
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            variant="default"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => patchStatus('IN_TRANSIT', 'Dispatch marked as in transit', 'Failed to update status')}
+          >
+            <Truck className="h-3.5 w-3.5" />
+            Mark as In Transit
+          </Button>
+        ))}
       {status === 'IN_TRANSIT' && (
         <Button
           variant="default"

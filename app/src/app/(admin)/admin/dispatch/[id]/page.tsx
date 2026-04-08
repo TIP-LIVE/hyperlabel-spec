@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, ShieldAlert, User } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ShieldAlert, User } from 'lucide-react'
 import { DispatchDetailClient } from '@/components/dispatch/dispatch-detail-client'
 import { DispatchAdminActions } from '@/components/dispatch/dispatch-admin-actions'
 import { shipmentStatusStyles } from '@/lib/status-config'
@@ -123,28 +123,45 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
             Admin Actions
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Owner:</span>
-            <Link
-              href={`/admin/users?q=${encodeURIComponent(shipment.user.email)}`}
-              className="font-medium text-foreground hover:underline"
-            >
-              {ownerName || shipment.user.email}
-            </Link>
-            {ownerName && (
-              <span className="text-xs text-muted-foreground">({shipment.user.email})</span>
-            )}
-            <Badge className={shipmentStatusStyles[shipment.status as keyof typeof shipmentStatusStyles] || ''}>
-              {shipment.status}
-            </Badge>
+        <CardContent className="flex flex-col gap-4">
+          {shipment.status === 'PENDING' && !shipment.addressSubmittedAt && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div>
+                <p className="font-medium text-foreground">Receiver address not submitted yet</p>
+                <p className="text-muted-foreground">
+                  The receiver hasn&apos;t filled in their delivery details via the share link.{' '}
+                  <span className="text-foreground">Mark as In Transit</span> is disabled until there&apos;s an
+                  address to ship to — either wait for the receiver, or use Edit below to fill the address in
+                  yourself.
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Owner:</span>
+              <Link
+                href={`/admin/users?q=${encodeURIComponent(shipment.user.email)}`}
+                className="font-medium text-foreground hover:underline"
+              >
+                {ownerName || shipment.user.email}
+              </Link>
+              {ownerName && (
+                <span className="text-xs text-muted-foreground">({shipment.user.email})</span>
+              )}
+              <Badge className={shipmentStatusStyles[shipment.status as keyof typeof shipmentStatusStyles] || ''}>
+                {shipment.status}
+              </Badge>
+            </div>
+            <DispatchAdminActions
+              shipmentId={shipment.id}
+              shipmentName={shipment.name}
+              status={shipment.status}
+              addressSubmittedAt={shipment.addressSubmittedAt?.toISOString() ?? null}
+            />
           </div>
-          <DispatchAdminActions
-            shipmentId={shipment.id}
-            shipmentName={shipment.name}
-            status={shipment.status}
-          />
         </CardContent>
       </Card>
 
