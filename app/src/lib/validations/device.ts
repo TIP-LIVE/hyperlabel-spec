@@ -13,12 +13,17 @@ export const deviceReportSchema = z.object({
   imei: z.string().min(1).optional(),
   iccid: z.string().min(1).optional(),
 
-  // Location coordinates (cell tower triangulation via Onomondo)
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  // Location coordinates — OPTIONAL since this endpoint is now battery-only.
+  // The label.utec.ua firmware forwarder includes lat/lng even when the
+  // device hasn't gotten a GPS fix yet (sends 0,0 = null island), and we
+  // want the battery update from those packets regardless. Coordinates are
+  // accepted for backwards compatibility but ignored by the route handler.
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 
-  // Optional location metadata
-  accuracy: z.number().positive().optional(), // meters
+  // Optional location metadata.
+  // accuracy must be non-negative (firmware reports 0 when no fix).
+  accuracy: z.number().min(0).optional(), // meters
   altitude: z.number().optional(),
   speed: z.number().min(0).optional(), // m/s
 
