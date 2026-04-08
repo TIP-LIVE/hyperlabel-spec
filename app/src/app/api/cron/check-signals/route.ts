@@ -9,9 +9,13 @@ import { withCronLogging } from '@/lib/cron'
 export const GET = withCronLogging('check-signals', async () => {
   const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
-  // Find active labels with shipments that haven't reported recently
+  // Find active cargo labels with shipments that haven't reported recently.
+  // LABEL_DISPATCH shipments are excluded — "no signal" copy is cargo-specific
+  // (shielded container / cellular dead zone), and dispatches rely on the
+  // courier rather than our own label reporting.
   const shipmentsWithSilentLabels = await db.shipment.findMany({
     where: {
+      type: 'CARGO_TRACKING',
       status: 'IN_TRANSIT',
       labelId: { not: null },
       label: {

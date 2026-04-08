@@ -80,6 +80,7 @@ export const GET = withCronLogging('check-delivery', async () => {
         deviceId: shipment.label.deviceId,
         shareCode: shipment.shareCode,
         destination: shipment.destinationAddress || 'Destination',
+        source: 'auto',
       })
 
       deliveriesDetected++

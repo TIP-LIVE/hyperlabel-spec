@@ -629,6 +629,7 @@ export async function processLocationReport(
             shareCode: activeShipment.shareCode,
             destination:
               activeShipment.destinationAddress || 'Destination',
+            source: 'auto',
           }).catch((err) =>
             console.error('Failed to send delivery notification:', err)
           )

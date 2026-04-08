@@ -6,41 +6,43 @@ interface LabelActivatedEmailProps {
   shipmentName: string
   deviceId: string
   trackingUrl: string
-  activatedAt: string
+  createdAt: string
 }
 
 export function LabelActivatedEmail({
   shipmentName,
   deviceId,
   trackingUrl,
-  activatedAt,
+  createdAt,
 }: LabelActivatedEmailProps) {
   return (
-    <BaseLayout preview={`Your label for "${shipmentName}" is now active`}>
-      <Heading style={heading}>Label Activated</Heading>
+    <BaseLayout preview={`Cargo shipment "${shipmentName}" is ready — waiting for first signal`}>
+      <Heading style={heading}>Cargo Shipment Created</Heading>
       <Text style={paragraph}>
-        Great news! Your tracking label has been activated and is now transmitting location
-        data.
+        You&apos;ve linked a tracking label to your cargo. As soon as the label reports its
+        first location, your shipment will switch to <strong>In Transit</strong> and we&apos;ll
+        notify you.
       </Text>
 
       <Section style={detailsBox}>
         <Text style={detailLabel}>Shipment</Text>
         <Text style={detailValue}>{shipmentName}</Text>
 
-        <Text style={detailLabel}>Device ID</Text>
+        <Text style={detailLabel}>Label</Text>
         <Text style={detailValue}>{deviceId}</Text>
 
-        <Text style={detailLabel}>Activated</Text>
-        <Text style={detailValue}>{activatedAt}</Text>
+        <Text style={detailLabel}>Created</Text>
+        <Text style={detailValue}>{createdAt}</Text>
       </Section>
 
       <Text style={paragraph}>
-        You can now track your shipment in real-time using the link below.
+        If you haven&apos;t already, peel the activation tab on the label and attach it to
+        your cargo. You can follow the shipment live using the link below.
       </Text>
 
       <Section style={buttonContainer}>
         <Button style={button} href={trackingUrl}>
-          Track Shipment
+          View Shipment
         </Button>
       </Section>
 

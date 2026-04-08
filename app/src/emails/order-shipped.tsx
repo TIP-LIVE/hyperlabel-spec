@@ -18,12 +18,12 @@ export function OrderShippedEmail({
   dashboardUrl,
 }: OrderShippedEmailProps) {
   return (
-    <BaseLayout preview={`Your TIP order #${orderNumber} has shipped!`}>
-      <Heading style={heading}>📦 Your Order Has Shipped!</Heading>
+    <BaseLayout preview={`Your TIP labels for order #${orderNumber} are being dispatched`}>
+      <Heading style={heading}>🚛 Your Labels Are Being Dispatched</Heading>
 
       <Text style={paragraph}>
-        Great news! Your TIP order is on its way. You&apos;ll receive your tracking
-        labels soon.
+        Good news — your TIP labels have left our warehouse and are on their way to the
+        address you set up.
       </Text>
 
       <Section style={detailsBox}>
@@ -31,11 +31,13 @@ export function OrderShippedEmail({
         <Text style={detailValue}>#{orderNumber}</Text>
 
         <Text style={detailLabel}>Quantity</Text>
-        <Text style={detailValue}>{quantity} label{quantity > 1 ? 's' : ''}</Text>
+        <Text style={detailValue}>
+          {quantity} label{quantity > 1 ? 's' : ''}
+        </Text>
 
         {trackingNumber && (
           <>
-            <Text style={detailLabel}>Tracking Number</Text>
+            <Text style={detailLabel}>Courier Tracking</Text>
             <Text style={detailValue}>{trackingNumber}</Text>
           </>
         )}
@@ -44,25 +46,33 @@ export function OrderShippedEmail({
       {trackingNumber && trackingUrl && (
         <Section style={buttonContainer}>
           <Button style={secondaryButton} href={trackingUrl}>
-            Track Package
+            Track Courier
           </Button>
         </Section>
       )}
 
       <Text style={paragraph}>
-        <strong>What&apos;s next?</strong>
+        <strong>What happens next?</strong>
       </Text>
 
       <Section style={stepsList}>
-        <Text style={stepItem}>1. Wait for your labels to arrive (typically 3-5 business days)</Text>
-        <Text style={stepItem}>2. Create a shipment in your TIP dashboard</Text>
-        <Text style={stepItem}>3. Scan the QR code on the label to activate tracking</Text>
-        <Text style={stepItem}>4. Attach the label to your cargo and ship!</Text>
+        <Text style={stepItem}>
+          1. Labels typically arrive at the dispatch address in 3–5 business days
+        </Text>
+        <Text style={stepItem}>
+          2. Whoever receives the TIP box opens it and pulls the activation tab on a label
+        </Text>
+        <Text style={stepItem}>
+          3. The label starts transmitting as soon as it&apos;s attached to the cargo
+        </Text>
+        <Text style={stepItem}>
+          4. You create a cargo shipment from your dashboard and link the active label
+        </Text>
       </Section>
 
       <Section style={buttonContainer}>
         <Button style={button} href={dashboardUrl}>
-          Go to Dashboard
+          View Dispatch
         </Button>
       </Section>
     </BaseLayout>

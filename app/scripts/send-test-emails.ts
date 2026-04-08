@@ -60,13 +60,13 @@ const emails: EmailDef[] = [
     }),
   },
   {
-    name: '3/16 — Label Activated',
-    subject: 'Label Activated: Coffee Beans → Rotterdam',
+    name: '3/16 — Cargo Shipment Created',
+    subject: 'Cargo Shipment Created: Coffee Beans → Rotterdam',
     component: LabelActivatedEmail({
       shipmentName: 'Coffee Beans → Rotterdam',
       deviceId: 'TIP-042',
       trackingUrl: 'https://tip.live/track/abc123',
-      activatedAt: 'Mar 12, 2026, 2:30 PM',
+      createdAt: 'Mar 12, 2026, 2:30 PM',
     }),
   },
   {
@@ -148,12 +148,12 @@ const emails: EmailDef[] = [
   },
   {
     name: '11/16 — Unused Labels Reminder',
-    subject: '📋 You have 3 unused tracking labels',
+    subject: '📋 You have 3 purchased labels waiting for the next step',
     component: UnusedLabelsReminderEmail({
       userName: 'Denys',
       labelCount: 3,
       deviceIds: ['TIP-040', 'TIP-041', 'TIP-042'],
-      newShipmentUrl: 'https://tip.live/shipments/new',
+      dashboardUrl: 'https://tip.live/dashboard',
     }),
   },
   {

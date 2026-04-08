@@ -8,6 +8,8 @@ interface ShipmentDeliveredEmailProps {
   deliveredAt: string
   destination: string
   trackingUrl: string
+  /** 'auto' = cell-tower proximity detection. 'manual' = consignee pressed Confirm Delivery. */
+  source?: 'auto' | 'manual'
 }
 
 export function ShipmentDeliveredEmail({
@@ -16,7 +18,9 @@ export function ShipmentDeliveredEmail({
   deliveredAt,
   destination,
   trackingUrl,
+  source = 'auto',
 }: ShipmentDeliveredEmailProps) {
+  const isAuto = source === 'auto'
   return (
     <BaseLayout preview={`✅ "${shipmentName}" has been delivered`}>
       <Section style={successBanner}>
@@ -25,8 +29,19 @@ export function ShipmentDeliveredEmail({
       </Section>
 
       <Text style={paragraph}>
-        Great news! Your shipment has arrived at its destination. The tracking label detected the
-        delivery based on its location.
+        {isAuto ? (
+          <>
+            Your shipment looks like it has arrived at its destination. The tracking label is
+            reporting from within ~1.5 km of the drop-off address, and cell-tower triangulation
+            has a typical accuracy of 500–1000 m — so please review the location before
+            treating this as final.
+          </>
+        ) : (
+          <>
+            Your consignee has confirmed delivery of your shipment. The journey history is
+            preserved below so you can review the route.
+          </>
+        )}
       </Text>
 
       <Section style={detailsBox}>
@@ -39,19 +54,20 @@ export function ShipmentDeliveredEmail({
         <Text style={detailLabel}>Delivered</Text>
         <Text style={detailValue}>{deliveredAt}</Text>
 
-        <Text style={detailLabel}>Device ID</Text>
+        <Text style={detailLabel}>Label</Text>
         <Text style={detailValue}>{deviceId}</Text>
       </Section>
 
       <Section style={buttonContainer}>
         <Button style={button} href={trackingUrl}>
-          View Delivery Details
+          {isAuto ? 'Review & Confirm Delivery' : 'View Delivery Details'}
         </Button>
       </Section>
 
       <Text style={noteText}>
-        Note: The tracking label will continue transmitting until its battery is depleted. No
-        action is required on your part.
+        {isAuto
+          ? 'If this is wrong, open the tracking page and the shipment will stay In Transit. The label keeps transmitting until the battery runs out, so the location will keep updating.'
+          : 'The label keeps transmitting until the battery runs out, so you can continue to see its location on the tracking page.'}
       </Text>
     </BaseLayout>
   )

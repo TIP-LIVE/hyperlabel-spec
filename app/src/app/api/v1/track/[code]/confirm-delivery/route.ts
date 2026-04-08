@@ -127,6 +127,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           deviceId: shipment.label?.deviceId ?? 'unknown',
           shareCode: code,
           destination: shipment.destinationAddress || 'Destination',
+          source: 'manual',
         })
       } catch (emailError) {
         logger.error('Failed to send delivery notification', { 

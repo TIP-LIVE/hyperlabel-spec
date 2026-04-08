@@ -71,9 +71,11 @@ export const GET = withCronLogging('check-reminders', async () => {
     remindersSent++
   }
 
-  // 2. Find PENDING shipments older than 3 days (label assigned but no movement)
+  // 2. Find PENDING cargo shipments older than 3 days (label linked but no movement)
+  // Note: LABEL_DISPATCH PENDING shipments are handled by check-stale-dispatches.
   const staleShipments = await db.shipment.findMany({
     where: {
+      type: 'CARGO_TRACKING',
       status: 'PENDING',
       createdAt: { lte: threeDaysAgo },
     },

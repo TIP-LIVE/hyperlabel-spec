@@ -22,7 +22,7 @@ export function ConsigneeInTransitEmail({
       <Heading style={heading}>🚛 Your shipment is moving!</Heading>
 
       <Text style={subheading}>
-        The tracking label is now transmitting — your shipment is in transit
+        We just received the first location signal — your cargo is on its way.
       </Text>
 
       <Section style={detailsBox}>
@@ -45,8 +45,8 @@ export function ConsigneeInTransitEmail({
       </Section>
 
       <Text style={paragraph}>
-        Follow the shipment in real-time on the tracking page. You&apos;ll receive another email
-        when it arrives near the destination.
+        Follow the shipment in real-time on the tracking page. When it arrives, you can press{' '}
+        <strong>Confirm Delivery</strong> there to let the sender know it&apos;s been received.
       </Text>
 
       <Section style={buttonContainer}>

@@ -42,8 +42,9 @@ export function ConsigneeDeliveredEmail({
       </Section>
 
       <Text style={paragraph}>
-        Tracking has been deactivated. You can still view the complete journey history for the next
-        90 days.
+        The shipment has been marked as delivered, so you won&apos;t receive any more updates.
+        The tracking link stays live for 90 days so you can review the full journey history
+        whenever you need it.
       </Text>
 
       <Section style={buttonContainer}>

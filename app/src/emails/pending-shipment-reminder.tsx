@@ -14,28 +14,41 @@ export function PendingShipmentReminderEmail({
   trackingUrl,
 }: PendingShipmentReminderEmailProps) {
   return (
-    <BaseLayout preview={`Your shipment "${shipmentName}" is still pending`}>
+    <BaseLayout preview={`Your cargo shipment "${shipmentName}" is waiting for first signal`}>
       <Heading style={heading}>Hi {userName},</Heading>
 
       <Text style={paragraph}>
-        Your shipment <strong>&ldquo;{shipmentName}&rdquo;</strong> was created but hasn&apos;t
-        started moving yet.
+        Your cargo shipment <strong>&ldquo;{shipmentName}&rdquo;</strong> was created but
+        we haven&apos;t received any location signal from the label yet.
       </Text>
 
-      <Section style={tipBox}>
-        <Text style={tipText}>
-          💡 <strong>Tip:</strong> Peel the backing off your label and stick it on your cargo. Once
-          it starts transmitting, the shipment will automatically switch to &ldquo;In Transit&rdquo;.
+      <Text style={paragraph}>
+        <strong>Common reasons:</strong>
+      </Text>
+
+      <Section style={reasonsList}>
+        <Text style={reasonItem}>
+          • The label hasn&apos;t been <strong>physically activated</strong> yet — whoever has
+          the label needs to pull the activation tab and attach it to the cargo.
+        </Text>
+        <Text style={reasonItem}>
+          • The label hasn&apos;t arrived at the receiver yet — check the dispatch status in
+          your dashboard.
+        </Text>
+        <Text style={reasonItem}>
+          • The label was activated but is in an area with <strong>no cellular coverage</strong>
+          {' '}— it will start reporting once it moves to a covered area.
         </Text>
       </Section>
 
       <Text style={paragraph}>
-        Share this tracking link with the recipient so they can follow the delivery:
+        As soon as the label sends its first location, the shipment will automatically switch
+        to <strong>In Transit</strong> and you&apos;ll get a notification.
       </Text>
 
       <Section style={buttonContainer}>
         <Button style={button} href={trackingUrl}>
-          View Tracking
+          View Shipment
         </Button>
       </Section>
     </BaseLayout>
@@ -56,17 +69,16 @@ const paragraph = {
   margin: '0 0 16px',
 }
 
-const tipBox = {
-  backgroundColor: '#fef3c7',
-  borderRadius: '8px',
-  padding: '16px',
-  margin: '24px 0',
+const reasonsList = {
+  margin: '8px 0 24px',
+  paddingLeft: '8px',
 }
 
-const tipText = {
-  fontSize: '14px',
-  color: '#92400e',
-  margin: '0',
+const reasonItem = {
+  fontSize: '15px',
+  lineHeight: '22px',
+  color: '#475569',
+  margin: '10px 0',
 }
 
 const buttonContainer = {

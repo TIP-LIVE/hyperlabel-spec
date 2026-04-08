@@ -193,21 +193,21 @@ export async function sendLabelActivatedNotification(params: {
   if (recipients.length === 0) return
 
   const trackingUrl = `${APP_URL}/track/${params.shareCode}`
-  const activatedAt = format(new Date(), 'PPpp')
+  const createdAt = format(new Date(), 'PPpp')
 
   const html = await render(
     LabelActivatedEmail({
       shipmentName: params.shipmentName,
       deviceId: params.deviceId,
       trackingUrl,
-      activatedAt,
+      createdAt,
     })
   )
 
   for (const r of recipients) {
     await sendEmail({
       to: r.email,
-      subject: `Label Activated: ${params.shipmentName}`,
+      subject: `Cargo Shipment Created: ${params.shipmentName}`,
       html,
     })
     await recordNotification(r.userId, 'label_activated', {
@@ -315,6 +315,7 @@ export async function sendShipmentDeliveredNotification(params: {
   deviceId: string
   shareCode: string
   destination: string
+  source?: 'auto' | 'manual'
 }): Promise<void> {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_delivered')
   if (recipients.length === 0) return
@@ -329,6 +330,7 @@ export async function sendShipmentDeliveredNotification(params: {
       deliveredAt,
       destination: params.destination,
       trackingUrl,
+      source: params.source ?? 'auto',
     })
   )
 
@@ -451,14 +453,14 @@ export async function sendShareLinkReminderNotification(params: {
   let html: string
 
   if (params.reminderType === 'unused_labels') {
-    subject = `📋 You have ${params.labelCount} unused tracking label${params.labelCount === 1 ? '' : 's'}`
-    const newShipmentUrl = `${APP_URL}/cargo/new`
+    subject = `📋 You have ${params.labelCount} purchased label${params.labelCount === 1 ? '' : 's'} waiting for the next step`
+    const dashboardUrl = `${APP_URL}/dashboard`
     html = await render(
       UnusedLabelsReminderEmail({
         userName: name,
         labelCount: params.labelCount || 0,
         deviceIds: params.deviceIds,
-        newShipmentUrl,
+        dashboardUrl,
       })
     )
   } else {

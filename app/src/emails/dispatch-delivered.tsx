@@ -26,7 +26,8 @@ export function DispatchDeliveredEmail({
 
       <Text style={paragraph}>
         Your TIP labels for <strong>{dispatchName}</strong> have arrived at{' '}
-        <strong>{receiverName}</strong>. Time to activate them and start tracking your cargo.
+        <strong>{receiverName}</strong>. Here&apos;s how to get them activated and start tracking
+        your cargo.
       </Text>
 
       <Section style={detailsBox}>
@@ -40,15 +41,27 @@ export function DispatchDeliveredEmail({
         <Text style={detailValue}>{deliveredAt}</Text>
       </Section>
 
-      <Text style={paragraph}>
-        <strong>What&apos;s next?</strong>
-      </Text>
-
+      <Text style={sectionHeading}>What the receiver does</Text>
       <Section style={stepsList}>
-        <Text style={stepItem}>1. Find the TIP box and open it</Text>
-        <Text style={stepItem}>2. Stick a label on the cargo you want to track</Text>
-        <Text style={stepItem}>3. Create a cargo shipment in your dashboard to link the label</Text>
+        <Text style={stepItem}>1. Opens the TIP box</Text>
+        <Text style={stepItem}>2. Pulls the activation tab on a label</Text>
+        <Text style={stepItem}>3. Sticks it on the cargo that needs tracking</Text>
       </Section>
+
+      <Text style={sectionHeading}>What you do</Text>
+      <Section style={stepsList}>
+        <Text style={stepItem}>
+          1. Create a cargo shipment in your dashboard and link the activated label
+        </Text>
+        <Text style={stepItem}>
+          2. Share the tracking link with your consignee so they can follow along
+        </Text>
+      </Section>
+
+      <Text style={tipText}>
+        Not sure who&apos;s doing what? Forward this email to {receiverName} so they know what to
+        expect when the TIP box arrives.
+      </Text>
 
       <Section style={buttonContainer}>
         <Button style={button} href={cargoUrl}>
@@ -100,8 +113,22 @@ const detailValue = {
   color: '#0f172a',
   margin: '0 0 16px',
 }
+const sectionHeading = {
+  fontSize: '14px',
+  fontWeight: '700' as const,
+  color: '#0f172a',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.04em',
+  margin: '24px 0 8px',
+}
+const tipText = {
+  fontSize: '14px',
+  color: '#64748b',
+  fontStyle: 'italic' as const,
+  margin: '16px 0 0',
+}
 const stepsList = {
-  margin: '16px 0 24px',
+  margin: '0 0 16px',
   paddingLeft: '8px',
 }
 const stepItem = {

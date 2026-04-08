@@ -18,18 +18,19 @@ export function AutoShipmentCreatedEmail({
   locationCount,
 }: AutoShipmentCreatedEmailProps) {
   return (
-    <BaseLayout preview={`A shipment was automatically created for label ${deviceId}`}>
-      <Heading style={heading}>Shipment Auto-Created</Heading>
+    <BaseLayout preview={`A cargo shipment was auto-created for label ${deviceId}`}>
+      <Heading style={heading}>Cargo Shipment Auto-Created</Heading>
       <Text style={paragraph}>
         Your tracking label <strong>{deviceId}</strong> has been reporting location data for
-        over 48 hours without a shipment. We&apos;ve automatically created one for you.
+        over 48 hours without being linked to a cargo shipment. To keep its history intact,
+        we&apos;ve automatically created a cargo shipment for you.
       </Text>
 
       <Section style={detailsBox}>
         <Text style={detailLabel}>Shipment</Text>
         <Text style={detailValue}>{shipmentName}</Text>
 
-        <Text style={detailLabel}>Device ID</Text>
+        <Text style={detailLabel}>Label</Text>
         <Text style={detailValue}>{deviceId}</Text>
 
         <Text style={detailLabel}>Created</Text>
@@ -40,18 +41,20 @@ export function AutoShipmentCreatedEmail({
       </Section>
 
       <Text style={paragraph}>
-        Log in to your TIP dashboard to add cargo details, destination, and consignee
-        information.
+        <strong>Next step:</strong> open the shipment in your dashboard and fill in the
+        cargo details — what&apos;s being tracked, the destination address, and the consignee
+        email if you want them to receive tracking updates automatically.
       </Text>
 
       <Section style={buttonContainer}>
         <Button style={button} href={trackingUrl}>
-          View Shipment
+          Fill in Cargo Details
         </Button>
       </Section>
 
       <Text style={tipText}>
-        All location data from the label&apos;s activation has been preserved in this shipment.
+        All location data from the label&apos;s first signal onwards has been preserved in
+        this shipment — nothing is lost.
       </Text>
     </BaseLayout>
   )

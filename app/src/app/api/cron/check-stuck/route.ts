@@ -15,9 +15,13 @@ export const GET = withCronLogging('check-stuck', async () => {
   const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
-  // Find in-transit shipments with recent location data
+  // Find in-transit cargo shipments with recent location data.
+  // LABEL_DISPATCH shipments are excluded — "stuck" copy is cargo-specific
+  // (waiting at port/customs/warehouse), and dispatch delays are surfaced
+  // by the courier, not our tracking.
   const shipments = await db.shipment.findMany({
     where: {
+      type: 'CARGO_TRACKING',
       status: 'IN_TRANSIT',
       labelId: { not: null },
       label: {
