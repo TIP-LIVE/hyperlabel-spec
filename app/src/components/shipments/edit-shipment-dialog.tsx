@@ -29,19 +29,21 @@ type PhotoItem = {
 interface EditShipmentDialogProps {
   shipmentId: string
   currentName: string | null
-  currentOrigin: string | null
+  currentOrigin?: string | null
   currentDestination: string | null
   currentPhotoUrls?: string[]
   apiBasePath?: string
+  showOrigin?: boolean
 }
 
 export function EditShipmentDialog({
   shipmentId,
   currentName,
-  currentOrigin,
+  currentOrigin = null,
   currentDestination,
   currentPhotoUrls = [],
   apiBasePath = '/api/v1/shipments',
+  showOrigin = true,
 }: EditShipmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -162,7 +164,7 @@ export function EditShipmentDialog({
     try {
       const body: Record<string, unknown> = {}
       if (name !== currentName) body.name = name
-      if (origin !== currentOrigin) {
+      if (showOrigin && origin !== currentOrigin) {
         body.originAddress = origin
         if (originLat != null && originLng != null) {
           body.originLat = originLat
@@ -240,19 +242,21 @@ export function EditShipmentDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="edit-origin">Origin Address</Label>
-              <FieldInfo text="Where the cargo is being shipped from." />
+          {showOrigin && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="edit-origin">Origin Address</Label>
+                <FieldInfo text="Where the cargo is being shipped from." />
+              </div>
+              <AddressInput
+                id="edit-origin"
+                defaultValue={currentOrigin || ''}
+                placeholder="Search for an address..."
+                disabled={isLoading}
+                onAddressSelect={handleOriginSelect}
+              />
             </div>
-            <AddressInput
-              id="edit-origin"
-              defaultValue={currentOrigin || ''}
-              placeholder="Search for an address..."
-              disabled={isLoading}
-              onAddressSelect={handleOriginSelect}
-            />
-          </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">

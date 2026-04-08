@@ -214,6 +214,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                 currentName={shipment.name}
                 currentOrigin={shipment.originAddress}
                 currentDestination={shipment.destinationAddress}
+                showOrigin={shipment.type !== 'LABEL_DISPATCH'}
               />
             )}
             {shipment.status === 'DELIVERED' && (
@@ -409,22 +410,26 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                  <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Origin</p>
-                  <p className="text-sm">{shipment.originAddress || 'Not specified'}</p>
-                </div>
-              </div>
-              {journeyInfo && (
-                <div className="flex items-center gap-3 pl-2">
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
-                  <span className="text-xs text-muted-foreground">
-                    {Math.round(journeyInfo.totalDistance)} km
-                  </span>
-                </div>
+              {shipment.type !== 'LABEL_DISPATCH' && (
+                <>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Origin</p>
+                      <p className="text-sm">{shipment.originAddress || 'Not specified'}</p>
+                    </div>
+                  </div>
+                  {journeyInfo && (
+                    <div className="flex items-center gap-3 pl-2">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(journeyInfo.totalDistance)} km
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">

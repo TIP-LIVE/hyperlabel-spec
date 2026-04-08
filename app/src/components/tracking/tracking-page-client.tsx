@@ -461,51 +461,58 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
               </Card>
             )}
 
-            {/* P1: Route Card — origin + destination (hidden when both empty) */}
-            {(shipment.originAddress || shipment.destinationAddress) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Navigation className="h-4 w-4" />
-                    Route
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {shipment.originAddress && (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                        <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+            {/* P1: Route Card — origin + destination (hidden when both empty).
+                For LABEL_DISPATCH, origin is suppressed since labels ship from TIP's warehouse. */}
+            {(() => {
+              const showOrigin =
+                shipment.type !== 'LABEL_DISPATCH' && !!shipment.originAddress
+              const showDestination = !!shipment.destinationAddress
+              if (!showOrigin && !showDestination) return null
+              return (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Navigation className="h-4 w-4" />
+                      Route
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {showOrigin && (
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                          <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">From</p>
+                          <p className="text-sm">{shipment.originAddress}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">From</p>
-                        <p className="text-sm">{shipment.originAddress}</p>
+                    )}
+                    {showOrigin && showDestination && (
+                      <div className="flex items-center gap-3 pl-2">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
+                        {journeyInfo && (
+                          <span className="text-xs text-muted-foreground">
+                            {Math.round(journeyInfo.totalDistance)} km
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  )}
-                  {shipment.originAddress && shipment.destinationAddress && (
-                    <div className="flex items-center gap-3 pl-2">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
-                      {journeyInfo && (
-                        <span className="text-xs text-muted-foreground">
-                          {Math.round(journeyInfo.totalDistance)} km
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {shipment.destinationAddress && (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                        <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>
+                    )}
+                    {showDestination && (
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                          <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">To</p>
+                          <p className="text-sm">{shipment.destinationAddress}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">To</p>
-                        <p className="text-sm">{shipment.destinationAddress}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })()}
 
             {/* Status Card */}
             <Card>

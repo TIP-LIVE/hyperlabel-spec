@@ -113,9 +113,9 @@ export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/di
             <EditShipmentDialog
               shipmentId={shipment.id}
               currentName={shipment.name}
-              currentOrigin={shipment.originAddress}
               currentDestination={shipment.destinationAddress}
               apiBasePath="/api/v1/dispatch"
+              showOrigin={false}
             />
           )}
           <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
@@ -175,20 +175,7 @@ export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/di
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Origin */}
-              <div className="flex items-start gap-3">
-                <div className="flex flex-col items-center">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300">A</span>
-                  </div>
-                  <div className="my-1.5 h-6 w-px border-l-2 border-dashed border-muted-foreground/30" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Origin</p>
-                  <p className="text-sm">{shipment.originAddress || 'Not specified'}</p>
-                </div>
-              </div>
-              {/* Destination */}
+              {/* Destination — labels ship from TIP warehouse by default, so origin is not shown */}
               <div className="flex items-start gap-3">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                   <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>

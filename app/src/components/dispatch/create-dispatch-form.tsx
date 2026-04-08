@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,12 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Loader2, Navigation, Send, UserRound, HelpCircle } from 'lucide-react'
+import { Loader2, Send, UserRound, HelpCircle } from 'lucide-react'
 import { FieldInfo } from '@/components/ui/field-info'
 import { SectionCard } from '@/components/ui/section-card'
-import { useSavedAddress } from '@/components/addresses/address-input-with-saved'
-import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
-import { AddressInput } from '@/components/ui/address-input'
 import { LabelSelectionTable } from '@/components/dispatch/label-selection-table'
 import { ShareReceiverLinkModal } from '@/components/dispatch/share-receiver-link-modal'
 import {
@@ -28,9 +25,6 @@ import { countries } from '@/lib/constants/countries'
 
 const dispatchFormSchema = z.object({
   name: z.string().min(1, 'Dispatch name is required').max(200),
-  originAddress: z.string().default(''),
-  originLat: z.number().min(-90).max(90).nullable().optional(),
-  originLng: z.number().min(-180).max(180).nullable().optional(),
   destinationAddress: z.string().default(''),
   destinationLat: z.number().min(-90).max(90).nullable().optional(),
   destinationLng: z.number().min(-180).max(180).nullable().optional(),
@@ -68,9 +62,6 @@ export function CreateDispatchForm() {
     resolver: zodResolver(dispatchFormSchema) as Resolver<DispatchFormData>,
     defaultValues: {
       name: '',
-      originAddress: '',
-      originLat: null,
-      originLng: null,
       destinationAddress: '',
       destinationLat: null,
       destinationLng: null,
@@ -88,17 +79,6 @@ export function CreateDispatchForm() {
   })
 
   const country = watch('destinationCountry')
-
-  const handleOriginSelect = useCallback(
-    (address: string, lat: number, lng: number) => {
-      setValue('originAddress', address)
-      setValue('originLat', lat && lng ? lat : null)
-      setValue('originLng', lat && lng ? lng : null)
-    },
-    [setValue]
-  )
-
-  const origin = useSavedAddress(handleOriginSelect)
 
   const onSubmit = async (data: DispatchFormData) => {
     if (selectedLabelIds.length === 0) {
@@ -282,27 +262,6 @@ export function CreateDispatchForm() {
               </div>
             </>
           )}
-        </SectionCard>
-
-        {/* Route Details */}
-        <SectionCard icon={Navigation} title="Origin (optional)">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="origin">Origin Address</Label>
-              <FieldInfo text="Starting point (TIP warehouse by default). Only override if dispatching from a different location." />
-              <SavedAddressSelector onSelect={origin.handleSavedSelect} />
-            </div>
-            <AddressInput
-              id="origin"
-              placeholder="e.g., 45 Warehouse Rd, London, UK"
-              onAddressSelect={handleOriginSelect}
-              disabled={origin.geocoding}
-              externalValue={origin.externalValue}
-            />
-            {errors.originAddress && (
-              <p className="text-sm text-destructive">{errors.originAddress.message}</p>
-            )}
-          </div>
         </SectionCard>
 
         {/* Submit */}
