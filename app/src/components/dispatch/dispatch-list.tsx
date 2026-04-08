@@ -50,10 +50,7 @@ export function DispatchList({ initialStatus }: DispatchListProps) {
       }
 
       const data = await res.json()
-      const shipments = (data.shipments || []).map((s: DispatchRow & { locations?: Array<{ id: string; latitude: number; longitude: number; recordedAt: string }> }) => ({
-        ...s,
-        latestLocation: s.locations?.[0] || null,
-      }))
+      const shipments = (data.shipments || []) as DispatchRow[]
       setAllShipments(shipments)
     } catch (err) {
       console.error('Failed to fetch dispatches:', err)

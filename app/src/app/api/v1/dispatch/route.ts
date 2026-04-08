@@ -4,7 +4,6 @@ import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createDispatchShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
-import { reverseGeocode } from '@/lib/geocoding'
 
 /**
  * GET /api/v1/dispatch - List label dispatch shipments
@@ -41,19 +40,6 @@ export async function GET(req: NextRequest) {
               },
             },
           },
-          locations: {
-            orderBy: { recordedAt: 'desc' },
-            take: 1,
-            select: {
-              id: true,
-              latitude: true,
-              longitude: true,
-              recordedAt: true,
-              geocodedCity: true,
-              geocodedCountry: true,
-              geocodedCountryCode: true,
-            },
-          },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -61,31 +47,6 @@ export async function GET(req: NextRequest) {
       }),
       db.shipment.count({ where }),
     ])
-
-    // Backfill geocoding for locations that have coordinates but no geocoded data
-    const ungeocodedLocations = shipments
-      .flatMap((s) => s.locations)
-      .filter((loc) => loc.latitude && loc.longitude && !loc.geocodedCity)
-
-    if (ungeocodedLocations.length > 0) {
-      ;(async () => {
-        for (const loc of ungeocodedLocations) {
-          try {
-            const geo = await reverseGeocode(loc.latitude, loc.longitude)
-            if (geo) {
-              await db.locationEvent.update({
-                where: { id: loc.id },
-                data: {
-                  geocodedCity: geo.city,
-                  geocodedCountry: geo.country,
-                  geocodedCountryCode: geo.countryCode,
-                },
-              })
-            }
-          } catch {}
-        }
-      })().catch(() => {})
-    }
 
     return NextResponse.json({
       shipments,

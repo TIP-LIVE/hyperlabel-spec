@@ -113,7 +113,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
         <Card>
           <CardHeader>
             <CardTitle>Label Dispatches</CardTitle>
-            <CardDescription>Track labels in transit from our warehouse to your chosen destinations</CardDescription>
+            <CardDescription>See where your labels are on their way from our warehouse to their destination</CardDescription>
           </CardHeader>
           <CardContent>
             <DispatchList initialStatus={initialStatus} />

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Share2, Send, Trash2, Loader2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Share2, Send, Trash2, Loader2, Copy, ArrowRight } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -30,10 +30,8 @@ import {
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { timeAgo } from '@/lib/utils/time-ago'
 import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
-import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
 function DispatchActionsCell({ shipment }: { shipment: DispatchRow }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -145,6 +143,7 @@ export type DispatchRow = {
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED'
   shareCode: string
   createdAt: Date
+  addressSubmittedAt: string | null
   shipmentLabels?: Array<{
     label: {
       id: string
@@ -154,15 +153,100 @@ export type DispatchRow = {
       lastSeenAt: string | null
     }
   }>
-  latestLocation: {
-    id: string
-    latitude: number
-    longitude: number
-    recordedAt: string
-    geocodedCity: string | null
-    geocodedCountry: string | null
-    geocodedCountryCode: string | null
-  } | null
+}
+
+type NextStepDescriptor = {
+  kind: 'none' | 'awaiting-receiver' | 'awaiting-warehouse' | 'in-transit' | 'attach-to-cargo'
+  label: string
+  tone: 'muted' | 'passive' | 'actionable'
+  action?:
+    | { type: 'copy-share-link' }
+    | { type: 'link'; href: string }
+}
+
+export function getDispatchNextStep(
+  row: Pick<DispatchRow, 'status' | 'addressSubmittedAt'>,
+): NextStepDescriptor {
+  switch (row.status) {
+    case 'CANCELLED':
+      return { kind: 'none', label: '—', tone: 'muted' }
+    case 'IN_TRANSIT':
+      return { kind: 'in-transit', label: 'On the way', tone: 'passive' }
+    case 'DELIVERED':
+      return {
+        kind: 'attach-to-cargo',
+        label: 'Attach to cargo',
+        tone: 'actionable',
+        action: { type: 'link', href: '/cargo/new' },
+      }
+    case 'PENDING':
+      if (!row.addressSubmittedAt) {
+        return {
+          kind: 'awaiting-receiver',
+          label: 'Awaiting receiver details',
+          tone: 'actionable',
+          action: { type: 'copy-share-link' },
+        }
+      }
+      return {
+        kind: 'awaiting-warehouse',
+        label: 'Awaiting dispatch from warehouse',
+        tone: 'passive',
+      }
+  }
+}
+
+function NextStepCell({ row }: { row: DispatchRow }) {
+  const descriptor = getDispatchNextStep(row)
+
+  if (descriptor.tone === 'muted') {
+    return <span className="text-muted-foreground text-xs">{descriptor.label}</span>
+  }
+
+  if (descriptor.tone === 'passive') {
+    return <span className="text-muted-foreground text-sm">{descriptor.label}</span>
+  }
+
+  // actionable
+  if (descriptor.action?.type === 'copy-share-link') {
+    const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/track/${row.shareCode}`
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 gap-1.5"
+            onClick={() => {
+              navigator.clipboard
+                .writeText(trackingUrl)
+                .then(() => toast.success('Share link copied'))
+                .catch(() => toast.error('Could not copy link'))
+            }}
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {descriptor.label}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          Copy and send this link to the receiver — they&apos;ll fill in their address.
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  if (descriptor.action?.type === 'link') {
+    return (
+      <Button variant="link" size="sm" className="h-auto p-0 gap-1.5" asChild>
+        <Link href={descriptor.action.href}>
+          <ArrowRight className="h-3.5 w-3.5" />
+          {descriptor.label}
+        </Link>
+      </Button>
+    )
+  }
+
+  return <span className="text-muted-foreground text-sm">{descriptor.label}</span>
 }
 
 export const dispatchColumns: ColumnDef<DispatchRow>[] = [
@@ -215,70 +299,9 @@ export const dispatchColumns: ColumnDef<DispatchRow>[] = [
     },
   },
   {
-    id: 'currentLocation',
-    header: 'Location',
-    cell: ({ row }) => {
-      const loc = row.original.latestLocation
-
-      if (!loc) {
-        return <span className="text-muted-foreground text-xs">No data yet</span>
-      }
-
-      if (!loc.geocodedCity) {
-        return (
-          <span className="text-muted-foreground text-xs">
-            {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
-          </span>
-        )
-      }
-
-      const locationText = `${loc.geocodedCity}${loc.geocodedCountry ? `, ${loc.geocodedCountry}` : ''}`
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 max-w-[200px]">
-              {loc.geocodedCountryCode && (
-                <span className="text-sm shrink-0">{countryCodeToFlag(loc.geocodedCountryCode)}</span>
-              )}
-              <span className="text-sm truncate">
-                {locationText}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{locationText}</p>
-          </TooltipContent>
-        </Tooltip>
-      )
-    },
-  },
-  {
-    id: 'lastUpdate',
-    header: 'Last Update',
-    cell: ({ row }) => {
-      const locTime = row.original.latestLocation?.recordedAt
-        ? new Date(row.original.latestLocation.recordedAt).getTime()
-        : 0
-      const seenTime = Math.max(
-        0,
-        ...(row.original.shipmentLabels || [])
-          .map((sl) => sl.label.lastSeenAt ? new Date(sl.label.lastSeenAt).getTime() : 0)
-      )
-      const timestamp = locTime >= seenTime
-        ? row.original.latestLocation?.recordedAt
-        : (row.original.shipmentLabels || [])
-            .map((sl) => sl.label.lastSeenAt)
-            .filter(Boolean)
-            .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0]
-      if (!timestamp) {
-        return <span className="text-muted-foreground text-xs">—</span>
-      }
-      return (
-        <span className="text-muted-foreground text-xs">
-          {timeAgo(timestamp)}
-        </span>
-      )
-    },
+    id: 'nextStep',
+    header: 'Next Step',
+    cell: ({ row }) => <NextStepCell row={row.original} />,
   },
   {
     id: 'actions',
