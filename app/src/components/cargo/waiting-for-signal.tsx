@@ -57,8 +57,8 @@ export function WaitingForSignal({ shipmentId, initialLocationCount = 0 }: Props
             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Your label hasn&apos;t reported yet. Make sure the cargo is outdoors or near a window.
-            Labels typically report within 1–5 minutes of being moved.
+            We haven&apos;t heard from this label yet. Once it powers on and finds cell coverage,
+            the first location usually arrives within a few minutes.
           </p>
           <p className="text-xs text-muted-foreground">Checking every 10 seconds…</p>
         </div>

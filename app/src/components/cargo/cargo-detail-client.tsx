@@ -493,7 +493,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
               })
               return lastUpdate
                 ? `Last updated ${timeAgo(lastUpdate)}`
-                : 'Acquiring signal — first location typically appears within a few minutes'
+                : 'Map updates automatically when the first signal arrives'
             })()}
           </CardDescription>
         </CardHeader>
