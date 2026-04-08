@@ -50,7 +50,11 @@ export default async function CargoPage({ searchParams }: CargoPageProps) {
     <div className="space-y-6">
       <PageHeader
         title="Track Cargo"
-        description="Attach tracking labels to your cargo and monitor journeys in real time"
+        description={
+          isPreCargoPhase
+            ? 'Track cargo once your labels arrive at the receiver'
+            : 'Attach tracking labels to your cargo and monitor journeys in real time'
+        }
         action={
           !isPreCargoPhase ? (
             <Button asChild>
@@ -122,9 +126,9 @@ function PreCargoEmptyState({ phaseData }: { phaseData: UserPhaseResult }) {
       : { label: 'New Dispatch', href: '/dispatch/new', icon: Send }
   } else if (phase === 2) {
     Icon = Truck
-    title = 'Your labels are on the way'
+    title = 'Your labels are on their way to the receiver'
     description =
-      'Your dispatch is in transit. Once the labels arrive, you can attach them to cargo and start tracking shipments here.'
+      "Your dispatch is in transit. Once it's delivered, attach a label to your cargo to start tracking here."
     primary = inTransitDispatch
       ? { label: 'View Dispatch', href: `/dispatch/${inTransitDispatch.id}`, icon: ArrowRight }
       : { label: 'View Dispatches', href: '/dispatch', icon: ArrowRight }
