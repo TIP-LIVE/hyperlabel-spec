@@ -124,7 +124,7 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {shipment.status === 'PENDING' && !shipment.addressSubmittedAt && (
+          {shipment.status === 'PENDING' && !shipment.destinationAddress && (
             <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <div>
@@ -159,7 +159,7 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
               shipmentId={shipment.id}
               shipmentName={shipment.name}
               status={shipment.status}
-              addressSubmittedAt={shipment.addressSubmittedAt?.toISOString() ?? null}
+              destinationAddress={shipment.destinationAddress}
             />
           </div>
         </CardContent>

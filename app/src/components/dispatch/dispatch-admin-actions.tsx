@@ -19,18 +19,18 @@ interface DispatchAdminActionsProps {
   shipmentId: string
   shipmentName: string | null
   status: DispatchStatus
-  addressSubmittedAt: string | null
+  destinationAddress: string | null
 }
 
 export function DispatchAdminActions({
   shipmentId,
   shipmentName,
   status,
-  addressSubmittedAt,
+  destinationAddress,
 }: DispatchAdminActionsProps) {
   const [cancelOpen, setCancelOpen] = useState(false)
   const isActive = status === 'PENDING' || status === 'IN_TRANSIT'
-  const missingReceiverAddress = status === 'PENDING' && !addressSubmittedAt
+  const missingReceiverAddress = status === 'PENDING' && !destinationAddress
 
   async function patchStatus(nextStatus: DispatchStatus, successMsg: string, errorMsg: string) {
     try {
