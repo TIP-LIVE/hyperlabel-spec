@@ -108,3 +108,82 @@ export function thinToTimeWindow<T extends { recordedAt: Date }>(
 
   return result
 }
+
+/** ~500m at mid-latitudes (0.005 degrees). Used as proximity fallback when city is missing. */
+const NEARBY_DEGREES = 0.005
+
+interface NearbyPoint {
+  latitude: number
+  longitude: number
+}
+
+/** Check if two coordinates are within ~500m of each other (fallback for un-geocoded records). */
+export function isNearby(a: NearbyPoint, b: NearbyPoint): boolean {
+  const dlat = Math.abs(a.latitude - b.latitude)
+  const dlng = Math.abs(a.longitude - b.longitude)
+  return dlat < NEARBY_DEGREES && dlng < NEARBY_DEGREES
+}
+
+export interface GroupableLocation {
+  recordedAt: Date
+  latitude: number
+  longitude: number
+  geocodedCity?: string | null
+}
+
+export interface LocationGroup<T extends GroupableLocation> {
+  events: T[]
+  /** First (newest) event in the group. Used as the representative for display. */
+  representative: T
+}
+
+/**
+ * Group consecutive location events by geocoded city name.
+ *
+ * Events are expected to be sorted newest-first, but this function applies a
+ * defensive sort first so the output is always chronologically correct. A new
+ * group starts whenever the geocoded city changes. When either side is missing
+ * a city name, falls back to coordinate proximity (~500m). When BOTH events
+ * have city names, the city comparison is authoritative — no proximity fallback
+ * — so geographically distinct named places never get silently merged under a
+ * single label.
+ *
+ * Invariant: for any two adjacent groups N and N+1, every event in group N is
+ * strictly newer than every event in group N+1. In other words, group time
+ * ranges never overlap.
+ */
+export function groupConsecutiveByCity<T extends GroupableLocation>(
+  locations: T[],
+): LocationGroup<T>[] {
+  if (locations.length === 0) return []
+
+  // Defensive sort: newest-first by recordedAt. Callers should already pass
+  // sorted input, but relying on that was the source of earlier chronology bugs.
+  const sorted = [...locations].sort(
+    (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime(),
+  )
+
+  const groups: LocationGroup<T>[] = []
+  let current: LocationGroup<T> = { events: [sorted[0]], representative: sorted[0] }
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = current.representative
+    const curr = sorted[i]
+
+    // Strict city matching: if both events carry a city name, that comparison
+    // wins. Proximity is only a fallback for events that haven't been geocoded.
+    const sameGroup =
+      prev.geocodedCity && curr.geocodedCity
+        ? prev.geocodedCity === curr.geocodedCity
+        : isNearby(prev, curr)
+
+    if (sameGroup) {
+      current.events.push(curr)
+    } else {
+      groups.push(current)
+      current = { events: [curr], representative: curr }
+    }
+  }
+  groups.push(current)
+  return groups
+}

@@ -4,9 +4,13 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
-import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
-import { formatLocationName, thinToTimeWindow } from '@/lib/utils/location-display'
+import {
+  formatLocationName,
+  thinToTimeWindow,
+  isNearby,
+  groupConsecutiveByCity,
+} from '@/lib/utils/location-display'
 
 interface LocationEvent {
   id: string
@@ -25,48 +29,6 @@ interface LocationEvent {
 
 interface ShipmentTimelineProps {
   locations: LocationEvent[]
-}
-
-interface LocationGroup {
-  events: LocationEvent[]
-  /** Representative event (first in the group = most recent, since locations are sorted newest-first) */
-  representative: LocationEvent
-}
-
-/** Check if two coordinates are within ~500m of each other (fallback for un-geocoded records) */
-function isNearby(a: LocationEvent, b: LocationEvent): boolean {
-  const dlat = Math.abs(a.latitude - b.latitude)
-  const dlng = Math.abs(a.longitude - b.longitude)
-  // ~0.005 degrees ≈ 500m at mid-latitudes
-  return dlat < 0.005 && dlng < 0.005
-}
-
-/** Group consecutive locations by geocoded city name, falling back to spatial proximity */
-function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] {
-  if (locations.length === 0) return []
-
-  const groups: LocationGroup[] = []
-  let current: LocationGroup = { events: [locations[0]], representative: locations[0] }
-
-  for (let i = 1; i < locations.length; i++) {
-    const prev = current.representative
-    const curr = locations[i]
-
-    // Group by geocoded city when available, fall back to spatial for un-geocoded records
-    const sameGroup =
-      prev.geocodedCity && curr.geocodedCity
-        ? prev.geocodedCity === curr.geocodedCity
-        : isNearby(prev, curr)
-
-    if (sameGroup) {
-      current.events.push(curr)
-    } else {
-      groups.push(current)
-      current = { events: [curr], representative: curr }
-    }
-  }
-  groups.push(current)
-  return groups
 }
 
 /**
@@ -129,7 +91,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
   const thinnedLocations = useMemo(() => thinToTimeWindow(locations), [locations])
-  const groups = useMemo(() => groupConsecutiveLocations(thinnedLocations), [thinnedLocations])
+  const groups = useMemo(() => groupConsecutiveByCity(thinnedLocations), [thinnedLocations])
 
   const toggleGroup = (index: number) => {
     setExpandedGroups((prev) => {
@@ -210,9 +172,12 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
             )
           }
 
-          // Grouped events — show summary with expand/collapse
+          // Grouped events — show summary with expand/collapse.
+          // The primary timestamp is the NEWEST event in the group. We
+          // deliberately don't show a date range here because long-dwell
+          // groups can span several days and that made the top-to-bottom
+          // timeline read non-chronologically (Andrii's bug, April 2026).
           const first = group.events[0] // newest
-          const last = group.events[group.events.length - 1] // oldest
 
           return (
             <div key={first.id}>
@@ -252,7 +217,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
+                    {format(new Date(first.recordedAt), 'PPp')}
                   </p>
                 </div>
               </button>
@@ -268,9 +233,10 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                         </div>
                       )
                     }
-                    // Multiple consecutive events in the same area — show one row with count
+                    // Multiple events in the same area — show one row with count.
+                    // Primary timestamp is the newest event; individual dates
+                    // are accessible by inspecting the raw data if needed.
                     const newest = subGroup[0]
-                    const oldest = subGroup[subGroup.length - 1]
                     return (
                       <div key={newest.id} className="min-h-[36px] sm:min-h-[44px]">
                         <div className="flex-1 min-w-0 space-y-1">
@@ -287,7 +253,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {formatDateRange(new Date(oldest.recordedAt), new Date(newest.recordedAt))}
+                            {format(new Date(newest.recordedAt), 'PPp')}
                           </p>
                         </div>
                       </div>

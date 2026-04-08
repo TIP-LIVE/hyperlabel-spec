@@ -4,9 +4,12 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
-import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
-import { formatLocationName, thinToTimeWindow } from '@/lib/utils/location-display'
+import {
+  formatLocationName,
+  thinToTimeWindow,
+  groupConsecutiveByCity,
+} from '@/lib/utils/location-display'
 
 interface LocationEvent {
   id: string
@@ -26,44 +29,6 @@ interface PublicTimelineProps {
   locations: LocationEvent[]
 }
 
-interface LocationGroup {
-  events: LocationEvent[]
-  representative: LocationEvent
-}
-
-/** Check if two coordinates are within ~3km of each other (cell tower bouncing range) */
-function isNearby(a: LocationEvent, b: LocationEvent): boolean {
-  const dlat = Math.abs(a.latitude - b.latitude)
-  const dlng = Math.abs(a.longitude - b.longitude)
-  return dlat < 0.03 && dlng < 0.03
-}
-
-/** Group consecutive locations by geocoded city name or spatial proximity */
-function groupConsecutiveLocations(locations: LocationEvent[]): LocationGroup[] {
-  if (locations.length === 0) return []
-
-  const groups: LocationGroup[] = []
-  let current: LocationGroup = { events: [locations[0]], representative: locations[0] }
-
-  for (let i = 1; i < locations.length; i++) {
-    const prev = current.representative
-    const curr = locations[i]
-
-    // Same city, or close enough coordinates (handles cell tower bouncing across city/county borders)
-    const sameCity = prev.geocodedCity && curr.geocodedCity && prev.geocodedCity === curr.geocodedCity
-    const sameGroup = sameCity || isNearby(prev, curr)
-
-    if (sameGroup) {
-      current.events.push(curr)
-    } else {
-      groups.push(current)
-      current = { events: [curr], representative: curr }
-    }
-  }
-  groups.push(current)
-  return groups
-}
-
 function locationDisplayName(location: LocationEvent): string {
   return formatLocationName(location) ?? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
 }
@@ -80,7 +45,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
   const thinnedLocations = useMemo(() => thinToTimeWindow(locations), [locations])
-  const groups = useMemo(() => groupConsecutiveLocations(thinnedLocations), [thinnedLocations])
+  const groups = useMemo(() => groupConsecutiveByCity(thinnedLocations), [thinnedLocations])
 
   const toggleGroup = (index: number) => {
     setExpandedGroups((prev) => {
@@ -163,8 +128,10 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
             )
           }
 
+          // Primary timestamp is the NEWEST event in the group. We don't show
+          // a date range here because long-dwell groups can span several days
+          // and that made the top-to-bottom timeline read non-chronologically.
           const first = group.events[0]
-          const last = group.events[group.events.length - 1]
 
           return (
             <div key={first.id}>
@@ -203,7 +170,7 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
+                    {format(new Date(first.recordedAt), 'PPp')}
                   </p>
                 </div>
               </button>
