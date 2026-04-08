@@ -214,7 +214,6 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                 currentName={shipment.name}
                 currentOrigin={shipment.originAddress}
                 currentDestination={shipment.destinationAddress}
-                showOrigin={shipment.type !== 'LABEL_DISPATCH'}
               />
             )}
             {shipment.status === 'DELIVERED' && (

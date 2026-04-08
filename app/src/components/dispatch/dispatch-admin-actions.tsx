@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Truck, CheckCircle, RefreshCw, MoreHorizontal, XCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { CancelShipmentDialog } from '@/components/shipments/cancel-shipment-dialog'
+import { CancelDispatchDialog } from '@/components/dispatch/cancel-dispatch-dialog'
 import { toast } from 'sonner'
 
 type DispatchStatus = 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED'
@@ -92,10 +92,10 @@ export function DispatchAdminActions({
           variant="outline"
           size="sm"
           className="gap-1.5"
-          onClick={() => patchStatus('IN_TRANSIT', 'Tracking reactivated', 'Failed to reactivate tracking')}
+          onClick={() => patchStatus('IN_TRANSIT', 'Dispatch reactivated', 'Failed to reactivate dispatch')}
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Reactivate Tracking
+          Reactivate Dispatch
         </Button>
       )}
       {status === 'CANCELLED' && (
@@ -127,10 +127,9 @@ export function DispatchAdminActions({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <CancelShipmentDialog
+          <CancelDispatchDialog
             shipmentId={shipmentId}
             shipmentName={shipmentName}
-            apiBasePath="/api/v1/dispatch"
             open={cancelOpen}
             onOpenChange={setCancelOpen}
           />

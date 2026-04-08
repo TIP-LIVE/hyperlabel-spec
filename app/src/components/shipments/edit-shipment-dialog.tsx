@@ -33,7 +33,6 @@ interface EditShipmentDialogProps {
   currentDestination: string | null
   currentPhotoUrls?: string[]
   apiBasePath?: string
-  showOrigin?: boolean
 }
 
 export function EditShipmentDialog({
@@ -42,8 +41,7 @@ export function EditShipmentDialog({
   currentOrigin = null,
   currentDestination,
   currentPhotoUrls = [],
-  apiBasePath = '/api/v1/shipments',
-  showOrigin = true,
+  apiBasePath = '/api/v1/cargo',
 }: EditShipmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -164,7 +162,7 @@ export function EditShipmentDialog({
     try {
       const body: Record<string, unknown> = {}
       if (name !== currentName) body.name = name
-      if (showOrigin && origin !== currentOrigin) {
+      if (origin !== currentOrigin) {
         body.originAddress = origin
         if (originLat != null && originLng != null) {
           body.originLat = originLat
@@ -224,9 +222,9 @@ export function EditShipmentDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Shipment</DialogTitle>
+          <DialogTitle>Edit Cargo</DialogTitle>
           <DialogDescription>
-            Update shipment details, addresses, or photos.
+            Update cargo details, origin and destination, or photos.
           </DialogDescription>
         </DialogHeader>
 
@@ -242,21 +240,19 @@ export function EditShipmentDialog({
             />
           </div>
 
-          {showOrigin && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="edit-origin">Origin Address</Label>
-                <FieldInfo text="Where the cargo is being shipped from." />
-              </div>
-              <AddressInput
-                id="edit-origin"
-                defaultValue={currentOrigin || ''}
-                placeholder="Search for an address..."
-                disabled={isLoading}
-                onAddressSelect={handleOriginSelect}
-              />
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="edit-origin">Origin Address</Label>
+              <FieldInfo text="Where the cargo is being shipped from." />
             </div>
-          )}
+            <AddressInput
+              id="edit-origin"
+              defaultValue={currentOrigin || ''}
+              placeholder="Search for an address..."
+              disabled={isLoading}
+              onAddressSelect={handleOriginSelect}
+            />
+          </div>
 
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">

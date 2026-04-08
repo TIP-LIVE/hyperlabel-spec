@@ -17,15 +17,19 @@ import { Loader2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-interface CancelShipmentDialogProps {
+interface CancelDispatchDialogProps {
   shipmentId: string
   shipmentName: string | null
-  apiBasePath?: string
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
 
-export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '/api/v1/cargo', open: controlledOpen, onOpenChange }: CancelShipmentDialogProps) {
+export function CancelDispatchDialog({
+  shipmentId,
+  shipmentName,
+  open: controlledOpen,
+  onOpenChange,
+}: CancelDispatchDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : internalOpen
@@ -37,16 +41,16 @@ export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${apiBasePath}/${shipmentId}`, {
+      const response = await fetch(`/api/v1/dispatch/${shipmentId}`, {
         method: 'DELETE',
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to cancel shipment')
+        throw new Error(data.error || 'Failed to cancel dispatch')
       }
 
-      toast.success('Shipment cancelled')
+      toast.success('Dispatch cancelled')
       setOpen(false)
       router.refresh()
     } catch (error) {
@@ -62,23 +66,24 @@ export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '
         <AlertDialogTrigger asChild>
           <Button variant="destructive" size="sm" className="gap-2">
             <XCircle className="h-4 w-4" />
-            Cancel Shipment
+            Cancel Dispatch
           </Button>
         </AlertDialogTrigger>
       )}
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Cancel Shipment</AlertDialogTitle>
+          <AlertDialogTitle>Cancel Dispatch</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to cancel{' '}
             <span className="font-medium text-foreground">
-              {shipmentName || 'this shipment'}
+              {shipmentName || 'this dispatch'}
             </span>
-            ? This will stop tracking and cannot be undone.
+            ? The labels will be released back to your inventory and the receiver&apos;s
+            share link will be disabled. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Keep Tracking</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>Keep Dispatch</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault()
@@ -95,7 +100,7 @@ export function CancelShipmentDialog({ shipmentId, shipmentName, apiBasePath = '
             ) : (
               <>
                 <XCircle className="h-4 w-4" />
-                Cancel Shipment
+                Cancel Dispatch
               </>
             )}
           </AlertDialogAction>

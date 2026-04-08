@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
-import { EditShipmentDialog } from '@/components/shipments/edit-shipment-dialog'
+import { EditDispatchDialog } from '@/components/dispatch/edit-dispatch-dialog'
 
 
 interface LocationPoint {
@@ -110,12 +110,10 @@ export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/di
         </div>
         <div className="flex items-center gap-2">
           {isActive && (
-            <EditShipmentDialog
+            <EditDispatchDialog
               shipmentId={shipment.id}
               currentName={shipment.name}
               currentDestination={shipment.destinationAddress}
-              apiBasePath="/api/v1/dispatch"
-              showOrigin={false}
             />
           )}
           <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
