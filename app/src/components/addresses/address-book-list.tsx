@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search, Plus, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import {
+  Search,
+  Plus,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  BookUser,
+  SearchX,
+} from 'lucide-react'
 import { AddressCard, type SavedAddressData } from '@/components/addresses/address-card'
 import { AddressFormDialog } from '@/components/addresses/address-form-dialog'
 import type { SavedAddressInput } from '@/lib/validations/address'
@@ -97,32 +106,54 @@ export function AddressBookList() {
     )
   }
 
+  // First-time empty state (no addresses and no search query):
+  // hide the toolbar entirely and show a full-bleed empty state with a
+  // primary CTA. The search bar would be useless here and just add visual noise.
+  const isFirstTimeEmpty = addresses.length === 0 && !search
+
   return (
     <>
-      {/* Toolbar: search + add button */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search addresses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {!isFirstTimeEmpty && (
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search addresses..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button onClick={handleAddNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Address
+          </Button>
         </div>
-        <Button onClick={handleAddNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Address
-        </Button>
-      </div>
+      )}
 
-      {/* Grid of address cards */}
-      {addresses.length === 0 ? (
-        <div className="py-12 text-center text-sm text-muted-foreground">
-          {search
-            ? 'No addresses match your search.'
-            : 'No saved addresses yet. Add your first one!'}
-        </div>
+      {isFirstTimeEmpty ? (
+        <EmptyState
+          icon={BookUser}
+          title="Your address book is empty"
+          description="Save shipping addresses here to reuse them instantly when dispatching labels or tracking cargo — no more retyping the same details."
+          action={
+            <Button onClick={handleAddNew}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Your First Address
+            </Button>
+          }
+        />
+      ) : addresses.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title="No addresses match"
+          description={`We couldn't find anything for "${search}". Try a different name, city, or postal code.`}
+          action={
+            <Button variant="outline" onClick={() => setSearch('')}>
+              Clear Search
+            </Button>
+          }
+        />
       ) : (
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {addresses.map((address) => (
@@ -136,7 +167,6 @@ export function AddressBookList() {
         </div>
       )}
 
-      {/* Add/Edit dialog */}
       <AddressFormDialog
         open={dialogOpen}
         onOpenChange={(open) => {
