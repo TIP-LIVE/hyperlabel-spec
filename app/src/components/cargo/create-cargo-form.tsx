@@ -36,6 +36,7 @@ import { AddressInput } from '@/components/ui/address-input'
 import { useSavedAddress } from '@/components/addresses/address-input-with-saved'
 import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
 import { QrScanner } from '@/components/shipments/qr-scanner'
+import { formatDistanceToNow } from 'date-fns'
 
 const cargoFormSchema = z.object({
   name: z.string().min(1, 'Cargo name is required').max(200),
@@ -67,7 +68,39 @@ type AvailableLabel = {
   id: string
   deviceId: string
   displayId: string | null
+  status: 'INVENTORY' | 'SOLD' | 'ACTIVE' | 'RETIRED'
   batteryPct: number | null
+  lastSeenAt: string | null
+}
+
+/**
+ * Friendly name for a tracking label.
+ * Prefers the user-facing displayId (NNNNNYYYY) when available.
+ * Otherwise falls back to "Label …NNNN" using the last 4 chars of the
+ * legacy deviceId — which matches the tail of the URL printed on the
+ * physical sticker (tip.live/w/17743546881).
+ */
+function formatLabelName(label: AvailableLabel): string {
+  if (label.displayId) return label.displayId
+  const tail = label.deviceId.slice(-4)
+  return `Label …${tail}`
+}
+
+/**
+ * Status line shown under the label name in the dropdown.
+ * Tells the user whether the label has phoned home yet, plus battery.
+ */
+function formatLabelStatus(label: AvailableLabel): string {
+  const parts: string[] = []
+  if (label.status === 'ACTIVE' && label.lastSeenAt) {
+    parts.push(`Last seen ${formatDistanceToNow(new Date(label.lastSeenAt), { addSuffix: true })}`)
+  } else {
+    parts.push('Awaiting first signal')
+  }
+  if (label.batteryPct !== null) {
+    parts.push(`${label.batteryPct}% battery`)
+  }
+  return parts.join(' · ')
 }
 
 type PhotoState = {
@@ -377,22 +410,36 @@ export function CreateCargoForm() {
                 </div>
               </div>
             ) : (
-              <Select
-                value={selectedLabelId}
-                onValueChange={(value) => setValue('labelId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a label" />
-                </SelectTrigger>
-                <SelectContent>
-                  {labels.map((label) => (
-                    <SelectItem key={label.id} value={label.id}>
-                      {label.displayId || label.deviceId}
-                      {label.batteryPct !== null && ` (${label.batteryPct}% battery)`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select
+                  value={selectedLabelId}
+                  onValueChange={(value) => setValue('labelId', value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a label" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {labels.map((label) => (
+                      <SelectItem
+                        key={label.id}
+                        value={label.id}
+                        textValue={formatLabelName(label)}
+                        className="py-2"
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium">{formatLabelName(label)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatLabelStatus(label)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This is the code printed on your physical sticker. Use the QR scanner above for the fastest match.
+                </p>
+              </>
             )}
             {errors.labelId && (
               <p className="text-sm text-destructive">{errors.labelId.message}</p>

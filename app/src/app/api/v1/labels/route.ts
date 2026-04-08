@@ -65,6 +65,7 @@ export async function GET(req: NextRequest) {
         status: true,
         batteryPct: true,
         activatedAt: true,
+        lastSeenAt: true,
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
