@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/lib/utils/format-date'
-import { Building2, Plus, QrCode } from 'lucide-react'
+import { Building2, Plus, ScanLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const statusStyles: Record<string, string> = {
@@ -106,8 +106,8 @@ export function LabelsTableWithSelection({
           </Button>
           <Button asChild variant="outline">
             <Link href="/admin/labels/generate">
-              <QrCode className="mr-2 h-4 w-4" />
-              Generate PDFs
+              <ScanLine className="mr-2 h-4 w-4" />
+              Provision Label
             </Link>
           </Button>
           <Button asChild>

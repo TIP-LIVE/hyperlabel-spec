@@ -1,22 +1,22 @@
 import type { Metadata } from 'next'
-import { LabelGeneratorForm } from '@/components/admin/label-generator-form'
+import { LabelProvisionForm } from '@/components/admin/label-provision-form'
 
 export const metadata: Metadata = {
-  title: 'Generate Labels',
-  description: 'Generate TIP label PDFs with unique QR codes',
+  title: 'Provision Label',
+  description: 'Scan a modem QR to create a print-ready TIP label',
 }
 
-export default function GenerateLabelsPage() {
+export default function ProvisionLabelPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Generate Labels</h1>
+        <h1 className="text-2xl font-bold">Provision Label</h1>
         <p className="text-muted-foreground">
-          Generate print-ready label PDFs with unique QR codes and serial numbers.
-          Each label will be registered in inventory.
+          Scan the QR code printed on the modem PCB to extract its IMEI, then
+          create a single print-ready sticker PDF. One label at a time.
         </p>
       </div>
-      <LabelGeneratorForm />
+      <LabelProvisionForm />
     </div>
   )
 }
