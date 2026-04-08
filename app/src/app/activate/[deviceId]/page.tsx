@@ -47,7 +47,7 @@ export default async function ActivateLabelPage({ params }: PageProps) {
             <CardTitle className="mt-4">Invalid Label</CardTitle>
             <CardDescription>
               &ldquo;{deviceId}&rdquo; is not a valid TIP tracking label ID.
-              Valid IDs look like <span className="font-mono">TIP-001</span> or <span className="font-mono">HL-001234</span>.
+              Valid IDs look like <span className="font-mono">002011395</span>, <span className="font-mono">TIP-001</span>, or <span className="font-mono">HL-001234</span>.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">

@@ -197,17 +197,21 @@ function CargoTrackingForm({
 
   const selectedLabelId = watch('labelId')
 
-  // Handle QR scanner result
+  // Handle QR scanner result. Scanned QR codes on new labels encode the
+  // 9-digit displayId, not the legacy TIP-NNN deviceId, so we match on both.
   const handleQrScanned = useCallback(
-    (deviceId: string) => {
+    (scannedId: string) => {
+      const normalized = scannedId.trim().toUpperCase()
       const matchingLabel = labels.find(
-        (l) => l.deviceId.toUpperCase() === deviceId.toUpperCase()
+        (l) =>
+          l.deviceId.toUpperCase() === normalized ||
+          (l.displayId != null && l.displayId.toUpperCase() === normalized)
       )
       if (matchingLabel) {
         setValue('labelId', matchingLabel.id)
       } else {
         toast.error(
-          `Label ${deviceId} not found in your available labels. Make sure the label has been purchased and delivered.`
+          `Label ${scannedId} not found in your available labels. Make sure the label has been purchased and delivered.`
         )
       }
     },
