@@ -236,11 +236,14 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                         </div>
                       )
                     }
-                    // Multiple events in the same area — show one row with count
-                    // and the visit window. Sub-groups merge A→B→A cell jitter,
-                    // so the range spans first→last appearance of this area.
+                    // Multiple events in the same area — show one row with count.
+                    // groupByArea merges A→B→A jitter into one sub-group, so a
+                    // sub-group's date range overlaps its siblings (Kingston Vale
+                    // events span the whole shipment, Putney Vale's range sits
+                    // inside them, etc.). Showing only the newest timestamp keeps
+                    // the expanded view monotonically decreasing top-to-bottom;
+                    // the x{count} badge conveys that there were multiple visits.
                     const newest = subGroup[0]
-                    const oldest = subGroup[subGroup.length - 1]
                     return (
                       <div key={newest.id} className="min-h-[36px] sm:min-h-[44px]">
                         <div className="flex-1 min-w-0 space-y-1">
@@ -257,7 +260,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {formatDateRange(new Date(oldest.recordedAt), new Date(newest.recordedAt))}
+                            {format(new Date(newest.recordedAt), 'PPp')}
                           </p>
                         </div>
                       </div>
