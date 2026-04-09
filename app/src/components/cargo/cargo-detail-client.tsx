@@ -26,7 +26,7 @@ import {
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
-import { getLastUpdateDate } from '@/lib/utils/location-display'
+import { getLastUpdateDate, thinToTimeWindow } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
 import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
@@ -299,6 +299,15 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
     return { ...l, recordedAt, isOfflineSync }
   })
 
+  // Visible count matches what the timeline actually renders (after the same
+  // 2-hour thinning ShipmentTimeline applies internally). The raw count
+  // exposed by the API can be much larger, so using it in the header caused
+  // "Showing 100 of 134" while the user only saw ~39 rows on screen.
+  const visibleLocationCount = useMemo(
+    () => thinToTimeWindow(locationsWithDates).length,
+    [locationsWithDates],
+  )
+
   return (
     <div className="space-y-6 min-w-0 overflow-x-hidden">
       {/* Header */}
@@ -527,9 +536,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
             <CardHeader className="px-3 sm:px-6">
               <CardTitle>Location History</CardTitle>
               <CardDescription>
-                {totalLocations > shipment.locations.length
-                  ? `Showing ${shipment.locations.length} of ${totalLocations} location updates`
-                  : `${shipment.locations.length} location updates`}
+                {visibleLocationCount} location updates
               </CardDescription>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
@@ -548,7 +555,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                     ) : (
                       <Clock className="h-3.5 w-3.5" />
                     )}
-                    {loadingMore ? 'Loading...' : `Load older locations (${totalLocations - shipment.locations.length} more)`}
+                    {loadingMore ? 'Loading...' : 'Load older locations'}
                   </Button>
                 </div>
               )}

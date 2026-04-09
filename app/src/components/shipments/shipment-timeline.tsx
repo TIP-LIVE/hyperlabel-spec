@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
+import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
 import {
   formatLocationName,
@@ -173,11 +174,11 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
           }
 
           // Grouped events — show summary with expand/collapse.
-          // The primary timestamp is the NEWEST event in the group. We
-          // deliberately don't show a date range here because long-dwell
-          // groups can span several days and that made the top-to-bottom
-          // timeline read non-chronologically (Andrii's bug, April 2026).
+          // A date range (oldest → newest) is safe here because
+          // groupConsecutiveByCity guarantees adjacent groups never overlap in
+          // time, so reading top-to-bottom stays monotonically decreasing.
           const first = group.events[0] // newest
+          const last = group.events[group.events.length - 1] // oldest
 
           return (
             <div key={first.id}>
@@ -217,7 +218,9 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(first.recordedAt), 'PPp')}
+                    {first.id === last.id
+                      ? format(new Date(first.recordedAt), 'PPp')
+                      : formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
                   </p>
                 </div>
               </button>
@@ -233,10 +236,11 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                         </div>
                       )
                     }
-                    // Multiple events in the same area — show one row with count.
-                    // Primary timestamp is the newest event; individual dates
-                    // are accessible by inspecting the raw data if needed.
+                    // Multiple events in the same area — show one row with count
+                    // and the visit window. Sub-groups merge A→B→A cell jitter,
+                    // so the range spans first→last appearance of this area.
                     const newest = subGroup[0]
+                    const oldest = subGroup[subGroup.length - 1]
                     return (
                       <div key={newest.id} className="min-h-[36px] sm:min-h-[44px]">
                         <div className="flex-1 min-w-0 space-y-1">
@@ -253,7 +257,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(newest.recordedAt), 'PPp')}
+                            {formatDateRange(new Date(oldest.recordedAt), new Date(newest.recordedAt))}
                           </p>
                         </div>
                       </div>

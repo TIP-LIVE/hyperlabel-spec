@@ -20,7 +20,7 @@ import {
 import { format } from 'date-fns'
 import { formatDateTime, formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
-import { getLastUpdateDate } from '@/lib/utils/location-display'
+import { getLastUpdateDate, thinToTimeWindow } from '@/lib/utils/location-display'
 import { PublicTrackingMap } from '@/components/maps/public-tracking-map'
 import { PublicTimeline } from '@/components/tracking/public-timeline'
 import { ConfirmDeliveryDialog } from '@/components/tracking/confirm-delivery-dialog'
@@ -222,6 +222,13 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
     recordedAt: new Date(l.recordedAt),
   }))
 
+  // Visible count matches PublicTimeline's rendered rows (same 2-hour
+  // thinning), so "N location updates" never exceeds what the user can count.
+  const visibleLocationCount = useMemo(
+    () => thinToTimeWindow(locationsWithDates).length,
+    [locationsWithDates],
+  )
+
   return (
     <div className="min-h-screen bg-muted">
       {/* Header */}
@@ -373,7 +380,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                 <CardHeader className="px-3 sm:px-6">
                   <CardTitle>Location History</CardTitle>
                   <CardDescription>
-                    {shipment.locations.length} location updates
+                    {visibleLocationCount} location updates
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
-import { getLastUpdateDate } from '@/lib/utils/location-display'
+import { getLastUpdateDate, thinToTimeWindow } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
 import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
@@ -172,6 +172,13 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
       isOfflineSync,
     }
   })
+
+  // Visible count matches what ShipmentTimeline actually renders after its
+  // 2-hour thinning pass, so the header never drifts from the rows on screen.
+  const visibleLocationCount = useMemo(
+    () => thinToTimeWindow(locationsWithDates).length,
+    [locationsWithDates],
+  )
 
   return (
     <div className="space-y-6 min-w-0 overflow-x-hidden">
@@ -388,7 +395,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
               <CardHeader className="px-3 sm:px-6">
                 <CardTitle>Location History</CardTitle>
                 <CardDescription>
-                  {shipment.locations.length} location updates
+                  {visibleLocationCount} location updates
                 </CardDescription>
               </CardHeader>
               <CardContent className="px-3 sm:px-6">

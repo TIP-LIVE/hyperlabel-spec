@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MapPin, Radio, ChevronDown } from 'lucide-react'
 import { countryCodeToFlag } from '@/lib/utils/country-flag'
+import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
 import {
   formatLocationName,
@@ -128,10 +129,11 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
             )
           }
 
-          // Primary timestamp is the NEWEST event in the group. We don't show
-          // a date range here because long-dwell groups can span several days
-          // and that made the top-to-bottom timeline read non-chronologically.
+          // A date range (oldest → newest) is safe here because
+          // groupConsecutiveByCity guarantees adjacent groups never overlap in
+          // time, so reading top-to-bottom stays monotonically decreasing.
           const first = group.events[0]
+          const last = group.events[group.events.length - 1]
 
           return (
             <div key={first.id}>
@@ -170,7 +172,9 @@ export function PublicTimeline({ locations }: PublicTimelineProps) {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(first.recordedAt), 'PPp')}
+                    {first.id === last.id
+                      ? format(new Date(first.recordedAt), 'PPp')
+                      : formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
                   </p>
                 </div>
               </button>
