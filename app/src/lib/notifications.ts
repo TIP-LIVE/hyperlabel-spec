@@ -272,6 +272,7 @@ export async function sendNoSignalNotification(params: {
   shareCode: string
   lastSeenAt: Date
   lastLocation?: { lat: number; lng: number }
+  thresholdHours: number
 }): Promise<void> {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'no_signal')
   if (recipients.length === 0) return
@@ -287,6 +288,7 @@ export async function sendNoSignalNotification(params: {
         ? await formatLocation(params.lastLocation.lat, params.lastLocation.lng)
         : undefined,
       trackingUrl,
+      thresholdHours: params.thresholdHours,
     })
   )
 
@@ -300,6 +302,7 @@ export async function sendNoSignalNotification(params: {
       shipmentName: params.shipmentName,
       lastSeenAt: params.lastSeenAt.toISOString(),
       shipmentId: params.shipmentId,
+      thresholdHours: params.thresholdHours,
     }, params.orgId)
   }
 }

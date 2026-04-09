@@ -254,6 +254,7 @@ model OrgSettings {
   orgId                     String   @unique @map("org_id")
   allowLabelsInMultipleOrgs Boolean  @default(false) @map("allow_labels_in_multiple_orgs")
   defaultDispatchAddressId  String?  @map("default_dispatch_address_id")
+  noSignalHours             Int      @default(48) @map("no_signal_hours")
   createdAt                 DateTime @default(now()) @map("created_at")
   updatedAt                 DateTime @updatedAt @map("updated_at")
 

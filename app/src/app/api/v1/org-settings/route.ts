@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 const updateSchema = z.object({
   allowLabelsInMultipleOrgs: z.boolean().optional(),
+  noSignalHours: z.number().int().min(2).max(720).optional(),
 })
 
 /**
@@ -22,6 +23,7 @@ export async function GET() {
 
     return NextResponse.json({
       allowLabelsInMultipleOrgs: row?.allowLabelsInMultipleOrgs ?? false,
+      noSignalHours: row?.noSignalHours ?? 48,
     })
   } catch (error) {
     return handleApiError(error, 'fetching org settings')
@@ -52,9 +54,12 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    const data: { allowLabelsInMultipleOrgs?: boolean } = {}
+    const data: { allowLabelsInMultipleOrgs?: boolean; noSignalHours?: number } = {}
     if (parsed.data.allowLabelsInMultipleOrgs !== undefined) {
       data.allowLabelsInMultipleOrgs = parsed.data.allowLabelsInMultipleOrgs
+    }
+    if (parsed.data.noSignalHours !== undefined) {
+      data.noSignalHours = parsed.data.noSignalHours
     }
 
     if (Object.keys(data).length === 0) {
@@ -63,6 +68,7 @@ export async function PATCH(req: NextRequest) {
       })
       return NextResponse.json({
         allowLabelsInMultipleOrgs: row?.allowLabelsInMultipleOrgs ?? false,
+        noSignalHours: row?.noSignalHours ?? 48,
       })
     }
 
@@ -77,6 +83,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({
       allowLabelsInMultipleOrgs: row.allowLabelsInMultipleOrgs,
+      noSignalHours: row.noSignalHours,
     })
   } catch (error) {
     return handleApiError(error, 'updating org settings')

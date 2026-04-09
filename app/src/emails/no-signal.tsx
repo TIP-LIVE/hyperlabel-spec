@@ -8,6 +8,7 @@ interface NoSignalEmailProps {
   lastSeenAt: string
   lastLocation?: string
   trackingUrl: string
+  thresholdHours: number
 }
 
 export function NoSignalEmail({
@@ -16,14 +17,17 @@ export function NoSignalEmail({
   lastSeenAt,
   lastLocation,
   trackingUrl,
+  thresholdHours,
 }: NoSignalEmailProps) {
+  const thresholdLabel =
+    thresholdHours === 1 ? '1 hour' : `${thresholdHours} hours`
   return (
     <BaseLayout preview={`No signal from "${shipmentName}" tracking label`}>
       <Heading style={heading}>📡 No Signal Alert</Heading>
 
       <Text style={paragraph}>
-        We haven&apos;t received any location updates from your tracking label in the last 24
-        hours. This could be due to:
+        We haven&apos;t received any location updates from your tracking label in the last{' '}
+        {thresholdLabel}. This could be due to:
       </Text>
 
       <Section style={reasonsList}>
