@@ -39,6 +39,11 @@ export async function GET(req: NextRequest) {
     // dispatch shipment containing them is DELIVERED, or the label is
     // already ACTIVE (activated in the wild). This prevents users from
     // assigning warehouse-resident labels to a cargo shipment.
+    //
+    // Also exclude labels that are already attached to an active cargo
+    // shipment (PENDING or IN_TRANSIT). The POST /api/v1/cargo handler
+    // rejects these with 400, so showing them in the dropdown only lets
+    // users pick a label that can't be submitted.
     if (status === 'SOLD') {
       where.OR = [
         { status: 'ACTIVE' },
@@ -53,6 +58,12 @@ export async function GET(req: NextRequest) {
           },
         },
       ]
+      where.shipments = {
+        none: {
+          type: 'CARGO_TRACKING',
+          status: { in: ['PENDING', 'IN_TRANSIT'] },
+        },
+      }
       delete where.status
     }
 
