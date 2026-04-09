@@ -117,6 +117,7 @@ export default async function DashboardPage() {
       db.shipment.count({
         where: {
           ...where,
+          type: 'CARGO_TRACKING',
           status: 'DELIVERED',
           deliveredAt: { gte: monthStart },
         },

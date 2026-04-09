@@ -8,7 +8,10 @@ import { handleApiError } from '@/lib/api-utils'
  *
  * Returns labels available for a new LABEL_DISPATCH shipment,
  * grouped by order. Only includes SOLD / INVENTORY labels that
- * are not already in an active dispatch (PENDING or IN_TRANSIT).
+ * are not committed to any non-cancelled dispatch — i.e. skips
+ * PENDING, IN_TRANSIT, and DELIVERED dispatches. DELIVERED matters
+ * because the label is physically at the receiver by then, not at
+ * the warehouse, so re-dispatching it would be meaningless.
  */
 export async function GET() {
   try {
@@ -30,10 +33,14 @@ export async function GET() {
                 deviceId: true,
                 status: true,
                 batteryPct: true,
-                // Check if label is in an active dispatch
+                // Check if label is committed to any non-cancelled dispatch
+                // (PENDING, IN_TRANSIT, or DELIVERED). Once DELIVERED the
+                // label sits at the receiver, not the warehouse.
                 shipmentLabels: {
                   where: {
-                    shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
+                    shipment: {
+                      status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
+                    },
                   },
                   select: { shipmentId: true },
                   take: 1,
