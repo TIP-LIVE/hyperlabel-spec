@@ -48,11 +48,16 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   let resolvedDeviceId: string | null = null
   if (q) {
     const label = await db.label.findFirst({
-      where: { deviceId: { contains: q, mode: 'insensitive' } },
-      select: { iccid: true, deviceId: true },
+      where: {
+        OR: [
+          { deviceId: { contains: q, mode: 'insensitive' } },
+          { displayId: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      select: { iccid: true, deviceId: true, displayId: true },
     })
     if (label?.iccid) {
-      resolvedDeviceId = label.deviceId
+      resolvedDeviceId = label.displayId || label.deviceId
       where.iccid = label.iccid
     } else {
       where.iccid = { contains: q, mode: 'insensitive' }
@@ -62,12 +67,12 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   // Get all labels that have webhook logs for the filter dropdown
   const labelsWithWebhooks = await db.label.findMany({
     where: { iccid: { not: null } },
-    select: { deviceId: true, iccid: true },
-    orderBy: { deviceId: 'asc' },
+    select: { deviceId: true, displayId: true, iccid: true },
+    orderBy: [{ displayId: 'asc' }, { deviceId: 'asc' }],
   })
   const labelOptions = labelsWithWebhooks
-    .filter((l): l is { deviceId: string; iccid: string } => l.iccid !== null)
-    .map((l) => ({ deviceId: l.deviceId, iccid: l.iccid }))
+    .filter((l): l is { deviceId: string; displayId: string | null; iccid: string } => l.iccid !== null)
+    .map((l) => ({ label: l.displayId || l.deviceId, iccid: l.iccid }))
 
   const [logs, total, totalAll, successCount, pendingCount, avgDuration] = await Promise.all([
     db.webhookLog.findMany({
@@ -86,17 +91,17 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   const successRate = totalAll > 0 ? Math.round((successCount / totalAll) * 100) : 0
   const avgMs = Math.round(avgDuration._avg.durationMs ?? 0)
 
-  // Build ICCID → deviceId map for label column
+  // Build ICCID → display label map (prefer 9-digit displayId, fall back to legacy deviceId)
   const iccids = [...new Set(logs.map((l) => l.iccid).filter(Boolean))] as string[]
   const labels = iccids.length > 0
     ? await db.label.findMany({
         where: { iccid: { in: iccids } },
-        select: { iccid: true, deviceId: true },
+        select: { iccid: true, deviceId: true, displayId: true },
       })
     : []
   const iccidToLabel: Record<string, string> = {}
   for (const l of labels) {
-    if (l.iccid) iccidToLabel[l.iccid] = l.deviceId
+    if (l.iccid) iccidToLabel[l.iccid] = l.displayId || l.deviceId
   }
 
   const totalPages = Math.ceil(total / perPage)

@@ -25,7 +25,7 @@ const STATUS_CODES = [
 ]
 
 interface LabelOption {
-  deviceId: string
+  label: string
   iccid: string
 }
 
@@ -59,7 +59,7 @@ export function WebhookFilters({ labels = [] }: { labels?: LabelOption[] }) {
             <SelectItem value="all">All Labels</SelectItem>
             {labels.map((l) => (
               <SelectItem key={l.iccid} value={l.iccid}>
-                {l.deviceId}
+                {l.label}
               </SelectItem>
             ))}
           </SelectContent>
