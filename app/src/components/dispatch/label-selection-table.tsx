@@ -13,6 +13,7 @@ import { formatDateTime } from '@/lib/utils/format-date'
 type AvailableLabel = {
   id: string
   deviceId: string
+  displayId: string | null
   status: string
   batteryPct: number | null
 }
@@ -27,6 +28,7 @@ type OrderGroup = {
 type FlatLabelRow = {
   id: string
   deviceId: string
+  displayId: string | null
   status: string
   batteryPct: number | null
   orderId: string
@@ -64,6 +66,7 @@ export function LabelSelectionTable({ selectedIds, onChange }: LabelSelectionTab
         order.labels.map((label) => ({
           id: label.id,
           deviceId: label.deviceId,
+          displayId: label.displayId,
           status: label.status,
           batteryPct: label.batteryPct,
           orderId: order.orderId,
@@ -89,6 +92,7 @@ export function LabelSelectionTable({ selectedIds, onChange }: LabelSelectionTab
     return rows.filter(
       (row) =>
         row.deviceId.toLowerCase().includes(q) ||
+        row.displayId?.toLowerCase().includes(q) ||
         row.orderId.toLowerCase().includes(q)
     )
   }, [rows, filter])
@@ -210,6 +214,7 @@ export function LabelSelectionTable({ selectedIds, onChange }: LabelSelectionTab
             <tbody className="divide-y divide-border">
               {visibleRows.map((row) => {
                 const isSelected = selectedIds.includes(row.id)
+                const labelId = row.displayId || row.deviceId
                 return (
                   <tr
                     key={row.id}
@@ -229,11 +234,11 @@ export function LabelSelectionTable({ selectedIds, onChange }: LabelSelectionTab
                           checked={isSelected}
                           onChange={() => toggleRow(row.id)}
                           className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-2 focus:ring-primary"
-                          aria-label={`Select ${row.deviceId}`}
+                          aria-label={`Select ${labelId}`}
                         />
                       </label>
                     </td>
-                    <td className="px-3 py-3 font-mono text-foreground">{row.deviceId}</td>
+                    <td className="px-3 py-3 font-mono text-foreground">{labelId}</td>
                     <td className="px-3 py-3">
                       <Badge className={statusStyles[row.status] ?? ''}>{row.status}</Badge>
                     </td>

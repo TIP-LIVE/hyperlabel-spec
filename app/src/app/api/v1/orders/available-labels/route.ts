@@ -31,6 +31,7 @@ export async function GET() {
               select: {
                 id: true,
                 deviceId: true,
+                displayId: true,
                 status: true,
                 batteryPct: true,
                 // Check if label is committed to any non-cancelled dispatch
