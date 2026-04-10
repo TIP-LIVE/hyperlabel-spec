@@ -8,9 +8,9 @@ import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
 import {
   formatLocationName,
-  thinToTimeWindow,
   isNearby,
   groupConsecutiveByCity,
+  thinGroupEvents,
 } from '@/lib/utils/location-display'
 
 interface LocationEvent {
@@ -91,8 +91,13 @@ function detailLocationDisplayName(location: LocationEvent): string {
 export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
-  const thinnedLocations = useMemo(() => thinToTimeWindow(locations), [locations])
-  const groups = useMemo(() => groupConsecutiveByCity(thinnedLocations), [thinnedLocations])
+  // Group first, then thin within each group. This preserves the oldest and
+  // newest events per group so the date range is never lost. Previous approach
+  // (thin → group) could reduce multi-event groups to single events.
+  const groups = useMemo(
+    () => thinGroupEvents(groupConsecutiveByCity(locations)),
+    [locations],
+  )
 
   const toggleGroup = (index: number) => {
     setExpandedGroups((prev) => {
@@ -218,9 +223,7 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {first.id === last.id
-                      ? format(new Date(first.recordedAt), 'PPp')
-                      : formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
+                    {formatDateRange(new Date(last.recordedAt), new Date(first.recordedAt))}
                   </p>
                 </div>
               </button>

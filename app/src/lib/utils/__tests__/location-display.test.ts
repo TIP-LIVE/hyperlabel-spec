@@ -6,6 +6,7 @@ import {
   thinToTimeWindow,
   isNearby,
   groupConsecutiveByCity,
+  thinGroupEvents,
   type GroupableLocation,
 } from '@/lib/utils/location-display'
 
@@ -214,5 +215,75 @@ describe('groupConsecutiveByCity — chronological integrity', () => {
     expect(groups).toHaveLength(2)
     expect(groups[0].representative.geocodedCity).toBe('Clapham Junction')
     expect(groups[1].representative.geocodedCity).toBe('Earlsfield')
+  })
+})
+
+describe('thinGroupEvents — preserves date ranges', () => {
+  it('always preserves the oldest event so date range is never lost', () => {
+    // 5 events within the same city, all within 2h of each other.
+    // thinToTimeWindow alone would reduce to 1 event (losing the date range).
+    // thinGroupEvents must preserve oldest + newest → at least 2 events.
+    const events: Loc[] = [
+      make('a', '2026-04-08T10:00:00Z', 'Berlin', 52.52, 13.4),
+      make('b', '2026-04-08T09:30:00Z', 'Berlin', 52.52, 13.4),
+      make('c', '2026-04-08T09:00:00Z', 'Berlin', 52.52, 13.4),
+      make('d', '2026-04-08T08:30:00Z', 'Berlin', 52.52, 13.4),
+      make('e', '2026-04-08T08:15:00Z', 'Berlin', 52.52, 13.4),
+    ]
+    const groups = groupConsecutiveByCity(events)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].events).toHaveLength(5)
+
+    const thinned = thinGroupEvents(groups)
+    expect(thinned).toHaveLength(1)
+    // Must keep at least 2 events (newest + oldest) for the date range
+    expect(thinned[0].events.length).toBeGreaterThanOrEqual(2)
+    expect(thinned[0].events[0].id).toBe('a') // newest preserved
+    expect(thinned[0].events[thinned[0].events.length - 1].id).toBe('e') // oldest preserved
+  })
+
+  it('does not duplicate the oldest event if thinning already kept it', () => {
+    // Events span > 2h, so thinToTimeWindow naturally keeps first and last.
+    const events: Loc[] = [
+      make('a', '2026-04-08T10:00:00Z', 'Berlin', 52.52, 13.4),
+      make('b', '2026-04-08T08:00:00Z', 'Berlin', 52.52, 13.4), // exactly 2h gap — kept
+      make('c', '2026-04-08T06:00:00Z', 'Berlin', 52.52, 13.4), // exactly 2h gap — kept
+    ]
+    const groups = groupConsecutiveByCity(events)
+    const thinned = thinGroupEvents(groups)
+    expect(thinned[0].events.map((e) => e.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('passes through groups with ≤ 2 events unchanged', () => {
+    const events: Loc[] = [
+      make('a', '2026-04-08T10:00:00Z', 'Berlin', 52.52, 13.4),
+      make('b', '2026-04-08T09:50:00Z', 'Berlin', 52.52, 13.4),
+    ]
+    const groups = groupConsecutiveByCity(events)
+    const thinned = thinGroupEvents(groups)
+    expect(thinned[0].events).toHaveLength(2)
+    expect(thinned[0].events.map((e) => e.id)).toEqual(['a', 'b'])
+  })
+
+  it('thins across multiple groups independently', () => {
+    const events: Loc[] = [
+      // Berlin group: 4 events within 1h
+      make('b1', '2026-04-08T10:00:00Z', 'Berlin', 52.52, 13.4),
+      make('b2', '2026-04-08T09:40:00Z', 'Berlin', 52.52, 13.4),
+      make('b3', '2026-04-08T09:20:00Z', 'Berlin', 52.52, 13.4),
+      // Munich group: 3 events within 30min
+      make('m1', '2026-04-08T06:00:00Z', 'Munich', 48.14, 11.58),
+      make('m2', '2026-04-08T05:45:00Z', 'Munich', 48.14, 11.58),
+      make('m3', '2026-04-08T05:30:00Z', 'Munich', 48.14, 11.58),
+    ]
+    const groups = groupConsecutiveByCity(events)
+    expect(groups).toHaveLength(2)
+
+    const thinned = thinGroupEvents(groups)
+    // Both groups preserve oldest + newest
+    expect(thinned[0].events[0].id).toBe('b1')
+    expect(thinned[0].events[thinned[0].events.length - 1].id).toBe('b3')
+    expect(thinned[1].events[0].id).toBe('m1')
+    expect(thinned[1].events[thinned[1].events.length - 1].id).toBe('m3')
   })
 })

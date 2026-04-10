@@ -187,3 +187,31 @@ export function groupConsecutiveByCity<T extends GroupableLocation>(
   groups.push(current)
   return groups
 }
+
+/**
+ * Thin events within each location group while always preserving the newest
+ * (first) and oldest (last) events so the group's date range is never lost.
+ *
+ * Use this AFTER `groupConsecutiveByCity` to reduce display clutter without
+ * destroying time range information. Previous approach (thin → group) could
+ * reduce multi-event groups to single events, making date ranges disappear.
+ */
+export function thinGroupEvents<T extends GroupableLocation>(
+  groups: LocationGroup<T>[],
+  windowMs = 2 * 60 * 60 * 1000,
+): LocationGroup<T>[] {
+  return groups.map((group) => {
+    if (group.events.length <= 2) return group
+
+    // thinToTimeWindow always preserves the newest (index 0).
+    // We must also guarantee the oldest survives for the date range.
+    const thinned = thinToTimeWindow(group.events, windowMs)
+
+    const oldest = group.events[group.events.length - 1]
+    if (thinned[thinned.length - 1] !== oldest) {
+      thinned.push(oldest)
+    }
+
+    return { events: thinned, representative: thinned[0] }
+  })
+}
