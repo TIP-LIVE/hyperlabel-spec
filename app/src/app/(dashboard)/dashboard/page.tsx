@@ -387,7 +387,7 @@ export default async function DashboardPage() {
                       href={`/cargo/${shipment.id}`}
                       className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {/* Signal indicator */}
                         <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${signalColor}`} />
                         <div className="min-w-0">
