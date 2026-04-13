@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
@@ -11,6 +11,27 @@ import {
   sendDispatchDeliveredNotification,
   sendDispatchCancelledNotification,
 } from '@/lib/notifications'
+
+/**
+ * When a dispatch is cancelled, check if the parent order should revert
+ * from SHIPPED → PAID (no remaining active dispatches).
+ */
+async function revertOrderIfNoDispatches(shipment: { orderId: string | null }) {
+  if (!shipment.orderId) return
+  const remaining = await db.shipment.count({
+    where: {
+      orderId: shipment.orderId,
+      type: 'LABEL_DISPATCH',
+      status: { not: 'CANCELLED' },
+    },
+  })
+  if (remaining === 0) {
+    await db.order.updateMany({
+      where: { id: shipment.orderId, status: 'SHIPPED' },
+      data: { status: 'PAID', shippedAt: null },
+    })
+  }
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -43,6 +64,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           },
         },
         locations: {
+          where: { ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' },
           take: 100,
         },
@@ -183,6 +205,10 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     if (validated.data.status === 'CANCELLED') {
+      // Revert parent order SHIPPED→PAID if no active dispatches remain
+      revertOrderIfNoDispatches(existing).catch((err) =>
+        console.error('Failed to revert order status on dispatch cancel:', err)
+      )
       // Owner/buyer notification — "Your dispatch has been cancelled"
       sendDispatchCancelledNotification({ shipmentId: existing.id }).catch((err) =>
         console.error('Failed to send dispatch cancelled notification:', err)
@@ -239,6 +265,11 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       where: { id },
       data: { status: 'CANCELLED' },
     })
+
+    // Revert parent order SHIPPED→PAID if no active dispatches remain
+    revertOrderIfNoDispatches(existing).catch((err) =>
+      console.error('Failed to revert order status on dispatch cancel:', err)
+    )
 
     // Owner/buyer notification — "Your dispatch has been cancelled"
     sendDispatchCancelledNotification({ shipmentId: existing.id }).catch((err) =>
