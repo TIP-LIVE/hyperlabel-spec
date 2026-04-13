@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Truck, CheckCircle, RefreshCw, MoreHorizontal, XCircle } from 'lucide-react'
+import { Truck, CheckCircle, RefreshCw, MoreHorizontal, XCircle, Mail, Loader2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { CancelDispatchDialog } from '@/components/dispatch/cancel-dispatch-dialog'
 import { LabelScanDialog } from '@/components/dispatch/label-scan-dialog'
@@ -22,6 +22,8 @@ interface DispatchAdminActionsProps {
   status: DispatchStatus
   destinationAddress: string | null
   labelCount: number | null
+  consigneeEmail: string | null
+  shareCode: string
 }
 
 export function DispatchAdminActions({
@@ -30,11 +32,30 @@ export function DispatchAdminActions({
   status,
   destinationAddress,
   labelCount,
+  consigneeEmail,
+  shareCode,
 }: DispatchAdminActionsProps) {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
+  const [sendingReminder, setSendingReminder] = useState(false)
   const isActive = status === 'PENDING' || status === 'IN_TRANSIT'
   const missingReceiverAddress = status === 'PENDING' && !destinationAddress
+
+  async function sendReminder() {
+    setSendingReminder(true)
+    try {
+      const res = await fetch(`/api/v1/dispatch/${shipmentId}/send-reminder`, { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to send reminder')
+      }
+      toast.success('Reminder email sent to receiver')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send reminder')
+    } finally {
+      setSendingReminder(false)
+    }
+  }
 
   async function patchStatus(nextStatus: DispatchStatus, successMsg: string, errorMsg: string) {
     try {
@@ -55,20 +76,34 @@ export function DispatchAdminActions({
     <div className="flex flex-wrap items-center gap-2">
       {status === 'PENDING' &&
         (missingReceiverAddress ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span tabIndex={0}>
-                <Button variant="default" size="sm" className="gap-1.5 pointer-events-none" disabled>
-                  <Truck className="h-3.5 w-3.5" />
-                  Scan & Ship
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              Waiting on the receiver to submit their delivery address. Fill it in via Edit first, or wait for
-              them to use the share link.
-            </TooltipContent>
-          </Tooltip>
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>
+                  <Button variant="default" size="sm" className="gap-1.5 pointer-events-none" disabled>
+                    <Truck className="h-3.5 w-3.5" />
+                    Scan & Ship
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Waiting on the receiver to submit their delivery address. Fill it in via Edit first, or wait for
+                them to use the share link.
+              </TooltipContent>
+            </Tooltip>
+            {consigneeEmail && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={sendReminder}
+                disabled={sendingReminder}
+              >
+                {sendingReminder ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                Send Reminder
+              </Button>
+            )}
+          </>
         ) : (
           <Button
             variant="default"

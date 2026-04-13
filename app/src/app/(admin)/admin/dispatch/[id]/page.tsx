@@ -177,6 +177,8 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
               status={shipment.status}
               destinationAddress={shipment.destinationAddress}
               labelCount={shipment.labelCount}
+              consigneeEmail={shipment.consigneeEmail}
+              shareCode={shipment.shareCode}
             />
           </div>
         </CardContent>
