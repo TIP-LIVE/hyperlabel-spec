@@ -384,7 +384,7 @@ export default async function DashboardPage() {
                   return (
                     <Link
                       key={shipment.id}
-                      href={`/cargo/${shipment.id}`}
+                      href={shipment.type === 'LABEL_DISPATCH' ? `/dispatch/${shipment.id}` : `/cargo/${shipment.id}`}
                       className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
                     >
                       <div className="flex items-center gap-3 min-w-0">
