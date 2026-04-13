@@ -134,7 +134,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const receiverLastName = norm(validated.data.receiverLastName)
     const receiverEmail = norm(validated.data.receiverEmail)
     const receiverPhone = norm(validated.data.receiverPhone)
-    const destinationAddress = norm(validated.data.destinationAddress)
     const destinationLine1 = norm(validated.data.destinationLine1)
     const destinationLine2 = norm(validated.data.destinationLine2)
     const destinationCity = norm(validated.data.destinationCity)
@@ -143,6 +142,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const destinationCountry = norm(validated.data.destinationCountry)
     const destinationLat = validated.data.destinationLat ?? null
     const destinationLng = validated.data.destinationLng ?? null
+
+    // Compose destinationAddress from structured fields if not provided directly
+    const destinationAddress = norm(validated.data.destinationAddress) ||
+      [destinationLine1, destinationLine2, destinationCity, destinationState, destinationPostalCode, destinationCountry]
+        .filter(Boolean)
+        .join(', ') || null
 
     const hasReceiverDetails = Boolean(
       !askReceiver &&
