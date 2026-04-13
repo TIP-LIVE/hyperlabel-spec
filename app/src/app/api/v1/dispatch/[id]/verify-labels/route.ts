@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireOrgAuth } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
-import { format } from 'date-fns'
+import { logger } from '@/lib/logger'
 import {
   sendConsigneeInTransitNotification,
   sendDispatchInTransitNotification,
@@ -172,6 +172,30 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         data: { status: 'IN_TRANSIT', deliveredAt: null },
       })
     })
+
+    // Safety net: if these labels belong to PAID orders, transition to SHIPPED.
+    // This covers dispatches created through /api/v1/dispatch (no orderId) where
+    // the admin dispatch endpoint's auto-transition was bypassed.
+    const linkedLabelIds = scannedLabels.map((sl) => sl.labelId)
+    db.orderLabel
+      .findMany({
+        where: { labelId: { in: linkedLabelIds } },
+        select: { orderId: true },
+      })
+      .then(async (orderLabels) => {
+        const orderIds = [...new Set(orderLabels.map((ol) => ol.orderId))]
+        for (const oid of orderIds) {
+          await db.order
+            .updateMany({
+              where: { id: oid, status: 'PAID' },
+              data: { status: 'SHIPPED', shippedAt: new Date() },
+            })
+            .then((r) => {
+              if (r.count > 0) logger.info('Order auto-transitioned PAID→SHIPPED via verify-labels', { orderId: oid })
+            })
+        }
+      })
+      .catch((err) => logger.error('Failed to cascade order status from verify-labels', { error: err }))
 
     // Fire notifications (same as current PATCH handler for IN_TRANSIT)
     sendDispatchInTransitNotification({ shipmentId: id }).catch((err) =>
