@@ -15,21 +15,43 @@ import {
 /**
  * When a dispatch is cancelled, check if the parent order should revert
  * from SHIPPED → PAID (no remaining active dispatches).
+ * Resolves the order via orderId (new flow) or ShipmentLabel→OrderLabel (legacy).
  */
-async function revertOrderIfNoDispatches(shipment: { orderId: string | null }) {
-  if (!shipment.orderId) return
-  const remaining = await db.shipment.count({
-    where: {
-      orderId: shipment.orderId,
-      type: 'LABEL_DISPATCH',
-      status: { not: 'CANCELLED' },
-    },
+async function revertOrderIfNoDispatches(shipment: { id: string; orderId: string | null }) {
+  // Find the related order(s) — either directly via orderId or via label chain
+  const orderIds = new Set<string>()
+  if (shipment.orderId) orderIds.add(shipment.orderId)
+
+  // Legacy: find orders via ShipmentLabel → Label → OrderLabel
+  const shipmentLabels = await db.shipmentLabel.findMany({
+    where: { shipmentId: shipment.id },
+    select: { label: { select: { orderLabels: { select: { orderId: true } } } } },
   })
-  if (remaining === 0) {
-    await db.order.updateMany({
-      where: { id: shipment.orderId, status: 'SHIPPED' },
-      data: { status: 'PAID', shippedAt: null },
+  for (const sl of shipmentLabels) {
+    for (const ol of sl.label.orderLabels) {
+      orderIds.add(ol.orderId)
+    }
+  }
+
+  if (orderIds.size === 0) return
+
+  for (const orderId of orderIds) {
+    // Check both direct (orderId) and legacy (ShipmentLabel) dispatches
+    const directCount = await db.shipment.count({
+      where: { orderId, type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } },
     })
+    const legacyCount = await db.shipmentLabel.count({
+      where: {
+        label: { orderLabels: { some: { orderId } } },
+        shipment: { type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } },
+      },
+    })
+    if (directCount === 0 && legacyCount === 0) {
+      await db.order.updateMany({
+        where: { id: orderId, status: 'SHIPPED' },
+        data: { status: 'PAID', shippedAt: null },
+      })
+    }
   }
 }
 
