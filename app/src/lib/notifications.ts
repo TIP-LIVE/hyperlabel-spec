@@ -24,6 +24,7 @@ import DispatchDetailsSubmittedEmail from '@/emails/dispatch-details-submitted'
 import DispatchInTransitEmail from '@/emails/dispatch-in-transit'
 import DispatchDeliveredEmail from '@/emails/dispatch-delivered'
 import DispatchCancelledEmail from '@/emails/dispatch-cancelled'
+import DispatchAddressConfirmedEmail from '@/emails/dispatch-address-confirmed'
 import OrderDeliveredEmail from '@/emails/order-delivered'
 import { format } from 'date-fns'
 
@@ -977,6 +978,58 @@ export async function sendDispatchDetailsSubmitted(params: {
       receiverName,
     }, shipment.orgId ?? undefined)
   }
+}
+
+/**
+ * Sends a confirmation email TO THE RECEIVER after they submit their address
+ * via the public share link.
+ */
+export async function sendDispatchAddressConfirmedToReceiver(params: {
+  shipmentId: string
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const shipment = await db.shipment.findUnique({
+    where: { id: params.shipmentId },
+    select: {
+      id: true,
+      shareCode: true,
+      consigneeEmail: true,
+      receiverFirstName: true,
+      receiverLastName: true,
+      destinationAddress: true,
+      destinationLine1: true,
+      destinationCity: true,
+      destinationPostalCode: true,
+      destinationCountry: true,
+    },
+  })
+  if (!shipment || !shipment.consigneeEmail) return
+
+  const receiverName = [shipment.receiverFirstName, shipment.receiverLastName]
+    .filter(Boolean)
+    .join(' ') || 'there'
+  const address =
+    shipment.destinationAddress ||
+    [shipment.destinationLine1, shipment.destinationCity, shipment.destinationPostalCode, shipment.destinationCountry]
+      .filter(Boolean)
+      .join(', ')
+
+  const trackingUrl = `${APP_URL}/track/${shipment.shareCode}`
+
+  const html = await render(
+    DispatchAddressConfirmedEmail({
+      receiverName,
+      destinationAddress: address,
+      trackingUrl,
+    })
+  )
+
+  await sendEmail({
+    to: shipment.consigneeEmail,
+    subject: 'We received your address — labels shipping soon',
+    html,
+  })
 }
 
 const SUPPORT_EMAIL = 'support@tip.live'

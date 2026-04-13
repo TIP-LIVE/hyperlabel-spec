@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { rateLimit, RATE_LIMIT_CHECKOUT, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { shipperAddressSchema } from '@/lib/validations/address'
 import { getCountryName } from '@/lib/constants/countries'
-import { sendDispatchDetailsSubmitted } from '@/lib/notifications'
+import { sendDispatchDetailsSubmitted, sendDispatchAddressConfirmedToReceiver } from '@/lib/notifications'
 
 interface RouteParams {
   params: Promise<{ code: string }>
@@ -99,6 +99,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     sendDispatchDetailsSubmitted({ shipmentId: shipment.id }).catch((err) => {
       console.error('Failed to send dispatch-details-submitted notification:', err)
     })
+
+    // Fire-and-forget: confirm to the receiver that their address was received
+    if (data.email) {
+      sendDispatchAddressConfirmedToReceiver({ shipmentId: shipment.id }).catch((err) => {
+        console.error('Failed to send dispatch-address-confirmed notification:', err)
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
