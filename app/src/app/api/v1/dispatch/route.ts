@@ -87,7 +87,6 @@ export async function POST(req: NextRequest) {
     }
 
     const originAddress = data.originAddress?.trim() || null
-    const destinationAddress = data.destinationAddress?.trim() || null
     const { labelIds, name, originLat, originLng, destinationLat, destinationLng } = data
 
     // Normalize receiver fields (empty string → null)
@@ -101,6 +100,13 @@ export async function POST(req: NextRequest) {
     const destinationState = data.destinationState?.trim() || null
     const destinationPostalCode = data.destinationPostalCode?.trim() || null
     const destinationCountry = data.destinationCountry?.trim() || null
+
+    // Compose destinationAddress from structured fields if not provided directly
+    const rawDestAddr = data.destinationAddress?.trim() || null
+    const composedAddr = [destinationLine1, destinationLine2, destinationCity, destinationState, destinationPostalCode, destinationCountry]
+      .filter(Boolean)
+      .join(', ')
+    const destinationAddress = rawDestAddr || composedAddr || null
 
     // A dispatch is "complete" (ready to ship) when it has a receiver name +
     // address line1 + city + postal + country + email. Otherwise the buyer is
