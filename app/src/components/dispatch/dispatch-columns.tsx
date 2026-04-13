@@ -33,7 +33,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { shipmentStatusConfig } from '@/lib/status-config'
 
-function DispatchActionsCell({ shipment }: { shipment: DispatchRow }) {
+function DispatchActionsCell({ shipment, isAdmin }: { shipment: DispatchRow; isAdmin: boolean }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
@@ -83,7 +83,7 @@ function DispatchActionsCell({ shipment }: { shipment: DispatchRow }) {
             <Share2 className="mr-2 h-4 w-4" />
             Copy tracking link
           </DropdownMenuItem>
-          {shipment.status !== 'CANCELLED' && (
+          {isAdmin && shipment.status !== 'CANCELLED' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -249,7 +249,8 @@ function NextStepCell({ row }: { row: DispatchRow }) {
   return <span className="text-muted-foreground text-sm">{descriptor.label}</span>
 }
 
-export const dispatchColumns: ColumnDef<DispatchRow>[] = [
+export function getDispatchColumns({ isAdmin }: { isAdmin: boolean }): ColumnDef<DispatchRow>[] {
+  return [
   {
     accessorKey: 'name',
     header: 'Dispatch',
@@ -305,6 +306,7 @@ export const dispatchColumns: ColumnDef<DispatchRow>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => <DispatchActionsCell shipment={row.original} />,
+    cell: ({ row }) => <DispatchActionsCell shipment={row.original} isAdmin={isAdmin} />,
   },
 ]
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { DataTable } from '@/components/data-table/data-table'
-import { dispatchColumns, DispatchRow } from './dispatch-columns'
+import { getDispatchColumns, DispatchRow } from './dispatch-columns'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, RefreshCw } from 'lucide-react'
@@ -21,11 +21,12 @@ import {
 
 interface DispatchListProps {
   initialStatus?: string
+  isAdmin?: boolean
 }
 
 const POLL_INTERVAL_MS = 60_000
 
-export function DispatchList({ initialStatus }: DispatchListProps) {
+export function DispatchList({ initialStatus, isAdmin = false }: DispatchListProps) {
   const [allShipments, setAllShipments] = useState<DispatchRow[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -35,6 +36,7 @@ export function DispatchList({ initialStatus }: DispatchListProps) {
       ? initialStatus
       : 'all'
   )
+  const columns = useMemo(() => getDispatchColumns({ isAdmin }), [isAdmin])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const initialLoadDone = useRef(false)
 
@@ -168,7 +170,7 @@ export function DispatchList({ initialStatus }: DispatchListProps) {
         </Tooltip>
       </div>
       <DataTable
-        columns={dispatchColumns}
+        columns={columns}
         data={filteredShipments}
         searchKey="name"
         searchPlaceholder="Search dispatches..."

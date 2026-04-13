@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Package, Plus, Send, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isAdmin as checkIsAdmin } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { DispatchList } from '@/components/dispatch/dispatch-list'
 import { isClerkConfigured } from '@/lib/clerk-config'
@@ -26,6 +26,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
   const { status: initialStatus } = await searchParams
   const user = await getCurrentUser()
   const { orgId } = await auth()
+  const userIsAdmin = await checkIsAdmin()
 
   const where: Record<string, unknown> = { type: 'LABEL_DISPATCH' }
   if (orgId) {
@@ -190,7 +191,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
               <CardDescription>See where your labels are on their way from our warehouse to their destination</CardDescription>
             </CardHeader>
             <CardContent>
-              <DispatchList initialStatus={initialStatus} />
+              <DispatchList initialStatus={initialStatus} isAdmin={userIsAdmin} />
             </CardContent>
           </Card>
         </>
