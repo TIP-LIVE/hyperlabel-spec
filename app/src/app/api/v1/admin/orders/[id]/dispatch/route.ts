@@ -136,10 +136,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Check label count doesn't exceed order quantity
-    if (labelCount > order.quantity) {
+    // Check label count doesn't exceed remaining (order qty minus already-dispatched)
+    const existingDispatches = await db.shipment.aggregate({
+      where: { orderId: id, type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } },
+      _sum: { labelCount: true },
+    })
+    const alreadyDispatched = existingDispatches._sum.labelCount || 0
+    const remaining = order.quantity - alreadyDispatched
+
+    if (labelCount > remaining) {
       return NextResponse.json(
-        { error: `Label count (${labelCount}) exceeds order quantity (${order.quantity})` },
+        {
+          error: `Label count (${labelCount}) exceeds remaining capacity (${remaining} of ${order.quantity})`,
+        },
         { status: 400 }
       )
     }

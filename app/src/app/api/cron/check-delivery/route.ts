@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { sendShipmentDeliveredNotification } from '@/lib/notifications'
 import { withCronLogging } from '@/lib/cron'
+import { maybeCompleteOrder } from '@/lib/order-utils'
 
 // Delivery threshold: 1500m from destination.
 // Device uses cell tower triangulation (~500-1000m accuracy), not GPS.
@@ -14,10 +15,16 @@ const DWELL_TIME_MS = 30 * 60 * 1000
  * Uses geofence detection: if the last N location points (covering 30+ minutes)
  * are all within 1500m of the destination, mark as delivered.
  * Threshold is 1500m because location is cell tower triangulation (~500-1000m accuracy).
+ *
+ * Handles both:
+ * - CARGO_TRACKING shipments (single label via labelId)
+ * - LABEL_DISPATCH shipments (multiple labels via shipmentLabels)
  */
 export const GET = withCronLogging('check-delivery', async () => {
-  // Find in-transit shipments with a destination
-  const shipments = await db.shipment.findMany({
+  let deliveriesDetected = 0
+
+  // ── Part 1: CARGO_TRACKING (single-label shipments) ──
+  const cargoShipments = await db.shipment.findMany({
     where: {
       status: 'IN_TRANSIT',
       labelId: { not: null },
@@ -31,64 +38,146 @@ export const GET = withCronLogging('check-delivery', async () => {
           deviceId: true,
           locations: {
             orderBy: { recordedAt: 'desc' },
-            take: 10, // Last 10 location events
+            take: 10,
           },
         },
       },
     },
   })
 
-  let deliveriesDetected = 0
-
-  for (const shipment of shipments) {
+  for (const shipment of cargoShipments) {
     if (!shipment.label) continue
-    const locations = shipment.label.locations
-    if (locations.length < 2) continue
+    const delivered = checkGeofence(
+      shipment.label.locations,
+      shipment.destinationLat!,
+      shipment.destinationLng!
+    )
+    if (!delivered) continue
 
-    const destLat = shipment.destinationLat!
-    const destLng = shipment.destinationLng!
-
-    // Check if all recent locations are within the geofence
-    const locationsWithinGeofence = locations.filter((loc) => {
-      const distance = calculateDistance(loc.latitude, loc.longitude, destLat, destLng)
-      return distance <= DELIVERY_THRESHOLD_M
-    })
-
-    if (locationsWithinGeofence.length < 2) continue
-
-    // Check dwell time: difference between oldest and newest in-range location
-    const oldest = locationsWithinGeofence[locationsWithinGeofence.length - 1]
-    const newest = locationsWithinGeofence[0]
-    const dwellTime = newest.recordedAt.getTime() - oldest.recordedAt.getTime()
-
-    if (dwellTime >= DWELL_TIME_MS) {
-      // Mark shipment as delivered
-      await db.shipment.update({
-        where: { id: shipment.id },
-        data: {
-          status: 'DELIVERED',
-          deliveredAt: new Date(),
-        },
-      })
-
-      // Send notification (org-wide if shipment belongs to an org)
-      await sendShipmentDeliveredNotification({
-        userId: shipment.userId,
-        orgId: shipment.orgId,
-        shipmentId: shipment.id,
-        shipmentName: shipment.name || 'Unnamed Shipment',
-        deviceId: shipment.label.deviceId,
-        shareCode: shipment.shareCode,
-        destination: shipment.destinationAddress || 'Destination',
-        source: 'auto',
-      })
-
-      deliveriesDetected++
-    }
+    await markDelivered(shipment)
+    deliveriesDetected++
   }
 
-  return { checked: shipments.length, deliveriesDetected }
+  // ── Part 2: LABEL_DISPATCH (multi-label shipments) ──
+  const dispatchShipments = await db.shipment.findMany({
+    where: {
+      status: 'IN_TRANSIT',
+      type: 'LABEL_DISPATCH',
+      destinationLat: { not: null },
+      destinationLng: { not: null },
+      shipmentLabels: { some: {} }, // at least one label linked
+    },
+    include: {
+      user: { select: { id: true } },
+      shipmentLabels: {
+        include: {
+          label: {
+            select: {
+              deviceId: true,
+              locations: {
+                orderBy: { recordedAt: 'desc' },
+                take: 10,
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  for (const shipment of dispatchShipments) {
+    // Aggregate locations from ALL linked labels
+    const allLocations = shipment.shipmentLabels
+      .flatMap((sl) => sl.label.locations)
+      .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())
+
+    if (allLocations.length < 2) continue
+
+    const delivered = checkGeofence(
+      allLocations,
+      shipment.destinationLat!,
+      shipment.destinationLng!
+    )
+    if (!delivered) continue
+
+    await markDelivered(shipment)
+
+    // Cascade: if this dispatch belongs to an order, check if order is now complete
+    if (shipment.orderId) {
+      await maybeCompleteOrder(shipment.orderId)
+    }
+
+    deliveriesDetected++
+  }
+
+  return {
+    checked: cargoShipments.length + dispatchShipments.length,
+    deliveriesDetected,
+  }
 })
+
+/**
+ * Check if locations satisfy the geofence + dwell time criteria.
+ */
+function checkGeofence(
+  locations: { latitude: number; longitude: number; recordedAt: Date }[],
+  destLat: number,
+  destLng: number
+): boolean {
+  if (locations.length < 2) return false
+
+  const withinGeofence = locations.filter((loc) => {
+    const distance = calculateDistance(loc.latitude, loc.longitude, destLat, destLng)
+    return distance <= DELIVERY_THRESHOLD_M
+  })
+
+  if (withinGeofence.length < 2) return false
+
+  const oldest = withinGeofence[withinGeofence.length - 1]
+  const newest = withinGeofence[0]
+  const dwellTime = newest.recordedAt.getTime() - oldest.recordedAt.getTime()
+
+  return dwellTime >= DWELL_TIME_MS
+}
+
+/**
+ * Mark a shipment as delivered and send notification.
+ */
+async function markDelivered(shipment: {
+  id: string
+  userId: string
+  orgId: string | null
+  name: string | null
+  shareCode: string
+  destinationAddress: string | null
+  orderId?: string | null
+  label?: { deviceId: string } | null
+  shipmentLabels?: { label: { deviceId: string } }[]
+}) {
+  await db.shipment.update({
+    where: { id: shipment.id },
+    data: {
+      status: 'DELIVERED',
+      deliveredAt: new Date(),
+    },
+  })
+
+  const deviceId =
+    shipment.label?.deviceId ??
+    shipment.shipmentLabels?.[0]?.label.deviceId ??
+    'unknown'
+
+  await sendShipmentDeliveredNotification({
+    userId: shipment.userId,
+    orgId: shipment.orgId,
+    shipmentId: shipment.id,
+    shipmentName: shipment.name || 'Unnamed Shipment',
+    deviceId,
+    shareCode: shipment.shareCode,
+    destination: shipment.destinationAddress || 'Destination',
+    source: 'auto',
+  })
+}
 
 /**
  * Calculate distance between two coordinates using Haversine formula.

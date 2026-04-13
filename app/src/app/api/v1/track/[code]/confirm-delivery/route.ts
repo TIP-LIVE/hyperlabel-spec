@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { sendShipmentDeliveredNotification, sendConsigneeDeliveredNotification } from '@/lib/notifications'
+import { maybeCompleteOrder } from '@/lib/order-utils'
 import { logger } from '@/lib/logger'
 import { format } from 'date-fns'
 
@@ -151,6 +152,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           error: emailError,
         })
       })
+    }
+
+    // Cascade: if this shipment belongs to an order, check if order is now complete
+    if (shipment.orderId) {
+      maybeCompleteOrder(shipment.orderId).catch((err) =>
+        logger.error('Failed to cascade order completion', { orderId: shipment.orderId, error: err })
+      )
     }
 
     logger.info('Shipment marked as delivered by consignee', {

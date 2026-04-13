@@ -24,6 +24,7 @@ import DispatchDetailsSubmittedEmail from '@/emails/dispatch-details-submitted'
 import DispatchInTransitEmail from '@/emails/dispatch-in-transit'
 import DispatchDeliveredEmail from '@/emails/dispatch-delivered'
 import DispatchCancelledEmail from '@/emails/dispatch-cancelled'
+import OrderDeliveredEmail from '@/emails/order-delivered'
 import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
@@ -384,6 +385,39 @@ export async function sendOrderShippedNotification(params: {
   })
 
   await recordNotification(params.userId, 'order_shipped', {
+    orderNumber: params.orderNumber,
+    quantity: params.quantity,
+  })
+}
+
+/**
+ * Send order delivered notification (all dispatches arrived)
+ */
+export async function sendOrderDeliveredNotification(params: {
+  userId: string
+  orderNumber: string
+  quantity: number
+}): Promise<void> {
+  const { enabled, email } = await shouldSendNotification(params.userId, 'shipment_delivered')
+  if (!enabled || !email) return
+
+  const dashboardUrl = `${APP_URL}/dashboard`
+
+  const html = await render(
+    OrderDeliveredEmail({
+      orderNumber: params.orderNumber,
+      quantity: params.quantity,
+      dashboardUrl,
+    })
+  )
+
+  await sendEmail({
+    to: email,
+    subject: `Your TIP labels from order #${params.orderNumber} have been delivered`,
+    html,
+  })
+
+  await recordNotification(params.userId, 'shipment_delivered', {
     orderNumber: params.orderNumber,
     quantity: params.quantity,
   })

@@ -74,17 +74,19 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       db.order.count({ where: { status: 'PAID' } }),
       db.order.count({ where: { status: 'SHIPPED' } }),
       db.order.count({ where: { status: 'DELIVERED' } }),
+      db.order.count({ where: { status: 'CANCELLED' } }),
     ]),
   ])
 
   const totalPages = Math.ceil(totalCount / perPage)
-  const [allCount, paidCount, shippedCount, deliveredCount] = statusCounts
+  const [allCount, paidCount, shippedCount, deliveredCount, cancelledCount] = statusCounts
 
   const statusTabs = [
     { label: 'All', value: 'ALL', count: allCount },
     { label: 'Paid', value: 'PAID', count: paidCount },
     { label: 'Shipped', value: 'SHIPPED', count: shippedCount },
     { label: 'Delivered', value: 'DELIVERED', count: deliveredCount },
+    { label: 'Cancelled', value: 'CANCELLED', count: cancelledCount },
   ]
 
   const currentStatus = statusFilter || 'ALL'
