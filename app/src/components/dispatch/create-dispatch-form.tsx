@@ -86,6 +86,22 @@ export function CreateDispatchForm() {
       return
     }
 
+    // Validate required address fields when user chose to fill them
+    if (!askReceiver) {
+      const missing: string[] = []
+      if (!data.receiverFirstName?.trim()) missing.push('First Name')
+      if (!data.receiverLastName?.trim()) missing.push('Last Name')
+      if (!data.receiverEmail?.trim()) missing.push('Email')
+      if (!data.destinationLine1?.trim()) missing.push('Address Line 1')
+      if (!data.destinationCity?.trim()) missing.push('City')
+      if (!data.destinationPostalCode?.trim()) missing.push('Postal Code')
+      if (!data.destinationCountry?.trim()) missing.push('Country')
+      if (missing.length > 0) {
+        toast.error(`Please fill in: ${missing.join(', ')}`)
+        return
+      }
+    }
+
     setLoading(true)
 
     try {
