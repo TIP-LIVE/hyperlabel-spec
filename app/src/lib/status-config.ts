@@ -13,8 +13,8 @@ export const shipmentStatusConfig: Record<
   ShipmentStatus,
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success'; dotColor: string }
 > = {
-  PENDING: { label: 'Pending', variant: 'secondary', dotColor: 'bg-muted-foreground/30' },
-  IN_TRANSIT: { label: 'In Transit', variant: 'default', dotColor: 'bg-green-500' },
+  PENDING: { label: 'Pending', variant: 'secondary', dotColor: 'bg-amber-500' },
+  IN_TRANSIT: { label: 'In Transit', variant: 'default', dotColor: 'bg-blue-500' },
   DELIVERED: { label: 'Delivered', variant: 'success', dotColor: 'bg-green-500' },
   CANCELLED: { label: 'Cancelled', variant: 'secondary', dotColor: 'bg-muted-foreground/30' },
 }
