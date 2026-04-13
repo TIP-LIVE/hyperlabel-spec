@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Navigation,
   Tag,
+  UserRound,
 } from 'lucide-react'
 import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
@@ -56,6 +57,16 @@ interface DispatchData {
   destinationAddress: string | null
   destinationLat: number | null
   destinationLng: number | null
+  destinationLine1: string | null
+  destinationLine2: string | null
+  destinationCity: string | null
+  destinationState: string | null
+  destinationPostalCode: string | null
+  destinationCountry: string | null
+  receiverFirstName: string | null
+  receiverLastName: string | null
+  consigneeEmail: string | null
+  consigneePhone: string | null
   deliveredAt: string | null
   createdAt: string
   shareCode: string
@@ -115,6 +126,16 @@ export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/di
               shipmentId={shipment.id}
               currentName={shipment.name}
               currentDestination={shipment.destinationAddress}
+              currentReceiverFirstName={shipment.receiverFirstName}
+              currentReceiverLastName={shipment.receiverLastName}
+              currentReceiverEmail={shipment.consigneeEmail}
+              currentReceiverPhone={shipment.consigneePhone}
+              currentLine1={shipment.destinationLine1}
+              currentLine2={shipment.destinationLine2}
+              currentCity={shipment.destinationCity}
+              currentState={shipment.destinationState}
+              currentPostalCode={shipment.destinationPostalCode}
+              currentCountry={shipment.destinationCountry}
             />
           )}
           <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} variant="dispatch" />
@@ -214,6 +235,40 @@ export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/di
               </div>
             </CardContent>
           </Card>
+
+          {/* Receiver Card */}
+          {(shipment.receiverFirstName || shipment.consigneeEmail) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserRound className="h-4 w-4" />
+                  Receiver
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {(shipment.receiverFirstName || shipment.receiverLastName) && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Name</p>
+                      <p>{[shipment.receiverFirstName, shipment.receiverLastName].filter(Boolean).join(' ')}</p>
+                    </div>
+                  )}
+                  {shipment.consigneeEmail && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p>{shipment.consigneeEmail}</p>
+                    </div>
+                  )}
+                  {shipment.consigneePhone && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p>{shipment.consigneePhone}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Share Card */}
           <Card>

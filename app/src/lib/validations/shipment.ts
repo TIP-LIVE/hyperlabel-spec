@@ -60,8 +60,19 @@ export const updateShipmentSchema = z.object({
   destinationLng: z.number().min(-180).max(180).optional(),
   shareEnabled: z.boolean().optional(),
   status: z.enum(['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED']).optional(),
-  consigneePhone: z.string().max(30).optional(),
+  consigneeEmail: z.string().email().optional().or(z.literal('')),
+  consigneePhone: z.string().max(30).optional().or(z.literal('')),
   photoUrls: z.array(z.string().url().or(z.string().startsWith('/'))).max(5).optional(),
+  // Receiver details (dispatch editing)
+  destinationName: z.string().max(200).optional().or(z.literal('')),
+  receiverFirstName: z.string().max(100).optional().or(z.literal('')),
+  receiverLastName: z.string().max(100).optional().or(z.literal('')),
+  destinationLine1: z.string().max(300).optional().or(z.literal('')),
+  destinationLine2: z.string().max(300).optional().or(z.literal('')),
+  destinationCity: z.string().max(100).optional().or(z.literal('')),
+  destinationState: z.string().max(100).optional().or(z.literal('')),
+  destinationPostalCode: z.string().max(20).optional().or(z.literal('')),
+  destinationCountry: z.string().length(2).optional().or(z.literal('')),
 })
 
 export type CreateShipmentInput = z.infer<typeof createShipmentSchema>
