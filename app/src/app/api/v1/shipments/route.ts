@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createShipmentSchema } from '@/lib/validations/shipment'
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
             },
           },
           locations: {
-            where: { source: 'CELL_TOWER' },
+            where: { source: 'CELL_TOWER', ...VALID_LOCATION },
             orderBy: { recordedAt: 'desc' },
             take: 1,
             select: {
@@ -300,6 +300,16 @@ async function createLabelDispatch(
     )
   }
 
+  // Collect PAID orders linked to these labels so we can transition PAID→SHIPPED
+  const paidOrderIds = [
+    ...new Set(
+      labels
+        .flatMap((l) => l.orderLabels)
+        .filter((ol) => ol.order.status === 'PAID')
+        .map((ol) => ol.order.id)
+    ),
+  ]
+
   // Create shipment + join table entries in a transaction
   const shipment = await db.$transaction(async (tx) => {
     const s = await tx.shipment.create({
@@ -326,6 +336,14 @@ async function createLabelDispatch(
         labelId,
       })),
     })
+
+    // Transition parent orders PAID→SHIPPED
+    if (paidOrderIds.length > 0) {
+      await tx.order.updateMany({
+        where: { id: { in: paidOrderIds }, status: 'PAID' },
+        data: { status: 'SHIPPED', shippedAt: new Date() },
+      })
+    }
 
     // Return with labels included
     return tx.shipment.findUniqueOrThrow({
