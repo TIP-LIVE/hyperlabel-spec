@@ -239,6 +239,12 @@ export function EditDispatchDialog({
           {/* Address */}
           <div className="space-y-3">
             <p className="text-sm font-medium">Delivery Address</p>
+            {/* Show existing composed address as hint when structured fields are empty (legacy dispatches) */}
+            {currentDestination && !currentLine1 && !currentCity && (
+              <p className="text-xs text-muted-foreground rounded-md bg-muted px-3 py-2">
+                Current address: {currentDestination}
+              </p>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="edit-line1">Address Line 1</Label>
               <Input
