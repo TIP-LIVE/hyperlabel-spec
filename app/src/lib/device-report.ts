@@ -190,7 +190,7 @@ export async function processLocationReport(
           imei: input.imei || null,
           iccid: input.iccid || null,
           status: 'ACTIVE',
-          activatedAt: new Date(),
+          manufacturedAt: new Date(),
         },
         include: shipmentInclude,
       })
@@ -271,6 +271,40 @@ export async function processLocationReport(
         updates: identifierUpdates,
         error: err instanceof Error ? err.message : String(err),
       })
+    }
+  }
+
+  // Manufacturing cooldown: suppress LocationEvent creation for 24h after
+  // auto-registration. When a label is physically built, the SIM activation
+  // triggers Onomondo events from the factory. These must not appear in the
+  // end user's tracking history.
+  const MANUFACTURING_COOLDOWN_MS = 24 * 60 * 60 * 1000
+  if (
+    label.manufacturedAt &&
+    Date.now() - new Date(label.manufacturedAt).getTime() < MANUFACTURING_COOLDOWN_MS
+  ) {
+    const now = new Date()
+    if (!label.lastSeenAt || now > label.lastSeenAt) {
+      await db.label.update({
+        where: { id: label.id },
+        data: { lastSeenAt: now },
+      })
+    }
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('[Device report] manufacturing cooldown — event suppressed', {
+        deviceId: label.deviceId,
+        manufacturedAt: new Date(label.manufacturedAt).toISOString(),
+        hoursRemaining: (
+          (MANUFACTURING_COOLDOWN_MS - (Date.now() - new Date(label.manufacturedAt).getTime())) /
+          (60 * 60 * 1000)
+        ).toFixed(1),
+      })
+    }
+    return {
+      success: true,
+      locationId: '',
+      shipmentId: null,
+      deviceId: label.deviceId,
     }
   }
 
@@ -454,6 +488,54 @@ export async function processLocationReport(
         success: true,
         locationId: proximityMatch.id,
         shipmentId: proximityMatch.shipmentId,
+        deviceId: label.deviceId,
+      }
+    }
+  }
+
+  // Velocity sanity check: reject events that imply impossible travel speed.
+  // Cell tower databases occasionally map a cell ID to the wrong country entirely,
+  // producing "teleportation" — e.g. Cologne and Bao'an District at the same timestamp.
+  // If speed exceeds MAX_PLAUSIBLE_SPEED_MS (≈1000 km/h, faster than any cargo transport),
+  // skip the event. When timestamps are identical (delta=0), any distance > 0 is infinite speed.
+  const MAX_PLAUSIBLE_SPEED_MS = 278 // ~1000 km/h in m/s
+  const recentEventForVelocity = await db.locationEvent.findFirst({
+    where: {
+      labelId: label.id,
+      recordedAt: { lte: recordedAt },
+    },
+    orderBy: { recordedAt: 'desc' },
+    select: { id: true, latitude: true, longitude: true, recordedAt: true },
+  })
+
+  if (recentEventForVelocity && recentEventForVelocity.latitude !== null && recentEventForVelocity.longitude !== null) {
+    const distanceM = haversineDistanceM(
+      effectiveLat, effectiveLng,
+      recentEventForVelocity.latitude, recentEventForVelocity.longitude
+    )
+    const timeDeltaS = Math.abs(recordedAt.getTime() - recentEventForVelocity.recordedAt.getTime()) / 1000
+    // If same timestamp (delta=0) and non-trivial distance, or speed exceeds max plausible
+    const impliedSpeed = timeDeltaS > 0 ? distanceM / timeDeltaS : (distanceM > 100 ? Infinity : 0)
+    if (impliedSpeed > MAX_PLAUSIBLE_SPEED_MS) {
+      if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
+        await db.label.update({
+          where: { id: label.id },
+          data: { lastSeenAt: receivedAt },
+        })
+      }
+      console.warn('[Device report] velocity sanity check failed — teleportation rejected', {
+        deviceId: label.deviceId,
+        recordedAt: recordedAt.toISOString(),
+        distanceKm: Math.round(distanceM / 1000),
+        timeDeltaS,
+        impliedSpeedKmh: timeDeltaS > 0 ? Math.round((distanceM / timeDeltaS) * 3.6) : 'Infinity',
+        from: { lat: recentEventForVelocity.latitude, lng: recentEventForVelocity.longitude },
+        to: { lat: effectiveLat, lng: effectiveLng },
+      })
+      return {
+        success: true,
+        locationId: recentEventForVelocity.id,
+        shipmentId: activeShipment?.id ?? null,
         deviceId: label.deviceId,
       }
     }

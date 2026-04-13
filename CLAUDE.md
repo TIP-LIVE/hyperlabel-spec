@@ -111,6 +111,7 @@ Four layers of dedup, each catching what the previous missed:
 | Webhook log ID | Onomondo double-sends | Deterministic SHA256 of `iccid:time:type` → same payload = same DB upsert |
 | Exact coordinate dedup | Same label, same lat/lng within 5 min | Skips new LocationEvent, still updates `lastSeenAt` |
 | Proximity dedup (cell tower only) | Same label, 3km radius within 60 min | Haversine distance — adjacent towers don't create new events |
+| Velocity sanity check | Same label, impossible travel speed | Rejects events implying >1000 km/h (stale cell tower DB). Same-timestamp + >100m = rejected |
 | DB unique constraint | Final safety net | `@@unique([labelId, recordedAt, lat, lng, source])` |
 
 **Key rule**: ALL dedup layers still update `lastSeenAt` so "Last Update" stays fresh.
@@ -118,6 +119,24 @@ Four layers of dedup, each catching what the previous missed:
 Previous attempts that failed:
 - 30min/1km heuristic dedup — too aggressive for infrequent reporters (reverted)
 - No dedup at all — too much noise from stationary devices
+
+### Manufacturing Cooldown (24h)
+
+When a label is physically built, the SIM activation triggers the first Onomondo event which auto-registers the label in our system (`processLocationReport()` → auto-register path). Events from the factory floor must NOT appear in the end user's location history.
+
+**How it works**:
+- Auto-registration sets `Label.manufacturedAt` (NOT `activatedAt`) to the current timestamp
+- `processLocationReport()` checks `manufacturedAt` — if <24 hours old, the event is suppressed:
+  - `lastSeenAt` is still updated (heartbeat stays alive)
+  - No `LocationEvent` is created
+  - No shipment status changes, orphan detection, or delivery checks run
+- After 24 hours, events are processed normally
+- `Label.activatedAt` is only set later when the label first reports with an active shipment (user's real activation, not manufacturing)
+
+**Key rules**:
+1. **Never set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` represents user-facing activation (first report with an active shipment), not factory SIM activation.
+2. **The cooldown only applies to auto-registered labels** — labels created manually (SOLD inventory) don't have `manufacturedAt` set.
+3. **`lastSeenAt` is still updated during cooldown** — the device appears online, but no location history is recorded.
 
 ### Cell Tower Geolocation
 
@@ -149,7 +168,7 @@ Additional rules:
 2. By ICCID — preferred for cell tower events (SIMs move between devices)
 3. By IMEI — fallback only
 
-If no label found, **auto-registers** a new label (`TIP-001`, `TIP-002`, etc.) with status `ACTIVE`.
+If no label found, **auto-registers** a new label (`TIP-001`, `TIP-002`, etc.) with status `ACTIVE` and `manufacturedAt = now()`. The 24h manufacturing cooldown then suppresses LocationEvent creation (see "Manufacturing Cooldown" section above).
 
 #### Orphaned Device Detection
 If a label reports location but has no active shipment and status is `SOLD`:
@@ -321,6 +340,8 @@ These rules were learned through 14 failed attempts:
 8. **Don't allow direct PATCH to DELIVERED status** — must go through confirm-delivery endpoint
 9. **Don't use `localhost` in CI** — use `127.0.0.1`
 10. **Don't skip lastSeenAt update on deduped events** — "Last Update" will look stale
+11. **Don't set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` is for user-facing activation (first report with an active shipment), not factory SIM activation
+12. **Don't create LocationEvents during manufacturing cooldown** — first 24h after auto-registration are factory events; `lastSeenAt` heartbeat still updates
 
 ---
 
@@ -366,6 +387,7 @@ Receivers are often not the buyer, and the buyer often doesn't know the receiver
 
 - `Shipment.receiverFirstName`, `Shipment.receiverLastName`, `Shipment.shareLinkExpiresAt`
 - `OrgSettings.defaultDispatchAddressId` → `SavedAddress.id` (UI to set this is not yet built)
+- `Label.manufacturedAt` — set during auto-registration (SIM first event from factory); drives 24h manufacturing cooldown
 
 ### Site content needing a copy pass
 

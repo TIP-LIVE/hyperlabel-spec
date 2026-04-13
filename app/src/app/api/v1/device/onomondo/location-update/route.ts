@@ -307,11 +307,13 @@ export async function POST(req: NextRequest) {
         })
 
         // Geocode + persist webhook log with final status
-        await geocodeLocationEvent(result.locationId, lat, lng)
+        if (result.locationId) {
+          await geocodeLocationEvent(result.locationId, lat, lng)
+        }
 
         await upsertWebhookLog(webhookLogParams, {
           statusCode: 200,
-          processingResult: { success: true, locationId: result.locationId, shipmentId: result.shipmentId, deviceId: result.deviceId },
+          processingResult: { success: true, locationId: result.locationId || null, shipmentId: result.shipmentId, deviceId: result.deviceId },
           durationMs: Date.now() - startTime,
         })
 

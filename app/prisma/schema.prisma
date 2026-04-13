@@ -92,6 +92,7 @@ model Label {
   batteryPct            Int?        @map("battery_pct")
   firmwareVersion       String?     @map("firmware_version")
   activatedAt           DateTime?   @map("activated_at")
+  manufacturedAt        DateTime?   @map("manufactured_at")
   claimToken            String?     @unique @map("claim_token")
   claimExpiresAt        DateTime?   @map("claim_expires_at")
   firstUnlinkedReportAt DateTime?   @map("first_unlinked_report_at")
