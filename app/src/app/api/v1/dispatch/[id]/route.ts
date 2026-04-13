@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, VALID_LOCATION } from '@/lib/db'
+import { db } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           },
         },
         locations: {
-          where: { ...VALID_LOCATION },
+          where: { excludedReason: null },
           orderBy: { recordedAt: 'desc' },
           take: 100,
         },
