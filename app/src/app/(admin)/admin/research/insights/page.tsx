@@ -144,11 +144,17 @@ export default async function InsightsPage() {
     .filter((l) => l.pilotInterest !== null && l.pilotInterest > 0)
     .sort((a, b) => (b.pilotInterest ?? 0) - (a.pilotInterest ?? 0))
 
-  // Hypothesis details with per-interview signals
-  const hypothesisDetails = hypotheses.map((h) => ({
-    ...h,
-    interviewSignals: allSignals.filter((s) => s.hypothesisId === h.code),
-  }))
+  // Hypothesis details with per-interview signals — derive counts from actual data
+  const hypothesisDetails = hypotheses.map((h) => {
+    const signals = allSignals.filter((s) => s.hypothesisId === h.code)
+    return {
+      ...h,
+      interviewSignals: signals,
+      validating: signals.filter((s) => s.signal === 'validating').length,
+      neutral: signals.filter((s) => s.signal === 'neutral').length,
+      invalidating: signals.filter((s) => s.signal === 'invalidating').length,
+    }
+  })
 
   // Stats
   const stats = {
