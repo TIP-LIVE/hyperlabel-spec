@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, VALID_LOCATION } from '@/lib/db'
+import { db } from '@/lib/db'
 import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createShipmentSchema } from '@/lib/validations/shipment'
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
             },
           },
           locations: {
-            where: { source: 'CELL_TOWER', ...VALID_LOCATION },
+            where: { source: 'CELL_TOWER' },
             orderBy: { recordedAt: 'desc' },
             take: 1,
             select: {
