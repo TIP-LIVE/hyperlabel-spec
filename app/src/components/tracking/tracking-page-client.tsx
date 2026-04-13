@@ -20,7 +20,7 @@ import {
 import { format } from 'date-fns'
 import { formatDateTime, formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
-import { getLastUpdateDate, thinToTimeWindow } from '@/lib/utils/location-display'
+import { getLastUpdateDate, groupConsecutiveByCity, thinGroupEvents } from '@/lib/utils/location-display'
 import { PublicTrackingMap } from '@/components/maps/public-tracking-map'
 import { PublicTimeline } from '@/components/tracking/public-timeline'
 import { ConfirmDeliveryDialog } from '@/components/tracking/confirm-delivery-dialog'
@@ -222,10 +222,11 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
     recordedAt: new Date(l.recordedAt),
   }))
 
-  // Visible count matches PublicTimeline's rendered rows (same 2-hour
-  // thinning), so "N location updates" never exceeds what the user can count.
+  // Matches PublicTimeline's pipeline (group → thin) so the header count
+  // equals the sum of badge counts the user sees in the timeline.
   const visibleLocationCount = useMemo(
-    () => thinToTimeWindow(locationsWithDates).length,
+    () => thinGroupEvents(groupConsecutiveByCity(locationsWithDates))
+      .reduce((sum, g) => sum + g.events.length, 0),
     [locationsWithDates],
   )
 

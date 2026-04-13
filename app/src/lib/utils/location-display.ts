@@ -129,6 +129,7 @@ export interface GroupableLocation {
   latitude: number
   longitude: number
   geocodedCity?: string | null
+  geocodedArea?: string | null
 }
 
 export interface LocationGroup<T extends GroupableLocation> {
@@ -138,22 +139,20 @@ export interface LocationGroup<T extends GroupableLocation> {
 }
 
 /**
- * Group consecutive location events by geocoded city name.
+ * Generic consecutive grouping by an arbitrary key field.
  *
- * Events are expected to be sorted newest-first, but this function applies a
- * defensive sort first so the output is always chronologically correct. A new
- * group starts whenever the geocoded city changes. When either side is missing
- * a city name, falls back to coordinate proximity (~500m). When BOTH events
- * have city names, the city comparison is authoritative — no proximity fallback
- * — so geographically distinct named places never get silently merged under a
- * single label.
+ * Applies a defensive newest-first sort, then walks events sequentially.
+ * A new group starts whenever the key changes. When either side is missing
+ * a key, falls back to coordinate proximity (~500m). When BOTH events
+ * have keys, the string comparison is authoritative — no proximity fallback
+ * — so distinct named places never get silently merged.
  *
  * Invariant: for any two adjacent groups N and N+1, every event in group N is
- * strictly newer than every event in group N+1. In other words, group time
- * ranges never overlap.
+ * strictly newer than every event in group N+1 (no time-range overlap).
  */
-export function groupConsecutiveByCity<T extends GroupableLocation>(
+function groupConsecutive<T extends GroupableLocation>(
   locations: T[],
+  getKey: (loc: T) => string | null | undefined,
 ): LocationGroup<T>[] {
   if (locations.length === 0) return []
 
@@ -170,11 +169,13 @@ export function groupConsecutiveByCity<T extends GroupableLocation>(
     const prev = current.representative
     const curr = sorted[i]
 
-    // Strict city matching: if both events carry a city name, that comparison
-    // wins. Proximity is only a fallback for events that haven't been geocoded.
+    const key1 = getKey(prev)
+    const key2 = getKey(curr)
+    // Strict key matching: if both events carry a key, that comparison wins.
+    // Proximity is only a fallback for events that haven't been geocoded.
     const sameGroup =
-      prev.geocodedCity && curr.geocodedCity
-        ? prev.geocodedCity === curr.geocodedCity
+      key1 && key2
+        ? key1 === key2
         : isNearby(prev, curr)
 
     if (sameGroup) {
@@ -186,6 +187,36 @@ export function groupConsecutiveByCity<T extends GroupableLocation>(
   }
   groups.push(current)
   return groups
+}
+
+/**
+ * Group consecutive location events by geocoded city name.
+ *
+ * A new group starts whenever the geocoded city changes. When either side is
+ * missing a city name, falls back to coordinate proximity (~500m). When BOTH
+ * events have city names, the city comparison is authoritative — no proximity
+ * fallback — so geographically distinct named places never get silently merged
+ * under a single label.
+ */
+export function groupConsecutiveByCity<T extends GroupableLocation>(
+  locations: T[],
+): LocationGroup<T>[] {
+  return groupConsecutive(locations, (l) => l.geocodedCity)
+}
+
+/**
+ * Group consecutive location events by geocoded area/suburb name.
+ *
+ * Same algorithm as city grouping but keyed on geocodedArea. Useful for
+ * showing movement patterns within a city when expanding a city-level group.
+ * Unlike the old `groupByArea` (which merged ALL same-area events globally),
+ * this preserves temporal order so the user can see when the device moved
+ * between areas.
+ */
+export function groupConsecutiveByArea<T extends GroupableLocation>(
+  locations: T[],
+): LocationGroup<T>[] {
+  return groupConsecutive(locations, (l) => l.geocodedArea)
 }
 
 /**

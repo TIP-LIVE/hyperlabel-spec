@@ -6,11 +6,12 @@ import {
   thinToTimeWindow,
   isNearby,
   groupConsecutiveByCity,
+  groupConsecutiveByArea,
   thinGroupEvents,
   type GroupableLocation,
 } from '@/lib/utils/location-display'
 
-type Loc = GroupableLocation & { id: string }
+type Loc = GroupableLocation & { id: string; geocodedArea?: string | null }
 
 function make(
   id: string,
@@ -18,8 +19,9 @@ function make(
   city: string | null,
   lat: number,
   lng: number,
+  area?: string | null,
 ): Loc {
-  return { id, recordedAt: new Date(iso), geocodedCity: city, latitude: lat, longitude: lng }
+  return { id, recordedAt: new Date(iso), geocodedCity: city, latitude: lat, longitude: lng, geocodedArea: area ?? null }
 }
 
 // London-ish coordinates used across tests
@@ -285,5 +287,64 @@ describe('thinGroupEvents — preserves date ranges', () => {
     expect(thinned[0].events[thinned[0].events.length - 1].id).toBe('b3')
     expect(thinned[1].events[0].id).toBe('m1')
     expect(thinned[1].events[thinned[1].events.length - 1].id).toBe('m3')
+  })
+})
+
+describe('groupConsecutiveByArea — temporal order', () => {
+  it('keeps consecutive same-area events in one group', () => {
+    const events: Loc[] = [
+      make('a', '2026-04-08T15:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+      make('b', '2026-04-08T13:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+      make('c', '2026-04-08T11:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+    ]
+    const groups = groupConsecutiveByArea(events)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].events.map((e) => e.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('splits into separate groups when area changes', () => {
+    const events: Loc[] = [
+      make('k1', '2026-04-08T15:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+      make('p1', '2026-04-08T13:00:00Z', 'London', PUTNEY.lat, PUTNEY.lng, 'Putney Vale'),
+      make('k2', '2026-04-08T11:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+    ]
+    const groups = groupConsecutiveByArea(events)
+    expect(groups).toHaveLength(3)
+    expect(groups[0].events.map((e) => e.id)).toEqual(['k1'])
+    expect(groups[0].representative.geocodedArea).toBe('Kingston Vale')
+    expect(groups[1].events.map((e) => e.id)).toEqual(['p1'])
+    expect(groups[1].representative.geocodedArea).toBe('Putney Vale')
+    expect(groups[2].events.map((e) => e.id)).toEqual(['k2'])
+    expect(groups[2].representative.geocodedArea).toBe('Kingston Vale')
+  })
+
+  it('falls back to proximity when area is missing', () => {
+    const events: Loc[] = [
+      make('a', '2026-04-08T15:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng),
+      make('b', '2026-04-08T13:00:00Z', 'London', KINGSTON.lat + 0.001, KINGSTON.lng), // nearby
+      make('c', '2026-04-08T11:00:00Z', 'London', CLAPHAM.lat, CLAPHAM.lng), // far
+    ]
+    const groups = groupConsecutiveByArea(events)
+    expect(groups).toHaveLength(2)
+    expect(groups[0].events.map((e) => e.id)).toEqual(['a', 'b'])
+    expect(groups[1].events.map((e) => e.id)).toEqual(['c'])
+  })
+
+  it('preserves no-overlap invariant across adjacent area groups', () => {
+    const events: Loc[] = [
+      make('k1', '2026-04-08T15:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+      make('k2', '2026-04-08T13:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+      make('p1', '2026-04-08T11:00:00Z', 'London', PUTNEY.lat, PUTNEY.lng, 'Putney Vale'),
+      make('p2', '2026-04-08T09:00:00Z', 'London', PUTNEY.lat, PUTNEY.lng, 'Putney Vale'),
+      make('k3', '2026-04-08T07:00:00Z', 'London', KINGSTON.lat, KINGSTON.lng, 'Kingston Vale'),
+    ]
+    const groups = groupConsecutiveByArea(events)
+    expect(groups).toHaveLength(3)
+
+    for (let i = 0; i < groups.length - 1; i++) {
+      const oldestOfCurrent = groups[i].events[groups[i].events.length - 1].recordedAt.getTime()
+      const newestOfNext = groups[i + 1].events[0].recordedAt.getTime()
+      expect(oldestOfCurrent).toBeGreaterThan(newestOfNext)
+    }
   })
 })

@@ -26,7 +26,7 @@ import {
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { formatDateTimeFull } from '@/lib/utils/format-date'
 import { timeAgo } from '@/lib/utils/time-ago'
-import { getLastUpdateDate, thinToTimeWindow } from '@/lib/utils/location-display'
+import { getLastUpdateDate } from '@/lib/utils/location-display'
 import { ShipmentMap } from '@/components/maps/shipment-map'
 import { ShipmentTimeline } from '@/components/shipments/shipment-timeline'
 import { ShareLinkButton } from '@/components/shipments/share-link-button'
@@ -299,14 +299,10 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
     return { ...l, recordedAt, isOfflineSync }
   })
 
-  // Visible count matches what the timeline actually renders (after the same
-  // 2-hour thinning ShipmentTimeline applies internally). The raw count
-  // exposed by the API can be much larger, so using it in the header caused
-  // "Showing 100 of 134" while the user only saw ~39 rows on screen.
-  const visibleLocationCount = useMemo(
-    () => thinToTimeWindow(locationsWithDates).length,
-    [locationsWithDates],
-  )
+  // Raw count — matches the sum of city-group badges in ShipmentTimeline
+  // (which no longer thins). The timeline shows area sub-group summaries,
+  // not individual rows, so the raw count is the right number to display.
+  const visibleLocationCount = locationsWithDates.length
 
   return (
     <div className="space-y-6 min-w-0 overflow-x-hidden">

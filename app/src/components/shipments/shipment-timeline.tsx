@@ -8,9 +8,8 @@ import { formatDateRange } from '@/lib/utils/format-date-range'
 import { cn } from '@/lib/utils'
 import {
   formatLocationName,
-  isNearby,
   groupConsecutiveByCity,
-  thinGroupEvents,
+  groupConsecutiveByArea,
 } from '@/lib/utils/location-display'
 
 interface LocationEvent {
@@ -30,45 +29,6 @@ interface LocationEvent {
 
 interface ShipmentTimelineProps {
   locations: LocationEvent[]
-}
-
-/**
- * Aggregate events within an expanded city group by geocodedArea (or proximity).
- * Unlike consecutive grouping, this merges ALL events for the same area into one
- * sub-group — eliminating the noisy A→B→A→B pattern caused by cell tower jitter.
- * Groups are ordered by first appearance (newest first, matching parent sort).
- */
-function groupByArea(events: LocationEvent[]): LocationEvent[][] {
-  if (events.length === 0) return []
-
-  const groups: { key: string; events: LocationEvent[] }[] = []
-
-  for (const event of events) {
-    const areaKey = event.geocodedArea ?? null
-    let matched = false
-
-    for (const group of groups) {
-      if (areaKey && group.key === areaKey) {
-        group.events.push(event)
-        matched = true
-        break
-      }
-      if (!areaKey && isNearby(event, group.events[0])) {
-        group.events.push(event)
-        matched = true
-        break
-      }
-    }
-
-    if (!matched) {
-      groups.push({
-        key: areaKey || `${event.latitude.toFixed(3)},${event.longitude.toFixed(3)}`,
-        events: [event],
-      })
-    }
-  }
-
-  return groups.map((g) => g.events)
 }
 
 function locationDisplayName(location: LocationEvent): string {
@@ -91,11 +51,10 @@ function detailLocationDisplayName(location: LocationEvent): string {
 export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
-  // Group first, then thin within each group. This preserves the oldest and
-  // newest events per group so the date range is never lost. Previous approach
-  // (thin → group) could reduce multi-event groups to single events.
+  // Group by city — no thinning needed because the expanded view shows area
+  // sub-group summaries (not individual events), so density is already managed.
   const groups = useMemo(
-    () => thinGroupEvents(groupConsecutiveByCity(locations)),
+    () => groupConsecutiveByCity(locations),
     [locations],
   )
 
@@ -228,21 +187,21 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                 </div>
               </button>
 
-              {/* Expanded individual events — sub-grouped by area to reduce cell tower noise */}
+              {/* Expanded — consecutive area sub-groups preserve temporal order */}
               {isExpanded && (
                 <div className="mt-2 space-y-2 sm:space-y-4 border-l-2 border-dashed border-muted-foreground/20 ml-[11px] sm:ml-[15px] pl-6 sm:pl-8">
-                  {groupByArea(group.events).map((subGroup) => {
-                    if (subGroup.length === 1) {
+                  {groupConsecutiveByArea(group.events).map((areaGroup) => {
+                    if (areaGroup.events.length === 1) {
                       return (
-                        <div key={subGroup[0].id} className="min-h-[36px] sm:min-h-[44px]">
-                          {renderLocationRow(subGroup[0], false, true)}
+                        <div key={areaGroup.events[0].id} className="min-h-[36px] sm:min-h-[44px]">
+                          {renderLocationRow(areaGroup.events[0], false, true)}
                         </div>
                       )
                     }
-                    // Multiple events in the same area — show one row with count
-                    // and the full date range so it's clear when visits started/ended.
-                    const newest = subGroup[0]
-                    const oldest = subGroup[subGroup.length - 1]
+                    // Multiple consecutive events in the same area — show one row
+                    // with count and the date range of this consecutive run.
+                    const newest = areaGroup.events[0]
+                    const oldest = areaGroup.events[areaGroup.events.length - 1]
                     return (
                       <div key={newest.id} className="min-h-[36px] sm:min-h-[44px]">
                         <div className="flex-1 min-w-0 space-y-1">
@@ -255,13 +214,11 @@ export function ShipmentTimeline({ locations }: ShipmentTimelineProps) {
                               {detailLocationDisplayName(newest)}
                             </span>
                             <span className="shrink-0 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                              x{subGroup.length}
+                              x{areaGroup.events.length}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {newest.id === oldest.id
-                              ? format(new Date(newest.recordedAt), 'PPp')
-                              : formatDateRange(new Date(oldest.recordedAt), new Date(newest.recordedAt))}
+                            {formatDateRange(new Date(oldest.recordedAt), new Date(newest.recordedAt))}
                           </p>
                         </div>
                       </div>
