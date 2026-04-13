@@ -363,7 +363,7 @@ export default async function DashboardPage() {
                   const label = shipment.label
                   const loc = shipment.locations[0]
                   const locationName = loc ? formatLocationName(loc) : null
-                  const countryCode = loc ? getLocationCountryCode(loc) : null
+                  const countryCode = loc ? getLocationCountryCode(loc) : (shipment.type === 'LABEL_DISPATCH' ? shipment.destinationCountry : null)
                   const flag = countryCode ? countryCodeToFlag(countryCode) : null
                   const lastUpdate = getLastUpdateDate({
                     locationRecordedAt: loc?.recordedAt,
@@ -393,7 +393,7 @@ export default async function DashboardPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium truncate">
-                              {shipment.name || 'Unnamed Cargo'}
+                              {shipment.name || (shipment.type === 'LABEL_DISPATCH' ? 'Label Dispatch' : 'Unnamed Cargo')}
                             </span>
                             <Badge variant={status.variant} className="shrink-0">{status.label}</Badge>
                           </div>
@@ -401,6 +401,8 @@ export default async function DashboardPage() {
                             {flag && <span>{flag}</span>}
                             {locationName ? (
                               <span className="truncate">{locationName}</span>
+                            ) : shipment.type === 'LABEL_DISPATCH' && shipment.destinationCity ? (
+                              <span className="truncate">To {shipment.destinationCity}{shipment.destinationCountry ? `, ${shipment.destinationCountry}` : ''}</span>
                             ) : (
                               <span className="italic">No location yet</span>
                             )}
