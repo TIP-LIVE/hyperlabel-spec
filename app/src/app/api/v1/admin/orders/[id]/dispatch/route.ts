@@ -13,6 +13,20 @@ interface RouteParams {
 const createDispatchSchema = z.object({
   name: z.string().min(1).max(200),
   labelCount: z.number().int().min(1),
+  askReceiver: z.boolean().optional().default(false),
+  receiverFirstName: z.string().max(100).optional().or(z.literal('')),
+  receiverLastName: z.string().max(100).optional().or(z.literal('')),
+  receiverEmail: z.string().email().optional().or(z.literal('')),
+  receiverPhone: z.string().max(30).optional().or(z.literal('')),
+  destinationAddress: z.string().optional().default(''),
+  destinationLat: z.number().min(-90).max(90).nullable().optional(),
+  destinationLng: z.number().min(-180).max(180).nullable().optional(),
+  destinationLine1: z.string().max(300).optional().or(z.literal('')),
+  destinationLine2: z.string().max(300).optional().or(z.literal('')),
+  destinationCity: z.string().max(100).optional().or(z.literal('')),
+  destinationState: z.string().max(100).optional().or(z.literal('')),
+  destinationPostalCode: z.string().max(20).optional().or(z.literal('')),
+  destinationCountry: z.string().length(2).optional().or(z.literal('')),
 })
 
 /**
@@ -112,7 +126,41 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { name, labelCount } = validated.data
+    const { name, labelCount, askReceiver } = validated.data
+
+    // Normalize empty strings → null
+    const norm = (v: string | undefined | null) => (v?.trim() || null)
+    const receiverFirstName = norm(validated.data.receiverFirstName)
+    const receiverLastName = norm(validated.data.receiverLastName)
+    const receiverEmail = norm(validated.data.receiverEmail)
+    const receiverPhone = norm(validated.data.receiverPhone)
+    const destinationAddress = norm(validated.data.destinationAddress)
+    const destinationLine1 = norm(validated.data.destinationLine1)
+    const destinationLine2 = norm(validated.data.destinationLine2)
+    const destinationCity = norm(validated.data.destinationCity)
+    const destinationState = norm(validated.data.destinationState)
+    const destinationPostalCode = norm(validated.data.destinationPostalCode)
+    const destinationCountry = norm(validated.data.destinationCountry)
+    const destinationLat = validated.data.destinationLat ?? null
+    const destinationLng = validated.data.destinationLng ?? null
+
+    const hasReceiverDetails = Boolean(
+      !askReceiver &&
+        receiverFirstName &&
+        receiverLastName &&
+        destinationLine1 &&
+        destinationCity &&
+        destinationPostalCode &&
+        destinationCountry &&
+        receiverEmail,
+    )
+    const destinationName = hasReceiverDetails
+      ? `${receiverFirstName} ${receiverLastName}`
+      : null
+    const addressSubmittedAt = hasReceiverDetails ? new Date() : null
+    const shareLinkExpiresAt = hasReceiverDetails
+      ? null
+      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
 
     const order = await db.order.findUnique({
       where: { id },
@@ -175,6 +223,22 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           orderId: order.id,
           labelCount,
           status: 'PENDING',
+          destinationAddress,
+          destinationLat,
+          destinationLng,
+          destinationName,
+          destinationLine1,
+          destinationLine2,
+          destinationCity,
+          destinationState,
+          destinationPostalCode,
+          destinationCountry,
+          receiverFirstName,
+          receiverLastName,
+          consigneeEmail: receiverEmail,
+          consigneePhone: receiverPhone,
+          addressSubmittedAt,
+          shareLinkExpiresAt,
         },
       })
 
@@ -201,7 +265,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       }).catch((err) => console.error('Failed to send order shipped notification:', err))
     }
 
-    return NextResponse.json({ shipment }, { status: 201 })
+    const shareLink = hasReceiverDetails ? null : `/track/${shipment.shareCode}`
+    return NextResponse.json({ shipment, shareLink, awaitingReceiverDetails: !hasReceiverDetails }, { status: 201 })
   } catch (error) {
     return handleApiError(error, 'creating dispatch for order')
   }
