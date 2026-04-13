@@ -162,6 +162,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Collect unique PAID order IDs from the labels being dispatched
+    const paidOrderIds = [
+      ...new Set(
+        labels
+          .flatMap((l) => l.orderLabels)
+          .filter((ol) => ol.order.status === 'PAID')
+          .map((ol) => ol.order.id)
+      ),
+    ]
+
     // Create shipment + join table entries in a transaction
     const shipment = await db.$transaction(async (tx) => {
       const s = await tx.shipment.create({
@@ -200,6 +210,14 @@ export async function POST(req: NextRequest) {
           labelId,
         })),
       })
+
+      // Update associated orders: PAID → SHIPPED
+      if (paidOrderIds.length > 0) {
+        await tx.order.updateMany({
+          where: { id: { in: paidOrderIds }, status: 'PAID' },
+          data: { status: 'SHIPPED', shippedAt: new Date() },
+        })
+      }
 
       return tx.shipment.findUniqueOrThrow({
         where: { id: s.id },
