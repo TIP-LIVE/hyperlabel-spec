@@ -13,6 +13,7 @@ import {
   Share2,
   Truck,
   CheckCircle,
+  MapPin,
   Navigation,
   Tag,
   UserRound,
@@ -200,11 +201,9 @@ export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/di
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Destination — labels ship from TIP warehouse by default, so origin is not shown */}
+              {/* Destination — labels ship from TIP warehouse, so only destination shown */}
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                  <span className="text-xs font-bold text-green-700 dark:text-green-300">B</span>
-                </div>
+                <MapPin className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400 mt-0.5" />
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Destination</p>
                   <p className="text-sm">{shipment.destinationAddress || 'Not specified'}</p>
