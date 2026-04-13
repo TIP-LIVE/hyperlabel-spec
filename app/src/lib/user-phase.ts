@@ -69,7 +69,7 @@ export async function resolveUserPhase({ userId, orgId }: Args): Promise<UserPha
                 select: {
                   id: true,
                   shipmentLabels: {
-                    where: { shipment: { type: 'LABEL_DISPATCH' } },
+                    where: { shipment: { type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } } },
                     select: { shipmentId: true },
                   },
                 },
