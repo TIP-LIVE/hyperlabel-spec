@@ -40,6 +40,14 @@ export async function GET(req: NextRequest) {
             shipment: { select: { id: true, name: true, status: true } },
           },
         },
+        shipments: {
+          where: {
+            type: 'CARGO_TRACKING',
+            status: { in: ['PENDING', 'IN_TRANSIT'] },
+          },
+          select: { id: true, name: true, status: true },
+          take: 1,
+        },
       },
     })
 
@@ -59,6 +67,14 @@ export async function GET(req: NextRequest) {
       const dispatch = label.shipmentLabels[0].shipment
       return NextResponse.json(
         { error: `Label is already in dispatch "${dispatch.name}" (${dispatch.status})`, label },
+        { status: 400 }
+      )
+    }
+
+    if (label.shipments.length > 0) {
+      const cargo = label.shipments[0]
+      return NextResponse.json(
+        { error: `Label is already tracking cargo "${cargo.name || 'Untitled'}" (${cargo.status})`, label },
         { status: 400 }
       )
     }

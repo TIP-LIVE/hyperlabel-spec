@@ -88,6 +88,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           where: { shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } } },
           select: { shipment: { select: { id: true, name: true } } },
         },
+        shipments: {
+          where: { type: 'CARGO_TRACKING', status: { in: ['PENDING', 'IN_TRANSIT'] } },
+          select: { id: true, name: true },
+          take: 1,
+        },
       },
     })
 
@@ -108,6 +113,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       if (label.shipmentLabels.length > 0) {
         const dispatch = label.shipmentLabels[0].shipment
         errors.push(`Label ${label.displayId || label.deviceId} is already in dispatch "${dispatch.name}"`)
+      }
+      if (label.shipments.length > 0) {
+        const cargo = label.shipments[0]
+        errors.push(`Label ${label.displayId || label.deviceId} is already tracking cargo "${cargo.name || 'Untitled'}"`)
       }
     }
 

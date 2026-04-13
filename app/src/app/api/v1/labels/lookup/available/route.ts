@@ -24,6 +24,13 @@ export async function GET() {
             },
           },
         },
+        // Exclude labels already in active cargo tracking
+        shipments: {
+          none: {
+            type: 'CARGO_TRACKING',
+            status: { in: ['PENDING', 'IN_TRANSIT'] },
+          },
+        },
       },
       select: {
         id: true,
