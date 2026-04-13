@@ -111,7 +111,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
     })
     const dispatchedCount = labels.filter((l) => l.inActiveDispatch).length
     const undispatchedCount = labels.filter(
-      (l) => !l.inActiveDispatch && (l.status === 'SOLD' || l.status === 'INVENTORY')
+      (l) => !l.inActiveDispatch && (l.status === 'SOLD' || l.status === 'INVENTORY' || l.status === 'ACTIVE')
     ).length
     return { ...order, labels, dispatchedCount, undispatchedCount }
   })
