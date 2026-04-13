@@ -108,10 +108,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       }
     })
     const dispatchedCount = labels.filter((l) => l.inActiveDispatch).length
-    const hasUndispatched = labels.some(
+    const undispatchedCount = labels.filter(
       (l) => !l.inActiveDispatch && (l.status === 'SOLD' || l.status === 'INVENTORY')
-    )
-    return { ...order, labels, dispatchedCount, hasUndispatched }
+    ).length
+    return { ...order, labels, dispatchedCount, undispatchedCount }
   })
 
   return (
@@ -230,11 +230,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             {formatDateTime(order.createdAt)}
                           </td>
                           <td className="py-3">
-                            {(order.status === 'PAID' || order.status === 'SHIPPED') && order.hasUndispatched && (
+                            {(order.status === 'PAID' || order.status === 'SHIPPED') && order.undispatchedCount > 0 && (
                               <CreateDispatchButton
                                 orderId={order.id}
                                 orderShortId={orderShortId}
-                                labels={order.labels}
+                                availableLabelCount={order.undispatchedCount}
                               />
                             )}
                           </td>

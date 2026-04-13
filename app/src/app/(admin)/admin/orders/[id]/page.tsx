@@ -87,39 +87,43 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
     }
   })
 
-  // Get all dispatches related to this order's labels
+  // Get all dispatches for this order (new: via orderId, legacy: via ShipmentLabel)
   const orderLabelIds = order.orderLabels.map((ol) => ol.label.id)
-  let dispatches: Array<{
-    id: string
-    name: string | null
-    status: string
-    shareCode: string
-    createdAt: Date
-    _count: { shipmentLabels: number }
-  }> = []
 
+  // Dispatches linked directly via orderId
+  const directDispatches = await db.shipment.findMany({
+    where: { orderId: order.id, type: 'LABEL_DISPATCH' },
+    select: {
+      id: true, name: true, status: true, shareCode: true, createdAt: true, labelCount: true,
+      _count: { select: { shipmentLabels: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  // Legacy dispatches via ShipmentLabel (for backwards compat)
+  let legacyDispatches: typeof directDispatches = []
   if (orderLabelIds.length > 0) {
     const shipmentLabels = await db.shipmentLabel.findMany({
       where: { labelId: { in: orderLabelIds } },
       select: { shipmentId: true },
     })
-    const shipmentIds = [...new Set(shipmentLabels.map((sl) => sl.shipmentId))]
+    const directIds = new Set(directDispatches.map((d) => d.id))
+    const legacyIds = [...new Set(shipmentLabels.map((sl) => sl.shipmentId))].filter((sid) => !directIds.has(sid))
 
-    if (shipmentIds.length > 0) {
-      dispatches = await db.shipment.findMany({
-        where: { id: { in: shipmentIds }, type: 'LABEL_DISPATCH' },
+    if (legacyIds.length > 0) {
+      legacyDispatches = await db.shipment.findMany({
+        where: { id: { in: legacyIds }, type: 'LABEL_DISPATCH' },
         select: {
-          id: true,
-          name: true,
-          status: true,
-          shareCode: true,
-          createdAt: true,
+          id: true, name: true, status: true, shareCode: true, createdAt: true, labelCount: true,
           _count: { select: { shipmentLabels: true } },
         },
         orderBy: { createdAt: 'desc' },
       })
     }
   }
+
+  const dispatches = [...directDispatches, ...legacyDispatches]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
   const shippingAddress = order.shippingAddress as {
     line1?: string; line2?: string; city?: string; state?: string; postal_code?: string; country?: string
@@ -128,9 +132,9 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
   const currencySymbol = order.currency === 'GBP' ? '\u00a3' : order.currency === 'EUR' ? '\u20ac' : '$'
   const orderShortId = order.id.slice(-8).toUpperCase()
 
-  const hasUndispatchedLabels = labelsWithDispatch.some(
+  const undispatchedLabelCount = labelsWithDispatch.filter(
     (l) => !l.inActiveDispatch && !l.dispatchStatus && (l.status === 'SOLD' || l.status === 'INVENTORY')
-  )
+  ).length
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -154,18 +158,11 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Badge className={statusStyles[order.status]}>{order.status}</Badge>
-          {(order.status === 'PAID' || order.status === 'SHIPPED') && hasUndispatchedLabels && (
+          {(order.status === 'PAID' || order.status === 'SHIPPED') && undispatchedLabelCount > 0 && (
             <CreateDispatchButton
               orderId={order.id}
               orderShortId={orderShortId}
-              labels={labelsWithDispatch.map((l) => ({
-                id: l.id,
-                deviceId: l.deviceId,
-                displayId: l.displayId ?? null,
-                status: l.status,
-                inActiveDispatch: l.inActiveDispatch || !!l.dispatchStatus,
-                dispatchStatus: l.dispatchStatus,
-              }))}
+              availableLabelCount={undispatchedLabelCount}
             />
           )}
         </div>
@@ -274,7 +271,12 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
                     <div>
                       <span className="text-sm text-card-foreground">{d.name || 'Unnamed dispatch'}</span>
                       <p className="text-xs text-muted-foreground">
-                        {d._count.shipmentLabels} label{d._count.shipmentLabels !== 1 ? 's' : ''} · {formatDateTime(d.createdAt)}
+                        {d._count.shipmentLabels > 0
+                          ? `${d._count.shipmentLabels} label${d._count.shipmentLabels !== 1 ? 's' : ''} linked`
+                          : d.labelCount
+                            ? `${d.labelCount} label${d.labelCount !== 1 ? 's' : ''} (not yet linked)`
+                            : 'No labels'
+                        } · {formatDateTime(d.createdAt)}
                       </p>
                     </div>
                   </div>

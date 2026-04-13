@@ -11,6 +11,7 @@ import {
 import { Truck, CheckCircle, RefreshCw, MoreHorizontal, XCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { CancelDispatchDialog } from '@/components/dispatch/cancel-dispatch-dialog'
+import { LabelScanDialog } from '@/components/dispatch/label-scan-dialog'
 import { toast } from 'sonner'
 
 type DispatchStatus = 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED'
@@ -20,6 +21,7 @@ interface DispatchAdminActionsProps {
   shipmentName: string | null
   status: DispatchStatus
   destinationAddress: string | null
+  labelCount: number | null
 }
 
 export function DispatchAdminActions({
@@ -27,8 +29,10 @@ export function DispatchAdminActions({
   shipmentName,
   status,
   destinationAddress,
+  labelCount,
 }: DispatchAdminActionsProps) {
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [scanOpen, setScanOpen] = useState(false)
   const isActive = status === 'PENDING' || status === 'IN_TRANSIT'
   const missingReceiverAddress = status === 'PENDING' && !destinationAddress
 
@@ -56,7 +60,7 @@ export function DispatchAdminActions({
               <span tabIndex={0}>
                 <Button variant="default" size="sm" className="gap-1.5 pointer-events-none" disabled>
                   <Truck className="h-3.5 w-3.5" />
-                  Mark as In Transit
+                  Scan & Ship
                 </Button>
               </span>
             </TooltipTrigger>
@@ -70,10 +74,10 @@ export function DispatchAdminActions({
             variant="default"
             size="sm"
             className="gap-1.5"
-            onClick={() => patchStatus('IN_TRANSIT', 'Dispatch marked as in transit', 'Failed to update status')}
+            onClick={() => setScanOpen(true)}
           >
             <Truck className="h-3.5 w-3.5" />
-            Mark as In Transit
+            Scan & Ship
           </Button>
         ))}
       {status === 'IN_TRANSIT' && (
@@ -135,6 +139,14 @@ export function DispatchAdminActions({
           />
         </>
       )}
+      <LabelScanDialog
+        shipmentId={shipmentId}
+        shipmentName={shipmentName}
+        labelCount={labelCount}
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onConfirmed={() => window.location.reload()}
+      />
     </div>
   )
 }

@@ -140,6 +140,9 @@ model Shipment {
   consigneePhone        String?        @map("consignee_phone") // Recipient's phone number
   consigneeUnsubscribed Boolean        @default(false) @map("consignee_unsubscribed") // Consignee opted out of emails
   photoUrls             String[]       @map("photo_urls") // Cargo photos
+  labelCount            Int?           @map("label_count") // Expected label count for LABEL_DISPATCH (labels linked at scan time)
+  orderId               String?        @map("order_id") // Source order for LABEL_DISPATCH
+  order                 Order?         @relation(fields: [orderId], references: [id])
   createdAt             DateTime       @default(now()) @map("created_at")
   updatedAt             DateTime       @updatedAt @map("updated_at")
   deliveredAt           DateTime?      @map("delivered_at")
@@ -156,6 +159,7 @@ model Shipment {
   locations      LocationEvent[]
 
   @@index([orgId])
+  @@index([orderId])
   @@map("shipments")
 }
 
@@ -221,6 +225,7 @@ model Order {
   userId      String       @map("user_id")
   user        User         @relation(fields: [userId], references: [id])
   orderLabels OrderLabel[]
+  dispatches  Shipment[]
 
   @@index([orgId])
   @@map("orders")

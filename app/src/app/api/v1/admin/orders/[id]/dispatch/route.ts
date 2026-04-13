@@ -12,12 +12,12 @@ interface RouteParams {
 
 const createDispatchSchema = z.object({
   name: z.string().min(1).max(200),
-  labelIds: z.array(z.string()).min(1),
+  labelCount: z.number().int().min(1),
 })
 
 /**
  * GET /api/v1/admin/orders/[id]/dispatch
- * List dispatches for an order's labels
+ * List dispatches for an order
  */
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
@@ -26,26 +26,49 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     const order = await db.order.findUnique({
       where: { id },
-      include: {
-        orderLabels: { select: { labelId: true } },
-      },
+      select: { id: true },
     })
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    const labelIds = order.orderLabels.map((ol) => ol.labelId)
-
-    if (labelIds.length === 0) {
-      return NextResponse.json({ dispatches: [] })
-    }
-
-    // Find all dispatches that contain any of this order's labels
-    const shipmentLabels = await db.shipmentLabel.findMany({
-      where: { labelId: { in: labelIds } },
+    // Find dispatches linked to this order directly (new flow)
+    // plus legacy dispatches linked via ShipmentLabel
+    const directDispatches = await db.shipment.findMany({
+      where: { orderId: id, type: 'LABEL_DISPATCH' },
       include: {
-        shipment: {
+        shipmentLabels: {
+          include: {
+            label: {
+              select: { id: true, deviceId: true, status: true, batteryPct: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    // Also find legacy dispatches via ShipmentLabel (for backwards compat)
+    const orderLabels = await db.orderLabel.findMany({
+      where: { orderId: id },
+      select: { labelId: true },
+    })
+    const labelIds = orderLabels.map((ol) => ol.labelId)
+
+    let legacyDispatches: typeof directDispatches = []
+    if (labelIds.length > 0) {
+      const shipmentLabels = await db.shipmentLabel.findMany({
+        where: { labelId: { in: labelIds } },
+        select: { shipmentId: true },
+      })
+      const legacyIds = [...new Set(shipmentLabels.map((sl) => sl.shipmentId))]
+      const directIds = new Set(directDispatches.map((d) => d.id))
+      const onlyLegacyIds = legacyIds.filter((sid) => !directIds.has(sid))
+
+      if (onlyLegacyIds.length > 0) {
+        legacyDispatches = await db.shipment.findMany({
+          where: { id: { in: onlyLegacyIds }, type: 'LABEL_DISPATCH' },
           include: {
             shipmentLabels: {
               include: {
@@ -55,19 +78,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
               },
             },
           },
-        },
-      },
-    })
+          orderBy: { createdAt: 'desc' },
+        })
+      }
+    }
 
-    // Deduplicate shipments
-    const seen = new Set<string>()
-    const dispatches = shipmentLabels
-      .filter((sl) => {
-        if (seen.has(sl.shipmentId)) return false
-        seen.add(sl.shipmentId)
-        return true
-      })
-      .map((sl) => sl.shipment)
+    const dispatches = [...directDispatches, ...legacyDispatches]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
     return NextResponse.json({ dispatches })
@@ -78,7 +94,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
 /**
  * POST /api/v1/admin/orders/[id]/dispatch
- * Create a label dispatch for selected labels from an order (admin only)
+ * Create a label dispatch for an order (admin only).
+ * Labels are NOT pre-assigned — they get linked when admin scans them at ship time.
  */
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
@@ -95,17 +112,16 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { name, labelIds } = validated.data
+    const { name, labelCount } = validated.data
 
-    // Fetch order with its labels
     const order = await db.order.findUnique({
       where: { id },
-      include: {
-        orderLabels: {
-          include: {
-            label: { select: { id: true, deviceId: true, status: true } },
-          },
-        },
+      select: {
+        id: true,
+        status: true,
+        userId: true,
+        orgId: true,
+        quantity: true,
       },
     })
 
@@ -120,47 +136,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Verify all requested labels belong to this order
-    const orderLabelIds = new Set(order.orderLabels.map((ol) => ol.label.id))
-    const invalidIds = labelIds.filter((lid) => !orderLabelIds.has(lid))
-    if (invalidIds.length > 0) {
+    // Check label count doesn't exceed order quantity
+    if (labelCount > order.quantity) {
       return NextResponse.json(
-        { error: 'Some labels do not belong to this order', invalidIds },
-        { status: 400 }
-      )
-    }
-
-    // Verify labels are SOLD or INVENTORY
-    const orderLabelsMap = new Map(order.orderLabels.map((ol) => [ol.label.id, ol.label]))
-    const unavailable = labelIds.filter((lid) => {
-      const label = orderLabelsMap.get(lid)
-      return label && label.status !== 'SOLD' && label.status !== 'INVENTORY'
-    })
-    if (unavailable.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Some labels are not available for dispatch',
-          labels: unavailable.map((lid) => orderLabelsMap.get(lid)?.deviceId),
-        },
-        { status: 400 }
-      )
-    }
-
-    // Check none of the labels are already in an active dispatch
-    const existingDispatch = await db.shipmentLabel.findMany({
-      where: {
-        labelId: { in: labelIds },
-        shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
-      },
-      include: { label: { select: { deviceId: true } } },
-    })
-
-    if (existingDispatch.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Some labels are already in an active dispatch',
-          labels: existingDispatch.map((sl) => sl.label.deviceId),
-        },
+        { error: `Label count (${labelCount}) exceeds order quantity (${order.quantity})` },
         { status: 400 }
       )
     }
@@ -175,7 +154,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       attempts++
     }
 
-    // Create shipment + join table entries in a transaction
+    // Create dispatch shipment (no ShipmentLabel entries — labels linked at scan time)
     const shipment = await db.$transaction(async (tx) => {
       const s = await tx.shipment.create({
         data: {
@@ -184,15 +163,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           shareCode,
           userId: order.userId,
           orgId: order.orgId,
+          orderId: order.id,
+          labelCount,
           status: 'PENDING',
         },
-      })
-
-      await tx.shipmentLabel.createMany({
-        data: labelIds.map((labelId) => ({
-          shipmentId: s.id,
-          labelId,
-        })),
       })
 
       // Auto-update order status: PAID → SHIPPED on first dispatch
@@ -206,18 +180,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         })
       }
 
-      return tx.shipment.findUniqueOrThrow({
-        where: { id: s.id },
-        include: {
-          shipmentLabels: {
-            include: {
-              label: {
-                select: { id: true, deviceId: true, batteryPct: true, status: true },
-              },
-            },
-          },
-        },
-      })
+      return s
     })
 
     // Send notification on first dispatch only (when order was PAID)

@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, ArrowLeft, ShieldAlert, User } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Package, ShieldAlert, User } from 'lucide-react'
 import { DispatchDetailClient } from '@/components/dispatch/dispatch-detail-client'
 import { DispatchAdminActions } from '@/components/dispatch/dispatch-admin-actions'
 import { shipmentStatusStyles } from '@/lib/status-config'
@@ -43,6 +43,7 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
               id: true,
               deviceId: true,
               displayId: true,
+              iccid: true,
               batteryPct: true,
               status: true,
               firmwareVersion: true,
@@ -84,6 +85,7 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
     shipmentLabels: shipment.shipmentLabels.map((sl) => ({
       deviceId: sl.label.deviceId,
       displayId: sl.label.displayId,
+      iccid: sl.label.iccid,
       batteryPct: sl.label.batteryPct,
       status: sl.label.status,
       firmwareVersion: sl.label.firmwareVersion,
@@ -131,9 +133,23 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
                 <p className="font-medium text-foreground">Receiver address not submitted yet</p>
                 <p className="text-muted-foreground">
                   The receiver hasn&apos;t filled in their delivery details via the share link.{' '}
-                  <span className="text-foreground">Mark as In Transit</span> is disabled until there&apos;s an
+                  <span className="text-foreground">Scan &amp; Ship</span> is disabled until there&apos;s an
                   address to ship to — either wait for the receiver, or use Edit below to fill the address in
                   yourself.
+                </p>
+              </div>
+            </div>
+          )}
+          {shipment.status === 'PENDING' && shipment.shipmentLabels.length === 0 && shipment.labelCount && (
+            <div className="flex items-start gap-2 rounded-md border border-blue-500/40 bg-blue-500/10 p-3 text-sm">
+              <Package className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <div>
+                <p className="font-medium text-foreground">
+                  {shipment.labelCount} label{shipment.labelCount !== 1 ? 's' : ''} to link
+                </p>
+                <p className="text-muted-foreground">
+                  No labels linked yet. Click <span className="text-foreground">Scan &amp; Ship</span> to scan
+                  physical labels and link them to this dispatch before shipping.
                 </p>
               </div>
             </div>
@@ -160,6 +176,7 @@ export default async function AdminDispatchDetailPage({ params }: PageProps) {
               shipmentName={shipment.name}
               status={shipment.status}
               destinationAddress={shipment.destinationAddress}
+              labelCount={shipment.labelCount}
             />
           </div>
         </CardContent>

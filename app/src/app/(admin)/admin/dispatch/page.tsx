@@ -167,8 +167,16 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
                         </td>
                         <td className="py-3">
                           <span className="text-foreground">
-                            {s.shipmentLabels.length} label{s.shipmentLabels.length !== 1 ? 's' : ''}
+                            {s.shipmentLabels.length > 0
+                              ? `${s.shipmentLabels.length} label${s.shipmentLabels.length !== 1 ? 's' : ''}`
+                              : s.labelCount
+                                ? `${s.labelCount} label${s.labelCount !== 1 ? 's' : ''}`
+                                : '0 labels'
+                            }
                           </span>
+                          {s.shipmentLabels.length === 0 && s.labelCount && (
+                            <p className="text-xs text-muted-foreground">not yet linked</p>
+                          )}
                           {s.shipmentLabels.length > 0 && (
                             <p className="font-mono text-xs">
                               {s.shipmentLabels.map((sl, i) => (

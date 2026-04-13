@@ -49,6 +49,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
               id: true,
               deviceId: true,
               displayId: true,
+              iccid: true,
               batteryPct: true,
               status: true,
               firmwareVersion: true,
@@ -96,6 +97,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
     shipmentLabels: shipment.shipmentLabels.map((sl) => ({
       deviceId: sl.label.deviceId,
       displayId: sl.label.displayId,
+      iccid: sl.label.iccid,
       batteryPct: sl.label.batteryPct,
       status: sl.label.status,
       firmwareVersion: sl.label.firmwareVersion,
