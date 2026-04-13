@@ -116,6 +116,11 @@ export function JourneyCard({ phaseData }: Props) {
     steps[3].state = 'active'
   }
 
+  const stepNames = ['Buy tracking labels', 'Dispatch labels', 'Receive labels and attach to cargo', 'Track cargo in real-time']
+  const completedStepNames = steps
+    .filter((s) => s.state === 'completed')
+    .map((s) => stepNames[s.index - 1])
+
   const pendingReceiverDispatches = pendingDispatches.filter(
     (d) => d.status === 'PENDING' && !d.addressSubmittedAt,
   )
@@ -135,143 +140,160 @@ export function JourneyCard({ phaseData }: Props) {
         </div>
 
         <div className="space-y-3">
-          {/* Step 1 — Buy labels */}
-          <StepRow index={1} state={steps[0].state} icon={ShoppingCart} title="Buy tracking labels">
-            {steps[0].state === 'active' && (
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-muted-foreground">
-                  Order tracking labels — delivered to wherever you choose.
-                </p>
-                <Button size="sm" asChild>
-                  <Link href="/buy">Buy Labels</Link>
-                </Button>
+          {/* Completed steps — collapsed into a compact summary */}
+          {completedStepNames.length > 0 && (
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <div className="flex -space-x-1">
+                {completedStepNames.map((_, i) => (
+                  <div key={i} className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-foreground ring-2 ring-card">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  </div>
+                ))}
               </div>
-            )}
-            {steps[0].state === 'completed' && latestOrder && (
-              <p className="text-muted-foreground">
-                {latestOrder.quantity} label{latestOrder.quantity === 1 ? '' : 's'} ordered{' '}
-                {formatDistanceToNow(latestOrder.createdAt, { addSuffix: true })}
+              <p className="text-sm text-muted-foreground">
+                {completedStepNames.join(', ')}
               </p>
-            )}
-          </StepRow>
+              <Badge variant="secondary" className="ml-auto text-xs shrink-0">Done</Badge>
+            </div>
+          )}
 
-          {/* Step 2 — Dispatch labels */}
-          <StepRow
-            index={2}
-            state={steps[1].state}
-            icon={Send}
-            title="Dispatch labels"
-          >
-            {phase === 1 && latestOrder && (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-muted-foreground">
-                  Tell us where to ship your labels ({latestOrder.undispatchedCount} undispatched).
-                  They&apos;ll arrive within 3-5 business days.
-                </p>
-                <Button size="sm" asChild>
-                  <Link href="/dispatch/new">
-                    <Send className="mr-1.5 h-4 w-4" /> New Dispatch
-                  </Link>
-                </Button>
-              </div>
-            )}
+          {/* Step 1 — Buy labels (only if not completed) */}
+          {steps[0].state !== 'completed' && (
+            <StepRow index={1} state={steps[0].state} icon={ShoppingCart} title="Buy tracking labels">
+              {steps[0].state === 'active' && (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-muted-foreground">
+                    Order tracking labels — delivered to wherever you choose.
+                  </p>
+                  <Button size="sm" asChild>
+                    <Link href="/buy">Buy Labels</Link>
+                  </Button>
+                </div>
+              )}
+            </StepRow>
+          )}
 
-            {phase === '1b' && pendingReceiverDispatches.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-muted-foreground">
-                  Waiting for the receiver to submit their delivery details.
-                </p>
-                {pendingReceiverDispatches.map((d) => {
-                  const shareUrl = `${window.location.origin}/track/${d.shareCode}`
-                  return (
-                    <div
+          {/* Step 2 — Dispatch labels (only if not completed) */}
+          {steps[1].state !== 'completed' && (
+            <StepRow
+              index={2}
+              state={steps[1].state}
+              icon={Send}
+              title="Dispatch labels"
+            >
+              {phase === 1 && latestOrder && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-muted-foreground">
+                    Tell us where to ship your labels ({latestOrder.undispatchedCount} undispatched).
+                    They&apos;ll arrive within 3-5 business days.
+                  </p>
+                  <Button size="sm" asChild>
+                    <Link href="/dispatch/new">
+                      <Send className="mr-1.5 h-4 w-4" /> New Dispatch
+                    </Link>
+                  </Button>
+                </div>
+              )}
+
+              {phase === '1b' && pendingReceiverDispatches.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-muted-foreground">
+                    Waiting for the receiver to submit their delivery details.
+                  </p>
+                  {pendingReceiverDispatches.map((d) => {
+                    const shareUrl = `${window.location.origin}/track/${d.shareCode}`
+                    return (
+                      <div
+                        key={d.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background p-3 text-xs"
+                      >
+                        <div>
+                          <p className="font-medium">{d.name || 'Untitled dispatch'}</p>
+                          <p className="text-muted-foreground">
+                            {d.labelCount} label{d.labelCount === 1 ? '' : 's'} · Created{' '}
+                            {formatDistanceToNow(d.createdAt, { addSuffix: true })}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyLink(shareUrl)}
+                            title="Copy share link"
+                          >
+                            <Copy className="mr-1 h-3 w-3" /> Copy
+                          </Button>
+                          <Button size="sm" variant="ghost" asChild>
+                            <Link href={`/dispatch/${d.id}`}>
+                              <ArrowRight className="h-3 w-3" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {phase === 2 && inTransitDispatches.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-muted-foreground">
+                    Your labels are on the way. Track progress from the dispatch detail page.
+                  </p>
+                  {inTransitDispatches.map((d) => (
+                    <Link
                       key={d.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background p-3 text-xs"
+                      href={`/dispatch/${d.id}`}
+                      className="flex items-center justify-between rounded-md border bg-background p-3 text-xs hover:bg-accent"
                     >
                       <div>
                         <p className="font-medium">{d.name || 'Untitled dispatch'}</p>
                         <p className="text-muted-foreground">
-                          {d.labelCount} label{d.labelCount === 1 ? '' : 's'} · Created{' '}
-                          {formatDistanceToNow(d.createdAt, { addSuffix: true })}
+                          {d.status === 'IN_TRANSIT' ? 'In transit' : 'Ready to ship'} · {d.labelCount}{' '}
+                          label{d.labelCount === 1 ? '' : 's'}
                         </p>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyLink(shareUrl)}
-                          title="Copy share link"
-                        >
-                          <Copy className="mr-1 h-3 w-3" /> Copy
-                        </Button>
-                        <Button size="sm" variant="ghost" asChild>
-                          <Link href={`/dispatch/${d.id}`}>
-                            <ArrowRight className="h-3 w-3" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                    </Link>
+                  ))}
+                </div>
+              )}
 
-            {phase === 2 && inTransitDispatches.length > 0 && (
-              <div className="space-y-2">
+              {phase === 3 && deliveredDispatches.length > 0 && (
                 <p className="text-muted-foreground">
-                  Your labels are on the way. Track progress from the dispatch detail page.
+                  Labels delivered. {deliveredDispatches[0].name || 'Your dispatch'} arrived{' '}
+                  {deliveredDispatches[0].addressSubmittedAt
+                    ? formatDistanceToNow(deliveredDispatches[0].createdAt, { addSuffix: true })
+                    : 'recently'}
+                  .
                 </p>
-                {inTransitDispatches.map((d) => (
-                  <Link
-                    key={d.id}
-                    href={`/dispatch/${d.id}`}
-                    className="flex items-center justify-between rounded-md border bg-background p-3 text-xs hover:bg-accent"
-                  >
-                    <div>
-                      <p className="font-medium">{d.name || 'Untitled dispatch'}</p>
-                      <p className="text-muted-foreground">
-                        {d.status === 'IN_TRANSIT' ? 'In transit' : 'Ready to ship'} · {d.labelCount}{' '}
-                        label{d.labelCount === 1 ? '' : 's'}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  </Link>
-                ))}
-              </div>
-            )}
+              )}
+            </StepRow>
+          )}
 
-            {(steps[1].state === 'completed' || phase === 3) && deliveredDispatches.length > 0 && (
-              <p className="text-muted-foreground">
-                Labels delivered. {deliveredDispatches[0].name || 'Your dispatch'} arrived{' '}
-                {deliveredDispatches[0].addressSubmittedAt
-                  ? formatDistanceToNow(deliveredDispatches[0].createdAt, { addSuffix: true })
-                  : 'recently'}
-                .
-              </p>
-            )}
-          </StepRow>
-
-          {/* Step 3 — Receive + attach */}
-          <StepRow
-            index={3}
-            state={steps[2].state}
-            icon={Package}
-            title="Receive labels and attach to cargo"
-          >
-            {phase === 3 && (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-muted-foreground">
-                  Remove the pull tab to activate a label, then stick it on the cargo you&apos;re
-                  shipping.
-                </p>
-                <Button size="sm" asChild>
-                  <Link href="/cargo/new">
-                    <Truck className="mr-1.5 h-4 w-4" /> Track Cargo
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </StepRow>
+          {/* Step 3 — Receive + attach (only if not completed) */}
+          {steps[2].state !== 'completed' && (
+            <StepRow
+              index={3}
+              state={steps[2].state}
+              icon={Package}
+              title="Receive labels and attach to cargo"
+            >
+              {phase === 3 && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-muted-foreground">
+                    Remove the pull tab to activate a label, then stick it on the cargo you&apos;re
+                    shipping.
+                  </p>
+                  <Button size="sm" asChild>
+                    <Link href="/cargo/new">
+                      <Truck className="mr-1.5 h-4 w-4" /> Track Cargo
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </StepRow>
+          )}
 
           {/* Step 4 — Track cargo */}
           <StepRow index={4} state={steps[3].state} icon={Truck} title="Track cargo in real-time">

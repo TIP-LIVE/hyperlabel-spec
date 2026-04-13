@@ -297,10 +297,10 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Stats — hidden in empty state to keep first impression clean */}
-      {(activeShipments > 0 || totalLabels > 0 || deliveredThisMonth > 0 || lowBatteryLabels > 0) && (
+      {/* Stats — hidden in empty state, zero-value cards filtered out */}
+      {stats.filter((s) => s.value !== '0').length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
+          {stats.filter((s) => s.value !== '0').map((stat) => (
             <Link key={stat.name} href={stat.href}>
               <StatCard
                 title={stat.name}
