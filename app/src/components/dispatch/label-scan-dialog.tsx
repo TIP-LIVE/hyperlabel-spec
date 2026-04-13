@@ -270,6 +270,14 @@ export function LabelScanDialog({
     }
   }, [])
 
+  // Auto-start camera when dialog opens in camera mode
+  useEffect(() => {
+    if (open && mode === 'camera' && cameraSupported && !scanning) {
+      startScanning()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
   // Auto-fetch when switching to browse mode
   useEffect(() => {
     if (mode === 'browse' && availableLabels.length === 0 && !loadingBrowse) {
