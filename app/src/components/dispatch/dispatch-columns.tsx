@@ -165,7 +165,7 @@ type NextStepDescriptor = {
 }
 
 export function getDispatchNextStep(
-  row: Pick<DispatchRow, 'status' | 'addressSubmittedAt'>,
+  row: Pick<DispatchRow, 'status' | 'addressSubmittedAt' | 'destinationAddress'>,
 ): NextStepDescriptor {
   switch (row.status) {
     case 'CANCELLED':
@@ -180,7 +180,7 @@ export function getDispatchNextStep(
         action: { type: 'link', href: '/cargo/new' },
       }
     case 'PENDING':
-      if (!row.addressSubmittedAt) {
+      if (!row.addressSubmittedAt && !row.destinationAddress) {
         return {
           kind: 'awaiting-receiver',
           label: 'Awaiting receiver details',
