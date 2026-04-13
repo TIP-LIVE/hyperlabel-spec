@@ -370,16 +370,19 @@ export default async function DashboardPage() {
                     labelLastSeenAt: label?.lastSeenAt,
                   })
 
-                  // Signal freshness: green <1h, yellow <24h, red >24h
+                  // Label Dispatch: dot color follows shipment status
+                  // Cargo Tracking: dot color follows IoT signal freshness
                   const msSinceUpdate = lastUpdate ? now.getTime() - lastUpdate.getTime() : null
                   const signalColor =
-                    msSinceUpdate === null
-                      ? 'bg-muted-foreground/30'
-                      : msSinceUpdate < 60 * 60 * 1000
-                        ? 'bg-green-500'
-                        : msSinceUpdate < 24 * 60 * 60 * 1000
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500'
+                    shipment.type === 'LABEL_DISPATCH'
+                      ? status.dotColor
+                      : msSinceUpdate === null
+                        ? 'bg-muted-foreground/30'
+                        : msSinceUpdate < 60 * 60 * 1000
+                          ? 'bg-green-500'
+                          : msSinceUpdate < 24 * 60 * 60 * 1000
+                            ? 'bg-yellow-500'
+                            : 'bg-red-500'
 
                   return (
                     <Link

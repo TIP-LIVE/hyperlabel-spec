@@ -11,12 +11,12 @@ export type ShipmentStatus = 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED
 
 export const shipmentStatusConfig: Record<
   ShipmentStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' }
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success'; dotColor: string }
 > = {
-  PENDING: { label: 'Pending', variant: 'secondary' },
-  IN_TRANSIT: { label: 'In Transit', variant: 'default' },
-  DELIVERED: { label: 'Delivered', variant: 'success' },
-  CANCELLED: { label: 'Cancelled', variant: 'secondary' },
+  PENDING: { label: 'Pending', variant: 'secondary', dotColor: 'bg-muted-foreground/30' },
+  IN_TRANSIT: { label: 'In Transit', variant: 'default', dotColor: 'bg-green-500' },
+  DELIVERED: { label: 'Delivered', variant: 'success', dotColor: 'bg-green-500' },
+  CANCELLED: { label: 'Cancelled', variant: 'secondary', dotColor: 'bg-muted-foreground/30' },
 }
 
 /** Admin color classes for shipment status badges */
