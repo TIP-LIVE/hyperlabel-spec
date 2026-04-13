@@ -7,6 +7,7 @@ import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
 import { Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { orderStatusStyles } from '@/lib/status-config'
+import { getOrgNamesMap } from '@/lib/admin/org-names'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -37,6 +38,8 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
       { id: { contains: q, mode: 'insensitive' } },
     ]
   }
+
+  const orgNames = await getOrgNamesMap()
 
   const [orders, totalCount, statusCounts] = await Promise.all([
     db.order.findMany({
@@ -170,6 +173,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                   <thead>
                     <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Order</th>
+                      <th className="pb-3 font-medium">Organisation</th>
                       <th className="pb-3 font-medium">Customer</th>
                       <th className="pb-3 font-medium">Qty</th>
                       <th className="pb-3 font-medium">Labels</th>
@@ -191,6 +195,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             >
                               {orderShortId}
                             </Link>
+                          </td>
+                          <td className="py-3 text-xs text-muted-foreground">
+                            {order.orgId ? (orgNames[order.orgId] ?? order.orgId.slice(-8)) : '—'}
                           </td>
                           <td className="py-3">
                             <Link

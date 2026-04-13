@@ -6,6 +6,7 @@ import { timeAgo } from '@/lib/utils/time-ago'
 import { MapPin, Send } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { shipmentStatusStyles } from '@/lib/status-config'
+import { getOrgNamesMap } from '@/lib/admin/org-names'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,7 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
     ]
   }
 
+  const orgNames = await getOrgNamesMap()
   const typeWhere = { type: 'LABEL_DISPATCH' as const }
 
   const [shipments, totalCount, statusCounts] = await Promise.all([
@@ -138,6 +140,7 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
                   <thead>
                     <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Dispatch</th>
+                      <th className="pb-3 font-medium">Organisation</th>
                       <th className="pb-3 font-medium">Shipper</th>
                       <th className="pb-3 font-medium">Labels</th>
                       <th className="pb-3 font-medium">Destination</th>
@@ -156,6 +159,9 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
                             {s.name || 'Untitled'}
                           </Link>
                           <p className="font-mono text-xs text-muted-foreground">{s.shareCode}</p>
+                        </td>
+                        <td className="py-3 text-xs text-muted-foreground">
+                          {s.orgId ? (orgNames[s.orgId] ?? s.orgId.slice(-8)) : '—'}
                         </td>
                         <td className="py-3">
                           <Link

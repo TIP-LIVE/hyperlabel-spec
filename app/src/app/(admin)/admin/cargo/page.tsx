@@ -6,6 +6,7 @@ import { timeAgo } from '@/lib/utils/time-ago'
 import { MapPin, Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { shipmentStatusStyles } from '@/lib/status-config'
+import { getOrgNamesMap } from '@/lib/admin/org-names'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,8 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
   }
 
   const typeWhere = { type: 'CARGO_TRACKING' as const }
+
+  const orgNames = await getOrgNamesMap()
 
   const [shipments, totalCount, statusCounts] = await Promise.all([
     db.shipment.findMany({
@@ -136,6 +139,7 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
                   <thead>
                     <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Shipment</th>
+                      <th className="pb-3 font-medium">Organisation</th>
                       <th className="pb-3 font-medium">Shipper</th>
                       <th className="pb-3 font-medium">Device</th>
                       <th className="pb-3 font-medium">Route</th>
@@ -154,6 +158,9 @@ export default async function AdminCargoPage({ searchParams }: PageProps) {
                             {s.name || 'Untitled'}
                           </Link>
                           <p className="font-mono text-xs text-muted-foreground">{s.shareCode}</p>
+                        </td>
+                        <td className="py-3 text-xs text-muted-foreground">
+                          {s.orgId ? (orgNames[s.orgId] ?? s.orgId.slice(-8)) : '—'}
                         </td>
                         <td className="py-3">
                           <Link
