@@ -144,10 +144,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const destinationLng = validated.data.destinationLng ?? null
 
     // Compose destinationAddress from structured fields if not provided directly
-    const destinationAddress = norm(validated.data.destinationAddress) ||
-      [destinationLine1, destinationLine2, destinationCity, destinationState, destinationPostalCode, destinationCountry]
-        .filter(Boolean)
-        .join(', ') || null
+    const rawDestAddr = norm(validated.data.destinationAddress)
+    const composedAddr = [destinationLine1, destinationLine2, destinationCity, destinationState, destinationPostalCode, destinationCountry]
+      .filter(Boolean)
+      .join(', ')
+    const destinationAddress = rawDestAddr || composedAddr || null
 
     const hasReceiverDetails = Boolean(
       !askReceiver &&
