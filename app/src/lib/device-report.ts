@@ -223,10 +223,34 @@ export async function processLocationReport(
   const identifierUpdates: { imei?: string; iccid?: string; displayId?: string } = {}
   if (input.imei && input.imei !== label.imei) {
     identifierUpdates.imei = input.imei
-    // Also (re)compute displayId now that we know the IMEI
-    if (label.counter != null && !label.displayId) {
-      const next = formatDisplayId(label.counter, input.imei)
+  }
+  // Backfill displayId for labels that don't have one (legacy + newly matched IMEI)
+  const effectiveImei = input.imei || label.imei
+  if (!label.displayId && effectiveImei) {
+    if (label.counter != null) {
+      const next = formatDisplayId(label.counter, effectiveImei)
       if (next) identifierUpdates.displayId = next
+    } else {
+      // Legacy label (e.g. TIP-016) has no counter — allocate one atomically
+      try {
+        const updated = await db.$transaction(async (tx) => {
+          const counter = await allocateNextCounter(tx)
+          const displayId = formatDisplayId(counter, effectiveImei)
+          return tx.label.update({
+            where: { id: label.id },
+            data: { counter, ...(displayId ? { displayId } : {}) },
+          })
+        })
+        label.counter = updated.counter
+        if (updated.displayId) {
+          label.displayId = updated.displayId
+        }
+      } catch (err) {
+        console.warn('[Device report] failed to backfill counter for legacy label', {
+          labelId: label.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
     }
   }
   if (input.iccid && input.iccid !== label.iccid) {
