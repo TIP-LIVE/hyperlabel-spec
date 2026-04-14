@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           take: 1,
         },
         locations: {
-          where: { source: 'CELL_TOWER' },
+          where: { source: 'CELL_TOWER', ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' },
           take: 100,
         },
@@ -60,11 +60,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // Backfill orphaned label locations that weren't linked at shipment creation.
-    // Run synchronously when no locations exist so the first page load shows data.
+    // Only backfill events from the last 24h before shipment creation to avoid
+    // pulling in stale history from previous uses of the label.
     let needsRefetch = false
     if (shipment.labelId) {
+      const backfillCutoff = new Date(shipment.createdAt.getTime() - 24 * 60 * 60 * 1000)
       const backfilled = await db.locationEvent.updateMany({
-        where: { labelId: shipment.labelId, shipmentId: null },
+        where: { labelId: shipment.labelId, shipmentId: null, recordedAt: { gte: backfillCutoff } },
         data: { shipmentId: shipment.id },
       })
       if (backfilled.count > 0) {
@@ -76,7 +78,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // Re-fetch locations if sync or backfill added new data
     if (needsRefetch) {
       const locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
+        where: { shipmentId: shipment.id, source: 'CELL_TOWER', ...VALID_LOCATION },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       })

@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { isClerkConfigured } from '@/lib/clerk-config'
@@ -53,7 +53,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
         },
       },
       locations: {
-        where: { source: 'CELL_TOWER' },
+        where: { source: 'CELL_TOWER', ...VALID_LOCATION },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       },
@@ -64,16 +64,24 @@ export default async function CargoDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  // Backfill orphaned label locations (created by webhooks before shipment association)
+  // Backfill orphaned label locations (created by webhooks shortly before
+  // shipment association — e.g. label activated while user was filling out the
+  // cargo form). Only backfill events from the last 24h before shipment
+  // creation to avoid pulling in stale history from previous uses of the label.
   let locations = shipment.locations
   if (shipment.labelId) {
+    const backfillCutoff = new Date(shipment.createdAt.getTime() - 24 * 60 * 60 * 1000)
     const backfilled = await db.locationEvent.updateMany({
-      where: { labelId: shipment.labelId, shipmentId: null },
+      where: {
+        labelId: shipment.labelId,
+        shipmentId: null,
+        recordedAt: { gte: backfillCutoff },
+      },
       data: { shipmentId: shipment.id },
     })
     if (backfilled.count > 0) {
       locations = await db.locationEvent.findMany({
-        where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
+        where: { shipmentId: shipment.id, source: 'CELL_TOWER', ...VALID_LOCATION },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       })
@@ -81,11 +89,11 @@ export default async function CargoDetailPage({ params }: PageProps) {
   }
 
   const totalLocations = await db.locationEvent.count({
-    where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
+    where: { shipmentId: shipment.id, source: 'CELL_TOWER', ...VALID_LOCATION },
   })
 
   const oldestLocation = await db.locationEvent.findFirst({
-    where: { shipmentId: shipment.id },
+    where: { shipmentId: shipment.id, ...VALID_LOCATION },
     orderBy: { recordedAt: 'asc' },
   })
 
