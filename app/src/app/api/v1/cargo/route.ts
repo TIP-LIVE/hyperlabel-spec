@@ -155,10 +155,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Label is not available for shipment' }, { status: 400 })
     }
 
-    // Check if label is already in an active shipment
+    // Check if label is already in an active cargo shipment for THIS org.
+    // Cross-org check is not needed: labels are scoped to the org via the
+    // dropdown, and a label physically can only be in one place at a time.
     const existingShipment = await db.shipment.findFirst({
       where: {
         labelId: label.id,
+        orgId: context.orgId,
+        type: 'CARGO_TRACKING',
         status: { in: ['PENDING', 'IN_TRANSIT'] },
       },
     })
