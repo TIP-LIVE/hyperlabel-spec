@@ -58,6 +58,30 @@ export async function GET(req: NextRequest) {
           },
         },
       ]
+      // Also include labels owned by the org via dispatches (not just orders).
+      // Admin-assigned labels may not have an orderLabel for this org, but
+      // if they appear in one of the org's dispatches they should be usable.
+      where.AND = [
+        {
+          OR: [
+            // Linked to a paid order in this org (existing path)
+            where.orderLabels as Record<string, unknown>,
+            // Linked to a dispatch owned by this org
+            {
+              shipmentLabels: {
+                some: {
+                  shipment: {
+                    orgId: context.orgId,
+                    type: 'LABEL_DISPATCH',
+                    status: { in: ['IN_TRANSIT', 'DELIVERED'] },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      ]
+      delete where.orderLabels
       where.shipments = {
         none: {
           type: 'CARGO_TRACKING',
