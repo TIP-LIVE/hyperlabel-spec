@@ -157,9 +157,45 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       iccidSet.add(iccid)
     }
 
-    // Atomically: link labels + update ICCIDs + transition status
+    // Org-level cap: don't ship more labels than were purchased
+    const [purchasedResult, activelyDispatched] = await Promise.all([
+      db.order.aggregate({
+        where: { orgId: shipment.orgId, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }, totalAmount: { gt: 0 } },
+        _sum: { quantity: true },
+      }),
+      // Count labels already in non-cancelled dispatches for this org,
+      // excluding the current dispatch (its labels will be replaced)
+      db.shipmentLabel.count({
+        where: {
+          shipment: {
+            orgId: shipment.orgId,
+            type: 'LABEL_DISPATCH',
+            status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
+            id: { not: id },
+          },
+        },
+      }),
+    ])
+
+    const totalBought = purchasedResult._sum.quantity ?? 0
+    const remainingQuota = totalBought - activelyDispatched
+
+    if (scannedLabels.length > remainingQuota) {
+      return NextResponse.json(
+        {
+          error: `Cannot ship ${scannedLabels.length} label${scannedLabels.length === 1 ? '' : 's'} — only ${remainingQuota} of ${totalBought} purchased label${totalBought === 1 ? '' : 's'} remaining`,
+          quota: { totalBought, activelyDispatched, remaining: remainingQuota },
+        },
+        { status: 400 }
+      )
+    }
+
+    // Atomically: replace labels + update ICCIDs + transition status
     await db.$transaction(async (tx) => {
-      // Create ShipmentLabel entries
+      // Remove any previously linked labels (from dispatch creation)
+      // and replace with the scanned set — admin is the source of truth
+      await tx.shipmentLabel.deleteMany({ where: { shipmentId: id } })
+
       await tx.shipmentLabel.createMany({
         data: scannedLabels.map(({ labelId }) => ({
           shipmentId: id,
