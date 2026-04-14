@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
             some: {
               shipment: {
                 type: 'LABEL_DISPATCH',
-                status: 'DELIVERED',
+                status: { in: ['IN_TRANSIT', 'DELIVERED'] },
               },
             },
           },
