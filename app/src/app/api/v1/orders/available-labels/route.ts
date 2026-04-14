@@ -71,7 +71,45 @@ export async function GET() {
       }))
       .filter((group) => group.labels.length > 0)
 
-    return NextResponse.json({ orders: grouped })
+    // Org-level cap: only allow dispatching as many labels as were purchased
+    // (paid orders with totalAmount > 0). Admin-assigned $0 orders don't
+    // increase dispatch capacity — they just fulfil existing paid slots.
+    const [purchasedResult, activelyDispatched] = await Promise.all([
+      db.order.aggregate({
+        where: {
+          ...orgScopedWhere(context, {}),
+          status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+          totalAmount: { gt: 0 },
+        },
+        _sum: { quantity: true },
+      }),
+      db.shipmentLabel.count({
+        where: {
+          shipment: {
+            ...orgScopedWhere(context, {}),
+            type: 'LABEL_DISPATCH',
+            status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
+          },
+        },
+      }),
+    ])
+
+    const totalBought = purchasedResult._sum.quantity ?? 0
+    const remainingQuota = Math.max(0, totalBought - activelyDispatched)
+
+    // Trim available labels to remaining quota
+    let budget = remainingQuota
+    for (const group of grouped) {
+      if (budget >= group.labels.length) {
+        budget -= group.labels.length
+      } else {
+        group.labels = group.labels.slice(0, budget)
+        budget = 0
+      }
+    }
+    const capped = grouped.filter((g) => g.labels.length > 0)
+
+    return NextResponse.json({ orders: capped, quota: { totalBought, activelyDispatched, remaining: remainingQuota } })
   } catch (error) {
     return handleApiError(error, 'fetching available labels')
   }

@@ -168,6 +168,32 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Org-level cap: don't dispatch more labels than were purchased
+    const [purchasedResult, activelyDispatched] = await Promise.all([
+      db.order.aggregate({
+        where: { orgId: context.orgId, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }, totalAmount: { gt: 0 } },
+        _sum: { quantity: true },
+      }),
+      db.shipmentLabel.count({
+        where: {
+          shipment: { orgId: context.orgId, type: 'LABEL_DISPATCH', status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] } },
+        },
+      }),
+    ])
+
+    const totalBought = purchasedResult._sum.quantity ?? 0
+    const remainingQuota = totalBought - activelyDispatched
+
+    if (labelIds.length > remainingQuota) {
+      return NextResponse.json(
+        {
+          error: `Cannot dispatch ${labelIds.length} label${labelIds.length === 1 ? '' : 's'} — only ${remainingQuota} of ${totalBought} purchased label${totalBought === 1 ? '' : 's'} remaining`,
+          quota: { totalBought, activelyDispatched, remaining: remainingQuota },
+        },
+        { status: 400 }
+      )
+    }
+
     // Collect unique PAID order IDs from the labels being dispatched
     const paidOrderIds = [
       ...new Set(
