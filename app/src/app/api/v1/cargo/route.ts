@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
 
     const where = orgScopedWhere(context, extraFilters)
 
+    console.info('[cargo GET] query', { orgId: context.orgId, where: JSON.stringify(where) })
+
     const [shipments, total] = await Promise.all([
       db.shipment.findMany({
         where,
@@ -98,6 +100,8 @@ export async function GET(req: NextRequest) {
         })
       )
     }
+
+    console.info('[cargo GET] results', { orgId: context.orgId, total, shipmentCount: shipments.length })
 
     return NextResponse.json({
       shipments,
