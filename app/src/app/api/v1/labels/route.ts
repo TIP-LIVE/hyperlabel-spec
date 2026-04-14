@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
         {
           OR: [
             // Linked to a paid order in this org (existing path)
-            where.orderLabels as Record<string, unknown>,
+            { orderLabels: where.orderLabels as Record<string, unknown> },
             // Linked to a dispatch owned by this org
             {
               shipmentLabels: {
