@@ -51,7 +51,7 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
         user: { select: { email: true } },
         shipmentLabels: {
           include: {
-            label: { select: { deviceId: true } },
+            label: { select: { deviceId: true, displayId: true } },
           },
         },
       },
@@ -192,7 +192,7 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
                                     href={`/admin/devices/${sl.label.deviceId}`}
                                     className="text-primary hover:underline"
                                   >
-                                    {sl.label.deviceId}
+                                    {sl.label.displayId || sl.label.deviceId}
                                   </Link>
                                 </span>
                               ))}
