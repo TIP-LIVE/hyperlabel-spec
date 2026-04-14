@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createCargoShipmentSchema } from '@/lib/validations/shipment'
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
             },
           },
           locations: {
-            where: { source: 'CELL_TOWER' },
+            where: { source: 'CELL_TOWER', ...VALID_LOCATION },
             orderBy: { receivedAt: 'desc' },
             take: 1,
             select: {
@@ -198,8 +198,11 @@ export async function POST(req: NextRequest) {
         },
       })
 
+      // Only backfill recent orphaned events (last 24h before creation)
+      // to avoid pulling stale history from previous uses of the label
+      const backfillCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
       await tx.locationEvent.updateMany({
-        where: { labelId: label.id, shipmentId: null },
+        where: { labelId: label.id, shipmentId: null, recordedAt: { gte: backfillCutoff } },
         data: { shipmentId: s.id },
       })
 
