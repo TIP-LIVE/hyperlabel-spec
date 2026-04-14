@@ -25,3 +25,14 @@ function createPrismaClient() {
 export const db = globalForPrisma.prisma ?? createPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+/**
+ * Filter to exclude soft-deleted LocationEvents.
+ * Spread into `where` clauses on all user-facing LocationEvent queries:
+ *   `where: { ...VALID_LOCATION, shipmentId: ... }`
+ * Also usable in relation includes:
+ *   `locations: { where: { ...VALID_LOCATION, source: 'CELL_TOWER' } }`
+ *
+ * Internal/dedup queries that must see ALL events should NOT use this filter.
+ */
+export const VALID_LOCATION = { excludedReason: null } as const
