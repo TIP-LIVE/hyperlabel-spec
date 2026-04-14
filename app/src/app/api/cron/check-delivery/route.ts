@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { sendShipmentDeliveredNotification } from '@/lib/notifications'
 import { withCronLogging } from '@/lib/cron'
 import { maybeCompleteOrder } from '@/lib/order-utils'
@@ -37,6 +37,7 @@ export const GET = withCronLogging('check-delivery', async () => {
         select: {
           deviceId: true,
           locations: {
+            where: { ...VALID_LOCATION },
             orderBy: { recordedAt: 'desc' },
             take: 10,
           },
@@ -75,6 +76,7 @@ export const GET = withCronLogging('check-delivery', async () => {
             select: {
               deviceId: true,
               locations: {
+                where: { ...VALID_LOCATION },
                 orderBy: { recordedAt: 'desc' },
                 take: 10,
               },

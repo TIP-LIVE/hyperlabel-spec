@@ -271,6 +271,23 @@ Must verify data actually spans 48 hours, not just that the query window is 48h.
 - **Schema changes**: Use `prisma db push` (not `migrate dev`) to avoid schema drift
 - **Production changes**: Pull env with `npx vercel env pull`, then `prisma db push` with prod DATABASE_URL
 
+### Never Delete Production Data
+
+**NEVER use `deleteMany` or `delete` on LocationEvent (or any tracking data) in production.** Always soft-exclude by setting a reason field. This preserves the audit trail and allows reversal.
+
+- `LocationEvent.excludedReason` — nullable `String`. `null` = valid, any value = excluded.
+- User-facing queries MUST filter with `excludedReason: null`. Use the `VALID_LOCATION` constant from `@/lib/db`:
+  ```typescript
+  import { db, VALID_LOCATION } from '@/lib/db'
+  // Direct query:
+  db.locationEvent.findMany({ where: { ...VALID_LOCATION, shipmentId } })
+  // Relation include:
+  include: { locations: { where: { ...VALID_LOCATION, source: 'CELL_TOWER' } } }
+  ```
+- Internal/dedup queries (device-report.ts, geocoding, admin diagnostics) must NOT use this filter — they need to see all events.
+- Cleanup scripts (`scripts/cleanup-teleportation.ts`) use `updateMany` to set `excludedReason`, never `deleteMany`.
+- Known exclusion reasons: `"teleportation"` (impossible travel speed from stale cell tower mapping).
+
 ---
 
 ## UI Patterns
@@ -342,6 +359,8 @@ These rules were learned through 14 failed attempts:
 10. **Don't skip lastSeenAt update on deduped events** — "Last Update" will look stale
 11. **Don't set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` is for user-facing activation (first report with an active shipment), not factory SIM activation
 12. **Don't create LocationEvents during manufacturing cooldown** — first 24h after auto-registration are factory events; `lastSeenAt` heartbeat still updates
+13. **Don't delete LocationEvents from the DB** — soft-exclude by setting `excludedReason`. Use `VALID_LOCATION` filter from `@/lib/db` in all user-facing queries
+14. **Don't forget `VALID_LOCATION` filter on new LocationEvent queries** — omitting it leaks excluded (bogus) events into the UI
 
 ---
 

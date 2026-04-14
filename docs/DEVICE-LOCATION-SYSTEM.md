@@ -141,15 +141,17 @@ When a device reports in and no existing label matches any of the three lookup s
 
 ```
 Label {
-  deviceId:    "TIP-XXX"        // sequential ID (see below)
-  imei:        <from webhook>   // or null if not provided
-  iccid:       <from webhook>   // or null if not provided
-  status:      ACTIVE
-  activatedAt: <current time>
+  deviceId:       "TIP-XXX"        // sequential ID (see below)
+  counter:        <atomic counter> // monotonic integer for display ID
+  displayId:      "NNNNNyyyy"     // 5-digit counter + last 4 of IMEI (if available)
+  imei:           <from webhook>   // or null if not provided
+  iccid:          <from webhook>   // or null if not provided
+  status:         ACTIVE
+  manufacturedAt: <current time>   // NOT activatedAt — triggers 24h cooldown
 }
 ```
 
-The new label is **unowned** — not linked to any user, org, or shipment. It becomes available in the admin labels inventory.
+The new label is **unowned** — not linked to any user, org, or shipment. It becomes available in the admin labels inventory. Setting `manufacturedAt` (not `activatedAt`) triggers the **24-hour manufacturing cooldown** — see below.
 
 #### Sequential Device ID Generation
 
@@ -161,26 +163,64 @@ The `generateNextDeviceId()` function creates the next `TIP-XXX` identifier:
 
 Example: if `TIP-042` is the highest in the DB → next auto-registered label gets `TIP-043`.
 
+#### Display ID Format
+
+In addition to the internal `TIP-XXX` device ID, labels get a user-facing `displayId` in `NNNNNYYYY` format:
+
+- **NNNNN**: 5-digit zero-padded counter (allocated atomically via `allocateNextCounter()`)
+- **YYYY**: last 4 digits of the IMEI (if known at registration time)
+
+Example: counter 7, IMEI `356789012345678` → displayId `000075678`.
+
 #### Post-Registration: Onomondo Sync
 
 If the webhook includes an **ICCID**, the system fires a **fire-and-forget** call to `syncSimLabelToOnomondo()`. This updates the SIM's label in the Onomondo dashboard to match the new `TIP-XXX` ID, so operators can identify the device in both systems.
 
 #### What Happens Next
 
-After auto-registration, the location report continues processing normally:
-- The new `LocationEvent` is created and linked to the label
+After auto-registration, the **manufacturing cooldown** suppresses `LocationEvent` creation for 24 hours (see next section). After the cooldown:
+- `LocationEvent` records are created and linked to the label
 - `lastSeenAt` is updated
 - If the label later gets linked to a shipment, all prior orphaned `LocationEvent` records are **backfilled** with the `shipmentId`
 
 If the label is later purchased (status set to `SOLD`) and starts reporting without a shipment, the **orphaned device detection** kicks in (see below).
 
-### Deduplication (4 Layers)
+#### Legacy Label Backfill
+
+When a webhook arrives for a label that lacks a `displayId` (pre-existing labels created before the display ID format was introduced), the system backfills it:
+
+1. If the label already has a `counter` → compute `displayId` from `counter + IMEI`
+2. If the label has no `counter` (e.g., `TIP-016` from early inventory) → atomically allocate one via `$transaction` + `allocateNextCounter()`, then compute `displayId`
+
+This ensures all labels gradually acquire display IDs as they report in, without requiring a migration.
+
+### Manufacturing Cooldown (24 hours)
+
+When a label is physically built, SIM activation triggers Onomondo events from the factory floor. These must not appear in the end user's tracking history.
+
+**How it works:**
+
+1. Auto-registration sets `Label.manufacturedAt` (not `activatedAt`) to the current timestamp
+2. `processLocationReport()` checks `manufacturedAt` — if <24 hours old, the event is **suppressed**:
+   - `lastSeenAt` is still updated (heartbeat stays alive)
+   - **No `LocationEvent` is created**
+   - No shipment status changes, orphan detection, or delivery checks run
+3. After 24 hours, events are processed normally
+4. `Label.activatedAt` is only set later when the label first reports with an active shipment (user's real activation, not manufacturing)
+
+**Key rules:**
+- Never set `activatedAt` during auto-registration — use `manufacturedAt`
+- The cooldown only applies to auto-registered labels (labels created manually as `SOLD` inventory don't have `manufacturedAt` set)
+- `lastSeenAt` is still updated during cooldown — the device appears online, but no location history is recorded
+
+### Deduplication (5 Layers)
 
 | Layer | What It Catches | Mechanism |
 |-------|----------------|-----------|
 | **Webhook log ID** | Onomondo double-sends | Deterministic `SHA256(onomondo:{iccid}:{time}:{type})[0:25]` — same payload = same DB upsert |
 | **Exact coordinate dedup** | Same location within 5 min | Query: same `labelId`, `lat`, `lng`, `source`, `recordedAt >= now - 5min` |
 | **Proximity dedup** | Adjacent cell towers (cell tower source only) | Haversine distance < 3km within 60 min window |
+| **Velocity sanity check** | Impossible travel speed (stale cell tower DB) | Rejects events implying >1000 km/h. Same-timestamp + >100m distance = rejected (infinite speed) |
 | **DB unique constraint** | Final safety net | `@@unique([labelId, recordedAt, lat, lng, source])` |
 
 **All layers still update `label.lastSeenAt`** so the "Last Update" column stays fresh even when the location event itself is deduplicated.
@@ -202,17 +242,29 @@ geocodedCity, geocodedArea, geocodedCountry, geocodedCountryCode
 
 ### Automatic Status Transitions
 
-**PENDING → IN_TRANSIT:** Triggered on the first location event after shipment creation. Sends consignee notification.
+**PENDING → IN_TRANSIT:** Triggered on the first location event after shipment creation. Sends type-specific notifications:
+- **CARGO_TRACKING**: Consignee in-transit email (if consignee email provided)
+- **LABEL_DISPATCH**: Dispatch buyer notification ("Your TIP labels are on their way")
 
-**IN_TRANSIT → DELIVERED:** Checks if the last 2+ locations (within 30 min) are all within 1500m of the destination address. The generous threshold accounts for cell tower accuracy (500-1000m). Auto-sets `deliveredAt` and sends delivery notifications to shipper + consignee.
+**IN_TRANSIT → DELIVERED:** Checks if the last 2+ locations (within 30 min) are all within 1500m of the destination address. The generous threshold accounts for cell tower accuracy (500-1000m). Auto-sets `deliveredAt` and sends type-specific notifications:
+- **CARGO_TRACKING**: Shipper + consignee delivery notifications
+- **LABEL_DISPATCH**: Dispatch delivered notification ("Your TIP labels have arrived, time to activate")
+
+**LABEL_DISPATCH delivery** is detected both inline in `processLocationReport()` and via the `check-delivery` cron job. The cron aggregates locations from **all linked labels** (via `shipmentLabels` join table) for multi-label dispatches.
+
+**Order cascade:** When a `LABEL_DISPATCH` is delivered and belongs to an order, `maybeCompleteOrder()` checks if all dispatches in the order are now delivered. If so, the order is marked `DELIVERED` and an order-delivered email is sent.
+
+**`activatedAt` stamping:** Set on the first location report when a label has any active shipment (cargo or dispatch). This gives a clean "first reported from the field" timestamp. Orphaned SOLD labels (no active shipment) skip this — they go through the claim-token flow.
 
 ### Orphaned Device Detection
 
-If a label reports location but has no active shipment and its status is `SOLD`:
-- Label is set to `ACTIVE`
+If a label reports location but has no active shipment, no existing claim token, and its status is `SOLD`:
+- Label status is **kept as `SOLD`** (not promoted to ACTIVE — keeps the label in the "available labels" dropdown for cargo creation)
 - A `claimToken` is generated (48h expiry)
 - Notification sent to the purchaser with a claim link
 - `firstUnlinkedReportAt` is tracked for monitoring
+
+The SOLD → ACTIVE promotion happens later when the user creates a cargo shipment with this label.
 
 ### Offline Sync Detection
 
@@ -324,6 +376,7 @@ The UI uses `recordedAt` for location history timestamps and `lastSeenAt` for "d
 | Job | Schedule | Purpose |
 |-----|----------|---------|
 | `backfill-geocode` | Daily 13:00 UTC | Retry failed reverse geocoding (200 records/batch) |
+| `check-delivery` | Periodic | Auto-detect delivery for both CARGO_TRACKING (single label) and LABEL_DISPATCH (multi-label via shipmentLabels). Cascades order completion |
 | `check-signals` | Periodic | Alert if device silent >48 hours |
 | `check-stuck` | Periodic | Alert if shipment location unchanged >48 hours |
 | `cleanup-data` | Periodic | Prune webhook logs >7 days, cron logs >30 days |
@@ -343,6 +396,9 @@ Must verify data actually **spans** 48 hours, not just that the query window is 
 | `app/src/lib/cell-geolocation.ts` | Google Geolocation API client (cell tower -> coords), in-memory cache |
 | `app/src/lib/geocoding.ts` | Reverse geocoding: 3-tier cache (memory, DB, Nominatim) |
 | `app/src/lib/validations/device.ts` | Zod schemas: `onomondoLocationUpdateSchema` |
+| `app/src/lib/label-id.ts` | Display ID format: `allocateNextCounter()`, `formatDisplayId()` |
+| `app/src/lib/order-utils.ts` | Order completion cascade: `maybeCompleteOrder()` |
+| `app/src/app/api/cron/check-delivery/route.ts` | Delivery detection cron: geofence check for CARGO_TRACKING + LABEL_DISPATCH |
 | `app/src/lib/utils/location-display.ts` | Display utilities: time-window thinning, location name formatting |
 | `app/src/components/shipments/shipment-timeline.tsx` | Internal timeline: city grouping + area sub-grouping |
 | `app/src/components/tracking/public-timeline.tsx` | Public tracking timeline |

@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { createClerkClient } from '@clerk/backend'
@@ -138,7 +138,7 @@ export default async function DashboardPage() {
             select: { deviceId: true, batteryPct: true, lastSeenAt: true, status: true },
           },
           locations: {
-            where: { source: 'CELL_TOWER' },
+            where: { source: 'CELL_TOWER', ...VALID_LOCATION },
             select: {
               id: true,
               latitude: true,

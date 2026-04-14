@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 
 export interface FleetStats {
   counts: {
@@ -93,17 +93,17 @@ export async function getFleetStats(): Promise<FleetStats> {
     db.label.count({ where: { status: 'ACTIVE', batteryPct: 0 } }),
     db.label.count({ where: { status: 'ACTIVE', batteryPct: null } }),
     // Reporting frequency
-    db.locationEvent.count(),
-    db.locationEvent.count({ where: { recordedAt: { gte: twentyFourHoursAgo } } }),
-    db.locationEvent.count({ where: { recordedAt: { gte: sevenDaysAgo } } }),
+    db.locationEvent.count({ where: { ...VALID_LOCATION } }),
+    db.locationEvent.count({ where: { recordedAt: { gte: twentyFourHoursAgo }, ...VALID_LOCATION } }),
+    db.locationEvent.count({ where: { recordedAt: { gte: sevenDaysAgo }, ...VALID_LOCATION } }),
     // Signal sources (all time)
-    db.locationEvent.count({ where: { source: 'GPS' } }),
-    db.locationEvent.count({ where: { source: 'CELL_TOWER' } }),
-    db.locationEvent.count({ where: { isOfflineSync: true } }),
+    db.locationEvent.count({ where: { source: 'GPS', ...VALID_LOCATION } }),
+    db.locationEvent.count({ where: { source: 'CELL_TOWER', ...VALID_LOCATION } }),
+    db.locationEvent.count({ where: { isOfflineSync: true, ...VALID_LOCATION } }),
     // Geographic distribution (top 10 countries)
     db.locationEvent.groupBy({
       by: ['geocodedCountry', 'geocodedCountryCode'],
-      where: { geocodedCountry: { not: null } },
+      where: { geocodedCountry: { not: null }, ...VALID_LOCATION },
       _count: { _all: true },
       orderBy: { _count: { geocodedCountry: 'desc' } },
       take: 10,
@@ -114,6 +114,7 @@ export async function getFleetStats(): Promise<FleetStats> {
       select: {
         id: true,
         locations: {
+          where: { ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' as const },
           take: 1,
           select: { recordedAt: true },
@@ -178,7 +179,7 @@ export async function getReportingHistory(): Promise<ReportingDay[]> {
   // Prisma groupBy doesn't support date_trunc, so we fetch timestamps + source
   // and bucket by day in JS.
   const rawEvents = await db.locationEvent.findMany({
-    where: { recordedAt: { gte: fourteenDaysAgo } },
+    where: { recordedAt: { gte: fourteenDaysAgo }, ...VALID_LOCATION },
     select: { recordedAt: true, source: true },
     orderBy: { recordedAt: 'asc' },
   })

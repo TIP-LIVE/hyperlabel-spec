@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { rateLimit, RATE_LIMIT_PUBLIC, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 interface RouteParams {
@@ -72,6 +72,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         locations: {
           where: {
             source: 'CELL_TOWER',
+            ...VALID_LOCATION,
             ...(since ? { recordedAt: { gt: new Date(since) } } : {}),
           },
           orderBy: { recordedAt: 'desc' },
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       })
       if (backfilled.count > 0) {
         shipment.locations = await db.locationEvent.findMany({
-          where: { shipmentId: shipment.id },
+          where: { shipmentId: shipment.id, ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' },
           take: 50,
           select: {

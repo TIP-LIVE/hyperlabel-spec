@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { rateLimit, RATE_LIMIT_DEVICE, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 /**
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // Get the most recent location event
     const lastLocation = await db.locationEvent.findFirst({
-      where: { labelId: label.id },
+      where: { labelId: label.id, ...VALID_LOCATION },
       orderBy: { recordedAt: 'desc' },
       select: {
         latitude: true,
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     // Get total location event count for this label
     const totalEvents = await db.locationEvent.count({
-      where: { labelId: label.id },
+      where: { labelId: label.id, ...VALID_LOCATION },
     })
 
     const activeShipment = label.shipments[0] || null

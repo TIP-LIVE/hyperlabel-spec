@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { sendShipmentDeliveredNotification, sendConsigneeDeliveredNotification } from '@/lib/notifications'
 import { maybeCompleteOrder } from '@/lib/order-utils'
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           },
         },
         locations: {
+          where: { ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' },
           take: 1,
         },

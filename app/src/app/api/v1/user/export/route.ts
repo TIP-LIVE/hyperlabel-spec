@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUser } from '@/lib/auth'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 
 /**
  * GET /api/v1/user/export
@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
         where: { userId: user.id },
         include: {
           locations: {
+            where: { ...VALID_LOCATION },
             orderBy: { recordedAt: 'asc' },
           },
           label: {

@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { isClerkConfigured } from '@/lib/clerk-config'
@@ -60,7 +60,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
         },
       },
       locations: {
-        where: { source: 'CELL_TOWER' },
+        where: { source: 'CELL_TOWER', ...VALID_LOCATION },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       },

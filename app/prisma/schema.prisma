@@ -189,6 +189,10 @@ model LocationEvent {
   geocodedCountry     String? @map("geocoded_country")
   geocodedCountryCode String? @map("geocoded_country_code")
 
+  // Soft-exclude: reason the event was marked invalid (e.g. "teleportation", "test_data").
+  // NULL = valid event. Excluded events are filtered out of all user-facing queries.
+  excludedReason String? @map("excluded_reason")
+
   // Relations
   labelId    String    @map("label_id")
   label      Label     @relation(fields: [labelId], references: [id])

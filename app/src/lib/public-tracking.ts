@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 
 /**
  * Fetch + serialize a shipment for the public TrackingPageClient.
@@ -24,7 +24,7 @@ export async function loadPublicTrackingData(
       },
       shipmentLabels: { select: { labelId: true } },
       locations: {
-        where: { source: 'CELL_TOWER' },
+        where: { source: 'CELL_TOWER', ...VALID_LOCATION },
         orderBy: { recordedAt: 'desc' },
         take: 100,
       },

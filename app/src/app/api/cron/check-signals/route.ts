@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { sendNoSignalNotification } from '@/lib/notifications'
 import { withCronLogging } from '@/lib/cron'
 
@@ -116,7 +116,7 @@ export const GET = withCronLogging('check-signals', async () => {
     // Only now do we fetch the latest LocationEvent (for the email's "last
     // known location"). Candidate-but-quiet labels skip this query.
     const latestLocation = await db.locationEvent.findFirst({
-      where: { labelId: shipment.label.id },
+      where: { labelId: shipment.label.id, ...VALID_LOCATION },
       orderBy: { recordedAt: 'desc' },
       select: { latitude: true, longitude: true },
     })

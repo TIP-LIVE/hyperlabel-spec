@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { sendShipmentStuckNotification } from '@/lib/notifications'
 import { withCronLogging } from '@/lib/cron'
 
@@ -30,6 +30,7 @@ export const GET = withCronLogging('check-stuck', async () => {
         locations: {
           some: {
             recordedAt: { gte: fortyEightHoursAgo },
+            excludedReason: null,
           },
         },
       },
@@ -39,6 +40,7 @@ export const GET = withCronLogging('check-stuck', async () => {
         select: {
           deviceId: true,
           locations: {
+            where: { ...VALID_LOCATION },
             orderBy: { recordedAt: 'desc' },
             take: 20, // Last 20 location events
           },

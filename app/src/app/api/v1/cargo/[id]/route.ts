@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
-import { db } from '@/lib/db'
+import { db, VALID_LOCATION } from '@/lib/db'
 import { requireOrgAuth, canAccessRecord } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
           },
         },
         locations: {
-          where: { source: 'CELL_TOWER' },
+          where: { source: 'CELL_TOWER', ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' },
           take: limit,
           skip: offset,
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // Backfill geocoding for locations missing geocoded data
     const finalLocations = needsRefetch
       ? (await db.locationEvent.findMany({
-          where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
+          where: { shipmentId: shipment.id, source: 'CELL_TOWER', ...VALID_LOCATION },
           orderBy: { recordedAt: 'desc' },
           take: limit,
           skip: offset,
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     })
 
     const totalLocations = await db.locationEvent.count({
-      where: { shipmentId: shipment.id, source: 'CELL_TOWER' },
+      where: { shipmentId: shipment.id, source: 'CELL_TOWER', ...VALID_LOCATION },
     })
     // Adjust total by the number of duplicates removed from this page
     const duplicatesRemoved = finalLocations.length - deduped.length
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // Fetch the actual oldest location so the frontend can infer origin
     // independently of which page of locations is currently loaded
     const oldestLocation = await db.locationEvent.findFirst({
-      where: { shipmentId: shipment.id },
+      where: { shipmentId: shipment.id, ...VALID_LOCATION },
       orderBy: { recordedAt: 'asc' },
     })
 

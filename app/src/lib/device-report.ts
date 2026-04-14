@@ -503,6 +503,7 @@ export async function processLocationReport(
     where: {
       labelId: label.id,
       recordedAt: { lte: recordedAt },
+      excludedReason: null,
     },
     orderBy: { recordedAt: 'desc' },
     select: { id: true, latitude: true, longitude: true, recordedAt: true },
