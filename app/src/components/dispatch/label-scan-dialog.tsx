@@ -79,7 +79,7 @@ export function LabelScanDialog({
 
   const [scannedLabels, setScannedLabels] = useState<ScannedLabel[]>([])
   const [step, setStep] = useState<ScanStep>('scan')
-  const [mode, setMode] = useState<'camera' | 'manual' | 'browse'>(cameraSupported ? 'camera' : 'manual')
+  const [mode, setMode] = useState<'camera' | 'manual' | 'browse'>('browse')
   const [scanning, setScanning] = useState(false)
   const [manualId, setManualId] = useState('')
   const [scanError, setScanError] = useState<string | null>(null)
@@ -124,7 +124,7 @@ export function LabelScanDialog({
     stopCamera()
     setScannedLabels([])
     setStep('scan')
-    setMode(cameraSupported ? 'camera' : 'manual')
+    setMode('browse')
     setManualId('')
     setScanError(null)
     setPendingLabel(null)
@@ -134,7 +134,7 @@ export function LabelScanDialog({
     setAvailableLabels([])
     setBrowseFilter('')
     setLoadingBrowse(false)
-  }, [stopCamera, cameraSupported])
+  }, [stopCamera])
 
   // Look up a label by deviceId/displayId
   const lookupLabel = useCallback(
