@@ -412,22 +412,22 @@ export function LabelScanDialog({
 
             {/* Camera view */}
             {mode === 'camera' && (
-              <div className="relative overflow-hidden rounded-lg bg-black">
+              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
                 <video
                   ref={videoRef}
-                  className="aspect-video w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                   playsInline
                   muted
                 />
                 {scanning && (
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <div className="h-40 w-40 rounded-lg border-2 border-white/50">
-                      <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/50" />
+                    <div className="h-56 w-56 rounded-lg border-2 border-white/70 sm:h-64 sm:w-64">
+                      <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
                     </div>
                   </div>
                 )}
                 {!scanning && !scanError && (
-                  <div className="flex flex-col items-center justify-center py-12">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-white/50" />
                     <p className="mt-2 text-sm text-white/50">Starting camera...</p>
                   </div>
@@ -437,6 +437,9 @@ export function LabelScanDialog({
                     <Loader2 className="h-8 w-8 animate-spin text-white" />
                   </div>
                 )}
+                <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs text-white/70">
+                  Point at the label&apos;s QR code
+                </p>
               </div>
             )}
 
