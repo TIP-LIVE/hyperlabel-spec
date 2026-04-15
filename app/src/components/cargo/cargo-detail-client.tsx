@@ -100,6 +100,7 @@ interface OldestLocationInfo {
 interface CargoDetailClientProps {
   initialData: CargoData
   trackingUrl: string
+  labelNeedsReprovisioning?: boolean
   initialTotalLocations?: number
   initialOldestLocation?: OldestLocationInfo | null
   isAdmin?: boolean
@@ -124,7 +125,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocations, initialOldestLocation, isAdmin }: CargoDetailClientProps) {
+export function CargoDetailClient({ initialData, trackingUrl, labelNeedsReprovisioning = false, initialTotalLocations, initialOldestLocation, isAdmin }: CargoDetailClientProps) {
   const [shipment, setShipment] = useState<CargoData>(initialData)
   const [totalLocations, setTotalLocations] = useState(initialTotalLocations ?? initialData.locations.length)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -388,7 +389,9 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
                 Reactivate
               </Button>
             )}
-            <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />
+            {trackingUrl && (
+              <ShareLinkButton shareCode={shipment.shareCode} trackingUrl={trackingUrl} />
+            )}
             {isActive && (
               <CancelShipmentDialog
                 shipmentId={shipment.id}
@@ -784,30 +787,64 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
           )}
 
           {/* Share Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Share2 className="h-4 w-4" />
-                Share Tracking
-              </CardTitle>
-              <CardDescription>
-                Share this link with your recipient to let them track the cargo
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-xl bg-muted px-3 py-2.5">
-                <p className="break-all font-mono text-xs text-muted-foreground">{trackingUrl}</p>
-              </div>
-              <ShareLinkButton
-                shareCode={shipment.shareCode}
-                trackingUrl={trackingUrl}
-                className="mt-3 w-full rounded-full"
-              />
-            </CardContent>
-          </Card>
+          {labelNeedsReprovisioning ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share Tracking
+                </CardTitle>
+                <CardDescription>
+                  This label needs reprovisioning before sharing is enabled
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+                  <p className="font-medium">No spec display ID on this label</p>
+                  <p className="mt-1 text-muted-foreground">
+                    The sticker URL, in-app tracking link, and QR code all use the label&rsquo;s
+                    9-digit <span className="font-mono">displayId</span> (see{' '}
+                    <a
+                      href="https://github.com/TIP-LIVE/hyperlabel-spec/blob/main/docs/DEVICE-LOCATION-SYSTEM.md#display-id-format"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      spec
+                    </a>
+                    ). This label was created before that system existed (IMEI and displayId are
+                    both null). Ask an admin to reprovision it via Admin &rarr; Labels &rarr;
+                    Generate with the modem&rsquo;s IMEI.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share Tracking
+                </CardTitle>
+                <CardDescription>
+                  Share this link with your recipient to let them track the cargo
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-xl bg-muted px-3 py-2.5">
+                  <p className="break-all font-mono text-xs text-muted-foreground">{trackingUrl}</p>
+                </div>
+                <ShareLinkButton
+                  shareCode={shipment.shareCode}
+                  trackingUrl={trackingUrl}
+                  className="mt-3 w-full rounded-full"
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Physical Label Preview + print-ready PDF download — last widget in sidebar */}
-          {shipment.label && (
+          {shipment.label && !labelNeedsReprovisioning && (
             <LabelPreview
               shipmentId={shipment.id}
               deviceId={shipment.label.deviceId}

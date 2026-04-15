@@ -14,12 +14,12 @@ export function AddLabelsForm() {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<'single' | 'bulk'>('single')
 
-  // Single mode
-  const [deviceId, setDeviceId] = useState('')
+  // Single mode — IMEI is required; deviceId + displayId are derived
+  // server-side via provisionLabel() (NNNNNYYYY format).
   const [imei, setImei] = useState('')
   const [iccid, setIccid] = useState('')
 
-  // Bulk mode
+  // Bulk mode — CSV of imei,iccid
   const [bulkData, setBulkData] = useState('')
 
   const handleSingleSubmit = async (e: React.FormEvent) => {
@@ -31,17 +31,18 @@ export function AddLabelsForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          labels: [{ deviceId, imei: imei || undefined, iccid: iccid || undefined }],
+          labels: [{ imei, iccid: iccid || undefined }],
         }),
       })
 
+      const data = await res.json()
       if (res.ok) {
-        toast.success('Label added to inventory')
+        const first = data.created?.[0]
+        toast.success(first ? `Provisioned ${first.displayId}` : 'Label added to inventory')
         router.push('/admin/labels')
         router.refresh()
       } else {
-        const error = await res.json()
-        toast.error(error.error || 'Failed to add label')
+        toast.error(data.error || 'Failed to add label')
       }
     } catch (error) {
       console.error('Error adding label:', error)
@@ -56,11 +57,11 @@ export function AddLabelsForm() {
     setLoading(true)
 
     try {
-      // Parse bulk data (CSV format: deviceId,imei,iccid)
+      // CSV: imei,iccid (one per line)
       const lines = bulkData.trim().split('\n')
       const labels = lines.map((line) => {
-        const [deviceId, imei, iccid] = line.split(',').map((s) => s.trim())
-        return { deviceId, imei: imei || undefined, iccid: iccid || undefined }
+        const [imei, iccid] = line.split(',').map((s) => s.trim())
+        return { imei, iccid: iccid || undefined }
       })
 
       const res = await fetch('/api/v1/admin/labels', {
@@ -69,14 +70,14 @@ export function AddLabelsForm() {
         body: JSON.stringify({ labels }),
       })
 
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
-        toast.success(`Added ${data.count} labels to inventory`)
+        const dupSuffix = data.duplicates?.length ? ` (${data.duplicates.length} duplicate IMEI skipped)` : ''
+        toast.success(`Added ${data.count} labels to inventory${dupSuffix}`)
         router.push('/admin/labels')
         router.refresh()
       } else {
-        const error = await res.json()
-        toast.error(error.error || 'Failed to add labels')
+        toast.error(data.error || 'Failed to add labels')
       }
     } catch (error) {
       console.error('Error adding labels:', error)
@@ -88,6 +89,12 @@ export function AddLabelsForm() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+        Scan or type the modem&rsquo;s IMEI. The device ID and 9-digit display ID
+        (<span className="font-mono">NNNNNYYYY</span>) are assigned automatically — they must come
+        from the IMEI so the sticker QR, public tracking URL, and in-app identifiers all match.
+      </div>
+
       {/* Mode Toggle */}
       <div className="flex gap-2">
         <Button
@@ -111,23 +118,17 @@ export function AddLabelsForm() {
       {mode === 'single' ? (
         <form onSubmit={handleSingleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-foreground">Device ID *</Label>
-            <Input
-              placeholder="HL-001234"
-              value={deviceId}
-              onChange={(e) => setDeviceId(e.target.value)}
-              required
-              className="border-border bg-muted text-foreground"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-foreground">IMEI (Optional)</Label>
+            <Label className="text-foreground">IMEI *</Label>
             <Input
               placeholder="123456789012345"
               value={imei}
-              onChange={(e) => setImei(e.target.value)}
-              className="border-border bg-muted text-foreground"
+              onChange={(e) => setImei(e.target.value.replace(/\D/g, '').slice(0, 15))}
+              required
+              inputMode="numeric"
+              pattern="\d{15}"
+              className="border-border bg-muted font-mono text-foreground"
             />
+            <p className="text-xs text-muted-foreground">15 digits, from the modem&rsquo;s PCB QR.</p>
           </div>
           <div className="space-y-2">
             <Label className="text-foreground">ICCID (Optional)</Label>
@@ -138,7 +139,7 @@ export function AddLabelsForm() {
               className="border-border bg-muted text-foreground"
             />
           </div>
-          <Button type="submit" disabled={loading || !deviceId}>
+          <Button type="submit" disabled={loading || imei.length !== 15}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <Plus className="mr-2 h-4 w-4" />
             Add Label
@@ -149,14 +150,15 @@ export function AddLabelsForm() {
           <div className="space-y-2">
             <Label className="text-foreground">Bulk Import (CSV)</Label>
             <Textarea
-              placeholder="deviceId,imei,iccid&#10;HL-001234,123456789012345,8944...&#10;HL-001235,123456789012346,8944..."
+              placeholder="imei,iccid&#10;123456789012345,8944...&#10;123456789012346,8944..."
               value={bulkData}
               onChange={(e) => setBulkData(e.target.value)}
               rows={10}
               className="border-border bg-muted font-mono text-sm text-foreground"
             />
             <p className="text-xs text-muted-foreground">
-              One label per line. Format: deviceId,imei,iccid (imei and iccid optional)
+              One label per line. Format: <span className="font-mono">imei,iccid</span> (ICCID
+              optional). IMEI must be 15 digits.
             </p>
           </div>
           <Button type="submit" disabled={loading || !bulkData.trim()}>

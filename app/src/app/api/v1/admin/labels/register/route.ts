@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       labels: string[]
       skipped: string[]
       skippedAlreadyInOrg?: string[]
+      skippedNotFound?: string[]
       error?: string
     }> = []
 
@@ -73,13 +74,14 @@ export async function POST(req: NextRequest) {
       const labelsToAssign: { id: string; deviceId: string }[] = []
       const skipped: string[] = []
       const skippedAlreadyInOrg: string[] = []
+      const skippedNotFound: string[] = []
 
       if (process.env.NODE_ENV !== 'test') {
         console.info('[Register] assignment orgId:', orgId, 'deviceIds:', deviceIds)
       }
 
       for (const deviceId of deviceIds) {
-        let label = await db.label.findUnique({
+        const label = await db.label.findUnique({
           where: { deviceId },
           include: {
             orderLabels: {
@@ -89,11 +91,17 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        // Never silently create labels here — the spec-compliant path is
+        // /admin/labels/generate which requires IMEI and produces a proper
+        // NNNNNYYYY displayId. Silent creation produced the class of labels
+        // with imei=null, displayId=null whose sticker URLs never resolve.
         if (!label) {
-          label = await db.label.create({
-            data: { deviceId, status: 'INVENTORY' },
-            include: { orderLabels: true },
-          })
+          skipped.push(deviceId)
+          skippedNotFound.push(deviceId)
+          if (process.env.NODE_ENV !== 'test') {
+            console.info('[Register] skip (not found — use /admin/labels/generate to create)', { deviceId, orgId })
+          }
+          continue
         }
 
         const alreadyInThisOrg = label.orderLabels.length > 0
@@ -116,6 +124,7 @@ export async function POST(req: NextRequest) {
           labels: [],
           skipped,
           ...(skippedAlreadyInOrg.length > 0 && { skippedAlreadyInOrg }),
+          ...(skippedNotFound.length > 0 && { skippedNotFound }),
         })
         continue
       }
@@ -148,6 +157,7 @@ export async function POST(req: NextRequest) {
         labels: labelsToAssign.map((l) => l.deviceId),
         skipped: skipped.length > 0 ? skipped : [],
         ...(skippedAlreadyInOrg.length > 0 && { skippedAlreadyInOrg }),
+        ...(skippedNotFound.length > 0 && { skippedNotFound }),
       })
     }
 

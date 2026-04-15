@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
     const alreadyInOrg: string[] = []
     const otherOrg: string[] = []
     const skippedDueToStatus: string[] = []
+    const notFound: string[] = []
 
     for (const deviceId of deviceIds) {
-      let label = await db.label.findUnique({
+      const label = await db.label.findUnique({
         where: { deviceId },
         include: {
           orderLabels: {
@@ -56,13 +57,15 @@ export async function POST(req: NextRequest) {
         },
       })
 
+      // Never silently create labels here. The previous behaviour produced
+      // rows with imei=null, displayId=null whose sticker URLs never resolve
+      // (see docs/DEVICE-LOCATION-SYSTEM.md — all labels must have a
+      // NNNNNYYYY displayId, which requires IMEI at provision time). If a
+      // user types an unknown device ID, they probably mistyped — surface
+      // that instead of creating a broken row.
       if (!label) {
-        label = await db.label.create({
-          data: { deviceId, status: 'INVENTORY' },
-          include: {
-            orderLabels: { include: { order: { select: { orgId: true, status: true } } } },
-          },
-        })
+        notFound.push(deviceId)
+        continue
       }
 
       const inThisOrg = label.orderLabels.some(
@@ -99,6 +102,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (notFound.length > 0 && labelsToAssign.length === 0 && alreadyInOrg.length === 0) {
+      return NextResponse.json(
+        {
+          error: `We couldn't find ${notFound.length === 1 ? 'that label' : 'those labels'} in our system. Check the ID is correct, or ask an admin to provision it (IMEI required).`,
+          deviceIds: notFound,
+        },
+        { status: 404 }
+      )
+    }
+
     if (labelsToAssign.length === 0) {
       return NextResponse.json({
         success: true,
@@ -107,6 +120,7 @@ export async function POST(req: NextRequest) {
         alreadyInOrg: alreadyInOrg.length > 0 ? alreadyInOrg : undefined,
         skippedDueToStatus:
           skippedDueToStatus.length > 0 ? skippedDueToStatus : undefined,
+        notFound: notFound.length > 0 ? notFound : undefined,
         message:
           alreadyInOrg.length > 0
             ? 'All given labels are already in this organisation.'
@@ -147,6 +161,7 @@ export async function POST(req: NextRequest) {
       registered: labelsToAssign.length,
       labels: labelsToAssign.map((l) => l.deviceId),
       alreadyInOrg: alreadyInOrg.length > 0 ? alreadyInOrg : undefined,
+      notFound: notFound.length > 0 ? notFound : undefined,
     })
   } catch (error) {
     return handleApiError(error, 'registering labels')

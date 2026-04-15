@@ -2,21 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
+import { provisionLabel, ProvisionLabelError } from '@/lib/label-id'
 import { z } from 'zod'
 
+// Labels must be provisioned with an IMEI so we can compute the spec's
+// NNNNNYYYY displayId (see docs/DEVICE-LOCATION-SYSTEM.md — Display ID Format).
+// The legacy `deviceId`-only path produced rows with displayId=null whose
+// sticker URLs never resolve via the proxy rewrite.
 const addLabelsSchema = z.object({
-  labels: z.array(
-    z.object({
-      deviceId: z.string().min(1, 'Device ID is required'),
-      imei: z.string().optional(),
-      iccid: z.string().optional(),
-    })
-  ),
+  labels: z
+    .array(
+      z.object({
+        imei: z.string().regex(/^\d{15}$/, 'IMEI must be exactly 15 digits'),
+        iccid: z.string().optional(),
+        firmwareVersion: z.string().optional(),
+      })
+    )
+    .min(1),
 })
 
 /**
  * POST /api/v1/admin/labels
- * Add labels to inventory (admin only)
+ * Add labels to inventory (admin only).
+ *
+ * Each row must include a 15-digit IMEI. The handler calls provisionLabel()
+ * which allocates a counter and writes a spec-compliant deviceId + displayId.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -32,36 +42,43 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { labels } = validated.data
+    const created: Array<{ deviceId: string; displayId: string; imei: string }> = []
+    const duplicates: Array<{ imei: string; existingDisplayId: string | null }> = []
 
-    // Check for duplicates
-    const deviceIds = labels.map((l) => l.deviceId)
-    const existing = await db.label.findMany({
-      where: { deviceId: { in: deviceIds } },
-      select: { deviceId: true },
-    })
-
-    if (existing.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Duplicate device IDs',
-          details: existing.map((l) => l.deviceId),
-        },
-        { status: 400 }
-      )
+    for (const row of validated.data.labels) {
+      try {
+        const label = await provisionLabel({
+          imei: row.imei,
+          firmwareVersion: row.firmwareVersion ?? null,
+        })
+        created.push({
+          deviceId: label.deviceId,
+          displayId: label.displayId,
+          imei: label.imei,
+        })
+        if (row.iccid) {
+          await db.label.update({
+            where: { id: label.id },
+            data: { iccid: row.iccid },
+          })
+        }
+      } catch (err) {
+        if (err instanceof ProvisionLabelError && err.code === 'DUPLICATE_IMEI') {
+          duplicates.push({
+            imei: row.imei,
+            existingDisplayId: err.existingLabel?.displayId ?? null,
+          })
+          continue
+        }
+        throw err
+      }
     }
 
-    // Create labels
-    const created = await db.label.createMany({
-      data: labels.map((l) => ({
-        deviceId: l.deviceId,
-        imei: l.imei,
-        iccid: l.iccid,
-        status: 'INVENTORY',
-      })),
+    return NextResponse.json({
+      count: created.length,
+      created,
+      ...(duplicates.length > 0 && { duplicates }),
     })
-
-    return NextResponse.json({ count: created.count })
   } catch (error) {
     return handleApiError(error, 'adding labels')
   }

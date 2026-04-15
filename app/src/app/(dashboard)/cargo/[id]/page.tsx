@@ -118,12 +118,17 @@ export default async function CargoDetailPage({ params }: PageProps) {
   // Access control is already baked into the findFirst query above (orgId
   // scope for non-admins), so no post-fetch check is needed.
 
-  // Prefer the short /w/{displayId} form so the public URL matches the sticker.
-  // Falls back to /track/{shareCode} if the label has no displayId yet.
+  // Canonical public URL per spec: tip.live/{displayId}. The proxy rewrites
+  // that to /activate/{displayId} which renders the public tracking view
+  // inline. No /track/{shareCode} fallback — when displayId is null the
+  // label was created outside the spec-compliant path and the sticker URL
+  // wouldn't work either. Surface the gap via `labelNeedsReprovisioning`
+  // rather than silently showing a different URL than the sticker.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  const labelNeedsReprovisioning = !shipment.label?.displayId
   const trackingUrl = shipment.label?.displayId
     ? `${appUrl}/${shipment.label.displayId}`
-    : `${appUrl}/track/${shipment.shareCode}`
+    : ''
 
   const serializedData = {
     id: shipment.id,
@@ -179,5 +184,5 @@ export default async function CargoDetailPage({ params }: PageProps) {
     geocodedCountryCode: oldestLocation.geocodedCountryCode,
   } : null
 
-  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} initialTotalLocations={totalLocations} initialOldestLocation={serializedOldestLocation} isAdmin={user?.role === 'admin'} />
+  return <CargoDetailClient initialData={serializedData} trackingUrl={trackingUrl} labelNeedsReprovisioning={labelNeedsReprovisioning} initialTotalLocations={totalLocations} initialOldestLocation={serializedOldestLocation} isAdmin={user?.role === 'admin'} />
 }

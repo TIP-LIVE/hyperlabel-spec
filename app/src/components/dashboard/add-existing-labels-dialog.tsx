@@ -38,6 +38,7 @@ export function AddExistingLabelsDialog({
   const [loading, setLoading] = useState(false)
   const [conflictDeviceIds, setConflictDeviceIds] = useState<string[] | null>(null)
   const [skippedDueToStatus, setSkippedDueToStatus] = useState<string[] | null>(null)
+  const [notFoundDeviceIds, setNotFoundDeviceIds] = useState<string[] | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,6 +65,8 @@ export function AddExistingLabelsDialog({
       if (!res.ok) {
         if (res.status === 409 && data.deviceIds?.length) {
           setConflictDeviceIds(data.deviceIds)
+        } else if (res.status === 404 && data.deviceIds?.length) {
+          setNotFoundDeviceIds(data.deviceIds)
         } else {
           toast.error(data.error || 'Failed to register labels')
         }
@@ -71,6 +74,7 @@ export function AddExistingLabelsDialog({
       }
 
       setConflictDeviceIds(null)
+      setNotFoundDeviceIds(data.notFound?.length ? data.notFound : null)
       if (data.registered > 0) {
         setSkippedDueToStatus(null)
         toast.success(`${data.registered} label(s) added to your organisation`)
@@ -104,6 +108,7 @@ export function AddExistingLabelsDialog({
         if (!next) {
           setConflictDeviceIds(null)
           setSkippedDueToStatus(null)
+          setNotFoundDeviceIds(null)
         }
         onOpenChange(next)
       }}
@@ -142,6 +147,22 @@ export function AddExistingLabelsDialog({
                   <Settings2 className="h-4 w-4" />
                   Open organisation settings
                 </Button>
+              </div>
+            ) : null}
+            {notFoundDeviceIds?.length ? (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              >
+                <p className="font-medium">
+                  {notFoundDeviceIds.length === 1 ? 'Label not found' : `${notFoundDeviceIds.length} labels not found`}
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                  <span className="font-mono">{notFoundDeviceIds.slice(0, 3).join(', ')}</span>
+                  {notFoundDeviceIds.length > 3 ? ` +${notFoundDeviceIds.length - 3} more` : ''} — check
+                  the ID spelling, or ask an admin to provision the label (requires scanning the modem
+                  IMEI).
+                </p>
               </div>
             ) : null}
             {skippedDueToStatus?.length ? (

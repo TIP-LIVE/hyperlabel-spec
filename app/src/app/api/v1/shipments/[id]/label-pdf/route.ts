@@ -53,16 +53,28 @@ export async function GET(
       }
     }
 
-    // Use the canonical bare URL form (tip.live/{displayId}) — the /w/ prefix
-    // was dropped and the bare form is what we show users everywhere else.
-    // Fallback to the numeric portion of deviceId when displayId is missing.
-    const urlKey =
-      shipment.label.displayId ||
-      shipment.label.deviceId.replace(/^[a-zA-Z]+-?/, '')
+    // The printed URL MUST be the spec's canonical bare form: tip.live/{displayId}
+    // (see docs/DEVICE-LOCATION-SYSTEM.md — Display ID Format). The proxy
+    // rewrite in src/proxy.ts only matches 9-digit IDs; any other URL form on
+    // the sticker leaves the public viewer staring at a sign-in page.
+    //
+    // If a label reached the print step without a displayId, it was created
+    // outside the spec-compliant path (e.g. by an old bulk script). Refuse
+    // to print a broken sticker — surface the problem so the label can be
+    // reprovisioned with an IMEI instead.
+    if (!shipment.label.displayId) {
+      return NextResponse.json(
+        {
+          error: 'This label has no displayId. Reprovision via Admin → Labels → Generate (IMEI required) before printing the sticker.',
+          deviceId: shipment.label.deviceId,
+        },
+        { status: 409 }
+      )
+    }
     const labelData: LabelData = {
       deviceId: shipment.label.deviceId,
       displayId: shipment.label.displayId,
-      url: `tip.live/${urlKey}`,
+      url: `tip.live/${shipment.label.displayId}`,
     }
 
     const cwd = process.cwd()
