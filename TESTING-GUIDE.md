@@ -4,6 +4,8 @@ Welcome, and thank you for helping test **TIP** (tip.live). This document walks 
 
 You don't need any technical background to follow this. Each section describes **what to do**, **what should happen**, and **edge cases worth poking at**.
 
+> 📋 **Testing the admin side too?** See the companion [TESTING-GUIDE-ADMIN.md](TESTING-GUIDE-ADMIN.md) — it covers the `/admin` area: label inventory, order fulfilment, dispatch creation, device fleet monitoring, user management, webhook diagnostics, and the Research Hub.
+
 ---
 
 ## Table of Contents
