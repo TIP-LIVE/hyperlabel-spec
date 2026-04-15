@@ -39,12 +39,16 @@ export default async function CargoPage({ searchParams }: CargoPageProps) {
     ? await resolveUserPhase({ userId: user.id, orgId }).catch(() => null)
     : null
 
+  // Phases 0 / 1 / 1b: labels genuinely aren't available yet — no cargo CTA.
+  // Phase 2 (dispatch in transit): user can pre-create cargo, so they get the
+  // CTA in the header AND a phase-aware empty state explaining the pre-create.
   const isPreCargoPhase =
     phaseData != null &&
     (phaseData.phase === 0 ||
       phaseData.phase === 1 ||
       phaseData.phase === '1b' ||
       phaseData.phase === 2)
+  const canCreateCargo = phaseData == null || !(phaseData.phase === 0 || phaseData.phase === 1 || phaseData.phase === '1b')
 
   return (
     <div className="space-y-6">
@@ -56,7 +60,7 @@ export default async function CargoPage({ searchParams }: CargoPageProps) {
             : 'Attach tracking labels to your cargo and monitor journeys in real time'
         }
         action={
-          !isPreCargoPhase ? (
+          canCreateCargo ? (
             <Button asChild>
               <Link href="/cargo/new">
                 <Plus className="mr-2 h-4 w-4" />
@@ -103,6 +107,10 @@ function PreCargoEmptyState({ phaseData }: { phaseData: UserPhaseResult }) {
     href: '/dispatch/new',
     icon: Send,
   }
+  let secondary: { label: string; href: string } | null = {
+    label: 'Go to Dashboard',
+    href: '/dashboard',
+  }
 
   if (phase === 0 || !latestOrder) {
     Icon = ShoppingCart
@@ -126,12 +134,13 @@ function PreCargoEmptyState({ phaseData }: { phaseData: UserPhaseResult }) {
       : { label: 'New Dispatch', href: '/dispatch/new', icon: Send }
   } else if (phase === 2) {
     Icon = Truck
-    title = 'Your labels are on their way to the receiver'
+    title = 'Your labels are on their way — set up cargo tracking now'
     description =
-      "Your dispatch is in transit. Once it's delivered, attach a label to your cargo to start tracking here."
-    primary = inTransitDispatch
-      ? { label: 'View Dispatch', href: `/dispatch/${inTransitDispatch.id}`, icon: ArrowRight }
-      : { label: 'View Dispatches', href: '/dispatch', icon: ArrowRight }
+      "Pre-configure a cargo shipment and it'll start tracking automatically once your label reaches the receiver and gets attached."
+    primary = { label: 'Create Cargo Tracking', href: '/cargo/new', icon: Plus }
+    secondary = inTransitDispatch
+      ? { label: 'View Dispatch', href: `/dispatch/${inTransitDispatch.id}` }
+      : { label: 'View Dispatches', href: '/dispatch' }
   }
 
   const PrimaryIcon = primary.icon
@@ -153,9 +162,11 @@ function PreCargoEmptyState({ phaseData }: { phaseData: UserPhaseResult }) {
               {primary.label}
             </Link>
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
+          {secondary && (
+            <Button variant="outline" asChild>
+              <Link href={secondary.href}>{secondary.label}</Link>
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
