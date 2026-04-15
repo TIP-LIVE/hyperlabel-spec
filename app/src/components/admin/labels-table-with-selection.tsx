@@ -21,6 +21,7 @@ export type LabelRow = {
   deviceId: string
   displayId: string | null
   imei: string | null
+  iccid: string | null
   status: string
   batteryPct: number | null
   activatedAt: Date | null
@@ -168,6 +169,7 @@ export function LabelsTableWithSelection({
                   </th>
                   <th className="pb-3 font-medium">Device ID</th>
                   <th className="pb-3 font-medium">IMEI</th>
+                  <th className="pb-3 font-medium">ICCID</th>
                   <th className="pb-3 font-medium">Status</th>
                   <th className="pb-3 font-medium">Battery</th>
                   <th className="pb-3 font-medium">Organisation</th>
@@ -204,6 +206,7 @@ export function LabelsTableWithSelection({
                             </Link>
                           </td>
                     <td className="py-3 font-mono text-muted-foreground">{label.imei || '—'}</td>
+                    <td className="py-3 font-mono text-muted-foreground">{label.iccid || '—'}</td>
                     <td className="py-3">
                       <Badge className={statusStyles[label.status]}>{label.status}</Badge>
                     </td>
@@ -253,7 +256,7 @@ export function LabelsTableWithSelection({
                 ))}
                 {labels.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={9} className="py-8 text-center text-muted-foreground">
                       {q ? 'No labels match your search' : 'No labels in inventory'}
                     </td>
                   </tr>

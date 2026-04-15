@@ -98,6 +98,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
       deviceId: label.deviceId,
       displayId: label.displayId,
       imei: label.imei,
+      iccid: label.iccid,
       status: label.status,
       batteryPct: label.batteryPct,
       activatedAt: label.activatedAt,
