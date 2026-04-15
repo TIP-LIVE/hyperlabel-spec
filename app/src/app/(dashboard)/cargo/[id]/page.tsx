@@ -33,12 +33,28 @@ export default async function CargoDetailPage({ params }: PageProps) {
     redirect('/sign-in')
   }
 
-  // Accept either the cuid shipment.id OR the 9-digit label displayId
+  const { orgId } = await auth()
+  const isAdmin = user?.role === 'admin'
+
+  // Accept either the cuid shipment.id OR the 9-digit label displayId.
+  // A label can accumulate multiple CARGO_TRACKING shipments over time
+  // (cancelled/delivered ones stay in history) and can even belong to
+  // different orgs across its lifetime. Scope the lookup to the viewer's
+  // current org so findFirst doesn't return a sibling shipment the user
+  // has no access to — which would 404 after the access check even though
+  // a valid match exists. Admins see all.
   const isDisplayId = /^\d{9}$/.test(id)
   const shipment = await db.shipment.findFirst({
     where: isDisplayId
-      ? { label: { displayId: id }, type: 'CARGO_TRACKING' }
-      : { id },
+      ? {
+          label: { displayId: id },
+          type: 'CARGO_TRACKING',
+          ...(isAdmin ? {} : { orgId }),
+        }
+      : {
+          id,
+          ...(isAdmin ? {} : { orgId }),
+        },
     include: {
       label: {
         select: {
@@ -58,6 +74,8 @@ export default async function CargoDetailPage({ params }: PageProps) {
         take: 100,
       },
     },
+    // Prefer the newest shipment when a label has been re-used in-org.
+    orderBy: { createdAt: 'desc' },
   })
 
   if (!shipment || shipment.type !== 'CARGO_TRACKING') {
@@ -97,13 +115,8 @@ export default async function CargoDetailPage({ params }: PageProps) {
     orderBy: { recordedAt: 'asc' },
   })
 
-  // Check access: org membership + ownership
-  const { orgId } = await auth()
-  if (user && user.role !== 'admin') {
-    if (shipment.orgId && shipment.orgId !== orgId) {
-      notFound()
-    }
-  }
+  // Access control is already baked into the findFirst query above (orgId
+  // scope for non-admins), so no post-fetch check is needed.
 
   // Prefer the short /w/{displayId} form so the public URL matches the sticker.
   // Falls back to /track/{shareCode} if the label has no displayId yet.
