@@ -183,7 +183,14 @@ export function CreateCargoForm() {
         const res = await fetch('/api/v1/labels?status=SOLD')
         if (res.ok) {
           const data = await res.json()
-          setLabels(data.labels || [])
+          const availableLabels: AvailableLabel[] = data.labels || []
+          setLabels(availableLabels)
+          // Auto-select when only one label is available — no need to ask.
+          // Covers the common onboarding case (one label just delivered) and
+          // the "Set Up Cargo Tracking" anchor from the dashboard journey card.
+          if (availableLabels.length === 1) {
+            setValue('labelId', availableLabels[0].id)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch labels:', error)
@@ -193,7 +200,7 @@ export function CreateCargoForm() {
     }
 
     fetchLabels()
-  }, [])
+  }, [setValue])
 
   const handleOriginSelect = useCallback(
     (address: string, lat: number, lng: number) => {
