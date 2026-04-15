@@ -69,7 +69,35 @@ export function EditDispatchDialog({
   const [state, setState] = useState(currentState || '')
   const [postalCode, setPostalCode] = useState(currentPostalCode || '')
   const [country, setCountry] = useState(currentCountry || '')
+  // Per-field error messages. Keys match input ids below.
+  // Shown inline and via aria-invalid red border; cleared as the user types.
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const router = useRouter()
+
+  // If any receiver/address field has content, the whole required set must be
+  // filled — prevents saves like the one that left the shipment with an address
+  // but no country. Matches shipperAddressSchema used by the public receiver-fill flow.
+  const shippingBlockTouched = Boolean(
+    receiverFirstName.trim() ||
+      receiverLastName.trim() ||
+      receiverEmail.trim() ||
+      receiverPhone.trim() ||
+      line1.trim() ||
+      line2.trim() ||
+      city.trim() ||
+      state.trim() ||
+      postalCode.trim() ||
+      country.trim(),
+  )
+
+  function clearError(field: string) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }
 
   function resetForm() {
     setName(currentName || '')
@@ -83,6 +111,7 @@ export function EditDispatchDialog({
     setState(currentState || '')
     setPostalCode(currentPostalCode || '')
     setCountry(currentCountry || '')
+    setErrors({})
   }
 
   function composeAddress() {
@@ -94,11 +123,34 @@ export function EditDispatchDialog({
     return parts.join(', ')
   }
 
+  function validate(): Record<string, string> {
+    const e: Record<string, string> = {}
+    if (!name.trim()) e.name = 'Dispatch name is required'
+
+    if (shippingBlockTouched) {
+      if (!receiverFirstName.trim()) e.receiverFirstName = 'First name is required'
+      if (!receiverLastName.trim()) e.receiverLastName = 'Last name is required'
+      if (!receiverEmail.trim()) {
+        e.receiverEmail = 'Email is required'
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(receiverEmail.trim())) {
+        e.receiverEmail = 'Enter a valid email address'
+      }
+      if (!line1.trim()) e.line1 = 'Address line 1 is required'
+      if (!city.trim()) e.city = 'City is required'
+      if (!postalCode.trim()) e.postalCode = 'Postal code is required'
+      if (!country.trim()) e.country = 'Country is required'
+    }
+    return e
+  }
+
   async function handleSave() {
-    if (!name.trim()) {
-      toast.error('Name is required')
+    const validationErrors = validate()
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      toast.error('Please fill in all required fields')
       return
     }
+    setErrors({})
 
     setIsLoading(true)
 
@@ -175,14 +227,21 @@ export function EditDispatchDialog({
         <div className="space-y-5 py-4">
           {/* Dispatch Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-dispatch-name">Dispatch Name</Label>
+            <Label htmlFor="edit-dispatch-name">
+              Dispatch Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="edit-dispatch-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value)
+                clearError('name')
+              }}
               placeholder="e.g., Warehouse labels — Batch 1"
               disabled={isLoading}
+              aria-invalid={!!errors.name}
             />
+            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
           </div>
 
           {/* Receiver */}
@@ -190,37 +249,64 @@ export function EditDispatchDialog({
             <p className="text-sm font-medium">Receiver</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-receiver-first">First Name</Label>
+                <Label htmlFor="edit-receiver-first">
+                  First Name{shippingBlockTouched && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input
                   id="edit-receiver-first"
                   value={receiverFirstName}
-                  onChange={(e) => setReceiverFirstName(e.target.value)}
+                  onChange={(e) => {
+                    setReceiverFirstName(e.target.value)
+                    clearError('receiverFirstName')
+                  }}
                   placeholder="Jane"
                   disabled={isLoading}
+                  aria-invalid={!!errors.receiverFirstName}
                 />
+                {errors.receiverFirstName && (
+                  <p className="text-sm text-destructive">{errors.receiverFirstName}</p>
+                )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit-receiver-last">Last Name</Label>
+                <Label htmlFor="edit-receiver-last">
+                  Last Name{shippingBlockTouched && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input
                   id="edit-receiver-last"
                   value={receiverLastName}
-                  onChange={(e) => setReceiverLastName(e.target.value)}
+                  onChange={(e) => {
+                    setReceiverLastName(e.target.value)
+                    clearError('receiverLastName')
+                  }}
                   placeholder="Doe"
                   disabled={isLoading}
+                  aria-invalid={!!errors.receiverLastName}
                 />
+                {errors.receiverLastName && (
+                  <p className="text-sm text-destructive">{errors.receiverLastName}</p>
+                )}
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-receiver-email">Email</Label>
+                <Label htmlFor="edit-receiver-email">
+                  Email{shippingBlockTouched && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input
                   id="edit-receiver-email"
                   type="email"
                   value={receiverEmail}
-                  onChange={(e) => setReceiverEmail(e.target.value)}
+                  onChange={(e) => {
+                    setReceiverEmail(e.target.value)
+                    clearError('receiverEmail')
+                  }}
                   placeholder="jane@acme.com"
                   disabled={isLoading}
+                  aria-invalid={!!errors.receiverEmail}
                 />
+                {errors.receiverEmail && (
+                  <p className="text-sm text-destructive">{errors.receiverEmail}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="edit-receiver-phone">Phone (optional)</Label>
@@ -246,14 +332,21 @@ export function EditDispatchDialog({
               </p>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="edit-line1">Address Line 1</Label>
+              <Label htmlFor="edit-line1">
+                Address Line 1{shippingBlockTouched && <span className="text-destructive"> *</span>}
+              </Label>
               <Input
                 id="edit-line1"
                 value={line1}
-                onChange={(e) => setLine1(e.target.value)}
+                onChange={(e) => {
+                  setLine1(e.target.value)
+                  clearError('line1')
+                }}
                 placeholder="123 Main St"
                 disabled={isLoading}
+                aria-invalid={!!errors.line1}
               />
+              {errors.line1 && <p className="text-sm text-destructive">{errors.line1}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-line2">Address Line 2 (optional)</Label>
@@ -267,17 +360,24 @@ export function EditDispatchDialog({
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-city">City</Label>
+                <Label htmlFor="edit-city">
+                  City{shippingBlockTouched && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input
                   id="edit-city"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => {
+                    setCity(e.target.value)
+                    clearError('city')
+                  }}
                   placeholder="Berlin"
                   disabled={isLoading}
+                  aria-invalid={!!errors.city}
                 />
+                {errors.city && <p className="text-sm text-destructive">{errors.city}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit-state">State / Region</Label>
+                <Label htmlFor="edit-state">State / Region (optional)</Label>
                 <Input
                   id="edit-state"
                   value={state}
@@ -288,23 +388,37 @@ export function EditDispatchDialog({
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-postal">Postal Code</Label>
+                <Label htmlFor="edit-postal">
+                  Postal Code{shippingBlockTouched && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input
                   id="edit-postal"
                   value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
+                  onChange={(e) => {
+                    setPostalCode(e.target.value)
+                    clearError('postalCode')
+                  }}
                   placeholder="10115"
                   disabled={isLoading}
+                  aria-invalid={!!errors.postalCode}
                 />
+                {errors.postalCode && (
+                  <p className="text-sm text-destructive">{errors.postalCode}</p>
+                )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit-country">Country</Label>
+                <Label htmlFor="edit-country">
+                  Country{shippingBlockTouched && <span className="text-destructive"> *</span>}
+                </Label>
                 <Select
                   value={country}
-                  onValueChange={setCountry}
+                  onValueChange={(v) => {
+                    setCountry(v)
+                    clearError('country')
+                  }}
                   disabled={isLoading}
                 >
-                  <SelectTrigger id="edit-country">
+                  <SelectTrigger id="edit-country" aria-invalid={!!errors.country}>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -315,6 +429,7 @@ export function EditDispatchDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.country && <p className="text-sm text-destructive">{errors.country}</p>}
               </div>
             </div>
           </div>
