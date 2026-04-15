@@ -405,7 +405,6 @@ export function CreateCargoForm() {
             <div className="flex items-center gap-1.5">
               <Label htmlFor="origin">Origin Address</Label>
               <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
-              <SavedAddressSelector onSelect={origin.handleSavedSelect} />
             </div>
             <AddressInput
               id="origin"
@@ -413,6 +412,7 @@ export function CreateCargoForm() {
               onAddressSelect={handleOriginSelect}
               disabled={origin.geocoding}
               externalValue={origin.externalValue}
+              rightSlot={<SavedAddressSelector onSelect={origin.handleSavedSelect} />}
             />
             {errors.originAddress && (
               <p className="text-sm text-destructive">{errors.originAddress.message}</p>
@@ -423,7 +423,6 @@ export function CreateCargoForm() {
             <div className="flex items-center gap-1.5">
               <Label htmlFor="destination">Destination Address</Label>
               <FieldInfo text="Destination for route tracking and delivery detection." />
-              <SavedAddressSelector onSelect={destination.handleSavedSelect} />
             </div>
             <AddressInput
               id="destination"
@@ -431,6 +430,7 @@ export function CreateCargoForm() {
               onAddressSelect={handleDestinationSelect}
               disabled={destination.geocoding}
               externalValue={destination.externalValue}
+              rightSlot={<SavedAddressSelector onSelect={destination.handleSavedSelect} />}
             />
             {errors.destinationAddress && (
               <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>

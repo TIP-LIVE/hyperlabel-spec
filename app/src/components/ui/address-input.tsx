@@ -19,13 +19,15 @@ interface AddressInputProps {
   className?: string
   /** When set, programmatically updates the input value (used by saved-address integration) */
   externalValue?: string
+  /** Extra action rendered at the right end of the input (e.g. saved-address picker) */
+  rightSlot?: React.ReactNode
 }
 
 /**
  * Address input with autocomplete suggestions.
  * Uses OpenStreetMap Nominatim (free, no API key).
  */
-export function AddressInput({ id, placeholder, defaultValue, disabled, onAddressSelect, className, externalValue }: AddressInputProps) {
+export function AddressInput({ id, placeholder, defaultValue, disabled, onAddressSelect, className, externalValue, rightSlot }: AddressInputProps) {
   const [query, setQuery] = useState(defaultValue || '')
   const [results, setResults] = useState<AddressResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -194,7 +196,7 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
           onFocus={() => results.length > 0 && setIsOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`pr-10 ${className || ''}`}
+          className={`${rightSlot ? 'pr-16' : 'pr-10'} ${className || ''}`}
         />
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
           {loading && (
@@ -213,6 +215,7 @@ export function AddressInput({ id, placeholder, defaultValue, disabled, onAddres
               <X className="h-3.5 w-3.5" />
             </button>
           )}
+          {rightSlot}
         </div>
       </div>
 

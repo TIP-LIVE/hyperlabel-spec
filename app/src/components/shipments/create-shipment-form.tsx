@@ -829,7 +829,6 @@ function RouteSection({
         <div className="flex items-center gap-1.5">
           <Label htmlFor="origin">Origin Address</Label>
           <FieldInfo text="Starting point for route tracking. Start typing for suggestions." />
-          <SavedAddressSelector onSelect={origin.handleSavedSelect} />
         </div>
         <AddressInput
           id="origin"
@@ -837,6 +836,7 @@ function RouteSection({
           onAddressSelect={onOriginSelect}
           disabled={origin.geocoding}
           externalValue={origin.externalValue}
+          rightSlot={<SavedAddressSelector onSelect={origin.handleSavedSelect} />}
         />
         {errors.originAddress && (
           <p className="text-sm text-destructive">{errors.originAddress.message}</p>
@@ -847,7 +847,6 @@ function RouteSection({
         <div className="flex items-center gap-1.5">
           <Label htmlFor="destination">Destination Address</Label>
           <FieldInfo text="Destination for route tracking and delivery detection." />
-          <SavedAddressSelector onSelect={destination.handleSavedSelect} />
         </div>
         <AddressInput
           id="destination"
@@ -855,6 +854,7 @@ function RouteSection({
           onAddressSelect={onDestinationSelect}
           disabled={destination.geocoding}
           externalValue={destination.externalValue}
+          rightSlot={<SavedAddressSelector onSelect={destination.handleSavedSelect} />}
         />
         {errors.destinationAddress && (
           <p className="text-sm text-destructive">{errors.destinationAddress.message}</p>
