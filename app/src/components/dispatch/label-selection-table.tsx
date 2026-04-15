@@ -74,13 +74,18 @@ export function LabelSelectionTable({ selectedIds, onChange }: LabelSelectionTab
         }))
       )
       setRows(flat)
+      // Auto-select when only one label is available — no need to ask the
+      // user to pick from a list of one. Mirrors the cargo form behavior.
+      if (flat.length === 1) {
+        onChange([flat[0].id])
+      }
     } catch (err) {
       console.error('Failed to fetch available labels:', err)
       setError(err instanceof Error ? err.message : 'Failed to load labels')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [onChange])
 
   useEffect(() => {
     fetchLabels()
