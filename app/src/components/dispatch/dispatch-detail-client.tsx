@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -89,7 +88,8 @@ const statusConfig = {
 }
 
 export function DispatchDetailClient({ initialData, trackingUrl, backHref = '/dispatch' }: DispatchDetailClientProps) {
-  const [shipment] = useState<DispatchData>(initialData)
+  // Use prop directly (not useState) so router.refresh() updates the UI after edits.
+  const shipment = initialData
 
   const statusInfo = statusConfig[shipment.status]
   const StatusIcon = statusInfo.icon
