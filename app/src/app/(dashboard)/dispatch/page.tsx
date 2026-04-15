@@ -38,33 +38,62 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
   let shipmentCount = 0
   let warehouseLabelCount = 0
   if (user) {
-    // Count labels sitting in our warehouse for this org: bought (SOLD/INVENTORY),
-    // part of a completed order, and not already in an active dispatch.
-    // Mirrors the filter in /api/v1/orders/available-labels.
+    // Count labels sitting in our warehouse for this org. Must stay in sync with
+    // /api/v1/orders/available-labels — that endpoint drives the actual dispatch
+    // picker, so the banner needs to agree with it or users see "1 ready" but
+    // find nothing to pick. Two things both routes enforce:
+    //   1. Exclude labels already committed to a PENDING/IN_TRANSIT/DELIVERED
+    //      dispatch. DELIVERED matters — the label is physically at the receiver.
+    //   2. Cap by the org's purchase quota (paid orders with totalAmount > 0) minus
+    //      labels already actively dispatched. Admin-attached $0 orders don't
+    //      increase dispatch capacity, they just fulfil existing paid slots.
     const orderScope = orgId ? { orgId } : { userId: user.id }
-    const [shipments, labels] = await Promise.all([
-      db.shipment.count({ where }),
-      db.label.count({
-        where: {
-          status: { in: ['SOLD', 'INVENTORY'] },
-          orderLabels: {
-            some: {
-              order: {
-                ...orderScope,
-                status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+    const shipmentScope = orgId ? { orgId } : { userId: user.id }
+    const [shipments, availableLabels, purchasedResult, activelyDispatched] =
+      await Promise.all([
+        db.shipment.count({ where }),
+        db.label.count({
+          where: {
+            status: { in: ['SOLD', 'INVENTORY'] },
+            orderLabels: {
+              some: {
+                order: {
+                  ...orderScope,
+                  status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+                },
+              },
+            },
+            shipmentLabels: {
+              none: {
+                shipment: {
+                  status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
+                },
               },
             },
           },
-          shipmentLabels: {
-            none: {
-              shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
+        }),
+        db.order.aggregate({
+          where: {
+            ...orderScope,
+            status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+            totalAmount: { gt: 0 },
+          },
+          _sum: { quantity: true },
+        }),
+        db.shipmentLabel.count({
+          where: {
+            shipment: {
+              ...shipmentScope,
+              type: 'LABEL_DISPATCH',
+              status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
             },
           },
-        },
-      }),
-    ])
+        }),
+      ])
     shipmentCount = shipments
-    warehouseLabelCount = labels
+    const totalBought = purchasedResult._sum.quantity ?? 0
+    const remainingQuota = Math.max(0, totalBought - activelyDispatched)
+    warehouseLabelCount = Math.min(availableLabels, remainingQuota)
   }
 
   const showEmptyState = shipmentCount === 0 && isClerkConfigured()
