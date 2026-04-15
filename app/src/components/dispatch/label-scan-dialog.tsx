@@ -379,6 +379,19 @@ export function LabelScanDialog({
           <div className="space-y-3">
             {/* Mode toggle */}
             <div className="flex gap-2">
+              <Button
+                variant={mode === 'browse' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1 gap-1.5"
+                onClick={() => {
+                  setMode('browse')
+                  stopCamera()
+                  setScanError(null)
+                }}
+              >
+                <List className="h-3.5 w-3.5" />
+                Browse
+              </Button>
               {cameraSupported && (
                 <Button
                   variant={mode === 'camera' ? 'default' : 'outline'}
@@ -406,19 +419,6 @@ export function LabelScanDialog({
               >
                 <Keyboard className="h-3.5 w-3.5" />
                 Manual
-              </Button>
-              <Button
-                variant={mode === 'browse' ? 'default' : 'outline'}
-                size="sm"
-                className="flex-1 gap-1.5"
-                onClick={() => {
-                  setMode('browse')
-                  stopCamera()
-                  setScanError(null)
-                }}
-              >
-                <List className="h-3.5 w-3.5" />
-                Browse
               </Button>
             </div>
 
@@ -470,7 +470,7 @@ export function LabelScanDialog({
                     disabled={lookingUp}
                   />
                   <Button onClick={handleManualSubmit} disabled={!manualId.trim() || lookingUp}>
-                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
                   </Button>
                 </div>
               </div>
