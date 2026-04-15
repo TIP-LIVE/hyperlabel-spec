@@ -206,7 +206,7 @@ When a label is physically built, SIM activation triggers Onomondo events from t
    - **No `LocationEvent` is created**
    - No shipment status changes, orphan detection, or delivery checks run
 3. After 24 hours, events are processed normally
-4. `Label.activatedAt` is only set later when the label first reports with an active shipment (user's real activation, not manufacturing)
+4. `Label.activatedAt` is set by one of the user-facing activation flows — whichever fires first: cargo/shipment creation against a SOLD/INVENTORY label, the explicit `/api/v1/device/activate` endpoint, or the first location report from the field while the label has an active shipment. None of these run during auto-registration.
 
 **Key rules:**
 - Never set `activatedAt` during auto-registration — use `manufacturedAt`
@@ -254,7 +254,14 @@ geocodedCity, geocodedArea, geocodedCountry, geocodedCountryCode
 
 **Order cascade:** When a `LABEL_DISPATCH` is delivered and belongs to an order, `maybeCompleteOrder()` checks if all dispatches in the order are now delivered. If so, the order is marked `DELIVERED` and an order-delivered email is sent.
 
-**`activatedAt` stamping:** Set on the first location report when a label has any active shipment (cargo or dispatch). This gives a clean "first reported from the field" timestamp. Orphaned SOLD labels (no active shipment) skip this — they go through the claim-token flow.
+**`activatedAt` stamping:** Marks the moment a label enters service. Set by the earliest of:
+
+1. **Cargo shipment creation** — `cargo/route.ts` stamps `activatedAt` (and promotes SOLD/INVENTORY → ACTIVE) when a cargo shipment is linked to the label
+2. **Generic shipment creation** — `shipments/route.ts` does the same for the generic shipment path
+3. **Explicit activation** — `/api/v1/device/activate` (QR-scan flow) sets `activatedAt` and status ACTIVE directly
+4. **First location report** — `device-report.ts` stamps it when the label reports from the field and has any active shipment (cargo or dispatch), independent of whether a cargo shipment was pre-created
+
+Paths 1–3 can stamp `activatedAt` **before any LocationEvent exists** — a label with `activatedAt` set and zero events is expected when the user has committed the label to service but the device hasn't pinged yet. Orphaned SOLD labels (no active shipment) never reach path 4 — they go through the claim-token flow instead.
 
 ### Orphaned Device Detection
 

@@ -254,7 +254,7 @@ iccid           String? (unique)  SIM card ICCID
 status          Enum              INVENTORY | SOLD | ACTIVE | DEPLETED
 batteryPct      Int?              0-100, updated from your reports
 firmwareVersion String?
-activatedAt     DateTime?         When QR code was scanned
+activatedAt     DateTime?         When the label entered service (cargo creation, /device/activate, or first location report — whichever is first)
 ```
 
 ### LocationEvent (Each Data Point You Send)

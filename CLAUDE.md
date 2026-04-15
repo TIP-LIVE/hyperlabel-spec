@@ -131,10 +131,10 @@ When a label is physically built, the SIM activation triggers the first Onomondo
   - No `LocationEvent` is created
   - No shipment status changes, orphan detection, or delivery checks run
 - After 24 hours, events are processed normally
-- `Label.activatedAt` is only set later when the label first reports with an active shipment (user's real activation, not manufacturing)
+- `Label.activatedAt` is set by the user-facing activation flows — whichever fires first: cargo/shipment creation against a SOLD/INVENTORY label, the explicit `/api/v1/device/activate` endpoint, or the first location report from the field while the label has an active shipment. None of these run during auto-registration, so factory SIM events never stamp it.
 
 **Key rules**:
-1. **Never set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` represents user-facing activation (first report with an active shipment), not factory SIM activation.
+1. **Never set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` represents user-facing activation ("label entered service"), not factory SIM activation.
 2. **The cooldown only applies to auto-registered labels** — labels created manually (SOLD inventory) don't have `manufacturedAt` set.
 3. **`lastSeenAt` is still updated during cooldown** — the device appears online, but no location history is recorded.
 
@@ -357,7 +357,7 @@ These rules were learned through 14 failed attempts:
 8. **Don't allow direct PATCH to DELIVERED status** — must go through confirm-delivery endpoint
 9. **Don't use `localhost` in CI** — use `127.0.0.1`
 10. **Don't skip lastSeenAt update on deduped events** — "Last Update" will look stale
-11. **Don't set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` is for user-facing activation (first report with an active shipment), not factory SIM activation
+11. **Don't set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` is for user-facing activation ("label entered service"), not factory SIM activation
 12. **Don't create LocationEvents during manufacturing cooldown** — first 24h after auto-registration are factory events; `lastSeenAt` heartbeat still updates
 13. **Don't delete LocationEvents from the DB** — soft-exclude by setting `excludedReason`. Use `VALID_LOCATION` filter from `@/lib/db` in all user-facing queries
 14. **Don't forget `VALID_LOCATION` filter on new LocationEvent queries** — omitting it leaks excluded (bogus) events into the UI
@@ -399,7 +399,7 @@ Receivers are often not the buyer, and the buyer often doesn't know the receiver
 5. **Receiver-fill expiry**: blank dispatches get `shareLinkExpiresAt = createdAt + 14 days`. Public GET returns 410 past expiry. `check-stale-dispatches` cron sends reminder on day 7 and auto-cancels on day 14.
 6. **`sendDispatchDetailsSubmitted`** must always fire when receiver completes the form — it's the only "unauthorized change detection" signal. Non-optional.
 7. **Receiver name is split** into `Shipment.receiverFirstName` + `receiverLastName`. The submit-address handler concatenates into legacy `destinationName` for backwards compatibility.
-8. **`Label.activatedAt`** is now stamped on first location report when the label has any active shipment (cargo OR dispatch), in addition to the existing cargo-creation path. The user's mental model is "physical activation = first signal in the wild."
+8. **`Label.activatedAt`** is stamped by the earliest of: cargo/shipment creation against a SOLD/INVENTORY label (`cargo/route.ts`, `shipments/route.ts`), the explicit `/api/v1/device/activate` endpoint, or the first location report while the label has an active shipment (`device-report.ts`). Think of it as "label entered service" — it can precede any signal, so a label with `activatedAt` set but zero `LocationEvent` rows is expected state, not a bug.
 9. **"New Shipment" dropdown** order is phase-dependent: Dispatch first for phases 0-2, Track Cargo first for phases 3+. Never lock to one order.
 
 ### Schema additions (April 2026)
