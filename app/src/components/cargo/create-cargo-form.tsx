@@ -9,15 +9,12 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { FieldInfo } from '@/components/ui/field-info'
 import { SectionCard } from '@/components/ui/section-card'
+import {
+  LabelSelectionTableSingle,
+  type CargoLabelRow,
+} from '@/components/cargo/label-selection-table-single'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -36,7 +33,6 @@ import { AddressInput } from '@/components/ui/address-input'
 import { useSavedAddress } from '@/components/addresses/address-input-with-saved'
 import { SavedAddressSelector } from '@/components/addresses/saved-address-selector'
 import { QrScanner } from '@/components/shipments/qr-scanner'
-import { formatDistanceToNow } from 'date-fns'
 
 const cargoFormSchema = z.object({
   name: z.string().min(1, 'Cargo name is required').max(200),
@@ -64,45 +60,6 @@ type CargoFormData = {
   consigneePhone?: string
 }
 
-type AvailableLabel = {
-  id: string
-  deviceId: string
-  displayId: string | null
-  status: 'INVENTORY' | 'SOLD' | 'ACTIVE' | 'RETIRED'
-  batteryPct: number | null
-  lastSeenAt: string | null
-}
-
-/**
- * Friendly name for a tracking label.
- * Prefers the user-facing displayId (NNNNNYYYY) when available.
- * Otherwise falls back to "Label …NNNN" using the last 4 chars of the
- * legacy deviceId — which matches the tail of the URL printed on the
- * physical sticker (tip.live/w/17743546881).
- */
-function formatLabelName(label: AvailableLabel): string {
-  if (label.displayId) return label.displayId
-  const tail = label.deviceId.slice(-4)
-  return `Label …${tail}`
-}
-
-/**
- * Status line shown under the label name in the dropdown.
- * Tells the user whether the label has phoned home yet, plus battery.
- */
-function formatLabelStatus(label: AvailableLabel): string {
-  const parts: string[] = []
-  if (label.status === 'ACTIVE' && label.lastSeenAt) {
-    parts.push(`Last seen ${formatDistanceToNow(new Date(label.lastSeenAt), { addSuffix: true })}`)
-  } else {
-    parts.push('Awaiting first signal')
-  }
-  if (label.batteryPct !== null) {
-    parts.push(`${label.batteryPct}% battery`)
-  }
-  return parts.join(' · ')
-}
-
 type PhotoState = {
   file: File
   preview: string
@@ -127,7 +84,7 @@ type CargoAnalysis = {
 export function CreateCargoForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [labels, setLabels] = useState<AvailableLabel[]>([])
+  const [labels, setLabels] = useState<CargoLabelRow[]>([])
   const [labelsLoading, setLabelsLoading] = useState(true)
   const [photos, setPhotos] = useState<PhotoState[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -183,7 +140,7 @@ export function CreateCargoForm() {
         const res = await fetch('/api/v1/labels?status=SOLD')
         if (res.ok) {
           const data = await res.json()
-          const availableLabels: AvailableLabel[] = data.labels || []
+          const availableLabels: CargoLabelRow[] = data.labels || []
           setLabels(availableLabels)
           // Auto-select when only one label is available — no need to ask.
           // Covers the common onboarding case (one label just delivered) and
@@ -423,31 +380,14 @@ export function CreateCargoForm() {
               </div>
             ) : (
               <>
-                <Select
-                  value={selectedLabelId}
-                  onValueChange={(value) => setValue('labelId', value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a label" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {labels.map((label) => (
-                      <SelectItem
-                        key={label.id}
-                        value={label.id}
-                        textValue={formatLabelName(label)}
-                        className="py-2"
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-medium">{formatLabelName(label)}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatLabelStatus(label)}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <LabelSelectionTableSingle
+                  labels={labels}
+                  loading={labelsLoading}
+                  selectedId={selectedLabelId || null}
+                  onChange={(id) =>
+                    setValue('labelId', id, { shouldValidate: true })
+                  }
+                />
                 <p className="text-xs text-muted-foreground">
                   This is the code printed on your physical sticker. Use the QR scanner above for the fastest match.
                 </p>

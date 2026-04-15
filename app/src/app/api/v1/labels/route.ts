@@ -102,11 +102,26 @@ export async function GET(req: NextRequest) {
         activatedAt: true,
         lastSeenAt: true,
         createdAt: true,
+        // Most recent order this label was purchased through. Used by the
+        // cargo label-selection table to show Order / Order date columns.
+        // Labels attached via admin-assigned dispatches won't have an
+        // orderLabel — orderId/orderCreatedAt fall back to null.
+        orderLabels: {
+          select: { order: { select: { id: true, createdAt: true } } },
+          orderBy: { order: { createdAt: 'desc' } },
+          take: 1,
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ labels })
+    const formatted = labels.map(({ orderLabels, ...label }) => ({
+      ...label,
+      orderId: orderLabels[0]?.order.id ?? null,
+      orderCreatedAt: orderLabels[0]?.order.createdAt ?? null,
+    }))
+
+    return NextResponse.json({ labels: formatted })
   } catch (error) {
     return handleApiError(error, 'fetching labels')
   }
