@@ -491,6 +491,14 @@ export async function sendShareLinkReminderNotification(params: {
   deviceIds: string[]
   shipmentName?: string
   shareCode?: string
+  /** Days elapsed since effective readiness (cargo createdAt or dispatch deliveredAt). Used for branched copy. */
+  daysSinceReady?: number
+  /** True if the label was dispatched via TIP and that dispatch is DELIVERED. */
+  dispatchDelivered?: boolean
+  /** When the dispatch was delivered, if applicable. */
+  dispatchDeliveredAt?: Date | null
+  /** Receiver name from the dispatch (firstName + lastName, or destinationName). */
+  receiverName?: string | null
 }): Promise<void> {
   const { enabled, email } = await shouldSendNotification(params.userId, 'reminders')
   if (!enabled || !email) return
@@ -518,12 +526,19 @@ export async function sendShareLinkReminderNotification(params: {
     )
   } else {
     const trackingUrl = params.shareCode ? `${APP_URL}/track/${params.shareCode}` : `${APP_URL}/dashboard`
-    subject = `⏳ Your shipment "${params.shipmentName}" is still pending`
+    const shipmentName = params.shipmentName || 'Unknown'
+    subject = `We haven't heard from "${shipmentName}" yet`
     html = await render(
       PendingShipmentReminderEmail({
         userName: name,
-        shipmentName: params.shipmentName || 'Unknown',
+        shipmentName,
         trackingUrl,
+        daysSinceReady: params.daysSinceReady,
+        dispatchDelivered: params.dispatchDelivered,
+        dispatchDeliveredAt: params.dispatchDeliveredAt
+          ? format(params.dispatchDeliveredAt, 'MMM d, yyyy')
+          : undefined,
+        receiverName: params.receiverName ?? undefined,
       })
     )
   }
@@ -535,6 +550,7 @@ export async function sendShareLinkReminderNotification(params: {
     labelCount: params.labelCount,
     shipmentName: params.shipmentName,
     shipmentId: params.shareCode,
+    daysSinceReady: params.daysSinceReady,
   })
 }
 

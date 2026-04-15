@@ -6,44 +6,79 @@ interface PendingShipmentReminderEmailProps {
   userName: string
   shipmentName: string
   trackingUrl: string
+  /** Whole days elapsed since the label was ready (cargo createdAt or dispatch deliveredAt). */
+  daysSinceReady?: number
+  /** True if the label was dispatched via TIP and that dispatch is DELIVERED. */
+  dispatchDelivered?: boolean
+  /** Pre-formatted delivery date string (e.g. "Apr 8, 2026"). */
+  dispatchDeliveredAt?: string
+  /** Receiver name from the linked dispatch, if any. */
+  receiverName?: string
 }
 
 export function PendingShipmentReminderEmail({
   userName,
   shipmentName,
   trackingUrl,
+  daysSinceReady,
+  dispatchDelivered,
+  dispatchDeliveredAt,
+  receiverName,
 }: PendingShipmentReminderEmailProps) {
+  const elapsedPhrase =
+    typeof daysSinceReady === 'number' && daysSinceReady > 0
+      ? daysSinceReady === 1
+        ? "It's been a day"
+        : `It's been ${daysSinceReady} days`
+      : "It's been a while"
+
+  // Branch 1: we dispatched the labels and know they were delivered.
+  // Branch 2: no dispatch record (user had labels already or imported them) —
+  //   we only know the cargo shipment has been sitting pending.
+  const hasKnownDispatch = Boolean(dispatchDelivered)
+
+  const openingParagraph = hasKnownDispatch
+    ? receiverName
+      ? `${elapsedPhrase} since we delivered your labels to ${receiverName}${
+          dispatchDeliveredAt ? ` on ${dispatchDeliveredAt}` : ''
+        }, and "${shipmentName}" still hasn't sent its first location signal.`
+      : `${elapsedPhrase} since your labels were delivered${
+          dispatchDeliveredAt ? ` on ${dispatchDeliveredAt}` : ''
+        }, and "${shipmentName}" still hasn't sent its first location signal.`
+    : `${elapsedPhrase} since you created "${shipmentName}", and the label hasn't sent its first location signal yet.`
+
   return (
-    <BaseLayout preview={`Your cargo shipment "${shipmentName}" is waiting for first signal`}>
+    <BaseLayout preview={`"${shipmentName}" hasn't reported in yet`}>
       <Heading style={heading}>Hi {userName},</Heading>
 
-      <Text style={paragraph}>
-        Your cargo shipment <strong>&ldquo;{shipmentName}&rdquo;</strong> was created but
-        we haven&apos;t received any location signal from the label yet.
-      </Text>
+      <Text style={paragraph}>{openingParagraph}</Text>
 
       <Text style={paragraph}>
-        <strong>Common reasons:</strong>
+        <strong>That usually means one of three things:</strong>
       </Text>
 
       <Section style={reasonsList}>
         <Text style={reasonItem}>
-          • The label hasn&apos;t been <strong>physically activated</strong> yet — whoever has
-          the label needs to pull the activation tab and attach it to the cargo.
+          • <strong>The label is still wrapped up.</strong>{' '}
+          {hasKnownDispatch && receiverName
+            ? `${receiverName} needs to remove the pull tab and stick the label on the cargo — that's what gets it reporting.`
+            : 'Whoever has the label needs to remove the pull tab and stick it on the cargo — that\u2019s what gets it reporting.'}
         </Text>
         <Text style={reasonItem}>
-          • The label hasn&apos;t arrived at the receiver yet — check the dispatch status in
-          your dashboard.
+          • <strong>The cargo is somewhere without cell coverage</strong> — a sealed
+          container, a warehouse basement, or a rural area. The label will reconnect on
+          its own once it moves into range.
         </Text>
         <Text style={reasonItem}>
-          • The label was activated but is in an area with <strong>no cellular coverage</strong>
-          {' '}— it will start reporting once it moves to a covered area.
+          • <strong>The label was damaged in transit.</strong> If you&apos;ve confirmed
+          it&apos;s been activated and attached to moving cargo, reply to this email and
+          we&apos;ll look into it.
         </Text>
       </Section>
 
       <Text style={paragraph}>
-        As soon as the label sends its first location, the shipment will automatically switch
-        to <strong>In Transit</strong> and you&apos;ll get a notification.
+        As soon as the first location comes in, we&apos;ll auto-switch this shipment to{' '}
+        <strong>In Transit</strong> and ping you. Nothing else you need to do right now.
       </Text>
 
       <Section style={buttonContainer}>
@@ -51,6 +86,12 @@ export function PendingShipmentReminderEmail({
           View Shipment
         </Button>
       </Section>
+
+      <Text style={footerNote}>
+        This is the {typeof daysSinceReady === 'number' && daysSinceReady >= 14 ? 'final' : 'first'}{' '}
+        reminder for this shipment. We won&apos;t keep nagging — you&apos;ll hear from us the
+        moment the label reports in.
+      </Text>
     </BaseLayout>
   )
 }
@@ -95,6 +136,14 @@ const button = {
   textAlign: 'center' as const,
   display: 'block',
   padding: '14px 24px',
+}
+
+const footerNote = {
+  fontSize: '13px',
+  lineHeight: '20px',
+  color: '#94a3b8',
+  margin: '24px 0 0',
+  fontStyle: 'italic' as const,
 }
 
 export default PendingShipmentReminderEmail
