@@ -65,9 +65,8 @@ export function PendingShipmentReminderEmail({
             : 'Whoever has the label needs to remove the pull tab and stick it on the cargo — that\u2019s what gets it reporting.'}
         </Text>
         <Text style={reasonItem}>
-          • <strong>The cargo is somewhere without cell coverage</strong> — a sealed
-          container, a warehouse basement, or a rural area. The label will reconnect on
-          its own once it moves into range.
+          • <strong>There&apos;s no cell coverage at the current location.</strong> The
+          label will reconnect and start reporting on its own once signal is available.
         </Text>
         <Text style={reasonItem}>
           • <strong>The label was damaged in transit.</strong> If you&apos;ve confirmed
