@@ -148,14 +148,42 @@ export async function POST(req: NextRequest) {
     // Verify label exists
     const label = await db.label.findUnique({
       where: { id: labelId },
-      include: { orderLabels: { include: { order: true } } },
+      include: {
+        orderLabels: { include: { order: true } },
+        // Include this org's delivered dispatches so we can accept labels that
+        // are still INVENTORY but have physically been shipped to the user.
+        // See the INVENTORY-drift note below.
+        shipmentLabels: {
+          where: {
+            shipment: {
+              orgId: context.orgId,
+              type: 'LABEL_DISPATCH',
+              status: 'DELIVERED',
+            },
+          },
+          select: { shipmentId: true },
+        },
+      },
     })
 
     if (!label) {
       return NextResponse.json({ error: 'Label not found' }, { status: 404 })
     }
 
-    if (label.status !== 'SOLD' && label.status !== 'ACTIVE') {
+    // A label is eligible for cargo attachment if it's SOLD, ACTIVE, or
+    // INVENTORY-but-has-a-delivered-dispatch-for-this-org. The third case
+    // covers labels that were admin-dispatched without going through a
+    // Stripe PAID order — they never got promoted to SOLD but are in the
+    // user's hands. The dropdown already surfaces these (see
+    // /api/v1/labels?status=SOLD filter); this guard was the last gate
+    // rejecting them.
+    const hasDeliveredDispatch = label.shipmentLabels.length > 0
+    const isEligible =
+      label.status === 'SOLD' ||
+      label.status === 'ACTIVE' ||
+      (label.status === 'INVENTORY' && hasDeliveredDispatch)
+
+    if (!isEligible) {
       return NextResponse.json({ error: 'Label is not available for shipment' }, { status: 400 })
     }
 
@@ -214,7 +242,7 @@ export async function POST(req: NextRequest) {
         data: { shipmentId: s.id },
       })
 
-      if (label.status === 'SOLD') {
+      if (label.status === 'SOLD' || label.status === 'INVENTORY') {
         await tx.label.update({
           where: { id: label.id },
           data: { status: 'ACTIVE', activatedAt: new Date() },

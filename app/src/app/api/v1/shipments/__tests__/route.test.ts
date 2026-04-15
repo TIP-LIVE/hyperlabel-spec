@@ -187,7 +187,7 @@ describe('POST /api/v1/shipments (CARGO_TRACKING)', () => {
     expect(body).toEqual({ error: 'Label not found' })
   })
 
-  it('returns 400 when label status is not SOLD or ACTIVE', async () => {
+  it('returns 400 when label is INVENTORY with no delivered dispatch', async () => {
     mockAuthenticatedUser()
     mockDb.user.findUnique.mockResolvedValueOnce(fakeDbUser as never)
     mockDb.shipment.findUnique.mockResolvedValue(null as never)
@@ -196,6 +196,7 @@ describe('POST /api/v1/shipments (CARGO_TRACKING)', () => {
       deviceId: 'TIP-001',
       status: 'INVENTORY',
       orderLabels: [],
+      shipmentLabels: [],
     } as never)
 
     const req = createTestRequest('/api/v1/shipments', {
@@ -219,6 +220,7 @@ describe('POST /api/v1/shipments (CARGO_TRACKING)', () => {
       deviceId: 'TIP-001',
       status: 'SOLD',
       orderLabels: [],
+      shipmentLabels: [],
     } as never)
     mockDb.shipment.findFirst.mockResolvedValueOnce(null as never) // no active shipment
 

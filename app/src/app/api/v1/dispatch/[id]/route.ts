@@ -186,6 +186,20 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       },
     })
 
+    // Safety net: promote any INVENTORY labels on this dispatch to SOLD when
+    // it transitions to IN_TRANSIT or DELIVERED. This catches labels that were
+    // admin-attached without going through the Stripe PAID flow, which would
+    // otherwise stay INVENTORY and fail the cargo POST guard later.
+    if (validated.data.status === 'IN_TRANSIT' || validated.data.status === 'DELIVERED') {
+      const labelIds = (shipment.shipmentLabels ?? []).map((sl) => sl.label.id)
+      if (labelIds.length > 0) {
+        await db.label.updateMany({
+          where: { id: { in: labelIds }, status: 'INVENTORY' },
+          data: { status: 'SOLD' },
+        })
+      }
+    }
+
     // Send notifications on status changes (fire-and-forget)
     if (validated.data.status === 'IN_TRANSIT') {
       // Owner/buyer notification — "Your TIP labels are on their way"

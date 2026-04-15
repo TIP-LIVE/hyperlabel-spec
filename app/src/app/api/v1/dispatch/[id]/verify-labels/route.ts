@@ -211,6 +211,15 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         })
       }
 
+      // Promote any INVENTORY labels to SOLD — the label is physically leaving
+      // the warehouse. Without this, admin-dispatched labels that didn't go
+      // through the Stripe PAID flow stay INVENTORY forever and later fail the
+      // cargo POST guard.
+      await tx.label.updateMany({
+        where: { id: { in: scannedLabels.map((sl) => sl.labelId) }, status: 'INVENTORY' },
+        data: { status: 'SOLD' },
+      })
+
       // Transition to IN_TRANSIT
       await tx.shipment.update({
         where: { id },

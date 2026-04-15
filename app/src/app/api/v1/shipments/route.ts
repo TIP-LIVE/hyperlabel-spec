@@ -152,14 +152,33 @@ async function createCargoTracking(
   // Verify label exists
   const label = await db.label.findUnique({
     where: { id: labelId },
-    include: { orderLabels: { include: { order: true } } },
+    include: {
+      orderLabels: { include: { order: true } },
+      // See cargo/route.ts POST for the INVENTORY-drift rationale.
+      shipmentLabels: {
+        where: {
+          shipment: {
+            orgId: context.orgId,
+            type: 'LABEL_DISPATCH',
+            status: 'DELIVERED',
+          },
+        },
+        select: { shipmentId: true },
+      },
+    },
   })
 
   if (!label) {
     return NextResponse.json({ error: 'Label not found' }, { status: 404 })
   }
 
-  if (label.status !== 'SOLD' && label.status !== 'ACTIVE') {
+  const hasDeliveredDispatch = label.shipmentLabels.length > 0
+  const isEligible =
+    label.status === 'SOLD' ||
+    label.status === 'ACTIVE' ||
+    (label.status === 'INVENTORY' && hasDeliveredDispatch)
+
+  if (!isEligible) {
     return NextResponse.json({ error: 'Label is not available for shipment' }, { status: 400 })
   }
 
@@ -210,7 +229,7 @@ async function createCargoTracking(
       data: { shipmentId: s.id },
     })
 
-    if (label.status === 'SOLD') {
+    if (label.status === 'SOLD' || label.status === 'INVENTORY') {
       await tx.label.update({
         where: { id: label.id },
         data: { status: 'ACTIVE', activatedAt: new Date() },
