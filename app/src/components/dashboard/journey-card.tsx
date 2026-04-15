@@ -237,9 +237,17 @@ export function JourneyCard({ phaseData }: Props) {
 
               {phase === 2 && inTransitDispatches.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-muted-foreground">
-                    Your labels are on the way. Track progress from the dispatch detail page.
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-muted-foreground">
+                      Your labels are on the way — set up cargo tracking now so it&apos;s ready
+                      the moment they arrive.
+                    </p>
+                    <Button size="sm" asChild>
+                      <Link href="/cargo/new">
+                        <Truck className="mr-1.5 h-4 w-4" /> Set Up Cargo Tracking
+                      </Link>
+                    </Button>
+                  </div>
                   {inTransitDispatches.map((d) => (
                     <Link
                       key={d.id}
