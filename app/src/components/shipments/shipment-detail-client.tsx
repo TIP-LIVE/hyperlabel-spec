@@ -369,6 +369,11 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
                 recordedAt: loc.recordedAt,
                 batteryPct: loc.batteryPct,
                 accuracyM: loc.accuracyM,
+                geocodedCity: loc.geocodedCity,
+                geocodedArea: loc.geocodedArea,
+                geocodedCountry: loc.geocodedCountry,
+                geocodedCountryCode: loc.geocodedCountryCode,
+                geocodedAt: loc.geocodedAt,
               }))}
               originLat={shipment.originLat}
               originLng={shipment.originLng}

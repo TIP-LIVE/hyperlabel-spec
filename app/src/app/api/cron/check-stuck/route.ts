@@ -111,6 +111,9 @@ export const GET = withCronLogging('check-stuck', async () => {
         lastLocation: {
           lat: latestLoc.latitude,
           lng: latestLoc.longitude,
+          geocodedCity: latestLoc.geocodedCity,
+          geocodedArea: latestLoc.geocodedArea,
+          geocodedCountry: latestLoc.geocodedCountry,
         },
         stuckSinceHours: Math.round(
           (Date.now() - recentLocations[recentLocations.length - 1].recordedAt.getTime()) /

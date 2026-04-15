@@ -184,10 +184,16 @@ model LocationEvent {
   cellLongitude Float? @map("cell_longitude")
 
   // Reverse-geocoded address (populated server-side at ingest)
-  geocodedCity        String? @map("geocoded_city")
-  geocodedArea        String? @map("geocoded_area") // Suburb/neighbourhood for detail view
-  geocodedCountry     String? @map("geocoded_country")
-  geocodedCountryCode String? @map("geocoded_country_code")
+  geocodedCity        String?   @map("geocoded_city")
+  geocodedArea        String?   @map("geocoded_area") // Suburb/neighbourhood for detail view
+  geocodedCountry     String?   @map("geocoded_country")
+  geocodedCountryCode String?   @map("geocoded_country_code")
+  // Timestamp of the last geocode attempt (success OR failure). NULL means
+  // "never tried yet" → UI shows "Locating…" instead of raw coords. When set
+  // but geocodedCity is still NULL, the attempt failed and the backfill cron
+  // waits ≥24h before retrying (avoids hammering Nominatim with permanently
+  // unresolvable coords).
+  geocodedAt          DateTime? @map("geocoded_at")
 
   // Soft-exclude: reason the event was marked invalid (e.g. "teleportation", "test_data").
   // NULL = valid event. Excluded events are filtered out of all user-facing queries.

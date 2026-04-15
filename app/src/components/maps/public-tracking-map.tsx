@@ -10,6 +10,11 @@ interface LocationPoint {
   recordedAt: Date
   batteryPct: number | null
   accuracyM: number | null
+  geocodedCity?: string | null
+  geocodedArea?: string | null
+  geocodedCountry?: string | null
+  geocodedCountryCode?: string | null
+  geocodedAt?: Date | string | null
 }
 
 interface PublicTrackingMapProps {

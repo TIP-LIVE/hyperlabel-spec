@@ -7,6 +7,8 @@ import { format, differenceInMinutes } from 'date-fns'
 import { timeAgo } from '@/lib/utils/time-ago'
 import { LocateFixed, Radio } from 'lucide-react'
 import { isNullIsland } from '@/lib/validations/device'
+import { formatLocationName } from '@/lib/utils/location-display'
+import { countryCodeToFlag } from '@/lib/utils/country-flag'
 
 interface LocationPoint {
   id: string
@@ -15,6 +17,11 @@ interface LocationPoint {
   recordedAt: Date
   batteryPct: number | null
   accuracyM: number | null
+  geocodedCity?: string | null
+  geocodedArea?: string | null
+  geocodedCountry?: string | null
+  geocodedCountryCode?: string | null
+  geocodedAt?: Date | string | null
 }
 
 interface TrackingMapProps {
@@ -258,6 +265,39 @@ function finalizeCluster(points: LocationPoint[], centroidLat: number, centroidL
     departureTime: departure,
     dwellMinutes: differenceInMinutes(departure, arrival),
   }
+}
+
+/**
+ * Pick the most common geocoded city across a cluster's points so the popup
+ * shows a meaningful headline instead of raw coords. Ignores null/empty.
+ */
+function modeGeocodedLocation(
+  points: LocationPoint[],
+): { city: string; country: string | null; countryCode: string | null } | null {
+  const counts = new Map<string, { count: number; country: string | null; countryCode: string | null }>()
+  for (const p of points) {
+    if (!p.geocodedCity) continue
+    const key = p.geocodedCity
+    const entry = counts.get(key)
+    if (entry) {
+      entry.count += 1
+    } else {
+      counts.set(key, {
+        count: 1,
+        country: p.geocodedCountry ?? null,
+        countryCode: p.geocodedCountryCode ?? null,
+      })
+    }
+  }
+  let winner: { city: string; country: string | null; countryCode: string | null } | null = null
+  let winnerCount = 0
+  for (const [city, entry] of counts) {
+    if (entry.count > winnerCount) {
+      winnerCount = entry.count
+      winner = { city, country: entry.country, countryCode: entry.countryCode }
+    }
+  }
+  return winner
 }
 
 function formatDwell(minutes: number): string {
@@ -826,23 +866,49 @@ export function TrackingMap({
                 style={{
                   fontSize: '11px',
                   color: '#6b7280',
-                  marginBottom: '2px',
+                  marginBottom: '6px',
                 }}
               >
                 {timeAgo(selectedLocation.recordedAt)}
               </div>
+              {(() => {
+                const name = formatLocationName({
+                  geocodedCity: selectedLocation.geocodedCity,
+                  geocodedArea: selectedLocation.geocodedArea,
+                  geocodedCountry: selectedLocation.geocodedCountry,
+                  geocodedCountryCode: selectedLocation.geocodedCountryCode,
+                })
+                const hasGeo = Boolean(selectedLocation.geocodedCity || selectedLocation.geocodedCountry)
+                if (!hasGeo) return null
+                return (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      marginBottom: '4px',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      color: '#111827',
+                    }}
+                  >
+                    {selectedLocation.geocodedCountryCode && (
+                      <span style={{ fontSize: '16px', lineHeight: 1 }}>
+                        {countryCodeToFlag(selectedLocation.geocodedCountryCode)}
+                      </span>
+                    )}
+                    <span>{name}</span>
+                  </div>
+                )
+              })()}
               <div
                 style={{
-                  display: 'flex',
-                  gap: '12px',
-                  marginTop: '8px',
-                  fontSize: '12px',
-                  color: '#374151',
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  color: '#6b7280',
                 }}
               >
-                <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
-                  {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
-                </span>
+                {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
               </div>
               <div
                 style={{
@@ -885,32 +951,57 @@ export function TrackingMap({
                 {' '}&#8594;{' '}
                 {format(new Date(selectedCluster.departureTime), 'p')}
               </div>
-              <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+              <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px' }}>
                 {selectedCluster.points.length} location readings
               </div>
+              {(() => {
+                const geo = modeGeocodedLocation(selectedCluster.points)
+                if (!geo) return null
+                const text = geo.country ? `${geo.city}, ${geo.country}` : geo.city
+                return (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      marginBottom: '4px',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      color: '#111827',
+                    }}
+                  >
+                    {geo.countryCode && (
+                      <span style={{ fontSize: '16px', lineHeight: 1 }}>
+                        {countryCodeToFlag(geo.countryCode)}
+                      </span>
+                    )}
+                    <span>{text}</span>
+                  </div>
+                )
+              })()}
               <div
                 style={{
-                  display: 'flex',
-                  gap: '12px',
-                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
                   color: '#6b7280',
+                  marginBottom: '6px',
                 }}
               >
-                {(() => {
-                  const batteries = selectedCluster.points
-                    .map((p) => p.batteryPct)
-                    .filter((b): b is number => b !== null)
-                  if (batteries.length > 0) {
-                    const min = Math.min(...batteries)
-                    const max = Math.max(...batteries)
-                    return <span>🔋 {min === max ? `${min}%` : `${min}% - ${max}%`}</span>
-                  }
-                  return null
-                })()}
-                <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
-                  {selectedCluster.centroidLat.toFixed(5)}, {selectedCluster.centroidLng.toFixed(5)}
-                </span>
+                {selectedCluster.centroidLat.toFixed(5)}, {selectedCluster.centroidLng.toFixed(5)}
               </div>
+              {(() => {
+                const batteries = selectedCluster.points
+                  .map((p) => p.batteryPct)
+                  .filter((b): b is number => b !== null)
+                if (batteries.length === 0) return null
+                const min = Math.min(...batteries)
+                const max = Math.max(...batteries)
+                return (
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                    🔋 {min === max ? `${min}%` : `${min}% - ${max}%`}
+                  </div>
+                )
+              })()}
             </div>
           </InfoWindow>
         )}

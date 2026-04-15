@@ -118,7 +118,13 @@ export const GET = withCronLogging('check-signals', async () => {
     const latestLocation = await db.locationEvent.findFirst({
       where: { labelId: shipment.label.id, ...VALID_LOCATION },
       orderBy: { recordedAt: 'desc' },
-      select: { latitude: true, longitude: true },
+      select: {
+        latitude: true,
+        longitude: true,
+        geocodedCity: true,
+        geocodedArea: true,
+        geocodedCountry: true,
+      },
     })
 
     await sendNoSignalNotification({
@@ -131,7 +137,13 @@ export const GET = withCronLogging('check-signals', async () => {
       lastSeenAt: effectiveLastSeen,
       thresholdHours,
       lastLocation: latestLocation
-        ? { lat: latestLocation.latitude, lng: latestLocation.longitude }
+        ? {
+            lat: latestLocation.latitude,
+            lng: latestLocation.longitude,
+            geocodedCity: latestLocation.geocodedCity,
+            geocodedArea: latestLocation.geocodedArea,
+            geocodedCountry: latestLocation.geocodedCountry,
+          }
         : undefined,
     })
 

@@ -114,16 +114,19 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     for (const loc of urgent) {
       try {
         const geo = await reverseGeocode(loc.latitude, loc.longitude)
+        await db.locationEvent.update({
+          where: { id: loc.id },
+          data: geo
+            ? {
+                geocodedCity: geo.city,
+                geocodedArea: geo.area,
+                geocodedCountry: geo.country,
+                geocodedCountryCode: geo.countryCode,
+                geocodedAt: new Date(),
+              }
+            : { geocodedAt: new Date() },
+        })
         if (geo) {
-          await db.locationEvent.update({
-            where: { id: loc.id },
-            data: {
-              geocodedCity: geo.city,
-              geocodedArea: geo.area,
-              geocodedCountry: geo.country,
-              geocodedCountryCode: geo.countryCode,
-            },
-          })
           Object.assign(loc, {
             geocodedCity: geo.city,
             geocodedArea: geo.area,
@@ -140,17 +143,18 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         for (const loc of rest) {
           try {
             const geo = await reverseGeocode(loc.latitude, loc.longitude)
-            if (geo) {
-              await db.locationEvent.update({
-                where: { id: loc.id },
-                data: {
-                  geocodedCity: geo.city,
-                  geocodedArea: geo.area,
-                  geocodedCountry: geo.country,
-                  geocodedCountryCode: geo.countryCode,
-                },
-              })
-            }
+            await db.locationEvent.update({
+              where: { id: loc.id },
+              data: geo
+                ? {
+                    geocodedCity: geo.city,
+                    geocodedArea: geo.area,
+                    geocodedCountry: geo.country,
+                    geocodedCountryCode: geo.countryCode,
+                    geocodedAt: new Date(),
+                  }
+                : { geocodedAt: new Date() },
+            })
           } catch {}
         }
       })

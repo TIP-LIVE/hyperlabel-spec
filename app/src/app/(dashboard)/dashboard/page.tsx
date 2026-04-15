@@ -150,6 +150,7 @@ export default async function DashboardPage() {
               geocodedArea: true,
               geocodedCountry: true,
               geocodedCountryCode: true,
+              geocodedAt: true,
             },
             orderBy: { recordedAt: 'desc' },
             take: 1,

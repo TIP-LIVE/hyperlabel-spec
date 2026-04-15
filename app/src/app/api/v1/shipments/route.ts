@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
               geocodedCity: true,
               geocodedCountry: true,
               geocodedCountryCode: true,
+              geocodedAt: true,
             },
           },
         },

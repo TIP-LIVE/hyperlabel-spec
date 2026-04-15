@@ -79,6 +79,7 @@ export async function loadPublicTrackingData(
       geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
+      geocodedAt: loc.geocodedAt?.toISOString() ?? null,
       eventType: loc.eventType,
     })),
   }

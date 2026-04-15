@@ -163,6 +163,7 @@ export default async function CargoDetailPage({ params }: PageProps) {
       geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
+      geocodedAt: loc.geocodedAt?.toISOString() ?? null,
       eventType: loc.eventType,
     })),
   }

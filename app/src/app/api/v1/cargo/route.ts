@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
               geocodedArea: true,
               geocodedCountry: true,
               geocodedCountryCode: true,
+              geocodedAt: true,
             },
           },
         },
@@ -78,16 +79,21 @@ export async function GET(req: NextRequest) {
         ungeocodedLocations.map(async (loc) => {
           try {
             const geo = await reverseGeocode(loc.latitude, loc.longitude)
+            // Stamp geocodedAt on every attempt so the UI can tell pending
+            // from failed and the cron knows not to retry immediately.
+            await db.locationEvent.update({
+              where: { id: loc.id },
+              data: geo
+                ? {
+                    geocodedCity: geo.city,
+                    geocodedArea: geo.area,
+                    geocodedCountry: geo.country,
+                    geocodedCountryCode: geo.countryCode,
+                    geocodedAt: new Date(),
+                  }
+                : { geocodedAt: new Date() },
+            })
             if (geo) {
-              await db.locationEvent.update({
-                where: { id: loc.id },
-                data: {
-                  geocodedCity: geo.city,
-                  geocodedArea: geo.area,
-                  geocodedCountry: geo.country,
-                  geocodedCountryCode: geo.countryCode,
-                },
-              })
               // Update the in-memory object so the response includes geocoded data
               loc.geocodedCity = geo.city
               loc.geocodedArea = geo.area

@@ -596,17 +596,21 @@ export async function processLocationReport(
   if (!input.skipGeocode) {
     try {
       const geo = await reverseGeocode(effectiveLat, effectiveLng)
-      if (geo) {
-        await db.locationEvent.update({
-          where: { id: locationEvent.id },
-          data: {
-            geocodedCity: geo.city,
-            geocodedArea: geo.area,
-            geocodedCountry: geo.country,
-            geocodedCountryCode: geo.countryCode,
-          },
-        })
-      }
+      // Stamp geocodedAt on every attempt (success or failure) so the
+      // backfill cron waits ≥24h before retrying permanently-unresolvable
+      // coords and the UI can distinguish "pending" from "failed".
+      await db.locationEvent.update({
+        where: { id: locationEvent.id },
+        data: geo
+          ? {
+              geocodedCity: geo.city,
+              geocodedArea: geo.area,
+              geocodedCountry: geo.country,
+              geocodedCountryCode: geo.countryCode,
+              geocodedAt: new Date(),
+            }
+          : { geocodedAt: new Date() },
+      })
     } catch (err) {
       // Geocoding failure should never block location ingest
       console.warn('[Device report] geocoding failed:', err)
@@ -787,17 +791,20 @@ export async function geocodeLocationEvent(
 ): Promise<void> {
   try {
     const geo = await reverseGeocode(latitude, longitude)
-    if (geo) {
-      await db.locationEvent.update({
-        where: { id: locationId },
-        data: {
-          geocodedCity: geo.city,
-          geocodedArea: geo.area,
-          geocodedCountry: geo.country,
-          geocodedCountryCode: geo.countryCode,
-        },
-      })
-    }
+    // Always stamp geocodedAt so the cron doesn't retry too soon and the UI
+    // can tell "never tried" (null) from "tried, no match" (set + null city).
+    await db.locationEvent.update({
+      where: { id: locationId },
+      data: geo
+        ? {
+            geocodedCity: geo.city,
+            geocodedArea: geo.area,
+            geocodedCountry: geo.country,
+            geocodedCountryCode: geo.countryCode,
+            geocodedAt: new Date(),
+          }
+        : { geocodedAt: new Date() },
+    })
   } catch (err) {
     console.warn('[Device report] deferred geocoding failed:', err)
   }

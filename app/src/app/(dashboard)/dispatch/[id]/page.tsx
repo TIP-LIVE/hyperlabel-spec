@@ -127,6 +127,7 @@ export default async function DispatchDetailPage({ params }: PageProps) {
       geocodedArea: loc.geocodedArea,
       geocodedCountry: loc.geocodedCountry,
       geocodedCountryCode: loc.geocodedCountryCode,
+      geocodedAt: loc.geocodedAt?.toISOString() ?? null,
     })),
   }
 

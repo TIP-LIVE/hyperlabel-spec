@@ -30,10 +30,25 @@ import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
 
-// Format coordinates into a human-readable location string
-async function formatLocation(lat: number, lng: number): Promise<string> {
+interface LocationForEmail {
+  lat: number
+  lng: number
+  geocodedCity?: string | null
+  geocodedArea?: string | null
+  geocodedCountry?: string | null
+}
+
+// Format coordinates into a human-readable location string.
+// Prefers geocoded fields already stored on the LocationEvent (populated at
+// ingest by the webhook handler's deferred geocoder). Only calls Nominatim as
+// a last resort for legacy callers passing raw coords. Coordinates are the
+// final fallback when everything else fails.
+async function formatLocation(loc: LocationForEmail): Promise<string> {
+  const stored = [loc.geocodedArea, loc.geocodedCity, loc.geocodedCountry].filter(Boolean)
+  if (stored.length > 0) return stored.join(', ')
+
   try {
-    const geo = await reverseGeocode(lat, lng)
+    const geo = await reverseGeocode(loc.lat, loc.lng)
     if (geo) {
       const parts = [geo.area, geo.city, geo.country].filter(Boolean)
       if (parts.length > 0) return parts.join(', ')
@@ -41,7 +56,7 @@ async function formatLocation(lat: number, lng: number): Promise<string> {
   } catch {
     // Fall through to coordinate fallback
   }
-  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+  return `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`
 }
 
 const PREF_FIELD_BY_TYPE: Record<EmailType, 'notifyLabelActivated' | 'notifyLowBattery' | 'notifyNoSignal' | 'notifyDelivered' | 'notifyOrderShipped' | 'notifyShipmentStuck' | 'notifyReminders'> = {
@@ -273,7 +288,7 @@ export async function sendNoSignalNotification(params: {
   deviceId: string
   shareCode: string
   lastSeenAt: Date
-  lastLocation?: { lat: number; lng: number }
+  lastLocation?: LocationForEmail
   thresholdHours: number
 }): Promise<void> {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'no_signal')
@@ -287,7 +302,7 @@ export async function sendNoSignalNotification(params: {
       deviceId: params.deviceId,
       lastSeenAt: format(params.lastSeenAt, 'PPpp'),
       lastLocation: params.lastLocation
-        ? await formatLocation(params.lastLocation.lat, params.lastLocation.lng)
+        ? await formatLocation(params.lastLocation)
         : undefined,
       trackingUrl,
       thresholdHours: params.thresholdHours,
@@ -533,7 +548,7 @@ export async function sendShipmentStuckNotification(params: {
   shipmentName: string
   deviceId: string
   shareCode: string
-  lastLocation: { lat: number; lng: number }
+  lastLocation: LocationForEmail
   stuckSinceHours: number
 }): Promise<void> {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_stuck')
@@ -546,7 +561,7 @@ export async function sendShipmentStuckNotification(params: {
       shipmentName: params.shipmentName,
       deviceId: params.deviceId,
       stuckSinceHours: params.stuckSinceHours,
-      lastLocation: await formatLocation(params.lastLocation.lat, params.lastLocation.lng),
+      lastLocation: await formatLocation(params.lastLocation),
       trackingUrl,
     })
   )
@@ -793,6 +808,9 @@ export async function sendLabelOrphanedNotification(params: {
   claimToken: string
   latitude?: number
   longitude?: number
+  geocodedCity?: string | null
+  geocodedArea?: string | null
+  geocodedCountry?: string | null
 }): Promise<void> {
   if (!isEmailConfigured()) return
 
@@ -816,7 +834,13 @@ export async function sendLabelOrphanedNotification(params: {
   const detectedAt = format(new Date(), 'PPpp')
   const locationHint =
     params.latitude !== undefined && params.longitude !== undefined
-      ? await formatLocation(params.latitude, params.longitude)
+      ? await formatLocation({
+          lat: params.latitude,
+          lng: params.longitude,
+          geocodedCity: params.geocodedCity,
+          geocodedArea: params.geocodedArea,
+          geocodedCountry: params.geocodedCountry,
+        })
       : undefined
 
   const html = await render(

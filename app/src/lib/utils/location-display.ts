@@ -44,26 +44,74 @@ interface LocationDisplayInput {
   geocodedArea?: string | null
   geocodedCountry?: string | null
   geocodedCountryCode?: string | null
+  /** When the last geocoding attempt ran. Null = never tried yet (pending). */
+  geocodedAt?: Date | string | null
   latitude?: number | null
   longitude?: number | null
 }
 
 /**
- * Format a location for display: "City, Country" if geocoded,
- * otherwise "lat, lng" coordinates, or null if no data.
+ * Tri-state display result so UI can show "Locating…" for pending events
+ * instead of raw coords (which almost always means "geocoder hasn't run yet"
+ * for <5-minute-old events).
+ *
+ *  - geocoded: Nominatim matched a place.
+ *  - pending:  geocoder hasn't attempted yet (or the row pre-dates the
+ *              geocodedAt column and needs backfill).
+ *  - failed:   geocoder attempted but returned null (remote / ocean /
+ *              permanently unresolvable coords). UI falls back to coords.
+ *  - empty:    no coordinates available at all.
+ */
+export type LocationDisplay =
+  | { state: 'geocoded'; text: string; countryCode: string | null }
+  | { state: 'pending'; coords: string | null }
+  | { state: 'failed'; coords: string | null }
+  | { state: 'empty' }
+
+function formatCoords(loc: LocationDisplayInput): string | null {
+  if (loc.latitude == null || loc.longitude == null) return null
+  return `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`
+}
+
+/**
+ * Resolve a LocationEvent into a display-ready value. See `LocationDisplay`
+ * for the state machine.
+ */
+export function resolveLocationDisplay(loc: LocationDisplayInput): LocationDisplay {
+  if (loc.geocodedCity || loc.geocodedCountry || loc.geocodedArea) {
+    let text: string | null = null
+    if (loc.geocodedCity && loc.geocodedCountry) {
+      text = `${loc.geocodedCity}, ${loc.geocodedCountry}`
+    } else if (loc.geocodedCity) {
+      text = loc.geocodedCity
+    } else if (loc.geocodedArea && loc.geocodedCountry) {
+      text = `${loc.geocodedArea}, ${loc.geocodedCountry}`
+    } else if (loc.geocodedCountry) {
+      text = loc.geocodedCountry
+    }
+    if (text) {
+      return { state: 'geocoded', text, countryCode: loc.geocodedCountryCode ?? null }
+    }
+  }
+
+  const coords = formatCoords(loc)
+  if (loc.geocodedAt) {
+    // Attempted but no result — show coords as the "failed" fallback.
+    return { state: 'failed', coords }
+  }
+  if (coords == null) return { state: 'empty' }
+  return { state: 'pending', coords }
+}
+
+/**
+ * Back-compat wrapper: returns just the display text ("City, Country" or
+ * coord string), or null if neither is available. Existing call sites that
+ * don't care about pending/failed state keep working unchanged.
  */
 export function formatLocationName(loc: LocationDisplayInput): string | null {
-  if (loc.geocodedCity && loc.geocodedCountry) {
-    return `${loc.geocodedCity}, ${loc.geocodedCountry}`
-  }
-  if (loc.geocodedCity) return loc.geocodedCity
-  if (loc.geocodedArea && loc.geocodedCountry) {
-    return `${loc.geocodedArea}, ${loc.geocodedCountry}`
-  }
-  if (loc.geocodedCountry) return loc.geocodedCountry
-  if (loc.latitude != null && loc.longitude != null) {
-    return `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`
-  }
+  const display = resolveLocationDisplay(loc)
+  if (display.state === 'geocoded') return display.text
+  if (display.state === 'pending' || display.state === 'failed') return display.coords
   return null
 }
 

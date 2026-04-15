@@ -365,6 +365,11 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
                       recordedAt: loc.recordedAt,
                       batteryPct: loc.batteryPct,
                       accuracyM: loc.accuracyM,
+                      geocodedCity: loc.geocodedCity,
+                      geocodedArea: loc.geocodedArea,
+                      geocodedCountry: loc.geocodedCountry,
+                      geocodedCountryCode: loc.geocodedCountryCode,
+                      geocodedAt: loc.geocodedAt,
                     }))}
                     destinationLat={shipment.destinationLat}
                     destinationLng={shipment.destinationLng}
