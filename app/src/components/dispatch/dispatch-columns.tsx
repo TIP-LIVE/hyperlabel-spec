@@ -171,7 +171,17 @@ export function getDispatchNextStep(
     case 'CANCELLED':
       return { kind: 'none', label: '—', tone: 'muted' }
     case 'IN_TRANSIT':
-      return { kind: 'in-transit', label: 'Awaiting delivery', tone: 'passive' }
+      // Users can now pre-create a cargo shipment for a label that's still in
+      // transit — it starts tracking once the label reaches the receiver and
+      // gets attached. Keep the DELIVERED row's "Attach to cargo" wording so
+      // the same column slot keeps meaning the same thing as the dispatch
+      // moves forward.
+      return {
+        kind: 'in-transit',
+        label: 'Set up cargo tracking',
+        tone: 'actionable',
+        action: { type: 'link', href: '/cargo/new' },
+      }
     case 'DELIVERED':
       return {
         kind: 'attach-to-cargo',
