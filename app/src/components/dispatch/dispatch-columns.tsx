@@ -171,7 +171,7 @@ export function getDispatchNextStep(
     case 'CANCELLED':
       return { kind: 'none', label: '—', tone: 'muted' }
     case 'IN_TRANSIT':
-      return { kind: 'in-transit', label: 'On the way', tone: 'passive' }
+      return { kind: 'in-transit', label: 'Awaiting delivery', tone: 'passive' }
     case 'DELIVERED':
       return {
         kind: 'attach-to-cargo',
