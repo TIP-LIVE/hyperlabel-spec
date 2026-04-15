@@ -50,6 +50,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
       { deviceId: { contains: q, mode: 'insensitive' } },
       { displayId: { contains: q } },
       { imei: { contains: q, mode: 'insensitive' } },
+      { iccid: { contains: q, mode: 'insensitive' } },
       { orderLabels: { some: { order: { user: { email: { contains: q, mode: 'insensitive' } } } } } },
     ]
   }
@@ -141,7 +142,7 @@ export default async function AdminLabelsPage({ searchParams }: PageProps) {
         ))}
       </div>
 
-      <AdminSearch placeholder="Search by device ID, IMEI, or owner email..." />
+      <AdminSearch placeholder="Search by device ID, IMEI, ICCID, or owner email..." />
 
       <LabelsTableWithSelection
         labels={labelRows}
