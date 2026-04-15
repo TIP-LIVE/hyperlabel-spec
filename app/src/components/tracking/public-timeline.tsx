@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import {
   formatLocationName,
   groupConsecutiveByCity,
+  resolveLocationDisplay,
   thinGroupEvents,
 } from '@/lib/utils/location-display'
 
@@ -24,6 +25,7 @@ interface LocationEvent {
   geocodedArea: string | null
   geocodedCountry: string | null
   geocodedCountryCode: string | null
+  geocodedAt?: string | null
 }
 
 interface PublicTimelineProps {
@@ -31,6 +33,9 @@ interface PublicTimelineProps {
 }
 
 function locationDisplayName(location: LocationEvent): string {
+  const d = resolveLocationDisplay(location)
+  if (d.state === 'geocoded') return d.text
+  if (d.state === 'pending') return 'Locating…'
   return formatLocationName(location) ?? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
 }
 

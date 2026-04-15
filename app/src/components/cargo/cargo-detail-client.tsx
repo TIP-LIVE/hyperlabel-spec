@@ -417,7 +417,7 @@ export function CargoDetailClient({ initialData, trackingUrl, initialTotalLocati
           )}
           <div className="flex-1 min-w-0">
             <p className="text-lg font-semibold truncate">
-              {currentGeo?.name || `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`}
+              {currentGeo?.name || (!latestLocation.geocodedAt ? 'Locating…' : `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`)}
             </p>
           </div>
           <button

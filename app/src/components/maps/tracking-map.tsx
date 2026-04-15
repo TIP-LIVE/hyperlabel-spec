@@ -872,14 +872,17 @@ export function TrackingMap({
                 {timeAgo(selectedLocation.recordedAt)}
               </div>
               {(() => {
-                const name = formatLocationName({
-                  geocodedCity: selectedLocation.geocodedCity,
-                  geocodedArea: selectedLocation.geocodedArea,
-                  geocodedCountry: selectedLocation.geocodedCountry,
-                  geocodedCountryCode: selectedLocation.geocodedCountryCode,
-                })
                 const hasGeo = Boolean(selectedLocation.geocodedCity || selectedLocation.geocodedCountry)
-                if (!hasGeo) return null
+                const isPending = !hasGeo && !selectedLocation.geocodedAt
+                if (!hasGeo && !isPending) return null
+                const name = hasGeo
+                  ? formatLocationName({
+                      geocodedCity: selectedLocation.geocodedCity,
+                      geocodedArea: selectedLocation.geocodedArea,
+                      geocodedCountry: selectedLocation.geocodedCountry,
+                      geocodedCountryCode: selectedLocation.geocodedCountryCode,
+                    })
+                  : 'Locating…'
                 return (
                   <div
                     style={{
@@ -889,10 +892,11 @@ export function TrackingMap({
                       marginBottom: '4px',
                       fontSize: '13px',
                       fontWeight: 500,
-                      color: '#111827',
+                      color: isPending ? '#6b7280' : '#111827',
+                      fontStyle: isPending ? 'italic' : 'normal',
                     }}
                   >
-                    {selectedLocation.geocodedCountryCode && (
+                    {hasGeo && selectedLocation.geocodedCountryCode && (
                       <span style={{ fontSize: '16px', lineHeight: 1 }}>
                         {countryCodeToFlag(selectedLocation.geocodedCountryCode)}
                       </span>

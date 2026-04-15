@@ -114,7 +114,9 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
   const latestLocation = shipment.locations[0]
   const isActive = shipment.status === 'PENDING' || shipment.status === 'IN_TRANSIT'
 
-  // Derive geocoded info from the latest location's server-side data
+  // Derive geocoded info from the latest location's server-side data.
+  // Returns null when the event is still pending geocoding so the hero
+  // banner shows "Locating…" instead of raw coords.
   const currentGeo = useMemo(() => {
     if (!latestLocation) return null
     const { geocodedCity, geocodedCountry, geocodedCountryCode } = latestLocation
@@ -268,7 +270,7 @@ export function ShipmentDetailClient({ initialData, trackingUrl }: ShipmentDetai
           )}
           <div className="flex-1 min-w-0">
             <p className="text-lg font-semibold truncate">
-              {currentGeo?.name || `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`}
+              {currentGeo?.name || (!latestLocation.geocodedAt ? 'Locating…' : `${latestLocation.latitude.toFixed(4)}, ${latestLocation.longitude.toFixed(4)}`)}
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3 shrink-0" />
