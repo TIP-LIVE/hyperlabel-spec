@@ -25,15 +25,7 @@ import {
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import { ScannedLabelRow } from './scanned-label-row'
-
-// BarcodeDetector type augmentation
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options?: { formats: string[] }) => {
-      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>
-    }
-  }
-}
+import type { IScannerControls } from '@zxing/browser'
 
 interface ScannedLabel {
   labelId: string
@@ -64,7 +56,7 @@ type ScanStep = 'scan' | 'iccid'
 
 const checkCameraSupport = () => {
   if (typeof navigator === 'undefined') return false
-  return !!navigator.mediaDevices?.getUserMedia && !!window.BarcodeDetector
+  return !!navigator.mediaDevices?.getUserMedia
 }
 
 export function LabelScanDialog({
@@ -101,18 +93,13 @@ export function LabelScanDialog({
   const [loadingBrowse, setLoadingBrowse] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const animationRef = useRef<number | null>(null)
+  const scannerControlsRef = useRef<IScannerControls | null>(null)
   const iccidInputRef = useRef<HTMLInputElement>(null)
 
   const stopCamera = useCallback(() => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
+    if (scannerControlsRef.current) {
+      scannerControlsRef.current.stop()
+      scannerControlsRef.current = null
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null
@@ -199,41 +186,42 @@ export function LabelScanDialog({
     setScanError(null)
     setScanning(true)
 
-    if (!window.BarcodeDetector) {
-      setScanError('QR scanning not supported in this browser. Use manual entry.')
-      setMode('manual')
-      setScanning(false)
-      return
-    }
-
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-      })
-      streamRef.current = stream
+      // Lazy-load zxing only when the user actually opens the camera.
+      // The awaits here also give React time to mount the <video> element
+      // after the caller flipped mode to 'camera'.
+      const { BrowserQRCodeReader } = await import('@zxing/browser')
+      const reader = new BrowserQRCodeReader()
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
+      // Prefer the rear camera when available
+      const devices = await BrowserQRCodeReader.listVideoInputDevices()
+      const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
+      const deviceId = rearCam?.deviceId ?? devices[0]?.deviceId
+
+      if (!videoRef.current) {
+        setScanning(false)
+        return
       }
 
-      const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
-      const scanFrame = async () => {
-        if (!videoRef.current || !streamRef.current) return
-        try {
-          const barcodes = await detector.detect(videoRef.current)
-          if (barcodes.length > 0 && barcodes[0].rawValue) {
-            handleQrScanned(barcodes[0].rawValue)
-            return
+      const controls = await reader.decodeFromVideoDevice(
+        deviceId,
+        videoRef.current,
+        (result, _err, ctrl) => {
+          if (result) {
+            ctrl.stop()
+            scannerControlsRef.current = null
+            handleQrScanned(result.getText())
           }
-        } catch {
-          // Detection failed for this frame, continue
         }
-        animationRef.current = requestAnimationFrame(scanFrame)
+      )
+      scannerControlsRef.current = controls
+    } catch (err) {
+      const name = err instanceof Error ? err.name : ''
+      if (name === 'NotAllowedError') {
+        setScanError('Camera permission denied. Enable it in browser settings or use manual entry.')
+      } else {
+        setScanError('Could not access camera. Check permissions or use manual entry.')
       }
-      animationRef.current = requestAnimationFrame(scanFrame)
-    } catch {
-      setScanError('Could not access camera. Check permissions or use manual entry.')
       setScanning(false)
       setMode('manual')
     }
