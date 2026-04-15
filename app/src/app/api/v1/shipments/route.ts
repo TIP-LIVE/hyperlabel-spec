@@ -5,6 +5,8 @@ import { handleApiError } from '@/lib/api-utils'
 import { createShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
+import { reverseGeocodeToAddressLine } from '@/lib/geocoding'
+import { isNullIsland } from '@/lib/validations/device'
 
 /**
  * GET /api/v1/shipments - List user's shipments
@@ -147,8 +149,21 @@ async function createCargoTracking(
   data: Extract<ReturnType<typeof createShipmentSchema.parse>, { type: 'CARGO_TRACKING' }>,
   opts: { shareCode: string; originAddress: string | null; destinationAddress: string | null; context: Awaited<ReturnType<typeof requireOrgAuth>> }
 ) {
-  const { shareCode, originAddress, destinationAddress, context } = opts
+  const { shareCode, context } = opts
+  let { originAddress, destinationAddress } = opts
   const { labelId, consigneeEmail, consigneePhone, photoUrls, name, originLat, originLng, destinationLat, destinationLng } = data
+
+  // Best-effort forward-enrichment: when the client supplied coords but no
+  // address string, reverse-geocode once at CREATE so the detail page never
+  // shows raw lat/lng for origin/destination. Skipped for LABEL_DISPATCH —
+  // those intentionally start blank (receiver-fill flow) and must stay null
+  // until the receiver submits their address.
+  if (!originAddress && originLat != null && originLng != null && !isNullIsland(originLat, originLng)) {
+    originAddress = await reverseGeocodeToAddressLine(originLat, originLng)
+  }
+  if (!destinationAddress && destinationLat != null && destinationLng != null && !isNullIsland(destinationLat, destinationLng)) {
+    destinationAddress = await reverseGeocodeToAddressLine(destinationLat, destinationLng)
+  }
 
   // Verify label exists
   const label = await db.label.findUnique({

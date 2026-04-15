@@ -120,3 +120,29 @@ export async function reverseGeocode(
     return null
   }
 }
+
+/**
+ * Reverse-geocode a lat/lng into a one-line display-ready address, e.g.
+ * "Oatlands North, Makhanda, South Africa". Returns null when the coords
+ * can't be resolved (oceanic / remote / null island). Intended for enriching
+ * user-supplied origin/destination records at CREATE time so the detail page
+ * never has to show raw coordinates for them.
+ *
+ * Never throws — this is best-effort enrichment; callers should treat null
+ * as "leave the address field blank and fall back to the existing display
+ * logic".
+ */
+export async function reverseGeocodeToAddressLine(
+  lat: number,
+  lng: number
+): Promise<string | null> {
+  try {
+    const geo = await reverseGeocode(lat, lng)
+    if (!geo) return null
+    const parts = [geo.area, geo.city, geo.country].filter((s) => s && s.length > 0)
+    if (parts.length === 0) return null
+    return parts.join(', ')
+  } catch {
+    return null
+  }
+}

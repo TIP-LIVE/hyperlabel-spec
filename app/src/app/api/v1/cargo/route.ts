@@ -5,7 +5,8 @@ import { handleApiError } from '@/lib/api-utils'
 import { createCargoShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
-import { reverseGeocode } from '@/lib/geocoding'
+import { reverseGeocode, reverseGeocodeToAddressLine } from '@/lib/geocoding'
+import { isNullIsland } from '@/lib/validations/device'
 
 /**
  * GET /api/v1/cargo - List cargo tracking shipments
@@ -147,9 +148,21 @@ export async function POST(req: NextRequest) {
       attempts++
     }
 
-    const originAddress = data.originAddress?.trim() || null
-    const destinationAddress = data.destinationAddress?.trim() || null
+    let originAddress = data.originAddress?.trim() || null
+    let destinationAddress = data.destinationAddress?.trim() || null
     const { labelId, consigneeEmail, consigneePhone, photoUrls, name, originLat, originLng, destinationLat, destinationLng } = data
+
+    // Best-effort forward-enrichment: when the client supplied coords but no
+    // address string (rare — most flows go through AddressInput which returns
+    // both), reverse-geocode once at CREATE so the detail page never falls
+    // back to raw lat/lng for the origin/destination labels. Failures are
+    // swallowed — never block cargo creation on Nominatim flakiness.
+    if (!originAddress && originLat != null && originLng != null && !isNullIsland(originLat, originLng)) {
+      originAddress = await reverseGeocodeToAddressLine(originLat, originLng)
+    }
+    if (!destinationAddress && destinationLat != null && destinationLng != null && !isNullIsland(destinationLat, destinationLng)) {
+      destinationAddress = await reverseGeocodeToAddressLine(destinationLat, destinationLng)
+    }
 
     // Verify label exists
     const label = await db.label.findUnique({
