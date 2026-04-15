@@ -50,12 +50,19 @@ export async function POST(req: Request) {
     const primaryEmail = email_addresses.find((email) => email.id === evt.data.primary_email_address_id)
     const emailAddress = primaryEmail?.email_address || ''
 
+    const isStaff = isAdminEmail(emailAddress)
+
     const data = {
       email: emailAddress,
       firstName: first_name || null,
       lastName: last_name || null,
       imageUrl: image_url || null,
-      role: isAdminEmail(emailAddress) ? 'admin' : 'user' as const,
+      role: isStaff ? 'admin' : 'user' as const,
+      // Staff accounts opt out of the shipment status digest by default —
+      // internal test shipments would otherwise blast their inbox. Regular
+      // users keep the schema default (DAILY). Staff can flip this back on
+      // from notification preferences if they actively want it.
+      ...(isStaff ? { digestCadence: 'OFF' as const } : {}),
     }
 
     const existingByClerk = await db.user.findUnique({ where: { clerkId: id } })

@@ -9,9 +9,9 @@ import type { Severity, ReportCategory } from '@/emails/watchdog-report'
 const EXPECTED_DAILY_CRONS: { name: string; scheduledHourUTC: number }[] = [
   { name: 'check-delivery', scheduledHourUTC: 6 },
   { name: 'check-battery', scheduledHourUTC: 7 },
-  { name: 'check-signals', scheduledHourUTC: 8 },
-  { name: 'check-stuck', scheduledHourUTC: 9 },
-  { name: 'check-reminders', scheduledHourUTC: 10 },
+  // shipment-digest replaces the old check-signals (8), check-stuck (9), and
+  // check-reminders (10) trio with a single consolidated cron at 10 UTC.
+  { name: 'shipment-digest', scheduledHourUTC: 10 },
   { name: 'check-unclaimed-labels', scheduledHourUTC: 11 },
   { name: 'backfill-geocode', scheduledHourUTC: 13 },
 ]
@@ -407,14 +407,16 @@ async function buildNotificationDelivery(
     details.push(`  ${group.type}: ${group._count}`)
   }
 
-  // Cross-reference with cron metrics
-  const notifJobs = ['check-battery', 'check-signals', 'check-stuck', 'check-reminders']
+  // Cross-reference with cron metrics. shipment-digest reports digestsSent;
+  // the older per-shipment crons reported notificationsSent / remindersSent.
+  const notifJobs = ['check-battery', 'shipment-digest']
   let cronNotifsSent = 0
   for (const job of notifJobs) {
     const run = latestByJob.get(job)
     if (run?.metrics && typeof run.metrics === 'object') {
       const m = run.metrics as Record<string, number>
-      cronNotifsSent += m.notificationsSent || m.remindersSent || 0
+      cronNotifsSent +=
+        m.digestsSent || m.notificationsSent || m.remindersSent || 0
     }
   }
   if (cronNotifsSent > 0) {

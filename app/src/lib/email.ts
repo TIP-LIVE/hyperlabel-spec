@@ -22,6 +22,7 @@ export type EmailType =
   | 'order_shipped'
   | 'shipment_stuck'
   | 'reminders'
+  | 'shipment_status_digest'
 
 // Send email wrapper with error handling
 export async function sendEmail({

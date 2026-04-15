@@ -592,6 +592,26 @@ export async function processLocationReport(
     })
   }
 
+  // Reset digest backoff for IN_TRANSIT shipments that had previously entered
+  // a silent/stuck digest cycle. Reaching this point means the event cleared
+  // the proximity/velocity/coordinate dedup layers above, so it represents a
+  // genuine new signal (recovery from silence) or genuine movement (recovery
+  // from stuck). The updateMany is a no-op when digestCount is already 0, so
+  // the happy path pays only for the WHERE index lookup.
+  if (activeShipment && activeShipment.status === 'IN_TRANSIT') {
+    db.shipment
+      .updateMany({
+        where: { id: activeShipment.id, digestCount: { gt: 0 } },
+        data: { digestCount: 0, lastDigestAt: null },
+      })
+      .catch((err) => {
+        console.warn(
+          `[Device report] digest reset failed for ${activeShipment.id}:`,
+          err
+        )
+      })
+  }
+
   // Reverse-geocode the location and persist on the record
   if (!input.skipGeocode) {
     try {
@@ -657,7 +677,10 @@ export async function processLocationReport(
   if (activeShipment && activeShipment.status === 'PENDING') {
     await db.shipment.update({
       where: { id: activeShipment.id },
-      data: { status: 'IN_TRANSIT' },
+      // Reset digest backoff — the "awaiting first signal" problem that the
+      // digest was nagging about has resolved. Any subsequent silent/stuck
+      // episode starts fresh instead of stacking on the pending backoff.
+      data: { status: 'IN_TRANSIT', digestCount: 0, lastDigestAt: null },
     })
     console.info(`[Device report] shipment ${activeShipment.id} status: PENDING → IN_TRANSIT (${label.deviceId})`)
 
@@ -729,7 +752,14 @@ export async function processLocationReport(
       if (allNearDestination) {
         await db.shipment.update({
           where: { id: activeShipment.id },
-          data: { status: 'DELIVERED', deliveredAt: new Date() },
+          // Reset digest backoff on delivery — terminal state; defensive even
+          // though the digest cron already excludes DELIVERED shipments.
+          data: {
+            status: 'DELIVERED',
+            deliveredAt: new Date(),
+            digestCount: 0,
+            lastDigestAt: null,
+          },
         })
         console.info(`[Device report] shipment ${activeShipment.id} status: IN_TRANSIT → DELIVERED (${label.deviceId}, distance=${Math.round(distance)}m)`)
 

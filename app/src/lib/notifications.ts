@@ -16,6 +16,9 @@ import LowInventoryEmail from '@/emails/low-inventory'
 import RoleChangedEmail from '@/emails/role-changed'
 import UnusedLabelsReminderEmail from '@/emails/unused-labels-reminder'
 import PendingShipmentReminderEmail from '@/emails/pending-shipment-reminder'
+import ShipmentStatusDigestEmail, {
+  type DigestShipmentItem,
+} from '@/emails/shipment-status-digest'
 import ConsigneeTrackingEmail from '@/emails/consignee-tracking'
 import ConsigneeInTransitEmail from '@/emails/consignee-in-transit'
 import ConsigneeDeliveredEmail from '@/emails/consignee-delivered'
@@ -67,6 +70,9 @@ const PREF_FIELD_BY_TYPE: Record<EmailType, 'notifyLabelActivated' | 'notifyLowB
   order_shipped: 'notifyOrderShipped',
   shipment_stuck: 'notifyShipmentStuck',
   reminders: 'notifyReminders',
+  // Digest rides on the same "reminders" kill-switch as the legacy cron emails
+  // — if a user has turned reminders off entirely, no digest either.
+  shipment_status_digest: 'notifyReminders',
 }
 
 // Check if user has enabled a specific notification type
@@ -551,6 +557,133 @@ export async function sendShareLinkReminderNotification(params: {
     shipmentName: params.shipmentName,
     shipmentId: params.shareCode,
     daysSinceReady: params.daysSinceReady,
+  })
+}
+
+/**
+ * Send the consolidated daily/weekly shipment status digest.
+ * One email per user summarising every shipment that needs attention.
+ *
+ * Cadence and per-shipment backoff are enforced by the caller
+ * (app/src/app/api/cron/shipment-digest/route.ts). This function just
+ * renders + sends + records.
+ */
+export async function sendShipmentStatusDigest(params: {
+  userId: string
+  userEmail: string
+  userName: string
+  cadence: 'DAILY' | 'WEEKLY'
+  pending: Array<{
+    shipmentId: string
+    name: string
+    shareCode: string
+    createdAt: Date
+  }>
+  silent: Array<{
+    shipmentId: string
+    name: string
+    shareCode: string
+    lastSeenAt: Date
+    lastLocation?: {
+      city: string | null
+      area: string | null
+      country: string | null
+    }
+  }>
+  stuck: Array<{
+    shipmentId: string
+    name: string
+    shareCode: string
+    stuckSinceHours: number
+    lastLocation?: {
+      city: string | null
+      area: string | null
+      country: string | null
+    }
+  }>
+  unusedCount: number
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const totalShipments =
+    params.pending.length + params.silent.length + params.stuck.length
+  const totalItems = totalShipments + (params.unusedCount > 0 ? 1 : 0)
+  if (totalItems === 0) return
+
+  const cadenceLabel = params.cadence === 'WEEKLY' ? "This week's" : "Today's"
+  const dashboardUrl = `${APP_URL}/dashboard`
+  const preferencesUrl = `${APP_URL}/settings`
+
+  function formatLocationLabel(loc?: {
+    city: string | null
+    area: string | null
+    country: string | null
+  }): string | undefined {
+    if (!loc) return undefined
+    const parts = [loc.area, loc.city, loc.country].filter(Boolean)
+    return parts.length > 0 ? parts.join(', ') : undefined
+  }
+
+  const pending: DigestShipmentItem[] = params.pending.map((p) => ({
+    name: p.name,
+    trackingUrl: `${APP_URL}/track/${p.shareCode}`,
+    detail: `created ${format(p.createdAt, 'MMM d')}`,
+  }))
+
+  const silent: DigestShipmentItem[] = params.silent.map((s) => ({
+    name: s.name,
+    trackingUrl: `${APP_URL}/track/${s.shareCode}`,
+    detail: `last seen ${format(s.lastSeenAt, 'MMM d')}`,
+    locationLabel: formatLocationLabel(s.lastLocation),
+  }))
+
+  const stuck: DigestShipmentItem[] = params.stuck.map((s) => ({
+    name: s.name,
+    trackingUrl: `${APP_URL}/track/${s.shareCode}`,
+    detail:
+      s.stuckSinceHours >= 48
+        ? `not moving for ${Math.round(s.stuckSinceHours / 24)}d`
+        : `not moving for ${s.stuckSinceHours}h`,
+    locationLabel: formatLocationLabel(s.lastLocation),
+  }))
+
+  const html = await render(
+    ShipmentStatusDigestEmail({
+      userName: params.userName,
+      dashboardUrl,
+      preferencesUrl,
+      pending,
+      silent,
+      stuck,
+      unusedLabels:
+        params.unusedCount > 0
+          ? { count: params.unusedCount, dashboardUrl }
+          : undefined,
+      cadenceLabel,
+    })
+  )
+
+  // Subject — deliberately plain. No emoji, no urgency, no shipment name
+  // (would feel targeted when we're aggregating multiple). The body carries
+  // the detail; the subject is just a calm header.
+  const subject =
+    params.cadence === 'WEEKLY'
+      ? 'This week’s shipment update'
+      : 'Today’s shipment update'
+
+  await sendEmail({ to: params.userEmail, subject, html })
+
+  await recordNotification(params.userId, 'shipment_status_digest', {
+    cadence: params.cadence,
+    pendingCount: params.pending.length,
+    silentCount: params.silent.length,
+    stuckCount: params.stuck.length,
+    unusedCount: params.unusedCount,
+    shipmentIds: [
+      ...params.pending.map((p) => p.shipmentId),
+      ...params.silent.map((s) => s.shipmentId),
+      ...params.stuck.map((s) => s.shipmentId),
+    ],
   })
 }
 

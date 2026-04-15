@@ -45,6 +45,16 @@ enum LocationSource {
   CELL_TOWER // Onomondo Location Update webhook (cell tower triangulation)
 }
 
+/// Per-user cadence for the consolidated shipment status digest.
+/// - DAILY: one digest per day if any shipments need attention (default for new users)
+/// - WEEKLY: one digest on Mondays (UTC), even if items are available mid-week
+/// - OFF: never send a digest (staff/admin accounts default to this in the Clerk webhook)
+enum DigestCadence {
+  OFF
+  WEEKLY
+  DAILY
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -69,6 +79,11 @@ model User {
   notifyOrderShipped   Boolean @default(true) @map("notify_order_shipped")
   notifyShipmentStuck  Boolean @default(true) @map("notify_shipment_stuck")
   notifyReminders      Boolean @default(true) @map("notify_reminders")
+
+  // Consolidated "shipment status" digest cadence. Replaces per-alert crons
+  // (no-signal, stuck, pending). Staff accounts (isAdminEmail) default to OFF
+  // in the Clerk webhook so internal test shipments don't blast their inbox.
+  digestCadence DigestCadence @default(DAILY) @map("digest_cadence")
 
   // Relations
   orders         Order[]
@@ -147,6 +162,13 @@ model Shipment {
   createdAt             DateTime       @default(now()) @map("created_at")
   updatedAt             DateTime       @updatedAt @map("updated_at")
   deliveredAt           DateTime?      @map("delivered_at")
+
+  // Digest backoff: how many times this shipment has appeared in a status
+  // digest for its *current* problem period. Reset to 0 when the issue resolves
+  // (PENDING → IN_TRANSIT, label recovers from silence, auto-delivery, etc.).
+  // After digestCount exceeds the backoff table the shipment falls silent.
+  digestCount  Int       @default(0) @map("digest_count")
+  lastDigestAt DateTime? @map("last_digest_at")
 
   // Organization scoping (from Clerk Organizations)
   orgId String? @map("org_id")

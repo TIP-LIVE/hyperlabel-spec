@@ -251,8 +251,7 @@ All cron handlers use `withCronLogging()` wrapper from `lib/cron.ts` which:
 |-----|----------|---------|
 | `watchdog` | Daily 14:00 UTC | Health report: scheduler, jobs, shipments, data quality |
 | `backfill-geocode` | Daily 13:00 UTC | Retry failed reverse geocoding (200 records/batch) |
-| `check-signals` | Periodic | Alert if device silent >48 hours |
-| `check-stuck` | Periodic | Alert if shipment location unchanged >48 hours |
+| `shipment-digest` | Daily 10:00 UTC | **One consolidated digest per user** — pending + silent + stuck + unused labels. Replaces the old `check-signals` / `check-stuck` / `check-reminders` trio |
 | `cleanup-data` | Periodic | Prune old webhook logs (>7 days), cron logs (>30 days) |
 | `check-unclaimed-labels` | Periodic | Reminder emails for unclaimed labels |
 | `research-reminders` | Daily 07:30 UTC | Send 24h-before interview reminders |
@@ -260,8 +259,21 @@ All cron handlers use `withCronLogging()` wrapper from `lib/cron.ts` which:
 | `research-referral` | Daily 10:30 UTC | Referral request 48h after interview |
 | `research-stale-leads` | Weekly Mon 09:00 UTC | Alert if leads stuck in CONTACTED >7 days |
 
-### Stuck Shipment Detection
-Must verify data actually spans 48 hours, not just that the query window is 48h. Compare oldest vs newest location timestamps in the result set.
+### Shipment Status Digest (Apr 2026 rewrite)
+
+`shipment-digest` (daily 10 UTC) replaces the three separate alert crons that used to hammer inboxes (check-signals 8am, check-stuck 9am, check-reminders 10am — each sending its own per-shipment email). The new model is **one email per user per day**, split into sections: "Awaiting first signal", "Silent recently", "Not moving", "Unused labels".
+
+Key rules when touching this code:
+
+1. **Per-shipment backoff via `Shipment.digestCount` + `Shipment.lastDigestAt`.** First digest when the threshold is hit; subsequent digests at +3d, +7d, +14d, then silent (total 4 sends max) until the underlying issue resolves.
+2. **Counters reset on recovery** in `lib/device-report.ts`: PENDING→IN_TRANSIT transition, IN_TRANSIT→DELIVERED, and any new LocationEvent stored for an IN_TRANSIT shipment (meaningful movement/signal recovery — the proximity/velocity dedup above filters stationary noise so reaching the store path is a real signal).
+3. **Per-user cadence via `User.digestCadence` enum** (`OFF` / `WEEKLY` / `DAILY`). `WEEKLY` only fires on Monday UTC. Staff accounts (email matches `isAdminEmail` / `ADMIN_EMAILS` env var) are stamped `OFF` by the Clerk webhook at user creation. Existing staff need a one-time backfill SQL.
+4. **Stuck detection must verify duration**: compare oldest vs newest recordedAt in the 48h window, not just that the query window is 48h.
+5. **Fresh-shipment grace**: shipments created <48h ago are never included. Prevents a just-created cargo from being nagged on its first cron cycle.
+6. **24h per-user throttle**: even with per-shipment backoff, check `Notification` table for a recent `shipment_status_digest` row before sending (belt + braces).
+7. **Critical events still fire immediately** and bypass the digest entirely: `shipment-delivered`, `label-activated`, `label-orphaned`, `low-battery`, `order-*`, `dispatch-*`.
+
+The deprecated send functions (`sendNoSignalNotification`, `sendShipmentStuckNotification`, `sendShareLinkReminderNotification`) and their email templates (`no-signal.tsx`, `shipment-stuck.tsx`, `pending-shipment-reminder.tsx`, `unused-labels-reminder.tsx`) remain in `lib/notifications.ts` and `emails/` for rollback safety but have **no callers**. Remove in a follow-up PR once the new digest is confirmed stable.
 
 ---
 

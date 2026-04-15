@@ -20,15 +20,7 @@
       "schedule": "0 7 * * *"
     },
     {
-      "path": "/api/cron/check-signals",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/check-stuck",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/check-reminders",
+      "path": "/api/cron/shipment-digest",
       "schedule": "0 10 * * *"
     },
     {
