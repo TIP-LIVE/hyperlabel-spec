@@ -44,6 +44,7 @@ interface LocationPoint {
   geocodedArea: string | null
   geocodedCountry: string | null
   geocodedCountryCode: string | null
+  geocodedAt?: string | null
   eventType?: string | null
 }
 
