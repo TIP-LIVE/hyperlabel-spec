@@ -33,6 +33,34 @@ import { format } from 'date-fns'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
 
+/**
+ * Build the canonical public tracking URL for a shipment.
+ *
+ * Prefers `tip.live/{displayId}` — the same URL printed on the sticker
+ * and shown in the Share dialog, so every surface points at one place
+ * (see commit 38da796, "Unify label URL across sticker, share link, and
+ * bare path per spec"). Falls back to `tip.live/track/{shareCode}` for
+ * LABEL_DISPATCH shipments (no single displayId — dispatches carry many
+ * labels) and for legacy labels that predate the provisionLabel() path.
+ *
+ * The legacy `/track/{shareCode}` route still renders the tracking page,
+ * so the fallback is just "uglier URL, same destination".
+ */
+async function resolveTrackingUrl(shareCode: string): Promise<string> {
+  const shipment = await db.shipment.findUnique({
+    where: { shareCode },
+    select: {
+      type: true,
+      label: { select: { displayId: true } },
+    },
+  })
+  const displayId = shipment?.label?.displayId
+  if (shipment?.type === 'CARGO_TRACKING' && displayId) {
+    return `${APP_URL}/${displayId}`
+  }
+  return `${APP_URL}/track/${shareCode}`
+}
+
 interface LocationForEmail {
   lat: number
   lng: number
@@ -215,7 +243,7 @@ export async function sendLabelActivatedNotification(params: {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'label_activated')
   if (recipients.length === 0) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
   const createdAt = format(new Date(), 'PPpp')
 
   const html = await render(
@@ -256,7 +284,7 @@ export async function sendLowBatteryNotification(params: {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'low_battery')
   if (recipients.length === 0) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
 
   const html = await render(
     LowBatteryEmail({
@@ -300,7 +328,7 @@ export async function sendNoSignalNotification(params: {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'no_signal')
   if (recipients.length === 0) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
 
   const html = await render(
     NoSignalEmail({
@@ -346,7 +374,7 @@ export async function sendShipmentDeliveredNotification(params: {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_delivered')
   if (recipients.length === 0) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
   const deliveredAt = format(new Date(), 'PPpp')
 
   const html = await render(
@@ -531,7 +559,9 @@ export async function sendShareLinkReminderNotification(params: {
       })
     )
   } else {
-    const trackingUrl = params.shareCode ? `${APP_URL}/track/${params.shareCode}` : `${APP_URL}/dashboard`
+    const trackingUrl = params.shareCode
+      ? await resolveTrackingUrl(params.shareCode)
+      : `${APP_URL}/dashboard`
     const shipmentName = params.shipmentName || 'Unknown'
     subject = `We haven't heard from "${shipmentName}" yet`
     html = await render(
@@ -624,28 +654,34 @@ export async function sendShipmentStatusDigest(params: {
     return parts.length > 0 ? parts.join(', ') : undefined
   }
 
-  const pending: DigestShipmentItem[] = params.pending.map((p) => ({
-    name: p.name,
-    trackingUrl: `${APP_URL}/track/${p.shareCode}`,
-    detail: `created ${format(p.createdAt, 'MMM d')}`,
-  }))
+  const pending: DigestShipmentItem[] = await Promise.all(
+    params.pending.map(async (p) => ({
+      name: p.name,
+      trackingUrl: await resolveTrackingUrl(p.shareCode),
+      detail: `created ${format(p.createdAt, 'MMM d')}`,
+    }))
+  )
 
-  const silent: DigestShipmentItem[] = params.silent.map((s) => ({
-    name: s.name,
-    trackingUrl: `${APP_URL}/track/${s.shareCode}`,
-    detail: `last seen ${format(s.lastSeenAt, 'MMM d')}`,
-    locationLabel: formatLocationLabel(s.lastLocation),
-  }))
+  const silent: DigestShipmentItem[] = await Promise.all(
+    params.silent.map(async (s) => ({
+      name: s.name,
+      trackingUrl: await resolveTrackingUrl(s.shareCode),
+      detail: `last seen ${format(s.lastSeenAt, 'MMM d')}`,
+      locationLabel: formatLocationLabel(s.lastLocation),
+    }))
+  )
 
-  const stuck: DigestShipmentItem[] = params.stuck.map((s) => ({
-    name: s.name,
-    trackingUrl: `${APP_URL}/track/${s.shareCode}`,
-    detail:
-      s.stuckSinceHours >= 48
-        ? `not moving for ${Math.round(s.stuckSinceHours / 24)}d`
-        : `not moving for ${s.stuckSinceHours}h`,
-    locationLabel: formatLocationLabel(s.lastLocation),
-  }))
+  const stuck: DigestShipmentItem[] = await Promise.all(
+    params.stuck.map(async (s) => ({
+      name: s.name,
+      trackingUrl: await resolveTrackingUrl(s.shareCode),
+      detail:
+        s.stuckSinceHours >= 48
+          ? `not moving for ${Math.round(s.stuckSinceHours / 24)}d`
+          : `not moving for ${s.stuckSinceHours}h`,
+      locationLabel: formatLocationLabel(s.lastLocation),
+    }))
+  )
 
   const html = await render(
     ShipmentStatusDigestEmail({
@@ -703,7 +739,7 @@ export async function sendShipmentStuckNotification(params: {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_stuck')
   if (recipients.length === 0) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
 
   const html = await render(
     ShipmentStuckEmail({
@@ -744,7 +780,7 @@ export async function sendConsigneeTrackingNotification(params: {
 }): Promise<void> {
   if (!isEmailConfigured()) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
   const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
 
   const html = await render(
@@ -784,7 +820,7 @@ export async function sendConsigneeInTransitNotification(params: {
   })
   if (shipment?.consigneeUnsubscribed) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
   const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
 
   const html = await render(
@@ -823,7 +859,7 @@ export async function sendConsigneeDeliveredNotification(params: {
   })
   if (shipment?.consigneeUnsubscribed) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
   const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
 
   const html = await render(
@@ -1029,7 +1065,7 @@ export async function sendAutoShipmentCreatedNotification(params: {
   const recipients = await resolveRecipients(params.userId, params.orgId, 'label_activated')
   if (recipients.length === 0) return
 
-  const trackingUrl = `${APP_URL}/track/${params.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
   const createdAt = format(new Date(), 'PPpp')
 
   const html = await render(
@@ -1067,7 +1103,10 @@ export async function sendDispatchDetailsRequested(params: {
 }): Promise<void> {
   if (!isEmailConfigured()) return
 
-  const completeUrl = `${APP_URL}/track/${params.shareCode}`
+  // Receiver fills in their address at /track/{shareCode} — dispatches have
+  // no single displayId (multiple labels), so resolveTrackingUrl falls back
+  // to the shareCode path here anyway.
+  const completeUrl = await resolveTrackingUrl(params.shareCode)
 
   const html = await render(
     DispatchDetailsRequestedEmail({
@@ -1188,7 +1227,7 @@ export async function sendDispatchAddressConfirmedToReceiver(params: {
       .filter(Boolean)
       .join(', ')
 
-  const trackingUrl = `${APP_URL}/track/${shipment.shareCode}`
+  const trackingUrl = await resolveTrackingUrl(shipment.shareCode)
 
   const html = await render(
     DispatchAddressConfirmedEmail({

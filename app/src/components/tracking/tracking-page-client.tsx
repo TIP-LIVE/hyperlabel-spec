@@ -204,10 +204,15 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
     }))
   }, [])
 
-  // P1: Share/copy tracking link
+  // P1: Share/copy tracking link. Prefer the canonical tip.live/{displayId}
+  // form so the copied link matches the sticker and Share dialog URLs.
+  // Dispatches and legacy labels (no displayId) fall back to /track/{code}.
+  const displayId = shipment.label?.displayId
   const handleCopyLink = useCallback(async () => {
     try {
-      const url = `${window.location.origin}/track/${code}`
+      const url = displayId
+        ? `${window.location.origin}/${displayId}`
+        : `${window.location.origin}/track/${code}`
       await navigator.clipboard.writeText(url)
       setCopied(true)
       toast.success('Tracking link copied!')
@@ -215,7 +220,7 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
     } catch {
       toast.error('Failed to copy link')
     }
-  }, [code])
+  }, [code, displayId])
 
   // Normalise dates for child components
   const locationsWithDates = shipment.locations.map((l) => ({
@@ -272,9 +277,11 @@ export function TrackingPageClient({ code, initialData }: TrackingPageClientProp
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">{shipment.name || (isDispatch ? 'Label Dispatch' : 'Shipment Tracking')}</h1>
-            <p className="text-sm text-muted-foreground">
-              Tracking code: <span className="font-mono">{code}</span>
-            </p>
+            {shipment.label?.displayId && (
+              <p className="text-sm text-muted-foreground">
+                Label: <span className="font-mono">{shipment.label.displayId}</span>
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {/* P1: Share button */}

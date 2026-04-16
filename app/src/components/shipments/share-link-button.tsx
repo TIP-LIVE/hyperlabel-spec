@@ -18,7 +18,12 @@ import { cn } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
 
 interface ShareLinkButtonProps {
-  shareCode: string
+  /**
+   * Still accepted for backwards compatibility with existing callers — no
+   * longer rendered in the dialog. The canonical URL is `trackingUrl`, which
+   * matches the sticker and the "Label:" line on the public tracking page.
+   */
+  shareCode?: string
   trackingUrl: string
   className?: string
   variant?: 'cargo' | 'dispatch'
@@ -29,19 +34,17 @@ const copyVariants = {
     title: 'Share Tracking Link',
     description: 'Share this link with your consignee so they can track the shipment without creating an account.',
     qrCaption: 'Scan to track shipment',
-    codeHelper: 'Your consignee can use this code on the tracking page',
     toast: 'Tracking link copied!',
   },
   dispatch: {
     title: 'Share Dispatch Link',
     description: 'Share this link with your recipient so they know their labels are on the way.',
     qrCaption: 'Scan to view dispatch status',
-    codeHelper: 'Your recipient can use this code to check dispatch status',
     toast: 'Dispatch link copied!',
   },
 }
 
-export function ShareLinkButton({ shareCode, trackingUrl, className, variant = 'cargo' }: ShareLinkButtonProps) {
+export function ShareLinkButton({ trackingUrl, className, variant = 'cargo' }: ShareLinkButtonProps) {
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
   const copy = copyVariants[variant]
@@ -100,15 +103,6 @@ export function ShareLinkButton({ shareCode, trackingUrl, className, variant = '
                 )}
               </Button>
             </div>
-          </div>
-
-          {/* Share Code */}
-          <div className="space-y-2">
-            <Label>Share Code</Label>
-            <p className="rounded-lg bg-muted px-3 py-2 font-mono text-sm">{shareCode}</p>
-            <p className="text-xs text-muted-foreground">
-              {copy.codeHelper}
-            </p>
           </div>
 
           {/* Actions */}
