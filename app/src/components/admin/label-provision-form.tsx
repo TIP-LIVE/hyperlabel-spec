@@ -259,6 +259,11 @@ export function LabelProvisionForm() {
                 Paste the full QR text, scan it with a USB QR reader (which types
                 into the field), or click the camera button to use your webcam.
               </p>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Read QR</span> extracts
+                the IMEI and firmware from the text so you can review them before
+                the label is created.
+              </p>
             </div>
 
             {parseError && (
@@ -274,7 +279,7 @@ export function LabelProvisionForm() {
                 disabled={!qrText.trim()}
                 className="flex-1"
               >
-                Parse QR
+                Read QR
               </Button>
               <ModemQrScanner onScanned={handleScanned} />
             </div>
