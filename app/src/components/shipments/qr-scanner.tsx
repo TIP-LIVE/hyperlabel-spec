@@ -15,18 +15,10 @@ import {
 import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
+import type { IScannerControls } from '@zxing/browser'
 
 interface QrScannerProps {
   onDeviceIdScanned: (deviceId: string) => void
-}
-
-// Extend Window for BarcodeDetector support check
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options?: { formats: string[] }) => {
-      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>
-    }
-  }
 }
 
 // Check camera support eagerly (client-only component)
@@ -44,20 +36,15 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
   const [error, setError] = useState<string | null>(null)
   const [scannedValue, setScannedValue] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const animationRef = useRef<number | null>(null)
+  const scannerControlsRef = useRef<IScannerControls | null>(null)
 
   // extractDeviceId is now imported from @/lib/extract-device-id
 
   // Stop camera
   const stopCamera = useCallback(() => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
+    if (scannerControlsRef.current) {
+      scannerControlsRef.current.stop()
+      scannerControlsRef.current = null
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null
@@ -87,49 +74,49 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     setScannedValue(null)
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-      })
-      streamRef.current = stream
+      // Lazy-load zxing only when the user actually opens the camera.
+      // The awaits here also give React time to mount the <video> element.
+      const { BrowserQRCodeReader } = await import('@zxing/browser')
+      const reader = new BrowserQRCodeReader()
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
+      // Prefer the rear camera when available (iOS Safari labels may be empty
+      // until permission is granted — in that case fall back to the first device
+      // and the browser still honors facingMode: environment on most devices).
+      const devices = await BrowserQRCodeReader.listVideoInputDevices()
+      const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
+      const deviceId = rearCam?.deviceId ?? devices[0]?.deviceId
+
+      if (!videoRef.current) {
+        setScanning(false)
+        return
       }
 
-      // Try using BarcodeDetector API
-      if (window.BarcodeDetector) {
-        const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
-        const scanFrame = async () => {
-          if (!videoRef.current || !streamRef.current) return
-          try {
-            const barcodes = await detector.detect(videoRef.current)
-            if (barcodes.length > 0) {
-              const deviceId = extractDeviceId(barcodes[0].rawValue)
-              if (deviceId) {
-                handleScannedId(deviceId)
-                return
-              }
-            }
-          } catch {
-            // Detection failed for this frame, continue
+      const controls = await reader.decodeFromVideoDevice(
+        deviceId,
+        videoRef.current,
+        (result, _err, ctrl) => {
+          if (!result) return
+          const scannedDeviceId = extractDeviceId(result.getText())
+          if (scannedDeviceId) {
+            ctrl.stop()
+            scannerControlsRef.current = null
+            handleScannedId(scannedDeviceId)
           }
-          animationRef.current = requestAnimationFrame(scanFrame)
         }
-        animationRef.current = requestAnimationFrame(scanFrame)
-      } else {
-        // BarcodeDetector not available — show camera view with manual fallback
-        setError('QR scanning not supported in this browser. Enter the device ID manually.')
-        setMode('manual')
-        stopCamera()
-      }
+      )
+      scannerControlsRef.current = controls
     } catch (err) {
       console.error('Camera error:', err)
-      setError('Could not access camera. Please check permissions or enter the device ID manually.')
+      const name = err instanceof Error ? err.name : ''
+      if (name === 'NotAllowedError') {
+        setError('Camera permission denied. Enable it in browser settings or enter the device ID manually.')
+      } else {
+        setError('Could not access camera. Please check permissions or enter the device ID manually.')
+      }
       setScanning(false)
       setMode('manual')
     }
-  }, [handleScannedId, stopCamera])
+  }, [handleScannedId])
 
   // Handle manual entry — accepts the new 9-digit displayId (e.g. 002011395)
   // or the legacy TIP-001 / HL-001234 format.
@@ -184,7 +171,11 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
               variant={mode === 'scanner' ? 'default' : 'outline'}
               size="sm"
               className="flex-1 gap-1.5"
-              onClick={() => setMode('scanner')}
+              onClick={() => {
+                setMode('scanner')
+                setError(null)
+                if (!scanning) startScanning()
+              }}
             >
               <Camera className="h-3.5 w-3.5" />
               Camera
@@ -206,9 +197,9 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
 
         {/* Scanner view */}
         {mode === 'scanner' && (
-          <div className="relative overflow-hidden rounded-lg bg-black">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
             {scannedValue ? (
-              <div className="flex flex-col items-center justify-center py-12">
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
                   <CheckCircle className="h-10 w-10 text-green-400" />
                 </div>
@@ -219,21 +210,21 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
               <>
                 <video
                   ref={videoRef}
-                  className="aspect-square w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                   playsInline
                   muted
                 />
                 {scanning && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     {/* Scanning overlay */}
-                    <div className="h-48 w-48 rounded-lg border-2 border-white/50">
+                    <div className="h-48 w-48 rounded-lg border-2 border-white/70 sm:h-56 sm:w-56">
                       {/* Animated scan line */}
-                      <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/50" />
+                      <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
                     </div>
                   </div>
                 )}
                 {!scanning && !error && (
-                  <div className="flex flex-col items-center justify-center py-16">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-white/50" />
                     <p className="mt-2 text-sm text-white/50">Starting camera...</p>
                   </div>
