@@ -7,15 +7,11 @@ import LabelActivatedEmail from '@/emails/label-activated'
 import LabelOrphanedEmail from '@/emails/label-orphaned'
 import AutoShipmentCreatedEmail from '@/emails/auto-shipment-created'
 import LowBatteryEmail from '@/emails/low-battery'
-import NoSignalEmail from '@/emails/no-signal'
 import ShipmentDeliveredEmail from '@/emails/shipment-delivered'
-import ShipmentStuckEmail from '@/emails/shipment-stuck'
 import OrderShippedEmail from '@/emails/order-shipped'
 import OrderConfirmedEmail from '@/emails/order-confirmed'
 import LowInventoryEmail from '@/emails/low-inventory'
 import RoleChangedEmail from '@/emails/role-changed'
-import UnusedLabelsReminderEmail from '@/emails/unused-labels-reminder'
-import PendingShipmentReminderEmail from '@/emails/pending-shipment-reminder'
 import ShipmentStatusDigestEmail, {
   type DigestShipmentItem,
 } from '@/emails/shipment-status-digest'
@@ -90,16 +86,13 @@ async function formatLocation(loc: LocationForEmail): Promise<string> {
   return `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`
 }
 
-const PREF_FIELD_BY_TYPE: Record<EmailType, 'notifyLabelActivated' | 'notifyLowBattery' | 'notifyNoSignal' | 'notifyDelivered' | 'notifyOrderShipped' | 'notifyShipmentStuck' | 'notifyReminders'> = {
+const PREF_FIELD_BY_TYPE: Record<EmailType, 'notifyLabelActivated' | 'notifyLowBattery' | 'notifyDelivered' | 'notifyOrderShipped' | 'notifyReminders'> = {
   label_activated: 'notifyLabelActivated',
   low_battery: 'notifyLowBattery',
-  no_signal: 'notifyNoSignal',
   shipment_delivered: 'notifyDelivered',
   order_shipped: 'notifyOrderShipped',
-  shipment_stuck: 'notifyShipmentStuck',
-  reminders: 'notifyReminders',
-  // Digest rides on the same "reminders" kill-switch as the legacy cron emails
-  // — if a user has turned reminders off entirely, no digest either.
+  // Digest is gated by the user-facing "reminders" preference (notifyReminders)
+  // — turning that off silences the daily/weekly status digest entirely.
   shipment_status_digest: 'notifyReminders',
 }
 
@@ -116,10 +109,8 @@ async function shouldSendNotification(
       email: true,
       notifyLabelActivated: true,
       notifyLowBattery: true,
-      notifyNoSignal: true,
       notifyDelivered: true,
       notifyOrderShipped: true,
-      notifyShipmentStuck: true,
       notifyReminders: true,
     },
   })
@@ -192,10 +183,8 @@ async function resolveRecipients(
       email: true,
       notifyLabelActivated: true,
       notifyLowBattery: true,
-      notifyNoSignal: true,
       notifyDelivered: true,
       notifyOrderShipped: true,
-      notifyShipmentStuck: true,
       notifyReminders: true,
     },
   })
@@ -307,53 +296,6 @@ export async function sendLowBatteryNotification(params: {
       batteryLevel: params.batteryLevel,
       shipmentId: params.shipmentId,
       threshold: params.batteryLevel <= 10 ? 'critical_10' : 'warning_20',
-    }, params.orgId)
-  }
-}
-
-/**
- * Send no signal notification
- */
-export async function sendNoSignalNotification(params: {
-  userId: string
-  orgId?: string | null
-  shipmentId?: string
-  shipmentName: string
-  deviceId: string
-  shareCode: string
-  lastSeenAt: Date
-  lastLocation?: LocationForEmail
-  thresholdHours: number
-}): Promise<void> {
-  const recipients = await resolveRecipients(params.userId, params.orgId, 'no_signal')
-  if (recipients.length === 0) return
-
-  const trackingUrl = await resolveTrackingUrl(params.shareCode)
-
-  const html = await render(
-    NoSignalEmail({
-      shipmentName: params.shipmentName,
-      deviceId: params.deviceId,
-      lastSeenAt: format(params.lastSeenAt, 'PPpp'),
-      lastLocation: params.lastLocation
-        ? await formatLocation(params.lastLocation)
-        : undefined,
-      trackingUrl,
-      thresholdHours: params.thresholdHours,
-    })
-  )
-
-  for (const r of recipients) {
-    await sendEmail({
-      to: r.email,
-      subject: `📡 No Signal: ${params.shipmentName}`,
-      html,
-    })
-    await recordNotification(r.userId, 'no_signal', {
-      shipmentName: params.shipmentName,
-      lastSeenAt: params.lastSeenAt.toISOString(),
-      shipmentId: params.shipmentId,
-      thresholdHours: params.thresholdHours,
     }, params.orgId)
   }
 }
@@ -516,81 +458,6 @@ export async function sendOrderConfirmedNotification(params: {
 }
 
 /**
- * Send share link / unused label reminder notification
- */
-export async function sendShareLinkReminderNotification(params: {
-  userId: string
-  reminderType: 'unused_labels' | 'pending_shipment'
-  labelCount?: number
-  deviceIds: string[]
-  shipmentName?: string
-  shareCode?: string
-  /** Days elapsed since effective readiness (cargo createdAt or dispatch deliveredAt). Used for branched copy. */
-  daysSinceReady?: number
-  /** True if the label was dispatched via TIP and that dispatch is DELIVERED. */
-  dispatchDelivered?: boolean
-  /** When the dispatch was delivered, if applicable. */
-  dispatchDeliveredAt?: Date | null
-  /** Receiver name from the dispatch (firstName + lastName, or destinationName). */
-  receiverName?: string | null
-}): Promise<void> {
-  const { enabled, email } = await shouldSendNotification(params.userId, 'reminders')
-  if (!enabled || !email) return
-
-  const user = await db.user.findUnique({
-    where: { id: params.userId },
-    select: { firstName: true },
-  })
-
-  const name = user?.firstName || 'there'
-
-  let subject: string
-  let html: string
-
-  if (params.reminderType === 'unused_labels') {
-    subject = `📋 You have ${params.labelCount} purchased label${params.labelCount === 1 ? '' : 's'} waiting for the next step`
-    const dashboardUrl = `${APP_URL}/dashboard`
-    html = await render(
-      UnusedLabelsReminderEmail({
-        userName: name,
-        labelCount: params.labelCount || 0,
-        deviceIds: params.deviceIds,
-        dashboardUrl,
-      })
-    )
-  } else {
-    const trackingUrl = params.shareCode
-      ? await resolveTrackingUrl(params.shareCode)
-      : `${APP_URL}/dashboard`
-    const shipmentName = params.shipmentName || 'Unknown'
-    subject = `We haven't heard from "${shipmentName}" yet`
-    html = await render(
-      PendingShipmentReminderEmail({
-        userName: name,
-        shipmentName,
-        trackingUrl,
-        daysSinceReady: params.daysSinceReady,
-        dispatchDelivered: params.dispatchDelivered,
-        dispatchDeliveredAt: params.dispatchDeliveredAt
-          ? format(params.dispatchDeliveredAt, 'MMM d, yyyy')
-          : undefined,
-        receiverName: params.receiverName ?? undefined,
-      })
-    )
-  }
-
-  await sendEmail({ to: email, subject, html })
-
-  await recordNotification(params.userId, params.reminderType === 'unused_labels' ? 'unused_label_reminder' : 'pending_shipment_reminder', {
-    reminderType: params.reminderType,
-    labelCount: params.labelCount,
-    shipmentName: params.shipmentName,
-    shipmentId: params.shareCode,
-    daysSinceReady: params.daysSinceReady,
-  })
-}
-
-/**
  * Send the consolidated daily/weekly shipment status digest.
  * One email per user summarising every shipment that needs attention.
  *
@@ -721,50 +588,6 @@ export async function sendShipmentStatusDigest(params: {
       ...params.stuck.map((s) => s.shipmentId),
     ],
   })
-}
-
-/**
- * Send shipment stuck notification
- */
-export async function sendShipmentStuckNotification(params: {
-  userId: string
-  orgId?: string | null
-  shipmentId?: string
-  shipmentName: string
-  deviceId: string
-  shareCode: string
-  lastLocation: LocationForEmail
-  stuckSinceHours: number
-}): Promise<void> {
-  const recipients = await resolveRecipients(params.userId, params.orgId, 'shipment_stuck')
-  if (recipients.length === 0) return
-
-  const trackingUrl = await resolveTrackingUrl(params.shareCode)
-
-  const html = await render(
-    ShipmentStuckEmail({
-      shipmentName: params.shipmentName,
-      deviceId: params.deviceId,
-      stuckSinceHours: params.stuckSinceHours,
-      lastLocation: await formatLocation(params.lastLocation),
-      trackingUrl,
-    })
-  )
-
-  for (const r of recipients) {
-    await sendEmail({
-      to: r.email,
-      subject: `⚠️ Shipment Stuck: "${params.shipmentName}" hasn't moved in ${params.stuckSinceHours}h`,
-      html,
-    })
-    await recordNotification(r.userId, 'shipment_stuck', {
-      shipmentName: params.shipmentName,
-      deviceId: params.deviceId,
-      shipmentId: params.shipmentId ?? params.shareCode,
-      lastLocation: params.lastLocation,
-      stuckSinceHours: params.stuckSinceHours,
-    }, params.orgId)
-  }
 }
 
 /**

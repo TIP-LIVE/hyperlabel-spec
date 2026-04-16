@@ -17,11 +17,8 @@ export function isEmailConfigured(): boolean {
 export type EmailType =
   | 'label_activated'
   | 'low_battery'
-  | 'no_signal'
   | 'shipment_delivered'
   | 'order_shipped'
-  | 'shipment_stuck'
-  | 'reminders'
   | 'shipment_status_digest'
 
 // Send email wrapper with error handling

@@ -20,11 +20,7 @@ import LabelActivatedEmail from '../src/emails/label-activated'
 import LabelOrphanedEmail from '../src/emails/label-orphaned'
 import AutoShipmentCreatedEmail from '../src/emails/auto-shipment-created'
 import LowBatteryEmail from '../src/emails/low-battery'
-import NoSignalEmail from '../src/emails/no-signal'
-import ShipmentStuckEmail from '../src/emails/shipment-stuck'
 import ShipmentDeliveredEmail from '../src/emails/shipment-delivered'
-import UnusedLabelsReminderEmail from '../src/emails/unused-labels-reminder'
-import PendingShipmentReminderEmail from '../src/emails/pending-shipment-reminder'
 import ConsigneeTrackingEmail from '../src/emails/consignee-tracking'
 import ConsigneeInTransitEmail from '../src/emails/consignee-in-transit'
 import ConsigneeDeliveredEmail from '../src/emails/consignee-delivered'
@@ -114,28 +110,6 @@ const emails: EmailDef[] = [
     }),
   },
   {
-    name: '8/16 — No Signal',
-    subject: '📡 No Signal: Coffee Beans → Rotterdam',
-    component: NoSignalEmail({
-      shipmentName: 'Coffee Beans → Rotterdam',
-      deviceId: 'TIP-042',
-      lastSeenAt: 'Mar 11, 2026, 10:15 AM',
-      lastLocation: '51.9225, 4.4792',
-      trackingUrl: 'https://tip.live/track/abc123',
-    }),
-  },
-  {
-    name: '9/16 — Shipment Stuck',
-    subject: '⚠️ Shipment Stuck: "Coffee Beans → Rotterdam" hasn\'t moved in 36h',
-    component: ShipmentStuckEmail({
-      shipmentName: 'Coffee Beans → Rotterdam',
-      deviceId: 'TIP-042',
-      stuckSinceHours: 36,
-      lastLocation: '51.9225, 4.4792',
-      trackingUrl: 'https://tip.live/track/abc123',
-    }),
-  },
-  {
     name: '10/16 — Shipment Delivered',
     subject: '✅ Delivered: Coffee Beans → Rotterdam',
     component: ShipmentDeliveredEmail({
@@ -143,25 +117,6 @@ const emails: EmailDef[] = [
       deviceId: 'TIP-042',
       deliveredAt: 'Mar 12, 2026, 2:30 PM',
       destination: 'Wilhelminakade 1, Rotterdam, Netherlands',
-      trackingUrl: 'https://tip.live/track/abc123',
-    }),
-  },
-  {
-    name: '11/16 — Unused Labels Reminder',
-    subject: '📋 You have 3 purchased labels waiting for the next step',
-    component: UnusedLabelsReminderEmail({
-      userName: 'Denys',
-      labelCount: 3,
-      deviceIds: ['TIP-040', 'TIP-041', 'TIP-042'],
-      dashboardUrl: 'https://tip.live/dashboard',
-    }),
-  },
-  {
-    name: '12/16 — Pending Shipment Reminder',
-    subject: '⏳ Your shipment "Coffee Beans → Rotterdam" is still pending',
-    component: PendingShipmentReminderEmail({
-      userName: 'Denys',
-      shipmentName: 'Coffee Beans → Rotterdam',
       trackingUrl: 'https://tip.live/track/abc123',
     }),
   },

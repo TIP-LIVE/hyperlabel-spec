@@ -33,7 +33,7 @@ export const GET = withCronLogging('check-stale-dispatches', async () => {
   })
 
   for (const dispatch of needReminder) {
-    // TODO: wire up sendShareLinkReminderNotification for dispatches.
+    // TODO: wire up a dispatch-specific reminder email here.
     // For now, log so the watchdog cron picks it up.
     console.info('[check-stale-dispatches] day-7 reminder due', {
       dispatchId: dispatch.id,

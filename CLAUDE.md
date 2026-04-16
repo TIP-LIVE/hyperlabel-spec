@@ -273,7 +273,7 @@ Key rules when touching this code:
 6. **24h per-user throttle**: even with per-shipment backoff, check `Notification` table for a recent `shipment_status_digest` row before sending (belt + braces).
 7. **Critical events still fire immediately** and bypass the digest entirely: `shipment-delivered`, `label-activated`, `label-orphaned`, `low-battery`, `order-*`, `dispatch-*`.
 
-The deprecated send functions (`sendNoSignalNotification`, `sendShipmentStuckNotification`, `sendShareLinkReminderNotification`) and their email templates (`no-signal.tsx`, `shipment-stuck.tsx`, `pending-shipment-reminder.tsx`, `unused-labels-reminder.tsx`) remain in `lib/notifications.ts` and `emails/` for rollback safety but have **no callers**. Remove in a follow-up PR once the new digest is confirmed stable.
+The legacy per-alert send functions (`sendNoSignalNotification`, `sendShipmentStuckNotification`, `sendShareLinkReminderNotification`) and their email templates (`no-signal.tsx`, `shipment-stuck.tsx`, `pending-shipment-reminder.tsx`, `unused-labels-reminder.tsx`) have been **deleted**. They kept firing in production via cron schedules baked into pre-digest deployments — Vercel cron jobs are bound to a deployment ID at deploy time, so removing the routes from the new build wasn't enough; the old deployments had to be `vercel remove`d, and the functions deleted from `lib/notifications.ts` so they can't be reintroduced accidentally. The `User.notifyNoSignal` / `notifyShipmentStuck` schema columns are still there and untouched — kept as-is to avoid a migration; the notification-preferences UI still toggles them but nothing reads them anymore. Remove the columns + UI rows in a follow-up.
 
 ---
 
