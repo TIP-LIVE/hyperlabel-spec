@@ -266,6 +266,18 @@ export function LabelScanDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
+  // Unmount safety: dialog-close cleanup runs in handleOpenChange, but if the
+  // parent route unmounts while the dialog is still open, the camera stream
+  // would otherwise keep running. Stop it on unmount unconditionally.
+  useEffect(() => {
+    return () => {
+      if (scannerControlsRef.current) {
+        scannerControlsRef.current.stop()
+        scannerControlsRef.current = null
+      }
+    }
+  }, [])
+
   // Auto-fetch when switching to browse mode
   useEffect(() => {
     if (mode === 'browse' && availableLabels.length === 0 && !loadingBrowse) {

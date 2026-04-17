@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,6 +50,18 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
       videoRef.current.srcObject = null
     }
     setScanning(false)
+  }, [])
+
+  // Unconditional cleanup if the component unmounts while scanning — e.g.
+  // user navigates away with the dialog still open. Without this, the
+  // camera LED stays on and the stream keeps decoding in the background.
+  useEffect(() => {
+    return () => {
+      if (scannerControlsRef.current) {
+        scannerControlsRef.current.stop()
+        scannerControlsRef.current = null
+      }
+    }
   }, [])
 
   // Handle scanned device ID

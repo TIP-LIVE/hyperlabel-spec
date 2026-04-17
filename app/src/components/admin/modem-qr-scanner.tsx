@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -54,6 +54,17 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
       videoRef.current.srcObject = null
     }
     setScanning(false)
+  }, [])
+
+  // Unmount safety: handleOpenChange only fires on dialog close, not on
+  // parent unmount, so the stream would otherwise leak.
+  useEffect(() => {
+    return () => {
+      if (scannerControlsRef.current) {
+        scannerControlsRef.current.stop()
+        scannerControlsRef.current = null
+      }
+    }
   }, [])
 
   const handleRawScanned = useCallback(
