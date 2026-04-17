@@ -40,9 +40,9 @@ const UNUSED_LABEL_DAYS = 7
 
 // After the first digest, wait these many days before the next one.
 // digestCount=1 → wait BACKOFF_DAYS[0] days, digestCount=2 → [1], etc.
-// After digestCount reaches 1 + BACKOFF_DAYS.length (= 4), stay silent.
+// After digestCount exceeds BACKOFF_DAYS.length (= 3) we stay silent until
+// counters reset (total 4 digests per problem period).
 const BACKOFF_DAYS = [3, 7, 14]
-const MAX_DIGESTS_PER_PERIOD = 1 + BACKOFF_DAYS.length // = 4
 
 /**
  * Apply backoff: should this shipment be included in today's digest?
@@ -53,13 +53,12 @@ function shouldIncludeInDigest(
 ): boolean {
   // First digest for this problem period — include.
   if (!shipment.lastDigestAt || shipment.digestCount === 0) return true
-  // Already max'd out — stay silent until the issue resolves (counters get
-  // reset in device-report.ts on recovery/delivery/PENDING→IN_TRANSIT).
-  if (shipment.digestCount >= MAX_DIGESTS_PER_PERIOD) return false
-  // digestCount is 1..MAX-1, map to the gap that must have elapsed.
-  const gapDays = BACKOFF_DAYS[shipment.digestCount - 1]
-  if (gapDays == null) return false
-  const gapMs = gapDays * 24 * 60 * 60 * 1000
+  // Map digestCount (1..N) to the gap index (0..N-1). Anything past the
+  // configured schedule stays silent until counters reset in device-report.ts
+  // (PENDING→IN_TRANSIT, auto-delivery, or fresh LocationEvent on IN_TRANSIT).
+  const gapIndex = shipment.digestCount - 1
+  if (gapIndex >= BACKOFF_DAYS.length) return false
+  const gapMs = BACKOFF_DAYS[gapIndex] * 24 * 60 * 60 * 1000
   return now.getTime() - shipment.lastDigestAt.getTime() >= gapMs
 }
 
@@ -158,6 +157,17 @@ export const GET = withCronLogging('shipment-digest', async () => {
   let skippedGrace = 0
   let skippedBackoff = 0
 
+  // Split into PENDING (no DB lookup needed) and IN_TRANSIT (needs location
+  // data). IN_TRANSIT candidates are bulk-loaded below so we don't fire one
+  // query per shipment inside the classification loop.
+  interface InTransitWork {
+    shipment: (typeof candidates)[number]
+    labelId: string
+    lastSeen: Date
+    thresholdMs: number
+  }
+  const inTransitWork: InTransitWork[] = []
+
   for (const s of candidates) {
     // 48h fresh-shipment grace — never nag a just-created shipment.
     if (s.createdAt > freshnessGraceDate) {
@@ -194,21 +204,105 @@ export const GET = withCronLogging('shipment-digest', async () => {
     const thresholdHours =
       (s.orgId ? thresholdByOrg.get(s.orgId) : undefined) ??
       DEFAULT_NO_SIGNAL_HOURS
-    const thresholdMs = thresholdHours * 60 * 60 * 1000
-    const lastSeen =
-      s.label.lastSeenAt ?? s.label.activatedAt ?? s.createdAt
+    inTransitWork.push({
+      shipment: s,
+      labelId: s.label.id,
+      lastSeen: s.label.lastSeenAt ?? s.label.activatedAt ?? s.createdAt,
+      thresholdMs: thresholdHours * 60 * 60 * 1000,
+    })
+  }
+
+  // Bulk-load recent events for all IN_TRANSIT candidates in a single query.
+  // Covers the stuck-window detection and serves as the latest-location
+  // source for silent shipments whose last event falls inside the window.
+  const inTransitLabelIds = [
+    ...new Set(inTransitWork.map((w) => w.labelId)),
+  ]
+  const stuckWindowEvents =
+    inTransitLabelIds.length === 0
+      ? []
+      : await db.locationEvent.findMany({
+          where: {
+            labelId: { in: inTransitLabelIds },
+            ...VALID_LOCATION,
+            recordedAt: { gte: stuckWindowStart },
+          },
+          orderBy: [{ labelId: 'asc' }, { recordedAt: 'desc' }],
+          select: {
+            labelId: true,
+            latitude: true,
+            longitude: true,
+            recordedAt: true,
+            geocodedCity: true,
+            geocodedArea: true,
+            geocodedCountry: true,
+          },
+        })
+
+  interface WindowEvent {
+    latitude: number
+    longitude: number
+    recordedAt: Date
+    geocodedCity: string | null
+    geocodedArea: string | null
+    geocodedCountry: string | null
+  }
+  // Preserve the original `take: 20` per-label cap.
+  const eventsByLabel = new Map<string, WindowEvent[]>()
+  for (const e of stuckWindowEvents) {
+    if (!e.labelId) continue
+    const bucket = eventsByLabel.get(e.labelId) ?? []
+    if (bucket.length < 20) {
+      bucket.push({
+        latitude: e.latitude,
+        longitude: e.longitude,
+        recordedAt: e.recordedAt,
+        geocodedCity: e.geocodedCity,
+        geocodedArea: e.geocodedArea,
+        geocodedCountry: e.geocodedCountry,
+      })
+    }
+    eventsByLabel.set(e.labelId, bucket)
+  }
+
+  // For silent labels whose last event is OLDER than the stuck window (nothing
+  // loaded above), fall back to a parallel latest-event lookup. Kept as a set
+  // of parallel findFirsts rather than one raw-SQL DISTINCT ON for simplicity.
+  const silentFallbackIds: string[] = []
+  for (const w of inTransitWork) {
+    const isSilent = now.getTime() - w.lastSeen.getTime() >= w.thresholdMs
+    const hasWindowEvents = (eventsByLabel.get(w.labelId)?.length ?? 0) > 0
+    if (isSilent && !hasWindowEvents) silentFallbackIds.push(w.labelId)
+  }
+  const silentFallbackLocs = silentFallbackIds.length === 0
+    ? []
+    : await Promise.all(
+        silentFallbackIds.map((labelId) =>
+          db.locationEvent
+            .findFirst({
+              where: { labelId, ...VALID_LOCATION },
+              orderBy: { recordedAt: 'desc' },
+              select: {
+                geocodedCity: true,
+                geocodedArea: true,
+                geocodedCountry: true,
+              },
+            })
+            .then((loc) => ({ labelId, loc }))
+        )
+      )
+  const fallbackLocByLabel = new Map(
+    silentFallbackLocs.map((r) => [r.labelId, r.loc])
+  )
+
+  // Classify in-memory — no more DB calls past this point.
+  for (const w of inTransitWork) {
+    const { shipment: s, labelId, lastSeen, thresholdMs } = w
+    const windowEvents = eventsByLabel.get(labelId) ?? []
 
     // Silent check.
     if (now.getTime() - lastSeen.getTime() >= thresholdMs) {
-      const latestLoc = await db.locationEvent.findFirst({
-        where: { labelId: s.label.id, ...VALID_LOCATION },
-        orderBy: { recordedAt: 'desc' },
-        select: {
-          geocodedCity: true,
-          geocodedArea: true,
-          geocodedCountry: true,
-        },
-      })
+      const loc = windowEvents[0] ?? fallbackLocByLabel.get(labelId) ?? null
       classified.push({
         kind: 'silent',
         shipmentId: s.id,
@@ -217,13 +311,13 @@ export const GET = withCronLogging('shipment-digest', async () => {
         name: s.name ?? 'Unnamed shipment',
         shareCode: s.shareCode,
         createdAt: s.createdAt,
-        labelDeviceId: s.label.deviceId,
+        labelDeviceId: s.label!.deviceId,
         lastSeenAt: lastSeen,
-        lastLocation: latestLoc
+        lastLocation: loc
           ? {
-              city: latestLoc.geocodedCity,
-              area: latestLoc.geocodedArea,
-              country: latestLoc.geocodedCountry,
+              city: loc.geocodedCity,
+              area: loc.geocodedArea,
+              country: loc.geocodedCountry,
             }
           : undefined,
       })
@@ -231,34 +325,16 @@ export const GET = withCronLogging('shipment-digest', async () => {
     }
 
     // Stuck check — location reporting but no meaningful movement.
-    const recentLocations = await db.locationEvent.findMany({
-      where: {
-        labelId: s.label.id,
-        ...VALID_LOCATION,
-        recordedAt: { gte: stuckWindowStart },
-      },
-      orderBy: { recordedAt: 'desc' },
-      take: 20,
-      select: {
-        latitude: true,
-        longitude: true,
-        recordedAt: true,
-        geocodedCity: true,
-        geocodedArea: true,
-        geocodedCountry: true,
-      },
-    })
-
-    if (recentLocations.length < 2) continue
+    if (windowEvents.length < 2) continue
 
     let maxDistance = 0
-    for (let i = 0; i < recentLocations.length; i++) {
-      for (let j = i + 1; j < recentLocations.length; j++) {
+    for (let i = 0; i < windowEvents.length; i++) {
+      for (let j = i + 1; j < windowEvents.length; j++) {
         const d = haversineDistanceM(
-          recentLocations[i].latitude,
-          recentLocations[i].longitude,
-          recentLocations[j].latitude,
-          recentLocations[j].longitude
+          windowEvents[i].latitude,
+          windowEvents[i].longitude,
+          windowEvents[j].latitude,
+          windowEvents[j].longitude
         )
         if (d > maxDistance) maxDistance = d
       }
@@ -266,8 +342,8 @@ export const GET = withCronLogging('shipment-digest', async () => {
 
     if (maxDistance >= STUCK_MOVEMENT_THRESHOLD_M) continue
 
-    const oldestInWindow = recentLocations[recentLocations.length - 1]
-    const newestInWindow = recentLocations[0]
+    const oldestInWindow = windowEvents[windowEvents.length - 1]
+    const newestInWindow = windowEvents[0]
     const stuckDurationHours =
       (newestInWindow.recordedAt.getTime() -
         oldestInWindow.recordedAt.getTime()) /
@@ -287,7 +363,7 @@ export const GET = withCronLogging('shipment-digest', async () => {
       name: s.name ?? 'Unnamed shipment',
       shareCode: s.shareCode,
       createdAt: s.createdAt,
-      labelDeviceId: s.label.deviceId,
+      labelDeviceId: s.label!.deviceId,
       stuckSinceHours,
       lastLocation: {
         city: newestInWindow.geocodedCity,
