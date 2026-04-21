@@ -3,7 +3,6 @@ import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { generateShareCode } from '@/lib/utils/share-code'
-import { sendOrderShippedNotification } from '@/lib/notifications'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -217,59 +216,37 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       attempts++
     }
 
-    // Create dispatch shipment (no ShipmentLabel entries — labels linked at scan time)
-    const shipment = await db.$transaction(async (tx) => {
-      const s = await tx.shipment.create({
-        data: {
-          type: 'LABEL_DISPATCH',
-          name,
-          shareCode,
-          userId: order.userId,
-          orgId: order.orgId,
-          orderId: order.id,
-          labelCount,
-          status: 'PENDING',
-          destinationAddress,
-          destinationLat,
-          destinationLng,
-          destinationName,
-          destinationLine1,
-          destinationLine2,
-          destinationCity,
-          destinationState,
-          destinationPostalCode,
-          destinationCountry,
-          receiverFirstName,
-          receiverLastName,
-          consigneeEmail: receiverEmail,
-          consigneePhone: receiverPhone,
-          addressSubmittedAt,
-          shareLinkExpiresAt,
-        },
-      })
-
-      // Auto-update order status: PAID → SHIPPED on first dispatch
-      if (order.status === 'PAID') {
-        await tx.order.update({
-          where: { id: order.id },
-          data: {
-            status: 'SHIPPED',
-            shippedAt: new Date(),
-          },
-        })
-      }
-
-      return s
-    })
-
-    // Send notification on first dispatch only (when order was PAID)
-    if (order.status === 'PAID') {
-      sendOrderShippedNotification({
+    // Create dispatch shipment (no ShipmentLabel entries — labels linked at scan time).
+    // Order stays PAID until labels are actually scanned via verify-labels — a dispatch
+    // container existing doesn't mean anything physically shipped yet.
+    const shipment = await db.shipment.create({
+      data: {
+        type: 'LABEL_DISPATCH',
+        name,
+        shareCode,
         userId: order.userId,
-        orderNumber: order.id.slice(-8).toUpperCase(),
-        quantity: order.quantity,
-      }).catch((err) => console.error('Failed to send order shipped notification:', err))
-    }
+        orgId: order.orgId,
+        orderId: order.id,
+        labelCount,
+        status: 'PENDING',
+        destinationAddress,
+        destinationLat,
+        destinationLng,
+        destinationName,
+        destinationLine1,
+        destinationLine2,
+        destinationCity,
+        destinationState,
+        destinationPostalCode,
+        destinationCountry,
+        receiverFirstName,
+        receiverLastName,
+        consigneeEmail: receiverEmail,
+        consigneePhone: receiverPhone,
+        addressSubmittedAt,
+        shareLinkExpiresAt,
+      },
+    })
 
     const shareLink = hasReceiverDetails ? null : `/track/${shipment.shareCode}`
     return NextResponse.json({ shipment, shareLink, awaitingReceiverDetails: !hasReceiverDetails }, { status: 201 })

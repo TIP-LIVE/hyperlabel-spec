@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger'
 import {
   sendConsigneeInTransitNotification,
   sendDispatchInTransitNotification,
+  sendOrderShippedNotification,
 } from '@/lib/notifications'
 import { z } from 'zod'
 
@@ -227,29 +228,38 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       })
     })
 
-    // Safety net: if these labels belong to PAID orders, transition to SHIPPED.
-    // This covers dispatches created through /api/v1/dispatch (no orderId) where
-    // the admin dispatch endpoint's auto-transition was bypassed.
+    // Cascade PAID → SHIPPED on the orders owning these labels — labels are now
+    // physically moving. Blocking so the admin list reflects the new status on
+    // the next refresh.
     const linkedLabelIds = scannedLabels.map((sl) => sl.labelId)
-    db.orderLabel
-      .findMany({
-        where: { labelId: { in: linkedLabelIds } },
-        select: { orderId: true },
+    const orderLabels = await db.orderLabel.findMany({
+      where: { labelId: { in: linkedLabelIds } },
+      select: { orderId: true },
+    })
+    const orderIds = [...new Set(orderLabels.map((ol) => ol.orderId))]
+    const shippedOrders: { id: string; userId: string; quantity: number }[] = []
+    for (const oid of orderIds) {
+      const updated = await db.order.updateMany({
+        where: { id: oid, status: 'PAID' },
+        data: { status: 'SHIPPED', shippedAt: new Date() },
       })
-      .then(async (orderLabels) => {
-        const orderIds = [...new Set(orderLabels.map((ol) => ol.orderId))]
-        for (const oid of orderIds) {
-          await db.order
-            .updateMany({
-              where: { id: oid, status: 'PAID' },
-              data: { status: 'SHIPPED', shippedAt: new Date() },
-            })
-            .then((r) => {
-              if (r.count > 0) logger.info('Order auto-transitioned PAID→SHIPPED via verify-labels', { orderId: oid })
-            })
-        }
-      })
-      .catch((err) => logger.error('Failed to cascade order status from verify-labels', { error: err }))
+      if (updated.count > 0) {
+        logger.info('Order auto-transitioned PAID→SHIPPED via verify-labels', { orderId: oid })
+        const o = await db.order.findUnique({
+          where: { id: oid },
+          select: { id: true, userId: true, quantity: true },
+        })
+        if (o) shippedOrders.push(o)
+      }
+    }
+
+    for (const o of shippedOrders) {
+      sendOrderShippedNotification({
+        userId: o.userId,
+        orderNumber: o.id.slice(-8).toUpperCase(),
+        quantity: o.quantity,
+      }).catch((err) => console.error('Failed to send order shipped notification:', err))
+    }
 
     // Fire notifications (same as current PATCH handler for IN_TRANSIT)
     sendDispatchInTransitNotification({ shipmentId: id }).catch((err) =>
