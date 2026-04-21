@@ -5,8 +5,9 @@ import { handleApiError } from '@/lib/api-utils'
 
 /**
  * GET /api/v1/labels/lookup/available
- * List all labels eligible for dispatch (SOLD or INVENTORY, not in active dispatch).
- * Admin-only. Used in the label scan dialog "Browse" mode.
+ * List all labels eligible for dispatch (SOLD, INVENTORY, or auto-registered
+ * ACTIVE labels that have no active shipment). Admin-only. Used in the label
+ * scan dialog "Browse" mode.
  */
 export async function GET() {
   try {
@@ -14,7 +15,7 @@ export async function GET() {
 
     const labels = await db.label.findMany({
       where: {
-        status: { in: ['SOLD', 'INVENTORY'] },
+        status: { in: ['SOLD', 'INVENTORY', 'ACTIVE'] },
         // Exclude labels already linked to an active dispatch
         shipmentLabels: {
           none: {

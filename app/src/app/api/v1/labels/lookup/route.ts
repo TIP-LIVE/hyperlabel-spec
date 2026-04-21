@@ -55,10 +55,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Label not found' }, { status: 404 })
     }
 
-    // Check eligibility
-    if (label.status !== 'SOLD' && label.status !== 'INVENTORY') {
+    // Check eligibility. ACTIVE labels are also dispatchable when they have no
+    // active shipment (covers auto-registered factory labels that land in ACTIVE
+    // without ever being marked SOLD/INVENTORY). The shipment/dispatch checks
+    // below enforce the "no active shipment" part.
+    if (label.status !== 'SOLD' && label.status !== 'INVENTORY' && label.status !== 'ACTIVE') {
       return NextResponse.json(
-        { error: `Label is ${label.status} — only SOLD or INVENTORY labels can be dispatched`, label },
+        { error: `Label is ${label.status} — cannot be dispatched`, label },
         { status: 400 }
       )
     }
