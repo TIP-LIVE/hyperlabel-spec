@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createDispatchShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
+
+class DispatchError extends Error {
+  constructor(public status: number, public body: Record<string, unknown>) {
+    super(typeof body.error === 'string' ? body.error : 'Dispatch error')
+  }
+}
 
 /**
  * GET /api/v1/dispatch - List label dispatch shipments
@@ -87,7 +94,8 @@ export async function POST(req: NextRequest) {
     }
 
     const originAddress = data.originAddress?.trim() || null
-    const { labelIds, name, originLat, originLng, destinationLat, destinationLng } = data
+    const { name, originLat, originLng, destinationLat, destinationLng } = data
+    const labelIds = [...new Set(data.labelIds)]
 
     // Normalize receiver fields (empty string → null)
     const receiverFirstName = data.receiverFirstName?.trim() || null
@@ -129,83 +137,77 @@ export async function POST(req: NextRequest) {
       ? `${receiverFirstName} ${receiverLastName}`
       : null
 
-    // Verify all labels exist and are available
-    const labels = await db.label.findMany({
-      where: { id: { in: labelIds } },
-      include: { orderLabels: { include: { order: true } } },
-    })
+    // Single transaction: lock the Label rows, re-validate, then write.
+    // The FOR UPDATE lock serializes concurrent dispatches of the same labels
+    // so the uniqueness + quota checks can't be bypassed by a race.
+    const shipment = await db.$transaction(async (tx) => {
+      // Row lock on the label ids. Concurrent tx targeting the same labels waits here.
+      await tx.$queryRaw(Prisma.sql`SELECT id FROM labels WHERE id IN (${Prisma.join(labelIds)}) FOR UPDATE`)
 
-    if (labels.length !== labelIds.length) {
-      const foundIds = new Set(labels.map((l) => l.id))
-      const missing = labelIds.filter((id) => !foundIds.has(id))
-      return NextResponse.json({ error: 'Labels not found', missing }, { status: 404 })
-    }
-
-    const unavailable = labels.filter((l) => l.status !== 'SOLD' && l.status !== 'INVENTORY')
-    if (unavailable.length > 0) {
-      return NextResponse.json(
-        { error: 'Some labels are not available for dispatch', labels: unavailable.map((l) => l.deviceId) },
-        { status: 400 }
-      )
-    }
-
-    // Check none of the labels are already in an active dispatch
-    const existingDispatch = await db.shipmentLabel.findMany({
-      where: {
-        labelId: { in: labelIds },
-        shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
-      },
-      include: { label: { select: { deviceId: true } } },
-    })
-
-    if (existingDispatch.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Some labels are already in an active dispatch',
-          labels: existingDispatch.map((sl) => sl.label.deviceId),
-        },
-        { status: 400 }
-      )
-    }
-
-    // Org-level cap: don't dispatch more labels than were purchased
-    const [purchasedResult, activelyDispatched] = await Promise.all([
-      db.order.aggregate({
-        where: { orgId: context.orgId, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }, totalAmount: { gt: 0 } },
-        _sum: { quantity: true },
-      }),
-      db.shipmentLabel.count({
+      // Labels must belong to this org (via any OrderLabel.order.orgId match).
+      // Scoping here also silently filters out cross-org ids — surfaced as "not found".
+      const labels = await tx.label.findMany({
         where: {
-          shipment: { orgId: context.orgId, type: 'LABEL_DISPATCH', status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] } },
+          id: { in: labelIds },
+          orderLabels: { some: { order: { orgId: context.orgId } } },
         },
-      }),
-    ])
+        include: { orderLabels: { include: { order: true } } },
+      })
 
-    const totalBought = purchasedResult._sum.quantity ?? 0
-    const remainingQuota = totalBought - activelyDispatched
+      if (labels.length !== labelIds.length) {
+        const foundIds = new Set(labels.map((l) => l.id))
+        const missing = labelIds.filter((id) => !foundIds.has(id))
+        throw new DispatchError(404, { error: 'Labels not found', missing })
+      }
 
-    if (labelIds.length > remainingQuota) {
-      return NextResponse.json(
-        {
+      const unavailable = labels.filter((l) => l.status !== 'SOLD' && l.status !== 'INVENTORY')
+      if (unavailable.length > 0) {
+        throw new DispatchError(400, {
+          error: 'Some labels are not available for dispatch',
+          labels: unavailable.map((l) => l.deviceId),
+        })
+      }
+
+      // Uniqueness: block any label already in a non-cancelled dispatch.
+      // DELIVERED is included — re-dispatching a delivered label would create a ghost row.
+      const existingDispatch = await tx.shipmentLabel.findMany({
+        where: {
+          labelId: { in: labelIds },
+          shipment: { status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] } },
+        },
+        include: { label: { select: { deviceId: true } } },
+      })
+
+      if (existingDispatch.length > 0) {
+        throw new DispatchError(400, {
+          error: 'Some labels are already in a dispatch',
+          labels: existingDispatch.map((sl) => sl.label.deviceId),
+        })
+      }
+
+      // Org quota
+      const [purchasedResult, activelyDispatched] = await Promise.all([
+        tx.order.aggregate({
+          where: { orgId: context.orgId, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }, totalAmount: { gt: 0 } },
+          _sum: { quantity: true },
+        }),
+        tx.shipmentLabel.count({
+          where: {
+            shipment: { orgId: context.orgId, type: 'LABEL_DISPATCH', status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] } },
+          },
+        }),
+      ])
+
+      const totalBought = purchasedResult._sum.quantity ?? 0
+      const remainingQuota = totalBought - activelyDispatched
+
+      if (labelIds.length > remainingQuota) {
+        throw new DispatchError(400, {
           error: `Cannot dispatch ${labelIds.length} label${labelIds.length === 1 ? '' : 's'} — only ${remainingQuota} of ${totalBought} purchased label${totalBought === 1 ? '' : 's'} remaining`,
           quota: { totalBought, activelyDispatched, remaining: remainingQuota },
-        },
-        { status: 400 }
-      )
-    }
+        })
+      }
 
-    // Collect unique PAID order IDs from the labels being dispatched
-    const paidOrderIds = [
-      ...new Set(
-        labels
-          .flatMap((l) => l.orderLabels)
-          .filter((ol) => ol.order.status === 'PAID')
-          .map((ol) => ol.order.id)
-      ),
-    ]
-
-    // Create shipment + join table entries in a transaction
-    const shipment = await db.$transaction(async (tx) => {
       const s = await tx.shipment.create({
         data: {
           type: 'LABEL_DISPATCH',
@@ -243,14 +245,6 @@ export async function POST(req: NextRequest) {
         })),
       })
 
-      // Update associated orders: PAID → SHIPPED
-      if (paidOrderIds.length > 0) {
-        await tx.order.updateMany({
-          where: { id: { in: paidOrderIds }, status: 'PAID' },
-          data: { status: 'SHIPPED', shippedAt: new Date() },
-        })
-      }
-
       return tx.shipment.findUniqueOrThrow({
         where: { id: s.id },
         include: {
@@ -268,6 +262,9 @@ export async function POST(req: NextRequest) {
     const shareLink = hasReceiverDetails ? null : `/track/${shareCode}`
     return NextResponse.json({ shipment, shareLink, awaitingReceiverDetails: !hasReceiverDetails }, { status: 201 })
   } catch (error) {
+    if (error instanceof DispatchError) {
+      return NextResponse.json(error.body, { status: error.status })
+    }
     return handleApiError(error, 'creating dispatch')
   }
 }
