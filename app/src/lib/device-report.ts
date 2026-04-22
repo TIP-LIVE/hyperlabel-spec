@@ -282,6 +282,19 @@ export async function processLocationReport(
     }
   }
 
+  // When displayId gets backfilled for the first time on a legacy TIP-XXX
+  // label, rename the SIM on Onomondo so its dashboard matches the new format.
+  // Fire-and-forget — never block ingest on an external call.
+  if (
+    identifierUpdates.displayId &&
+    label.iccid &&
+    process.env.NODE_ENV !== 'test'
+  ) {
+    syncSimLabelToOnomondo(label.iccid, identifierUpdates.displayId).catch(
+      (err) => console.warn('[Onomondo] label rename failed:', err),
+    )
+  }
+
   // Manufacturing cooldown: suppress LocationEvent creation for 24h after
   // auto-registration. When a label is physically built, the SIM activation
   // triggers Onomondo events from the factory. These must not appear in the
