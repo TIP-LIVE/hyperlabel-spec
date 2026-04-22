@@ -1,24 +1,28 @@
 /**
- * Find orgs that have more LABEL_DISPATCH reservations than purchased labels.
+ * Find orgs that have more LABEL_DISPATCH reservations than purchased labels,
+ * plus helpers for the cleanup actions that fall out of it.
  *
  * Background: before commit 23e94a6, the user-facing dispatch flow counted
  * only ShipmentLabel rows when computing "actively dispatched" — missing
  * admin-created blank reservations (labelCount set, no ShipmentLabel rows
  * yet). Orgs in that window could end up with a blank reservation AND a
- * user-created duplicate on the same purchased label. Cron will age the
- * blanks out at 14 days, but this tool lets an admin clean them up now.
+ * user-created duplicate on the same purchased label. Commit 5b2ff7c
+ * separately deferred order PAID→SHIPPED to the scan step; some orders
+ * shipped before that landed are now stale SHIPPED with no active dispatch.
  *
  * Usage:
- *   npx tsx scripts/audit-dispatch-overbook.ts                  # audit only
- *   npx tsx scripts/audit-dispatch-overbook.ts --org ORG_ID     # single-org detail
- *   npx tsx scripts/audit-dispatch-overbook.ts --cancel SHIP_ID # cancel one PENDING dispatch
+ *   npx tsx scripts/audit-dispatch-overbook.ts                           # audit only
+ *   npx tsx scripts/audit-dispatch-overbook.ts --org ORG_ID              # single-org detail
+ *   npx tsx scripts/audit-dispatch-overbook.ts --cancel SHIP_ID          # cancel one PENDING dispatch (also rolls orphaned SHIPPED orders back)
+ *   npx tsx scripts/audit-dispatch-overbook.ts --fix-stale-shipped       # dry-run: list SHIPPED orders with no active dispatch
+ *   npx tsx scripts/audit-dispatch-overbook.ts --fix-stale-shipped --apply # roll them back to PAID + clear shippedAt
  */
 
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 config({ path: '.env' })
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { neonConfig } from '@neondatabase/serverless'
 
@@ -37,6 +41,9 @@ const TARGET_ORG = ORG_FLAG !== -1 ? process.argv[ORG_FLAG + 1] : null
 
 const CANCEL_FLAG = process.argv.indexOf('--cancel')
 const CANCEL_SHIPMENT_ID = CANCEL_FLAG !== -1 ? process.argv[CANCEL_FLAG + 1] : null
+
+const FIX_STALE = process.argv.includes('--fix-stale-shipped')
+const APPLY = process.argv.includes('--apply')
 
 type ActiveDispatch = {
   id: string
@@ -170,6 +177,63 @@ async function auditAll() {
   )
 }
 
+/**
+ * For each label in labelIds, check every owning order: if the order is SHIPPED
+ * and none of its labels are in an active (PENDING/IN_TRANSIT/DELIVERED) dispatch,
+ * roll it back to PAID and clear shippedAt. The pre-5b2ff7c auto-SHIP path and
+ * the dispatch-cancel path both can leave orders in this ghost state.
+ */
+async function rollbackOrphanedOrders(
+  tx: Prisma.TransactionClient,
+  labelIds: string[],
+): Promise<string[]> {
+  if (labelIds.length === 0) return []
+
+  const orderLabels = await tx.orderLabel.findMany({
+    where: { labelId: { in: labelIds } },
+    select: { orderId: true },
+  })
+  const orderIds = [...new Set(orderLabels.map((ol) => ol.orderId))]
+  if (orderIds.length === 0) return []
+
+  const orders = await tx.order.findMany({
+    where: { id: { in: orderIds }, status: 'SHIPPED' },
+    select: {
+      id: true,
+      orderLabels: {
+        select: {
+          label: {
+            select: {
+              shipmentLabels: {
+                where: {
+                  shipment: {
+                    type: 'LABEL_DISPATCH',
+                    status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
+                  },
+                },
+                select: { shipmentId: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const orphaned = orders.filter((o) =>
+    o.orderLabels.every((ol) => ol.label.shipmentLabels.length === 0),
+  )
+
+  for (const o of orphaned) {
+    await tx.order.update({
+      where: { id: o.id },
+      data: { status: 'PAID', shippedAt: null },
+    })
+  }
+  return orphaned.map((o) => o.id)
+}
+
 async function cancelShipment(shipmentId: string) {
   const s = await prisma.shipment.findUnique({
     where: { id: shipmentId },
@@ -182,7 +246,7 @@ async function cancelShipment(shipmentId: string) {
       labelCount: true,
       destinationAddress: true,
       addressSubmittedAt: true,
-      _count: { select: { shipmentLabels: true } },
+      shipmentLabels: { select: { labelId: true } },
     },
   })
 
@@ -207,25 +271,102 @@ async function cancelShipment(shipmentId: string) {
   console.log(`  name:        ${s.name ?? '(unnamed)'}`)
   console.log(`  orgId:       ${s.orgId}`)
   console.log(`  labelCount:  ${s.labelCount ?? 0}`)
-  console.log(`  labels linked: ${s._count.shipmentLabels}`)
+  console.log(`  labels linked: ${s.shipmentLabels.length}`)
   console.log(`  destination: ${s.destinationAddress ?? '(none)'}`)
   console.log(`  addressSubmittedAt: ${s.addressSubmittedAt?.toISOString() ?? '(none)'}`)
   console.log()
 
-  const updated = await prisma.shipment.updateMany({
-    where: { id: shipmentId, status: 'PENDING' },
-    data: { status: 'CANCELLED' },
+  const labelIds = s.shipmentLabels.map((sl) => sl.labelId)
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.shipment.updateMany({
+      where: { id: shipmentId, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    })
+    if (updated.count === 0) return { cancelled: false, rolledBackOrders: [] as string[] }
+    const rolledBackOrders = await rollbackOrphanedOrders(tx, labelIds)
+    return { cancelled: true, rolledBackOrders }
   })
 
-  if (updated.count === 0) {
+  if (!result.cancelled) {
     console.error('Shipment status changed between audit and cancel — aborted.')
     process.exit(1)
   }
   console.log(`✓ Cancelled shipment ${shipmentId}.`)
+  if (result.rolledBackOrders.length > 0) {
+    console.log(
+      `✓ Rolled back ${result.rolledBackOrders.length} orphaned SHIPPED order(s) to PAID: ` +
+        result.rolledBackOrders.map((id) => id.slice(-8).toUpperCase()).join(', '),
+    )
+  }
+}
+
+async function fixStaleShipped() {
+  const orders = await prisma.order.findMany({
+    where: { status: 'SHIPPED' },
+    select: {
+      id: true,
+      quantity: true,
+      shippedAt: true,
+      createdAt: true,
+      user: { select: { email: true } },
+      orderLabels: {
+        select: {
+          label: {
+            select: {
+              deviceId: true,
+              shipmentLabels: {
+                where: {
+                  shipment: {
+                    type: 'LABEL_DISPATCH',
+                    status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
+                  },
+                },
+                select: { shipmentId: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const stale = orders.filter((o) =>
+    o.orderLabels.every((ol) => ol.label.shipmentLabels.length === 0),
+  )
+
+  console.log(`Total SHIPPED orders: ${orders.length}`)
+  console.log(`Stale (SHIPPED but 0 labels in active dispatch): ${stale.length}\n`)
+
+  for (const o of stale) {
+    const shortId = o.id.slice(-8).toUpperCase()
+    const devices = o.orderLabels.map((ol) => ol.label.deviceId).join(',')
+    console.log(
+      `  ${shortId}  ${o.user.email}  qty=${o.quantity}  [${devices}]  shippedAt=${o.shippedAt?.toISOString().slice(0, 10) ?? '-'}`,
+    )
+  }
+
+  if (stale.length === 0) return
+  if (!APPLY) {
+    console.log('\nDry run. Re-run with --apply to roll these back to PAID + clear shippedAt.')
+    return
+  }
+
+  console.log('\nRolling back...')
+  const ids = stale.map((o) => o.id)
+  const updated = await prisma.order.updateMany({
+    where: { id: { in: ids }, status: 'SHIPPED' },
+    data: { status: 'PAID', shippedAt: null },
+  })
+  console.log(`✓ Rolled back ${updated.count} order(s).`)
 }
 
 async function main() {
-  if (CANCEL_SHIPMENT_ID) {
+  if (FIX_STALE) {
+    await fixStaleShipped()
+  } else if (CANCEL_SHIPMENT_ID) {
     await cancelShipment(CANCEL_SHIPMENT_ID)
   } else if (TARGET_ORG) {
     const r = await auditOrg(TARGET_ORG)
