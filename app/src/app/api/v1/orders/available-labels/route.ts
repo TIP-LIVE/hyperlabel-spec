@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
+import { getDispatchQuota } from '@/lib/dispatch-quota'
 
 /**
  * GET /api/v1/orders/available-labels
@@ -74,31 +75,12 @@ export async function GET() {
     // Org-level cap: only allow dispatching as many labels as were purchased
     // (paid orders with totalAmount > 0). Admin-assigned $0 orders don't
     // increase dispatch capacity — they just fulfil existing paid slots.
-    const [purchasedResult, activelyDispatched] = await Promise.all([
-      db.order.aggregate({
-        where: {
-          ...orgScopedWhere(context, {}),
-          status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-          totalAmount: { gt: 0 },
-        },
-        _sum: { quantity: true },
-      }),
-      db.shipmentLabel.count({
-        where: {
-          shipment: {
-            ...orgScopedWhere(context, {}),
-            type: 'LABEL_DISPATCH',
-            status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
-          },
-        },
-      }),
-    ])
-
-    const totalBought = purchasedResult._sum.quantity ?? 0
-    const remainingQuota = Math.max(0, totalBought - activelyDispatched)
+    // Includes admin-created blank reservations (labelCount without scan) so
+    // the picker doesn't offer labels that are already committed.
+    const quota = await getDispatchQuota(db, { orgId: context.orgId })
 
     // Trim available labels to remaining quota
-    let budget = remainingQuota
+    let budget = quota.remaining
     for (const group of grouped) {
       if (budget >= group.labels.length) {
         budget -= group.labels.length
@@ -109,7 +91,7 @@ export async function GET() {
     }
     const capped = grouped.filter((g) => g.labels.length > 0)
 
-    return NextResponse.json({ orders: capped, quota: { totalBought, activelyDispatched, remaining: remainingQuota } })
+    return NextResponse.json({ orders: capped, quota })
   } catch (error) {
     return handleApiError(error, 'fetching available labels')
   }

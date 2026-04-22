@@ -5,6 +5,7 @@ import { requireOrgAuth, orgScopedWhere } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { createDispatchShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
+import { getDispatchQuota } from '@/lib/dispatch-quota'
 
 class DispatchError extends Error {
   constructor(public status: number, public body: Record<string, unknown>) {
@@ -185,26 +186,15 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // Org quota
-      const [purchasedResult, activelyDispatched] = await Promise.all([
-        tx.order.aggregate({
-          where: { orgId: context.orgId, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }, totalAmount: { gt: 0 } },
-          _sum: { quantity: true },
-        }),
-        tx.shipmentLabel.count({
-          where: {
-            shipment: { orgId: context.orgId, type: 'LABEL_DISPATCH', status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] } },
-          },
-        }),
-      ])
+      // Org quota — counts both attached labels AND admin-created blank
+      // reservations (labelCount set, no shipmentLabels yet), so a user can't
+      // grab a label an admin has already reserved against this order.
+      const quota = await getDispatchQuota(tx, { orgId: context.orgId })
 
-      const totalBought = purchasedResult._sum.quantity ?? 0
-      const remainingQuota = totalBought - activelyDispatched
-
-      if (labelIds.length > remainingQuota) {
+      if (labelIds.length > quota.remaining) {
         throw new DispatchError(400, {
-          error: `Cannot dispatch ${labelIds.length} label${labelIds.length === 1 ? '' : 's'} — only ${remainingQuota} of ${totalBought} purchased label${totalBought === 1 ? '' : 's'} remaining`,
-          quota: { totalBought, activelyDispatched, remaining: remainingQuota },
+          error: `Cannot dispatch ${labelIds.length} label${labelIds.length === 1 ? '' : 's'} — only ${quota.remaining} of ${quota.totalBought} purchased label${quota.totalBought === 1 ? '' : 's'} remaining`,
+          quota,
         })
       }
 

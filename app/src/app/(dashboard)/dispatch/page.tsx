@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Package, Plus, Send, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
+import { countActivelyDispatched } from '@/lib/dispatch-quota'
 import { getCurrentUser, isAdmin as checkIsAdmin } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { DispatchList } from '@/components/dispatch/dispatch-list'
@@ -47,8 +48,10 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
     //   2. Cap by the org's purchase quota (paid orders with totalAmount > 0) minus
     //      labels already actively dispatched. Admin-attached $0 orders don't
     //      increase dispatch capacity, they just fulfil existing paid slots.
+    // "Actively dispatched" must include admin-created blank dispatches
+    // (labelCount set, no shipmentLabels yet) — those reservations block the
+    // label even though no join row exists. See countActivelyDispatched.
     const orderScope = orgId ? { orgId } : { userId: user.id }
-    const shipmentScope = orgId ? { orgId } : { userId: user.id }
     const [shipments, availableLabels, purchasedResult, activelyDispatched] =
       await Promise.all([
         db.shipment.count({ where }),
@@ -80,15 +83,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
           },
           _sum: { quantity: true },
         }),
-        db.shipmentLabel.count({
-          where: {
-            shipment: {
-              ...shipmentScope,
-              type: 'LABEL_DISPATCH',
-              status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
-            },
-          },
-        }),
+        countActivelyDispatched(db, orgId ? { orgId } : { userId: user.id }),
       ])
     shipmentCount = shipments
     const totalBought = purchasedResult._sum.quantity ?? 0

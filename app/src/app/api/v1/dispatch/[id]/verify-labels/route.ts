@@ -8,6 +8,7 @@ import {
   sendDispatchInTransitNotification,
   sendOrderShippedNotification,
 } from '@/lib/notifications'
+import { getDispatchQuota } from '@/lib/dispatch-quota'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -158,34 +159,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       iccidSet.add(iccid)
     }
 
-    // Org-level cap: don't ship more labels than were purchased
-    const [purchasedResult, activelyDispatched] = await Promise.all([
-      db.order.aggregate({
-        where: { orgId: shipment.orgId, status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }, totalAmount: { gt: 0 } },
-        _sum: { quantity: true },
-      }),
-      // Count labels already in non-cancelled dispatches for this org,
-      // excluding the current dispatch (its labels will be replaced)
-      db.shipmentLabel.count({
-        where: {
-          shipment: {
-            orgId: shipment.orgId,
-            type: 'LABEL_DISPATCH',
-            status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
-            id: { not: id },
-          },
-        },
-      }),
-    ])
+    // Org-level cap: don't ship more labels than were purchased. The current
+    // dispatch is excluded — its reservation is about to be replaced by the
+    // scanned set, so counting it would double-book against itself.
+    if (!shipment.orgId) {
+      return NextResponse.json({ error: 'Dispatch missing org' }, { status: 400 })
+    }
+    const quota = await getDispatchQuota(db, { orgId: shipment.orgId }, id)
 
-    const totalBought = purchasedResult._sum.quantity ?? 0
-    const remainingQuota = totalBought - activelyDispatched
-
-    if (scannedLabels.length > remainingQuota) {
+    if (scannedLabels.length > quota.remaining) {
       return NextResponse.json(
         {
-          error: `Cannot ship ${scannedLabels.length} label${scannedLabels.length === 1 ? '' : 's'} — only ${remainingQuota} of ${totalBought} purchased label${totalBought === 1 ? '' : 's'} remaining`,
-          quota: { totalBought, activelyDispatched, remaining: remainingQuota },
+          error: `Cannot ship ${scannedLabels.length} label${scannedLabels.length === 1 ? '' : 's'} — only ${quota.remaining} of ${quota.totalBought} purchased label${quota.totalBought === 1 ? '' : 's'} remaining`,
+          quota,
         },
         { status: 400 }
       )
