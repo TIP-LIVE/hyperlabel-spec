@@ -296,6 +296,11 @@ export async function POST(req: NextRequest) {
 
         const result = await processLocationReport({
           iccid: data.iccid,
+          // IMEI is passed so auto-registration can build the 9-digit
+          // displayId (counter + last-4 of IMEI). Label resolution stays
+          // ICCID-first — the existing iccid-override below handles the
+          // rare SIM-moved-to-different-device case.
+          imei: data.imei || undefined,
           cellLatitude: lat,
           cellLongitude: lng,
           accuracy,
