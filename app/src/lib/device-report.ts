@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { validateLocation } from '@/lib/validations/device'
 import { reverseGeocode } from '@/lib/geocoding'
@@ -177,16 +178,23 @@ export async function processLocationReport(
     }
   }
 
-  // Auto-register: if no label found but IMEI/ICCID provided, create one
+  // Auto-register: if no label found but IMEI/ICCID provided, create one.
+  // Prefer the 9-digit displayId (counter + last-4 of IMEI) as deviceId —
+  // matches what factory provisionLabel produces, so the sticker, our
+  // deviceId, and Onomondo's SIM label all agree. Fall back to TIP-XXX only
+  // when IMEI is missing (e.g. network-registration events without a device
+  // attached) — backfilling deviceId once IMEI arrives is risky since
+  // dispatches, shipments and events all reference it.
   if (!label && (input.imei || input.iccid)) {
-    const nextDeviceId = await generateNextDeviceId()
     const newLabel = await db.$transaction(async (tx) => {
       const counter = await allocateNextCounter(tx)
+      const displayId = formatDisplayId(counter, input.imei ?? null)
+      const deviceId = displayId ?? (await generateNextDeviceId(tx))
       return tx.label.create({
         data: {
-          deviceId: nextDeviceId,
+          deviceId,
           counter,
-          displayId: formatDisplayId(counter, input.imei ?? null),
+          displayId,
           imei: input.imei || null,
           iccid: input.iccid || null,
           status: 'ACTIVE',
@@ -198,14 +206,14 @@ export async function processLocationReport(
     label = newLabel
     if (process.env.NODE_ENV !== 'test') {
       console.info('[Device report] auto-registered new label', {
-        deviceId: nextDeviceId,
+        deviceId: newLabel.deviceId,
         imei: input.imei ?? null,
         iccid: input.iccid ?? null,
       })
 
       // Sync deviceId as SIM label in Onomondo dashboard (fire-and-forget)
       if (input.iccid) {
-        syncSimLabelToOnomondo(input.iccid, nextDeviceId).catch((err) =>
+        syncSimLabelToOnomondo(input.iccid, newLabel.deviceId).catch((err) =>
           console.warn('[Onomondo] label sync failed:', err)
         )
       }
@@ -869,9 +877,13 @@ function toRad(deg: number): number {
 
 /**
  * Generate the next sequential TIP device ID (TIP-001, TIP-002, ...).
+ * Fallback identifier used only when IMEI is missing at auto-register time —
+ * the preferred format is the 9-digit displayId from formatDisplayId().
  */
-async function generateNextDeviceId(): Promise<string> {
-  const latest = await db.label.findFirst({
+async function generateNextDeviceId(
+  client: Prisma.TransactionClient | typeof db = db,
+): Promise<string> {
+  const latest = await client.label.findFirst({
     where: { deviceId: { startsWith: 'TIP-' } },
     orderBy: { deviceId: 'desc' },
     select: { deviceId: true },
