@@ -177,7 +177,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                       <th className="pb-3 font-medium">Customer</th>
                       <th className="pb-3 font-medium">Qty</th>
                       <th className="pb-3 font-medium">Labels</th>
-                      <th className="pb-3 font-medium">Dispatched</th>
+                      <th className="pb-3 font-medium">In dispatch</th>
                       <th className="pb-3 font-medium">Status</th>
                       <th className="pb-3 font-medium">Date</th>
                       <th className="pb-3 font-medium">Actions</th>

@@ -330,7 +330,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
                     </Badge>
                     {label.dispatchStatus && (
                       <Badge variant="outline" className="text-xs">
-                        {label.dispatchStatus === 'PENDING' ? 'Dispatched' :
+                        {label.dispatchStatus === 'PENDING' ? 'In dispatch' :
                          label.dispatchStatus === 'IN_TRANSIT' ? 'In Transit' :
                          label.dispatchStatus === 'DELIVERED' ? 'Delivered' :
                          label.dispatchStatus}
