@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { OrganizationSwitcher } from '@clerk/nextjs'
-import { BookUser, Settings, LayoutDashboard, Menu, Truck, Send } from 'lucide-react'
+import { BookUser, Settings, LayoutDashboard, Menu, Truck, Send, ShieldCheck } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { isClerkConfigured } from '@/lib/clerk-config'
 import { cn } from '@/lib/utils'
@@ -25,7 +25,7 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-export function MobileSidebar() {
+export function MobileSidebar({ isPlatformAdmin = false }: { isPlatformAdmin?: boolean }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -88,6 +88,21 @@ export function MobileSidebar() {
               </Link>
             )
           })}
+          {isPlatformAdmin && (
+            <Link
+              href="/admin/labels"
+              onClick={() => setOpen(false)}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors min-h-[44px] active:bg-accent/80 active:scale-[0.98]',
+                pathname.startsWith('/admin')
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              <ShieldCheck className="h-5 w-5" />
+              Admin
+            </Link>
+          )}
           </div>
         </nav>
         <div className="shrink-0 border-t border-border p-4">

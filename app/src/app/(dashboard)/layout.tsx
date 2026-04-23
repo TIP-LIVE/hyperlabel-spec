@@ -81,7 +81,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Top bar */}
         <header className="lg:sticky lg:top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
           {/* Mobile menu button */}
-          <MobileSidebar />
+          <MobileSidebar isPlatformAdmin={isPlatformAdmin} />
 
           {/* Mobile logo */}
           <Link href="/dashboard" className="lg:hidden">
