@@ -2,73 +2,35 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
-import { logger } from '@/lib/logger'
+import { reconcileOrderShipmentStatus } from '@/lib/order-status'
 
 /**
  * POST /api/v1/admin/orders/backfill-status
  *
- * One-time fix: find PAID orders whose labels are already in active dispatches
- * and transition them to SHIPPED. Covers orders where dispatches were created
- * through the user-facing endpoint (no orderId link) bypassing the auto-transition.
+ * Sweep PAID/SHIPPED orders and re-apply the "order SHIPPED ⟺ every label is
+ * in an IN_TRANSIT/DELIVERED dispatch" rule. Fixes orders left in the wrong
+ * state by older code paths that promoted on any-label-dispatched or at
+ * dispatch creation.
  */
 export async function POST() {
   try {
     await requireAdmin()
 
-    // Find all PAID orders
-    const paidOrders = await db.order.findMany({
-      where: { status: 'PAID' },
-      select: {
-        id: true,
-        quantity: true,
-        orderLabels: {
-          select: {
-            label: {
-              select: {
-                id: true,
-                shipmentLabels: {
-                  where: {
-                    shipment: {
-                      type: 'LABEL_DISPATCH',
-                      status: { in: ['PENDING', 'IN_TRANSIT', 'DELIVERED'] },
-                    },
-                  },
-                  select: { shipmentId: true },
-                },
-              },
-            },
-          },
-        },
-      },
+    const orders = await db.order.findMany({
+      where: { status: { in: ['PAID', 'SHIPPED'] } },
+      select: { id: true },
     })
 
-    const updated: string[] = []
-
-    for (const order of paidOrders) {
-      // Count labels that are in an active dispatch
-      const dispatchedCount = order.orderLabels.filter(
-        (ol) => ol.label.shipmentLabels.length > 0
-      ).length
-
-      // If any labels are dispatched, this order should be SHIPPED
-      if (dispatchedCount > 0) {
-        await db.order.update({
-          where: { id: order.id },
-          data: { status: 'SHIPPED', shippedAt: new Date() },
-        })
-        updated.push(order.id.slice(-8).toUpperCase())
-        logger.info('Backfill: order PAID→SHIPPED', {
-          orderId: order.id,
-          dispatchedLabels: dispatchedCount,
-          totalLabels: order.orderLabels.length,
-        })
-      }
-    }
+    const changes = await reconcileOrderShipmentStatus(orders.map((o) => o.id))
 
     return NextResponse.json({
-      checked: paidOrders.length,
-      updated: updated.length,
-      orders: updated,
+      checked: orders.length,
+      updated: changes.length,
+      changes: changes.map((c) => ({
+        order: c.orderId.slice(-8).toUpperCase(),
+        from: c.from,
+        to: c.to,
+      })),
     })
   } catch (error) {
     return handleApiError(error, 'backfilling order statuses')

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireOrgAuth } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
-import { logger } from '@/lib/logger'
 import {
   sendConsigneeInTransitNotification,
   sendDispatchInTransitNotification,
   sendOrderShippedNotification,
 } from '@/lib/notifications'
 import { getDispatchQuota } from '@/lib/dispatch-quota'
+import { reconcileOrderShipmentStatus } from '@/lib/order-status'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -214,37 +214,25 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       })
     })
 
-    // Cascade PAID → SHIPPED on the orders owning these labels — labels are now
-    // physically moving. Blocking so the admin list reflects the new status on
-    // the next refresh.
+    // Reconcile parent orders: PAID→SHIPPED only when *every* label in the
+    // order is in an IN_TRANSIT/DELIVERED dispatch. Partial dispatches leave
+    // the order PAID.
     const linkedLabelIds = scannedLabels.map((sl) => sl.labelId)
     const orderLabels = await db.orderLabel.findMany({
       where: { labelId: { in: linkedLabelIds } },
       select: { orderId: true },
     })
-    const orderIds = [...new Set(orderLabels.map((ol) => ol.orderId))]
-    const shippedOrders: { id: string; userId: string; quantity: number }[] = []
-    for (const oid of orderIds) {
-      const updated = await db.order.updateMany({
-        where: { id: oid, status: 'PAID' },
-        data: { status: 'SHIPPED', shippedAt: new Date() },
-      })
-      if (updated.count > 0) {
-        logger.info('Order auto-transitioned PAID→SHIPPED via verify-labels', { orderId: oid })
-        const o = await db.order.findUnique({
-          where: { id: oid },
-          select: { id: true, userId: true, quantity: true },
-        })
-        if (o) shippedOrders.push(o)
-      }
-    }
+    const affectedOrderIds = orderLabels.map((ol) => ol.orderId)
+    const changes = await reconcileOrderShipmentStatus(affectedOrderIds)
 
-    for (const o of shippedOrders) {
-      sendOrderShippedNotification({
-        userId: o.userId,
-        orderNumber: o.id.slice(-8).toUpperCase(),
-        quantity: o.quantity,
-      }).catch((err) => console.error('Failed to send order shipped notification:', err))
+    for (const change of changes) {
+      if (change.from === 'PAID' && change.to === 'SHIPPED') {
+        sendOrderShippedNotification({
+          userId: change.userId,
+          orderNumber: change.orderId.slice(-8).toUpperCase(),
+          quantity: change.quantity,
+        }).catch((err) => console.error('Failed to send order shipped notification:', err))
+      }
     }
 
     // Fire notifications (same as current PATCH handler for IN_TRANSIT)

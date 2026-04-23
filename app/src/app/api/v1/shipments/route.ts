@@ -298,7 +298,6 @@ async function createLabelDispatch(
   // Verify all labels exist and are available
   const labels = await db.label.findMany({
     where: { id: { in: labelIds } },
-    include: { orderLabels: { include: { order: true } } },
   })
 
   if (labels.length !== labelIds.length) {
@@ -335,15 +334,9 @@ async function createLabelDispatch(
     )
   }
 
-  // Collect PAID orders linked to these labels so we can transition PAID→SHIPPED
-  const paidOrderIds = [
-    ...new Set(
-      labels
-        .flatMap((l) => l.orderLabels)
-        .filter((ol) => ol.order.status === 'PAID')
-        .map((ol) => ol.order.id)
-    ),
-  ]
+  // Order status is NOT touched here. A PENDING dispatch hasn't physically
+  // moved anything — PAID→SHIPPED is driven by verify-labels once labels are
+  // actually leaving (and only when every label in the order is in flight).
 
   // Create shipment + join table entries in a transaction
   const shipment = await db.$transaction(async (tx) => {
@@ -371,14 +364,6 @@ async function createLabelDispatch(
         labelId,
       })),
     })
-
-    // Transition parent orders PAID→SHIPPED
-    if (paidOrderIds.length > 0) {
-      await tx.order.updateMany({
-        where: { id: { in: paidOrderIds }, status: 'PAID' },
-        data: { status: 'SHIPPED', shippedAt: new Date() },
-      })
-    }
 
     // Return with labels included
     return tx.shipment.findUniqueOrThrow({

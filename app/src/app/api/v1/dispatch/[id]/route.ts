@@ -10,47 +10,29 @@ import {
   sendDispatchInTransitNotification,
   sendDispatchDeliveredNotification,
   sendDispatchCancelledNotification,
+  sendOrderShippedNotification,
 } from '@/lib/notifications'
+import {
+  collectOrderIdsForDispatch,
+  reconcileOrderShipmentStatus,
+} from '@/lib/order-status'
 
 /**
- * When a dispatch is cancelled, check if the parent order should revert
- * from SHIPPED → PAID (no remaining active dispatches).
- * Resolves the order via orderId (new flow) or ShipmentLabel→OrderLabel (legacy).
+ * Keep every order touched by this dispatch in sync with its labels' current
+ * dispatch state (both the direct orderId link and the legacy ShipmentLabel
+ * chain). Fires shipped-notifications for PAID→SHIPPED transitions.
  */
-async function revertOrderIfNoDispatches(shipment: { id: string; orderId: string | null }) {
-  // Find the related order(s) — either directly via orderId or via label chain
-  const orderIds = new Set<string>()
-  if (shipment.orderId) orderIds.add(shipment.orderId)
-
-  // Legacy: find orders via ShipmentLabel → Label → OrderLabel
-  const shipmentLabels = await db.shipmentLabel.findMany({
-    where: { shipmentId: shipment.id },
-    select: { label: { select: { orderLabels: { select: { orderId: true } } } } },
-  })
-  for (const sl of shipmentLabels) {
-    for (const ol of sl.label.orderLabels) {
-      orderIds.add(ol.orderId)
-    }
-  }
-
-  if (orderIds.size === 0) return
-
-  for (const orderId of orderIds) {
-    // Check both direct (orderId) and legacy (ShipmentLabel) dispatches
-    const directCount = await db.shipment.count({
-      where: { orderId, type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } },
-    })
-    const legacyCount = await db.shipmentLabel.count({
-      where: {
-        label: { orderLabels: { some: { orderId } } },
-        shipment: { type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } },
-      },
-    })
-    if (directCount === 0 && legacyCount === 0) {
-      await db.order.updateMany({
-        where: { id: orderId, status: 'SHIPPED' },
-        data: { status: 'PAID', shippedAt: null },
-      })
+async function reconcileOrdersForDispatch(shipment: { id: string; orderId: string | null }) {
+  const orderIds = await collectOrderIdsForDispatch(shipment)
+  if (orderIds.length === 0) return
+  const changes = await reconcileOrderShipmentStatus(orderIds)
+  for (const change of changes) {
+    if (change.from === 'PAID' && change.to === 'SHIPPED') {
+      sendOrderShippedNotification({
+        userId: change.userId,
+        orderNumber: change.orderId.slice(-8).toUpperCase(),
+        quantity: change.quantity,
+      }).catch((err) => console.error('Failed to send order shipped notification:', err))
     }
   }
 }
@@ -200,6 +182,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Reconcile parent order status whenever a dispatch's status changes —
+    // any IN_TRANSIT/DELIVERED/CANCELLED/PENDING transition can flip whether
+    // the order's labels are fully in flight.
+    if (validated.data.status) {
+      await reconcileOrdersForDispatch(existing)
+    }
+
     // Send notifications on status changes (fire-and-forget)
     if (validated.data.status === 'IN_TRANSIT') {
       // Owner/buyer notification — "Your TIP labels are on their way"
@@ -241,10 +230,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     if (validated.data.status === 'CANCELLED') {
-      // Revert parent order SHIPPED→PAID if no active dispatches remain
-      revertOrderIfNoDispatches(existing).catch((err) =>
-        console.error('Failed to revert order status on dispatch cancel:', err)
-      )
       // Owner/buyer notification — "Your dispatch has been cancelled"
       sendDispatchCancelledNotification({ shipmentId: existing.id }).catch((err) =>
         console.error('Failed to send dispatch cancelled notification:', err)
@@ -302,10 +287,9 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       data: { status: 'CANCELLED' },
     })
 
-    // Revert parent order SHIPPED→PAID if no active dispatches remain
-    revertOrderIfNoDispatches(existing).catch((err) =>
-      console.error('Failed to revert order status on dispatch cancel:', err)
-    )
+    // Reconcile parent order status — if cancelling this dispatch means not
+    // every label is in flight anymore, revert SHIPPED→PAID.
+    await reconcileOrdersForDispatch(existing)
 
     // Owner/buyer notification — "Your dispatch has been cancelled"
     sendDispatchCancelledNotification({ shipmentId: existing.id }).catch((err) =>
