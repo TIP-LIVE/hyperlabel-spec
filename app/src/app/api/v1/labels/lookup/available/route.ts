@@ -35,9 +35,22 @@ export async function GET(req: NextRequest) {
 
       excludeShipmentId = shipment.id
 
+      // Prefer the dispatch's source order — tight scope to what the buyer
+      // paid for. Fall back to the org when the order has no OrderLabels
+      // attached (legacy source=null rows, or INVOICE/Stripe allocations
+      // that ran short of inventory) so admin doesn't face an empty list
+      // for orders that still owe labels.
       if (shipment.orderId) {
-        scopeFilter = { orderLabels: { some: { orderId: shipment.orderId } } }
-      } else if (shipment.orgId) {
+        const hasOrderLabels = await db.orderLabel.findFirst({
+          where: { orderId: shipment.orderId },
+          select: { orderId: true },
+        })
+        if (hasOrderLabels) {
+          scopeFilter = { orderLabels: { some: { orderId: shipment.orderId } } }
+        }
+      }
+
+      if (!scopeFilter && shipment.orgId) {
         scopeFilter = { orderLabels: { some: { order: { orgId: shipment.orgId } } } }
       }
     }
