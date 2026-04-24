@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { timeAgo } from '@/lib/utils/time-ago'
 import { MapPin, Send } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
+import { NewDispatchDialog } from '@/components/admin/new-dispatch-dialog'
 import { shipmentStatusStyles } from '@/lib/status-config'
 import { getOrgNamesMap } from '@/lib/admin/org-names'
 import type { Metadata } from 'next'
@@ -84,9 +85,12 @@ export default async function AdminDispatchPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Label Dispatch</h1>
-        <p className="text-muted-foreground">View label dispatch shipments across all users</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Label Dispatch</h1>
+          <p className="text-muted-foreground">View label dispatch shipments across all users</p>
+        </div>
+        <NewDispatchDialog />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
