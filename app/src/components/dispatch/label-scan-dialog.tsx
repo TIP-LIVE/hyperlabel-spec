@@ -150,7 +150,12 @@ export function LabelScanDialog({
       }
 
       try {
-        const res = await fetch(`/api/v1/labels/lookup?q=${encodeURIComponent(deviceIdOrDisplayId)}`)
+        // Pass shipmentId so labels already pre-linked to *this* dispatch
+        // aren't rejected — verify-labels replaces the linked set atomically
+        // on confirm, so re-scanning them is legal.
+        const res = await fetch(
+          `/api/v1/labels/lookup?q=${encodeURIComponent(deviceIdOrDisplayId)}&shipmentId=${encodeURIComponent(shipmentId)}`
+        )
         const data = await res.json()
 
         if (!res.ok) {
@@ -178,7 +183,7 @@ export function LabelScanDialog({
         setLookingUp(false)
       }
     },
-    [scannedLabels, stopCamera]
+    [scannedLabels, stopCamera, shipmentId]
   )
 
   // Handle a scanned QR value

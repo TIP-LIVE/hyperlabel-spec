@@ -4,15 +4,20 @@ import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 
 /**
- * GET /api/v1/labels/lookup?q=002011395
+ * GET /api/v1/labels/lookup?q=002011395&shipmentId=...
  * Look up a label by displayId or deviceId. Admin-only.
  * Used during dispatch scanning to verify a label is eligible for linking.
+ *
+ * Pass shipmentId when scanning for a specific dispatch — labels already
+ * linked to *that* dispatch are treated as eligible (verify-labels replaces
+ * the linked set atomically, so re-scanning is legal).
  */
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin()
 
     const q = req.nextUrl.searchParams.get('q')?.trim()
+    const excludeShipmentId = req.nextUrl.searchParams.get('shipmentId')?.trim() || undefined
     if (!q) {
       return NextResponse.json({ error: 'Query parameter "q" is required' }, { status: 400 })
     }
@@ -34,7 +39,10 @@ export async function GET(req: NextRequest) {
         status: true,
         shipmentLabels: {
           where: {
-            shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
+            shipment: {
+              status: { in: ['PENDING', 'IN_TRANSIT'] },
+              ...(excludeShipmentId ? { NOT: { id: excludeShipmentId } } : {}),
+            },
           },
           select: {
             shipment: { select: { id: true, name: true, status: true } },
