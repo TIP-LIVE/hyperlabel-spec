@@ -59,9 +59,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         name: true,
         shareCode: true,
         orgId: true,
+        labelCount: true,
         consigneeEmail: true,
         originAddress: true,
         destinationAddress: true,
+        _count: { select: { shipmentLabels: true } },
       },
     })
 
@@ -157,6 +159,24 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         )
       }
       iccidSet.add(iccid)
+    }
+
+    // Per-dispatch cap: the admin scan replaces the original set, so it must
+    // not exceed the dispatch's original intent — either the admin's blank
+    // reservation (labelCount) or the user's pre-linked labels (shipmentLabels
+    // count). Without this, admin can inflate a user's 4-label dispatch to 5+.
+    // Scanning fewer is allowed (damaged/missing labels). Note: org quota
+    // (below) would not catch this on its own because the current dispatch is
+    // excluded from that count.
+    const expectedCount = Math.max(shipment.labelCount ?? 0, shipment._count.shipmentLabels)
+    if (expectedCount > 0 && scannedLabels.length > expectedCount) {
+      return NextResponse.json(
+        {
+          error: `Cannot ship ${scannedLabels.length} label${scannedLabels.length === 1 ? '' : 's'} — this dispatch was created for ${expectedCount} label${expectedCount === 1 ? '' : 's'}`,
+          expectedCount,
+        },
+        { status: 400 }
+      )
     }
 
     // Org-level cap: don't ship more labels than were purchased. The current
