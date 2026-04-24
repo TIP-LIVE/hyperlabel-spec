@@ -5,6 +5,8 @@ import { db } from '@/lib/db'
 import { formatDateTime } from '@/lib/utils/format-date'
 import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
 import { CreateInvoiceButton } from '@/components/admin/create-invoice-button'
+import { MarkPaidButton } from '@/components/admin/mark-paid-button'
+import { CancelOrderButton } from '@/components/admin/cancel-order-button'
 import { Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { orderStatusStyles } from '@/lib/status-config'
@@ -243,13 +245,31 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             {formatDateTime(order.createdAt)}
                           </td>
                           <td className="py-3">
-                            {(order.status === 'PAID' || order.status === 'SHIPPED') && order.undispatchedCount > 0 && (
-                              <CreateDispatchButton
-                                orderId={order.id}
-                                orderShortId={orderShortId}
-                                availableLabelCount={order.undispatchedCount}
-                              />
-                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                              {order.status === 'PENDING' && (
+                                <MarkPaidButton
+                                  orderId={order.id}
+                                  orderShortId={orderShortId}
+                                  quantity={order.quantity}
+                                />
+                              )}
+                              {(order.status === 'PAID' || order.status === 'SHIPPED') && order.undispatchedCount > 0 && (
+                                <CreateDispatchButton
+                                  orderId={order.id}
+                                  orderShortId={orderShortId}
+                                  availableLabelCount={order.undispatchedCount}
+                                />
+                              )}
+                              {order.source === 'INVOICE' &&
+                                order.status !== 'CANCELLED' &&
+                                order.status !== 'DELIVERED' && (
+                                  <CancelOrderButton
+                                    orderId={order.id}
+                                    orderShortId={orderShortId}
+                                    assignedLabelCount={order.orderLabels.length}
+                                  />
+                                )}
+                            </div>
                           </td>
                         </tr>
                       )
