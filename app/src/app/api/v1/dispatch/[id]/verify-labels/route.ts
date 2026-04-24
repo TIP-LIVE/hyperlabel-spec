@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { requireOrgAuth } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import {
-  sendConsigneeInTransitNotification,
+  sendDispatchConsigneeInTransitNotification,
   sendDispatchInTransitNotification,
   sendOrderShippedNotification,
 } from '@/lib/notifications'
@@ -261,14 +261,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     )
 
     if (shipment.consigneeEmail) {
-      sendConsigneeInTransitNotification({
+      sendDispatchConsigneeInTransitNotification({
         consigneeEmail: shipment.consigneeEmail,
         shipmentName: shipment.name || 'Shipment',
         shareCode: shipment.shareCode,
-        originAddress: shipment.originAddress,
         destinationAddress: shipment.destinationAddress,
       }).catch((err) =>
-        console.error('Failed to send consignee in-transit notification:', err)
+        console.error('Failed to send dispatch consignee in-transit notification:', err)
       )
     }
 

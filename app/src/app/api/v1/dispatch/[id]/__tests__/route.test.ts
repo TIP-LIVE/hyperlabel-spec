@@ -14,8 +14,8 @@ vi.mock('@/lib/db', () => {
 })
 
 vi.mock('@/lib/notifications', () => ({
-  sendConsigneeInTransitNotification: vi.fn().mockResolvedValue(undefined),
-  sendConsigneeDeliveredNotification: vi.fn().mockResolvedValue(undefined),
+  sendDispatchConsigneeInTransitNotification: vi.fn().mockResolvedValue(undefined),
+  sendDispatchConsigneeDeliveredNotification: vi.fn().mockResolvedValue(undefined),
   sendDispatchInTransitNotification: vi.fn().mockResolvedValue(undefined),
   sendDispatchDeliveredNotification: vi.fn().mockResolvedValue(undefined),
   sendDispatchCancelledNotification: vi.fn().mockResolvedValue(undefined),
@@ -27,16 +27,16 @@ import {
   sendDispatchInTransitNotification,
   sendDispatchDeliveredNotification,
   sendDispatchCancelledNotification,
-  sendConsigneeInTransitNotification,
-  sendConsigneeDeliveredNotification,
+  sendDispatchConsigneeInTransitNotification,
+  sendDispatchConsigneeDeliveredNotification,
 } from '@/lib/notifications'
 
 const mockDb = vi.mocked(db)
 const mockInTransit = vi.mocked(sendDispatchInTransitNotification)
 const mockDelivered = vi.mocked(sendDispatchDeliveredNotification)
 const mockCancelled = vi.mocked(sendDispatchCancelledNotification)
-const mockConsigneeInTransit = vi.mocked(sendConsigneeInTransitNotification)
-const mockConsigneeDelivered = vi.mocked(sendConsigneeDeliveredNotification)
+const mockConsigneeInTransit = vi.mocked(sendDispatchConsigneeInTransitNotification)
+const mockConsigneeDelivered = vi.mocked(sendDispatchConsigneeDeliveredNotification)
 
 const adminDbUser = {
   id: 'db-admin-001',

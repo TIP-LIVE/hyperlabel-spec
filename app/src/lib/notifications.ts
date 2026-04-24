@@ -22,6 +22,8 @@ import DispatchDetailsRequestedEmail from '@/emails/dispatch-details-requested'
 import DispatchDetailsSubmittedEmail from '@/emails/dispatch-details-submitted'
 import DispatchInTransitEmail from '@/emails/dispatch-in-transit'
 import DispatchDeliveredEmail from '@/emails/dispatch-delivered'
+import DispatchConsigneeInTransitEmail from '@/emails/dispatch-consignee-in-transit'
+import DispatchConsigneeDeliveredEmail from '@/emails/dispatch-consignee-delivered'
 import DispatchCancelledEmail from '@/emails/dispatch-cancelled'
 import DispatchAddressConfirmedEmail from '@/emails/dispatch-address-confirmed'
 import OrderDeliveredEmail from '@/emails/order-delivered'
@@ -698,6 +700,83 @@ export async function sendConsigneeDeliveredNotification(params: {
   await sendEmail({
     to: params.consigneeEmail,
     subject: `✅ Delivered: "${params.shipmentName}"`,
+    html,
+  })
+}
+
+/**
+ * Send in-transit email to the receiver of a LABEL_DISPATCH.
+ * Labels-flavored copy — no "cargo" language, no Confirm Delivery CTA
+ * (the tracking page hides that button for dispatches).
+ */
+export async function sendDispatchConsigneeInTransitNotification(params: {
+  consigneeEmail: string
+  shipmentName: string
+  shareCode: string
+  destinationAddress?: string | null
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const shipment = await db.shipment.findUnique({
+    where: { shareCode: params.shareCode },
+    select: { consigneeUnsubscribed: true },
+  })
+  if (shipment?.consigneeUnsubscribed) return
+
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
+  const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
+
+  const html = await render(
+    DispatchConsigneeInTransitEmail({
+      shipmentName: params.shipmentName,
+      destinationAddress: params.destinationAddress,
+      trackingUrl,
+      unsubscribeUrl,
+    })
+  )
+
+  await sendEmail({
+    to: params.consigneeEmail,
+    subject: `📦 A package of TIP labels is on its way to you`,
+    html,
+  })
+}
+
+/**
+ * Send delivered email to the receiver of a LABEL_DISPATCH.
+ * Simple confirmation — buyer gets the rich "time to activate" email separately.
+ */
+export async function sendDispatchConsigneeDeliveredNotification(params: {
+  consigneeEmail: string
+  shipmentName: string
+  shareCode: string
+  destinationAddress?: string | null
+  deliveredAt: string
+}): Promise<void> {
+  if (!isEmailConfigured()) return
+
+  const shipment = await db.shipment.findUnique({
+    where: { shareCode: params.shareCode },
+    select: { consigneeUnsubscribed: true },
+  })
+  if (shipment?.consigneeUnsubscribed) return
+
+  const trackingUrl = await resolveTrackingUrl(params.shareCode)
+  const unsubscribeUrl = `${APP_URL}/track/${params.shareCode}/unsubscribe?email=${encodeURIComponent(params.consigneeEmail)}`
+
+  const html = await render(
+    DispatchConsigneeDeliveredEmail({
+      shipmentName: params.shipmentName,
+      destinationAddress: params.destinationAddress,
+      deliveredAt: params.deliveredAt,
+      trackingUrl,
+      unsubscribeUrl,
+    })
+  )
+
+  await sendEmail({
+    to: params.consigneeEmail,
+    subject: `✅ Your TIP labels package has arrived`,
     html,
   })
 }

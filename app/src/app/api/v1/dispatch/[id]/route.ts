@@ -5,8 +5,8 @@ import { handleApiError } from '@/lib/api-utils'
 import { updateShipmentSchema } from '@/lib/validations/shipment'
 import { format } from 'date-fns'
 import {
-  sendConsigneeInTransitNotification,
-  sendConsigneeDeliveredNotification,
+  sendDispatchConsigneeInTransitNotification,
+  sendDispatchConsigneeDeliveredNotification,
   sendDispatchInTransitNotification,
   sendDispatchDeliveredNotification,
   sendDispatchCancelledNotification,
@@ -198,14 +198,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
       // Receiver-facing tracking email (only if we have their address)
       if (existing.consigneeEmail) {
-        sendConsigneeInTransitNotification({
+        sendDispatchConsigneeInTransitNotification({
           consigneeEmail: existing.consigneeEmail,
           shipmentName: existing.name || 'Shipment',
           shareCode: existing.shareCode,
-          originAddress: existing.originAddress,
           destinationAddress: existing.destinationAddress,
         }).catch((err) =>
-          console.error('Failed to send consignee in-transit notification:', err)
+          console.error('Failed to send dispatch consignee in-transit notification:', err)
         )
       }
     }
@@ -217,14 +216,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       )
 
       if (existing.consigneeEmail) {
-        sendConsigneeDeliveredNotification({
+        sendDispatchConsigneeDeliveredNotification({
           consigneeEmail: existing.consigneeEmail,
           shipmentName: existing.name || 'Shipment',
           shareCode: existing.shareCode,
           destinationAddress: existing.destinationAddress,
           deliveredAt: format(new Date(), 'PPpp'),
         }).catch((err) =>
-          console.error('Failed to send consignee delivery notification:', err)
+          console.error('Failed to send dispatch consignee delivery notification:', err)
         )
       }
     }
