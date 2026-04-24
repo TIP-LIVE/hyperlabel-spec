@@ -227,27 +227,45 @@ export function LabelScanDialog({
 
   // Still-photo fallback. Native camera capture gives a full-res JPEG that
   // sidesteps the WebRTC quality cap — useful for low-contrast prints.
+  // Chatty toasts/logs so iOS-side failures (in-app browser quirks, missing
+  // change events, empty files, etc.) are visible without a debugger.
   const handlePhotoSelected = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
+      const fileList = e.target.files
+      console.warn('[scan-dialog] photo change event', { count: fileList?.length ?? 0 })
+      const file = fileList?.[0]
       e.target.value = '' // allow re-selecting the same file later
-      if (!file) return
+      if (!file) {
+        toast.error('No photo received from the camera.')
+        return
+      }
+      console.warn('[scan-dialog] photo file', { name: file.name, type: file.type, size: file.size })
+      if (file.size === 0) {
+        toast.error('Photo was empty (0 bytes). Try again.')
+        return
+      }
+      toast.info('Reading photo…')
       setScanError(null)
       setDecodingPhoto(true)
       stopCamera()
       let decoded = false
       try {
         const text = await decodeQrFromImage(file)
+        console.warn('[scan-dialog] decode result', text ? `text (len=${text.length})` : 'null')
         if (!text) {
           setScanError(
             'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
           )
+          toast.error('No QR found in photo')
           return
         }
         decoded = true
+        toast.success(`Decoded: ${text.length > 30 ? text.slice(0, 30) + '…' : text}`)
         handleQrScanned(text)
-      } catch {
+      } catch (err) {
+        console.error('[scan-dialog] decode threw', err)
         setScanError('Could not decode the photo. Try again.')
+        toast.error('Photo decode failed')
       } finally {
         setDecodingPhoto(false)
         // Restart the live scanner after a failed photo so the user can
