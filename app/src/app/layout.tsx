@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { getCheapestPerLabel } from '@/lib/pricing'
 import './globals.css'
 
 const suisseIntl = localFont({
@@ -20,55 +21,59 @@ const suisseIntl = localFont({
   fallback: ['Inter', 'system-ui', 'sans-serif'],
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: 'TIP — Door-to-Door Cargo Tracking',
-    template: '%s | TIP',
-  },
-  description:
-    'Door-to-door cargo tracking labels. Reliable updates every 2 hours in 180+ countries. AI-powered route detection, delivery alerts. From $20 per label.',
-  keywords: ['cargo tracking', 'door-to-door tracking', 'shipment tracking', 'tracking labels', 'logistics', 'AI cargo tracking', 'smart tracking label'],
-  authors: [{ name: 'TIP' }],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'),
-  openGraph: {
-    type: 'website',
-    locale: 'en_GB',
-    url: 'https://tip.live',
-    siteName: 'TIP',
-    title: 'TIP — Door-to-Door Cargo Tracking',
-    description: 'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'TIP — Door-to-Door Cargo Tracking',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'TIP — Door-to-Door Cargo Tracking',
-    description: 'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links.',
-    images: ['/og-image.png'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+export async function generateMetadata(): Promise<Metadata> {
+  const cheapest = await getCheapestPerLabel().catch(() => 20)
+  const fromPrice = `$${Number.isInteger(cheapest) ? cheapest.toFixed(0) : cheapest.toFixed(2)}`
+
+  return {
+    title: {
+      default: 'TIP — Door-to-Door Cargo Tracking',
+      template: '%s | TIP',
+    },
+    description: `Door-to-door cargo tracking labels. Reliable updates every 2 hours in 180+ countries. AI-powered route detection, delivery alerts. From ${fromPrice} per label.`,
+    keywords: ['cargo tracking', 'door-to-door tracking', 'shipment tracking', 'tracking labels', 'logistics', 'AI cargo tracking', 'smart tracking label'],
+    authors: [{ name: 'TIP' }],
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'),
+    openGraph: {
+      type: 'website',
+      locale: 'en_GB',
+      url: 'https://tip.live',
+      siteName: 'TIP',
+      title: 'TIP — Door-to-Door Cargo Tracking',
+      description: 'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links.',
+      images: [
+        {
+          url: '/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'TIP — Door-to-Door Cargo Tracking',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'TIP — Door-to-Door Cargo Tracking',
+      description: 'Reliable cargo tracking every 2 hours in 180+ countries. AI-powered route detection, delivery alerts, shareable links.',
+      images: ['/og-image.png'],
+    },
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
-  },
-  icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
-  },
-  manifest: '/site.webmanifest',
+    icons: {
+      icon: '/favicon.svg',
+      shortcut: '/favicon.svg',
+      apple: '/apple-touch-icon.png',
+    },
+    manifest: '/site.webmanifest',
+  }
 }
 
 export default function RootLayout({

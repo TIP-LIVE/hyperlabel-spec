@@ -1,11 +1,14 @@
 import { ImageResponse } from 'next/og'
+import { getCheapestPerLabel } from '@/lib/pricing'
 
-export const runtime = 'edge'
 export const alt = 'TIP — Door-to-Door Cargo Tracking'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default function OGImage() {
+export default async function OGImage() {
+  const cheapest = await getCheapestPerLabel().catch(() => 20)
+  const fromPrice = `$${Number.isInteger(cheapest) ? cheapest.toFixed(0) : cheapest.toFixed(2)}`
+
   return new ImageResponse(
     (
       <div
@@ -65,7 +68,7 @@ export default function OGImage() {
             textAlign: 'center',
           }}
         >
-          Real-time visibility in 180+ countries. From $20 per label.
+          Real-time visibility in 180+ countries. From {fromPrice} per label.
         </div>
       </div>
     ),

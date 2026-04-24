@@ -1,6 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { getLabelPack } from '@/lib/pricing'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'API Documentation',
@@ -23,7 +26,8 @@ interface EndpointCategory {
   endpoints: Endpoint[]
 }
 
-const endpoints: EndpointCategory[] = [
+function buildEndpoints(exampleTotalAmount: number, exampleQuantity: number): EndpointCategory[] {
+  return [
   {
     category: 'Authentication',
     description: 'All authenticated endpoints require a valid session from Clerk.',
@@ -228,8 +232,8 @@ const endpoints: EndpointCategory[] = [
     {
       "id": "ord_abc123",
       "status": "PAID",
-      "quantity": 5,
-      "totalAmount": 11000,
+      "quantity": ${exampleQuantity},
+      "totalAmount": ${exampleTotalAmount},
       "currency": "USD",
       "trackingNumber": null,
       "createdAt": "2025-01-15T10:00:00.000Z"
@@ -457,7 +461,8 @@ const endpoints: EndpointCategory[] = [
       },
     ],
   },
-]
+  ]
+}
 
 const methodColors: Record<string, string> = {
   GET: 'bg-green-500/20 text-green-700 dark:text-green-400',
@@ -466,7 +471,12 @@ const methodColors: Record<string, string> = {
   DELETE: 'bg-red-500/20 text-red-700 dark:text-red-400',
 }
 
-export default function ApiDocsPage() {
+export default async function ApiDocsPage() {
+  const teamPack = await getLabelPack('team').catch(() => null)
+  const exampleQuantity = teamPack?.quantity ?? 5
+  const exampleTotalAmount = teamPack?.priceCents ?? 11000
+  const endpoints = buildEndpoints(exampleTotalAmount, exampleQuantity)
+
   return (
     <div className="container mx-auto max-w-4xl py-12 px-4">
       <div className="mb-12">
