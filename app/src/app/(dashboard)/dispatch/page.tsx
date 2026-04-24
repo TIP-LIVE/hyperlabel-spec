@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Package, Plus, Send, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { countActivelyDispatched } from '@/lib/dispatch-quota'
+import { PURCHASED_ORDER_FILTER, countActivelyDispatched } from '@/lib/dispatch-quota'
 import { getCurrentUser, isAdmin as checkIsAdmin } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
 import { DispatchList } from '@/components/dispatch/dispatch-list'
@@ -45,9 +45,9 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
     // find nothing to pick. Two things both routes enforce:
     //   1. Exclude labels already committed to a PENDING/IN_TRANSIT/DELIVERED
     //      dispatch. DELIVERED matters — the label is physically at the receiver.
-    //   2. Cap by the org's purchase quota (paid orders with totalAmount > 0) minus
-    //      labels already actively dispatched. Admin-attached $0 orders don't
-    //      increase dispatch capacity, they just fulfil existing paid slots.
+    //   2. Cap by the org's purchase quota (see PURCHASED_ORDER_FILTER —
+    //      STRIPE + INVOICE orders grant capacity, LABELS_REGISTER does not)
+    //      minus labels already actively dispatched.
     // "Actively dispatched" must include admin-created blank dispatches
     // (labelCount set, no shipmentLabels yet) — those reservations block the
     // label even though no join row exists. See countActivelyDispatched.
@@ -76,11 +76,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
           },
         }),
         db.order.aggregate({
-          where: {
-            ...orderScope,
-            status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-            totalAmount: { gt: 0 },
-          },
+          where: { ...orderScope, ...PURCHASED_ORDER_FILTER },
           _sum: { quantity: true },
         }),
         countActivelyDispatched(db, orgId ? { orgId } : { userId: user.id }),

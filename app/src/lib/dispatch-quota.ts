@@ -40,6 +40,23 @@ export async function countActivelyDispatched(
   )
 }
 
+// Which orders count as "purchased" dispatch slots.
+// - STRIPE / INVOICE: yes — customer acquired these labels (even at £0, e.g.
+//   a free-sample invoice or a 100%-discount Stripe checkout).
+// - LABELS_REGISTER: no — those orders represent physical labels already in
+//   the user's hand (registered via QR/device ID), not warehouse stock to
+//   dispatch.
+// - null (legacy rows pre-dating the `source` column): fall back to the old
+//   `totalAmount > 0` heuristic so we don't retroactively grant capacity to
+//   historical £0 labels/register orders.
+export const PURCHASED_ORDER_FILTER = {
+  status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] as const },
+  OR: [
+    { source: { in: ['STRIPE', 'INVOICE'] as const } },
+    { AND: [{ source: null }, { totalAmount: { gt: 0 } }] },
+  ],
+}
+
 export async function getDispatchQuota(
   client: DbClient,
   scope: DispatchScope,
@@ -47,11 +64,7 @@ export async function getDispatchQuota(
 ): Promise<{ totalBought: number; activelyDispatched: number; remaining: number }> {
   const [purchasedResult, activelyDispatched] = await Promise.all([
     client.order.aggregate({
-      where: {
-        ...scope,
-        status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-        totalAmount: { gt: 0 },
-      },
+      where: { ...scope, ...PURCHASED_ORDER_FILTER },
       _sum: { quantity: true },
     }),
     countActivelyDispatched(client, scope, excludeShipmentId),

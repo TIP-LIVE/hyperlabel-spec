@@ -29,7 +29,7 @@ import { useRouter } from 'next/navigation'
 const schema = z.object({
   orgId: z.string().min(1, 'Organisation is required'),
   quantity: z.number().int().min(1, 'At least 1').max(1000),
-  totalAmount: z.number().min(0),
+  totalAmount: z.number().min(0, 'Amount cannot be negative'),
   currency: z.string().length(3),
 })
 
@@ -95,7 +95,7 @@ export function CreateInvoiceButton({ orgNames }: CreateInvoiceButtonProps) {
 
       if (res.ok) {
         toast.success(
-          `Invoice created: ${data.quantity} dispatch slot${data.quantity > 1 ? 's' : ''} for ${orgNames[data.orgId] ?? data.orgId}`,
+          `Invoice created (PENDING): ${data.quantity} label${data.quantity > 1 ? 's' : ''} for ${orgNames[data.orgId] ?? data.orgId}. Mark it paid once payment lands.`,
         )
         setOpen(false)
         router.refresh()
@@ -123,8 +123,9 @@ export function CreateInvoiceButton({ orgNames }: CreateInvoiceButtonProps) {
         <DialogHeader>
           <DialogTitle className="text-foreground">Create Invoice / Order</DialogTitle>
           <DialogDescription>
-            Creates a PAID order that gives the organisation N dispatch slots. Use for invoice-paid
-            corporate clients or free samples. Amount can be 0.
+            Creates a PENDING invoice billed outside Stripe. Mark it as paid from the order page
+            once payment lands — that's when labels get allocated and dispatch capacity opens up.
+            Use amount = 0 for free samples (labels we ship at no charge for evaluation).
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -189,6 +190,9 @@ export function CreateInvoiceButton({ orgNames }: CreateInvoiceButtonProps) {
                 className="border-border bg-muted font-mono text-foreground"
               />
               <p className="text-xs text-muted-foreground">0 for free samples</p>
+              {errors.totalAmount && (
+                <p className="text-sm text-destructive">{errors.totalAmount.message}</p>
+              )}
             </div>
           </div>
 

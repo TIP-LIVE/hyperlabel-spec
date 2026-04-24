@@ -40,6 +40,12 @@ enum OrderStatus {
   CANCELLED // Order cancelled
 }
 
+enum OrderSource {
+  STRIPE          // Created by Stripe webhook (paid checkout)
+  INVOICE         // Admin-created invoice billed outside Stripe (grants dispatch capacity)
+  LABELS_REGISTER // Admin/user registering physical labels already in hand (does NOT grant capacity)
+}
+
 enum LocationSource {
   GPS // Device firmware location report (currently cell tower, name kept for backward compat)
   CELL_TOWER // Onomondo Location Update webhook (cell tower triangulation)
@@ -235,12 +241,13 @@ model LocationEvent {
 
 /// Orders - purchase records
 model Order {
-  id              String      @id @default(cuid())
-  stripePaymentId String?     @unique @map("stripe_payment_id")
-  stripeSessionId String?     @unique @map("stripe_session_id")
-  status          OrderStatus @default(PENDING)
-  totalAmount     Int         @map("total_amount") // In cents
-  currency        String      @default("GBP")
+  id              String       @id @default(cuid())
+  stripePaymentId String?      @unique @map("stripe_payment_id")
+  stripeSessionId String?      @unique @map("stripe_session_id")
+  status          OrderStatus  @default(PENDING)
+  source          OrderSource? @map("source") // null = legacy rows; else identifies creation path
+  totalAmount     Int          @map("total_amount") // In cents
+  currency        String       @default("GBP")
   quantity        Int // Number of labels
 
   // Shipping info

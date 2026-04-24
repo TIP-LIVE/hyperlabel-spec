@@ -103,6 +103,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       stripeSessionId: session.id,
       stripePaymentId: session.payment_intent as string,
       status: 'PAID',
+      source: 'STRIPE',
       totalAmount: session.amount_total || 0,
       currency: session.currency?.toUpperCase() || 'GBP',
       quantity,

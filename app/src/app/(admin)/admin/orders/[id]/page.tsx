@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Package, MapPin, Truck, CreditCard, User, Send } from 'lucide-react'
 import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
+import { MarkPaidButton } from '@/components/admin/mark-paid-button'
 import { shipmentStatusStyles } from '@/lib/status-config'
 import { format } from 'date-fns'
 import { formatDateTime } from '@/lib/utils/format-date'
@@ -158,6 +159,13 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Badge className={statusStyles[order.status]}>{order.status}</Badge>
+          {order.status === 'PENDING' && (
+            <MarkPaidButton
+              orderId={order.id}
+              orderShortId={orderShortId}
+              quantity={order.quantity}
+            />
+          )}
           {(order.status === 'PAID' || order.status === 'SHIPPED') && undispatchedLabelCount > 0 && (
             <CreateDispatchButton
               orderId={order.id}

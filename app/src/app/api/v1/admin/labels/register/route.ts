@@ -134,6 +134,7 @@ export async function POST(req: NextRequest) {
           userId,
           orgId,
           status: 'PAID',
+          source: 'LABELS_REGISTER',
           totalAmount: 0,
           currency: 'GBP',
           quantity: labelsToAssign.length,

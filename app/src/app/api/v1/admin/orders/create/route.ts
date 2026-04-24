@@ -7,20 +7,23 @@ import { z } from 'zod'
 const createOrderSchema = z.object({
   orgId: z.string().min(1, 'Organisation ID is required'),
   quantity: z.number().int().min(1).max(1000),
-  totalAmount: z.number().int().min(0).default(0),
+  totalAmount: z.number().int().min(0),
   currency: z.string().length(3).default('GBP'),
 })
 
 /**
  * POST /api/v1/admin/orders/create
  *
- * Admin: create a PAID order for an organisation without going through Stripe.
- * Used for invoice-based sales (corp clients billed externally) and free samples.
+ * Admin: create a PENDING invoice for an organisation, paid outside Stripe.
+ * Supports both paid invoices (amount > 0) and free samples (amount = 0)
+ * where we ship labels to a prospect for testing. Admin flips the order PAID
+ * via /api/v1/admin/orders/[id]/mark-paid once the payment lands (or
+ * immediately for free samples) — that's when labels get allocated and
+ * dispatch capacity opens up.
  *
- * The resulting Order provides `quantity` dispatch slots — the existing admin
- * dispatch button (which checks `order.quantity - alreadyDispatched`) will then
- * let the admin create LABEL_DISPATCH shipments on the org's behalf. Labels get
- * linked to dispatches at scan time, so no OrderLabel rows are created here.
+ * This path sets source=INVOICE so the dispatch-quota filter counts its
+ * `quantity` as purchased capacity regardless of amount. Label-registration
+ * flows (source=LABELS_REGISTER) still don't grant capacity.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -51,7 +54,8 @@ export async function POST(req: NextRequest) {
       data: {
         userId,
         orgId,
-        status: 'PAID',
+        status: 'PENDING',
+        source: 'INVOICE',
         totalAmount,
         currency,
         quantity,
