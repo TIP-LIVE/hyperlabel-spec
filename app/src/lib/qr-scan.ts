@@ -234,45 +234,77 @@ export async function startQrScan(
  * JPEG with native HDR/AF/exposure that the live stream is denied.
  *
  * Returns the decoded text or `null` if no QR is found.
+ *
+ * Logs progress to console at each stage so failures can be inspected
+ * via Safari Web Inspector (USB-connected iPhone debugging).
  */
 export async function decodeQrFromImage(file: Blob): Promise<string | null> {
-  let bitmap: ImageBitmap | null = null
+  const log = (...args: unknown[]) => console.warn('[qr-scan/photo]', ...args)
+  log('start', { type: file.type, size: file.size })
+
+  // Load via HTMLImageElement — it respects EXIF orientation natively in
+  // modern browsers, where createImageBitmap may rotate the image wrong.
+  const url = URL.createObjectURL(file)
+  let img: HTMLImageElement
   try {
-    bitmap = await createImageBitmap(file)
-  } catch {
+    img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = () => reject(new Error('image load failed'))
+      el.src = url
+    })
+  } catch (err) {
+    URL.revokeObjectURL(url)
+    log('image load failed', err)
     return null
   }
+  log('loaded', { w: img.naturalWidth, h: img.naturalHeight })
+
+  // Downscale to a manageable size. iPhone photos are 4032x3024 (12 MP) —
+  // both BarcodeDetector and zxing can stall or run out of memory at that
+  // size, and the resulting toDataURL string is multiple megabytes.
+  // 1500px on the longest side keeps QR modules well above the ~3 px/module
+  // detection floor while staying snappy.
+  const MAX_SIDE = 1500
+  const longest = Math.max(img.naturalWidth, img.naturalHeight)
+  const scale = longest > MAX_SIDE ? MAX_SIDE / longest : 1
+  const dw = Math.round(img.naturalWidth * scale)
+  const dh = Math.round(img.naturalHeight * scale)
+  const canvas = document.createElement('canvas')
+  canvas.width = dw
+  canvas.height = dh
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    URL.revokeObjectURL(url)
+    log('no 2d context')
+    return null
+  }
+  ctx.drawImage(img, 0, 0, dw, dh)
+  URL.revokeObjectURL(url)
+  log('downscaled', { dw, dh, scale })
 
   // Path 1: native BarcodeDetector
   const W = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
   if (W.BarcodeDetector) {
     try {
       const formats = (await W.BarcodeDetector.getSupportedFormats?.()) ?? null
+      log('BarcodeDetector formats', formats)
       if (!formats || formats.includes('qr_code')) {
         const detector = new W.BarcodeDetector({ formats: ['qr_code'] })
-        const results = await detector.detect(bitmap)
+        const results = await detector.detect(canvas)
+        log('BarcodeDetector result count', results.length)
         if (results.length && results[0].rawValue) {
-          bitmap.close()
           return results[0].rawValue
         }
       }
-    } catch {
-      // Fall through to zxing
+    } catch (err) {
+      log('BarcodeDetector threw', err)
     }
+  } else {
+    log('BarcodeDetector unavailable')
   }
 
-  // Path 2: zxing via canvas
-  const canvas = document.createElement('canvas')
-  canvas.width = bitmap.width
-  canvas.height = bitmap.height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    bitmap.close()
-    return null
-  }
-  ctx.drawImage(bitmap, 0, 0)
-  bitmap.close()
-
+  // Path 2: zxing via canvas → JPEG (smaller than PNG, easier on memory).
   try {
     const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
       import('@zxing/browser'),
@@ -282,10 +314,13 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
     hints.set(DecodeHintType.TRY_HARDER, true)
     hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
     const reader = new BrowserQRCodeReader(hints)
-    const dataUrl = canvas.toDataURL('image/png')
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+    log('zxing trying', { dataUrlLen: dataUrl.length })
     const result = await reader.decodeFromImageUrl(dataUrl)
+    log('zxing decoded')
     return result.getText()
-  } catch {
+  } catch (err) {
+    log('zxing failed', err instanceof Error ? err.message : err)
     return null
   }
 }

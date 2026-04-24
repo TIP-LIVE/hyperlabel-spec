@@ -235,20 +235,27 @@ export function LabelScanDialog({
       setScanError(null)
       setDecodingPhoto(true)
       stopCamera()
+      let decoded = false
       try {
         const text = await decodeQrFromImage(file)
         if (!text) {
-          setScanError('No QR code found in the photo. Try again with the QR centered and well lit.')
+          setScanError(
+            'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
+          )
           return
         }
+        decoded = true
         handleQrScanned(text)
       } catch {
         setScanError('Could not decode the photo. Try again.')
       } finally {
         setDecodingPhoto(false)
+        // Restart the live scanner after a failed photo so the user can
+        // try again without re-tapping Camera mode.
+        if (!decoded && cameraSupported) startScanning()
       }
     },
-    [handleQrScanned, stopCamera]
+    [handleQrScanned, stopCamera, cameraSupported, startScanning]
   )
 
   // Handle manual ID submission

@@ -120,20 +120,25 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
       setError(null)
       setDecodingPhoto(true)
       stopCamera()
+      let decoded = false
       try {
         const text = await decodeQrFromImage(file)
         if (!text) {
-          setError('No QR code found in the photo. Try again with the QR centered and well lit.')
+          setError(
+            'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
+          )
           return
         }
+        decoded = true
         handleRawScanned(text)
       } catch {
         setError('Could not decode the photo. Try again.')
       } finally {
         setDecodingPhoto(false)
+        if (!decoded && cameraSupported) startScanning()
       }
     },
-    [handleRawScanned, stopCamera]
+    [handleRawScanned, stopCamera, cameraSupported, startScanning]
   )
 
   const handleOpenChange = useCallback(

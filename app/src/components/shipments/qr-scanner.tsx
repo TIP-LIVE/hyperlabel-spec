@@ -122,10 +122,13 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
       setError(null)
       setDecodingPhoto(true)
       stopCamera()
+      let decoded = false
       try {
         const text = await decodeQrFromImage(file)
         if (!text) {
-          setError('No QR code found in the photo. Try again with the QR centered and well lit.')
+          setError(
+            'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
+          )
           return
         }
         const scannedDeviceId = extractDeviceId(text)
@@ -133,14 +136,16 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
           setError('Photo decoded, but the QR did not contain a label ID.')
           return
         }
+        decoded = true
         handleScannedId(scannedDeviceId)
       } catch {
         setError('Could not decode the photo. Try again.')
       } finally {
         setDecodingPhoto(false)
+        if (!decoded && cameraSupported) startScanning()
       }
     },
-    [handleScannedId, stopCamera]
+    [handleScannedId, stopCamera, cameraSupported, startScanning]
   )
 
   // Handle manual entry — accepts the new 9-digit displayId (e.g. 002011395)
