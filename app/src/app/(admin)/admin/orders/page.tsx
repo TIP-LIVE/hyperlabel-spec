@@ -175,15 +175,15 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full [&_td]:pr-4 [&_th]:pr-4 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
                   <thead>
                     <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Order</th>
                       <th className="pb-3 font-medium">Organisation</th>
                       <th className="pb-3 font-medium">Customer</th>
-                      <th className="pb-3 font-medium">Qty</th>
-                      <th className="pb-3 font-medium">Labels</th>
-                      <th className="pb-3 font-medium">In dispatch</th>
+                      <th className="pb-3 text-right font-medium">Qty</th>
+                      <th className="pb-3 text-right font-medium">Labels</th>
+                      <th className="pb-3 text-right font-medium whitespace-nowrap">In dispatch</th>
                       <th className="pb-3 font-medium">Status</th>
                       <th className="pb-3 font-medium">Date</th>
                       <th className="pb-3 font-medium">Actions</th>
@@ -213,10 +213,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                               {order.user.email}
                             </Link>
                           </td>
-                          <td className="py-3 font-semibold text-foreground">{order.quantity}</td>
-                          <td className="py-3">
+                          <td className="py-3 text-right font-mono font-semibold text-foreground">{order.quantity}</td>
+                          <td className="py-3 text-right">
                             <span
-                              className={`font-semibold ${
+                              className={`font-mono font-semibold ${
                                 order.orderLabels.length < order.quantity
                                   ? 'text-yellow-600 dark:text-yellow-400'
                                   : 'text-foreground'
@@ -225,9 +225,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                               {order.orderLabels.length}/{order.quantity}
                             </span>
                           </td>
-                          <td className="py-3">
+                          <td className="py-3 text-right">
                             <span
-                              className={`font-semibold ${
+                              className={`font-mono font-semibold ${
                                 order.dispatchedCount > 0 && order.dispatchedCount < order.orderLabels.length
                                   ? 'text-blue-600 dark:text-blue-400'
                                   : order.dispatchedCount === order.orderLabels.length && order.orderLabels.length > 0
