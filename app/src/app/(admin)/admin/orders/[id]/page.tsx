@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Package, MapPin, Truck, CreditCard, User, Send } from 'lucide-react'
 import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
 import { MarkPaidButton } from '@/components/admin/mark-paid-button'
+import { CancelOrderButton } from '@/components/admin/cancel-order-button'
 import { shipmentStatusStyles } from '@/lib/status-config'
 import { format } from 'date-fns'
 import { formatDateTime } from '@/lib/utils/format-date'
@@ -171,6 +172,13 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
               orderId={order.id}
               orderShortId={orderShortId}
               availableLabelCount={undispatchedLabelCount}
+            />
+          )}
+          {order.source === 'INVOICE' && order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+            <CancelOrderButton
+              orderId={order.id}
+              orderShortId={orderShortId}
+              assignedLabelCount={order.orderLabels.length}
             />
           )}
         </div>
