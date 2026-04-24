@@ -20,7 +20,13 @@ interface ComparisonFeature {
   enterprise: boolean | string
 }
 
-const features: ComparisonFeature[] = [
+function buildFeatures(tipCostLabel: string): ComparisonFeature[] {
+  return baseFeatures.map((f) =>
+    f.name === 'Cost Per Shipment' ? { ...f, tip: tipCostLabel } : f
+  )
+}
+
+const baseFeatures: ComparisonFeature[] = [
   {
     name: 'No Scanners or Readers Needed',
     description: 'Works with any smartphone camera',
@@ -117,7 +123,7 @@ function CellValue({ value, highlight }: { value: boolean | string; highlight?: 
 }
 
 /* ─── Desktop Table ──────────────────────────────────────────────── */
-function DesktopTable() {
+function DesktopTable({ items }: { items: ComparisonFeature[] }) {
   return (
     <div className="hidden md:block">
       <Table>
@@ -143,7 +149,7 @@ function DesktopTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {features.map((feature, i) => (
+          {items.map((feature, i) => (
             <TableRow key={feature.name} className={cn('border-white/5', i % 2 === 0 && 'bg-white/[0.02]')}>
               <TableCell className="font-medium text-white">
                 <div>{feature.name}</div>
@@ -176,10 +182,10 @@ function DesktopTable() {
 }
 
 /* ─── Mobile Cards ───────────────────────────────────────────────── */
-function MobileCards() {
+function MobileCards({ items }: { items: ComparisonFeature[] }) {
   return (
     <div className="space-y-4 md:hidden">
-      {features.map((feature) => (
+      {items.map((feature) => (
         <div key={feature.name} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <h3 className="font-semibold text-white">{feature.name}</h3>
           <p className="mt-1 text-xs text-gray-500">{feature.description}</p>
@@ -223,11 +229,12 @@ function MobileCards() {
   )
 }
 
-export function ComparisonTable() {
+export function ComparisonTable({ tipCostLabel = 'From $20' }: { tipCostLabel?: string }) {
+  const items = buildFeatures(tipCostLabel)
   return (
     <>
-      <DesktopTable />
-      <MobileCards />
+      <DesktopTable items={items} />
+      <MobileCards items={items} />
     </>
   )
 }

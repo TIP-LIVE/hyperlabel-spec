@@ -12,7 +12,10 @@ import {
   Radio,
   Cpu,
 } from 'lucide-react'
+import { getCheapestPerLabel, getLabelPacks, toDisplayPacks } from '@/lib/pricing'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Features — How TIP Tracking Labels Work',
@@ -20,7 +23,20 @@ export const metadata: Metadata = {
     'LTE Cat-1 cellular, QR activation in 30 seconds, no subscriptions, disposable design, shareable tracking links. Technical details on TIP tracking labels.',
 }
 
-export default function FeaturesPage() {
+function fmt(dollars: number): string {
+  return Number.isInteger(dollars) ? dollars.toFixed(0) : dollars.toFixed(2)
+}
+
+export default async function FeaturesPage() {
+  const cheapestPerLabel = await getCheapestPerLabel()
+  const fromPrice = `$${fmt(cheapestPerLabel)}`
+  const packs = toDisplayPacks(await getLabelPacks())
+  const highestPerLabel = packs.length > 0 ? Math.max(...packs.map((p) => p.perLabel)) : cheapestPerLabel
+  const perLabelRange =
+    cheapestPerLabel === highestPerLabel
+      ? `$${fmt(cheapestPerLabel)}`
+      : `$${fmt(cheapestPerLabel)}-${fmt(highestPerLabel)}`
+
   return (
     <>
       {/* Hero */}
@@ -74,9 +90,9 @@ export default function FeaturesPage() {
         icon={Tag}
         title="No Subscription Fees"
         subtitle="One price, everything included"
-        description="Every TIP label is a one-time purchase starting from $20. The price includes 60+ days of cellular connectivity via the embedded softSIM, full platform access for tracking and management, shareable public tracking links, email notifications, and AI-powered route intelligence. No monthly fees, no data plans, no per-message charges, no hidden costs."
+        description={`Every TIP label is a one-time purchase starting from ${fromPrice}. The price includes 60+ days of cellular connectivity via the embedded softSIM, full platform access for tracking and management, shareable public tracking links, email notifications, and AI-powered route intelligence. No monthly fees, no data plans, no per-message charges, no hidden costs.`}
         specs={[
-          { label: 'Starting price', value: 'From $20' },
+          { label: 'Starting price', value: `From ${fromPrice}` },
           { label: 'Connectivity', value: 'Included' },
           { label: 'Platform access', value: 'Included' },
           { label: 'Sharing', value: 'Unlimited' },
@@ -108,7 +124,7 @@ export default function FeaturesPage() {
         icon={PackageCheck}
         title="No Return Logistics"
         subtitle="Ship it, track it, done"
-        description="TIP labels are designed as single-use devices. At $20-30 per label, there is no need to coordinate device returns across international borders, manage inventory of reusable trackers, or handle cleaning and recharging cycles. This eliminates the reverse logistics cost that makes enterprise trackers prohibitively expensive for most shipments — where device return shipping alone can exceed the cost of a TIP label."
+        description={`TIP labels are designed as single-use devices. At ${perLabelRange} per label, there is no need to coordinate device returns across international borders, manage inventory of reusable trackers, or handle cleaning and recharging cycles. This eliminates the reverse logistics cost that makes enterprise trackers prohibitively expensive for most shipments — where device return shipping alone can exceed the cost of a TIP label.`}
         specs={[
           { label: 'Device type', value: 'Single-use' },
           { label: 'Return shipping', value: 'None' },

@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ComparisonTable } from '@/components/landing/comparison-table'
 import { Wifi, DollarSign, PackageCheck } from 'lucide-react'
+import { getCheapestPerLabel } from '@/lib/pricing'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'TIP vs Traditional Tracking Solutions | Compare',
@@ -10,7 +13,14 @@ export const metadata: Metadata = {
     'Compare TIP disposable tracking labels against RFID, Bluetooth, and enterprise trackers. No scanners, no subscriptions, no return logistics.',
 }
 
-export default function ComparePage() {
+function fmt(dollars: number): string {
+  return Number.isInteger(dollars) ? dollars.toFixed(0) : dollars.toFixed(2)
+}
+
+export default async function ComparePage() {
+  const cheapest = await getCheapestPerLabel()
+  const fromPrice = `$${fmt(cheapest)}`
+
   return (
     <>
       {/* Hero */}
@@ -20,7 +30,7 @@ export default function ComparePage() {
             TIP vs. Traditional Tracking
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-400">
-            See how a $20 disposable label replaces expensive scanning infrastructure, recurring subscriptions, and complex reverse logistics.
+            See how a {fromPrice} disposable label replaces expensive scanning infrastructure, recurring subscriptions, and complex reverse logistics.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Button
@@ -50,7 +60,7 @@ export default function ComparePage() {
             How TIP stacks up against traditional cargo tracking solutions.
           </p>
           <div className="mt-12">
-            <ComparisonTable />
+            <ComparisonTable tipCostLabel={`From ${fromPrice}`} />
           </div>
         </div>
       </section>
@@ -72,7 +82,7 @@ export default function ComparePage() {
               {
                 icon: DollarSign,
                 title: 'No Recurring Costs',
-                desc: 'One price per label, everything included. No monthly platform fees, no data plans, no per-message charges. From $20 per shipment.',
+                desc: `One price per label, everything included. No monthly platform fees, no data plans, no per-message charges. From ${fromPrice} per shipment.`,
               },
               {
                 icon: PackageCheck,

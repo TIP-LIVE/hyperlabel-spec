@@ -9,7 +9,30 @@ import { AnimatedSection } from '@/components/landing/animated-section'
 import { CountUp } from '@/components/landing/count-up'
 import { IndustriesSection } from '@/components/landing/industries-section'
 import { Check, X, Mail } from 'lucide-react'
+import { getLabelPacks, toDisplayPacks, type LabelPackDisplay } from '@/lib/pricing'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
+
+function fmt(dollars: number): string {
+  return Number.isInteger(dollars) ? dollars.toFixed(0) : dollars.toFixed(2)
+}
+
+function pickPack(packs: LabelPackDisplay[], key: string, quantity: number): LabelPackDisplay {
+  return (
+    packs.find((p) => p.key === key) ??
+    packs.find((p) => p.labels === quantity) ?? {
+      key,
+      name: `${quantity} Label${quantity > 1 ? 's' : ''}`,
+      description: '',
+      labels: quantity,
+      price: 0,
+      perLabel: 0,
+      savings: 0,
+      popular: false,
+    }
+  )
+}
 
 export const metadata: Metadata = {
   title: 'TIP — Door-to-Door Cargo Tracking',
@@ -22,7 +45,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const packs = toDisplayPacks(await getLabelPacks())
+  const starter = pickPack(packs, 'starter', 1)
+  const team = pickPack(packs, 'team', 5)
+  const volume = pickPack(packs, 'volume', 10)
+
   return (
     <>
       {/* 1. Hero — video background */}
@@ -219,7 +247,7 @@ export default function HomePage() {
                   { feature: 'Global Coverage', sub: 'Track across borders on land, sea, and air', tip: '180+ countries', rfid: 'Facility only', bt: '~30m range', gps: '180+ countries' },
                   { feature: 'AI Route Intelligence', sub: 'Auto-detect flights, vessels, road transport', tip: '✓', rfid: '✗', bt: '✗', gps: '✗' },
                   { feature: 'Battery Life', sub: 'Tracking duration per device', tip: '60+ days', rfid: 'No battery', bt: '1-6 months', gps: '10-60 days' },
-                  { feature: 'Cost Per Shipment', sub: 'All-in price to track one shipment', tip: 'From $20', rfid: '$0.10-2 + reader', bt: '$10-30 + gateway', gps: '$100-500+' },
+                  { feature: 'Cost Per Shipment', sub: 'All-in price to track one shipment', tip: `From $${fmt(volume.perLabel)}`, rfid: '$0.10-2 + reader', bt: '$10-30 + gateway', gps: '$100-500+' },
                 ].map((row, i) => (
                   <tr key={row.feature} className={i % 2 === 0 ? 'bg-white/[0.06]' : 'bg-white/[0.02]'}>
                     <td className="px-5 py-3">
@@ -328,7 +356,7 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold text-white">1 Label</h3>
               <p className="mt-1 text-sm text-gray-500">Single label</p>
               <div className="mt-4">
-                <span className="text-4xl font-bold text-white">$25</span>
+                <span className="text-4xl font-bold text-white">${fmt(starter.price)}</span>
               </div>
               <ul className="mt-6 space-y-2 text-sm text-gray-400">
                 <li>&bull; Full tracking &amp; map</li>
@@ -352,14 +380,16 @@ export default function HomePage() {
                 Best Value
               </div>
               <h3 className="text-lg font-semibold text-white">5 Labels</h3>
-              <p className="mt-1 text-sm text-gray-500">$22 per label</p>
+              <p className="mt-1 text-sm text-gray-500">${fmt(team.perLabel)} per label</p>
               <div className="mt-4">
-                <span className="text-4xl font-bold text-white">$110</span>
+                <span className="text-4xl font-bold text-white">${fmt(team.price)}</span>
               </div>
               <ul className="mt-6 space-y-2 text-sm text-gray-400">
                 <li>&bull; Same features as single</li>
                 <li>&bull; Free shipping</li>
-                <li>&bull; Save $15 vs buying one by one</li>
+                {team.savings > 0 && (
+                  <li>&bull; Save ${fmt(team.savings)} vs buying one by one</li>
+                )}
               </ul>
               <Button
                 className="mt-6 w-full rounded-full bg-[#00FF2B] text-black hover:bg-[#00DD25]"
@@ -372,15 +402,17 @@ export default function HomePage() {
             {/* 10 Labels */}
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
               <h3 className="text-lg font-semibold text-white">10 Labels</h3>
-              <p className="mt-1 text-sm text-gray-500">$20 per label</p>
+              <p className="mt-1 text-sm text-gray-500">${fmt(volume.perLabel)} per label</p>
               <div className="mt-4">
-                <span className="text-4xl font-bold text-white">$200</span>
+                <span className="text-4xl font-bold text-white">${fmt(volume.price)}</span>
               </div>
               <ul className="mt-6 space-y-2 text-sm text-gray-400">
                 <li>&bull; Same features as single</li>
                 <li>&bull; Free shipping</li>
                 <li>&bull; Lowest price per label</li>
-                <li>&bull; Save $50 vs buying one by one</li>
+                {volume.savings > 0 && (
+                  <li>&bull; Save ${fmt(volume.savings)} vs buying one by one</li>
+                )}
               </ul>
               <Button
                 className="mt-6 w-full rounded-full border-white/20 text-white hover:bg-white/10"

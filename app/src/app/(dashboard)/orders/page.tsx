@@ -8,6 +8,7 @@ import { orderStatusConfig } from '@/lib/status-config'
 import { Package, ShoppingCart, Truck } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { getLabelPack } from '@/lib/pricing'
 import { auth } from '@clerk/nextjs/server'
 import { formatDateTime, formatDateTimeFull } from '@/lib/utils/format-date'
 import type { Metadata } from 'next'
@@ -24,6 +25,8 @@ const statusConfig = orderStatusConfig
 export default async function OrdersPage() {
   const user = await getCurrentUser()
   const { orgId, orgRole } = await auth()
+  const starterPack = await getLabelPack('starter')
+  const starterPrice = starterPack ? (starterPack.priceCents / 100).toFixed(0).replace(/\.0+$/, '') : '25'
 
   let orders: Array<{
     id: string
@@ -82,7 +85,7 @@ export default async function OrdersPage() {
         <EmptyState
           icon={Package}
           title="No orders yet"
-          description="Tracking labels start at $25 each. Order a pack and they'll appear in your dashboard instantly."
+          description={`Tracking labels start at $${starterPrice} each. Order a pack and they'll appear in your dashboard instantly.`}
           action={
             <Button asChild>
               <Link href="/buy">

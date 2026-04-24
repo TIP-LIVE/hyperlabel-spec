@@ -43,6 +43,14 @@ export async function getLabelPack(key: string): Promise<LabelPack | null> {
   return db.labelPack.findUnique({ where: { key } })
 }
 
+/** Returns the cheapest per-label price in whole dollars, used by "From $X" marketing copy. */
+export async function getCheapestPerLabel(): Promise<number> {
+  const packs = await getLabelPacks()
+  if (packs.length === 0) return 20
+  const cheapestCents = Math.min(...packs.map((p) => p.priceCents / p.quantity))
+  return cheapestCents / 100
+}
+
 export function toDisplayPacks(packs: LabelPack[]): LabelPackDisplay[] {
   const starter = packs.find((p) => p.quantity === 1)
   const baseCents = starter?.priceCents ?? 2500
