@@ -240,21 +240,67 @@ function drawDownscaled(img: HTMLImageElement, maxSide: number): HTMLCanvasEleme
   return canvas
 }
 
-async function decodeViaServer(blob: Blob): Promise<string | null> {
+/**
+ * Result of a server-side decode attempt. Distinguishes "ZBar tried all
+ * strategies and found nothing" (status 404) from "the server itself
+ * failed" (timeout, crash, auth, network), which used to look identical
+ * from the caller's perspective.
+ */
+export interface ServerDecodeResult {
+  text: string | null
+  status: number
+  /** Server's error message if !ok, else undefined. */
+  error?: string
+  /** Which preprocessing strategy hit, if text is set. */
+  strategy?: string
+}
+
+async function decodeViaServer(blob: Blob): Promise<ServerDecodeResult> {
   const formData = new FormData()
   formData.append('image', blob, 'photo.jpg')
   try {
     const res = await fetch('/api/v1/decode-qr', { method: 'POST', body: formData })
-    if (!res.ok) return null
-    const data = (await res.json()) as { text?: string; strategy?: string }
-    if (data.text) {
-      console.warn('[qr-scan/photo] server decoded', { strategy: data.strategy, len: data.text.length })
+    let body: { text?: string; error?: string; strategy?: string } = {}
+    try {
+      body = (await res.json()) as typeof body
+    } catch {
+      // Non-JSON response (HTML error page, empty body, etc.)
     }
-    return data.text ?? null
+    console.warn('[qr-scan/photo] server response', { status: res.status, ...body })
+    return {
+      text: body.text ?? null,
+      status: res.status,
+      error: body.error,
+      strategy: body.strategy,
+    }
   } catch (err) {
-    console.warn('[qr-scan/photo] server decode failed', err)
-    return null
+    console.warn('[qr-scan/photo] server fetch threw', err)
+    return {
+      text: null,
+      status: 0,
+      error: err instanceof Error ? err.message : 'network failure',
+    }
   }
+}
+
+/**
+ * Result of decoding a still image. Either contains the decoded `text`
+ * or — when null — a `reason` describing where in the pipeline it failed
+ * so the UI can show something more specific than "no QR found".
+ */
+export interface PhotoDecodeResult {
+  text: string | null
+  reason?:
+    | 'image-load-failed'
+    | 'canvas-alloc-failed'
+    | 'jpeg-encode-failed'
+    | 'no-qr-in-image' // server tried all strategies, ZBar found nothing
+    | 'server-error' // server crashed / timed out / unreachable
+  /** When `reason` is `server-error`, includes status + message for diagnosis. */
+  serverStatus?: number
+  serverError?: string
+  /** Which server preprocessing strategy hit, if text is set. */
+  strategy?: string
 }
 
 /**
@@ -264,14 +310,12 @@ async function decodeViaServer(blob: Blob): Promise<string | null> {
  *  1. Client BarcodeDetector on a 1500px downscale — fast, instant, works
  *     for normal-contrast prints (white-on-navy, black-on-white).
  *  2. If that returns nothing, POST the JPEG to /api/v1/decode-qr where
- *     ZBar (a battle-tested C library used by every Linux distro) runs
- *     a 7-strategy preprocessing pipeline. ZBar reads marginal prints
- *     that web detectors can't — including our green-on-navy label.
+ *     ZBar runs a 7-strategy preprocessing pipeline.
  *
- * Logs each stage with [qr-scan/photo] prefix for Safari Web Inspector
- * debugging from a USB-tethered iPhone.
+ * Returns a `PhotoDecodeResult` so the UI can distinguish "ZBar tried
+ * hard and the print is genuinely undecodable" from "the server crashed".
  */
-export async function decodeQrFromImage(file: Blob): Promise<string | null> {
+export async function decodeQrFromImage(file: Blob): Promise<PhotoDecodeResult> {
   const log = (...args: unknown[]) => console.warn('[qr-scan/photo]', ...args)
   log('start', { type: file.type, size: file.size })
 
@@ -288,7 +332,7 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   } catch (err) {
     URL.revokeObjectURL(url)
     log('image load failed', err)
-    return null
+    return { text: null, reason: 'image-load-failed' }
   }
   log('loaded', { w: img.naturalWidth, h: img.naturalHeight })
 
@@ -296,7 +340,7 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   URL.revokeObjectURL(url)
   if (!canvas) {
     log('canvas alloc failed')
-    return null
+    return { text: null, reason: 'canvas-alloc-failed' }
   }
 
   // Stage 1: client BarcodeDetector. Fast path for normal-contrast prints.
@@ -309,7 +353,7 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
         const results = await detector.detect(canvas)
         if (results.length && results[0].rawValue) {
           log('decoded by client BarcodeDetector')
-          return results[0].rawValue
+          return { text: results[0].rawValue, strategy: 'client-BarcodeDetector' }
         }
         log('BarcodeDetector found 0 codes — escalating to server')
       }
@@ -326,8 +370,21 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   )
   if (!blob) {
     log('canvas.toBlob returned null')
-    return null
+    return { text: null, reason: 'jpeg-encode-failed' }
   }
   log('uploading to server', { size: blob.size })
-  return decodeViaServer(blob)
+  const server = await decodeViaServer(blob)
+  if (server.text) {
+    return { text: server.text, strategy: server.strategy }
+  }
+  // Distinguish "ZBar tried all strategies, found nothing" from real errors.
+  if (server.status === 404) {
+    return { text: null, reason: 'no-qr-in-image', serverStatus: 404 }
+  }
+  return {
+    text: null,
+    reason: 'server-error',
+    serverStatus: server.status,
+    serverError: server.error,
+  }
 }

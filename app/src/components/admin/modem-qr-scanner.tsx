@@ -122,15 +122,19 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
       stopCamera()
       let decoded = false
       try {
-        const text = await decodeQrFromImage(file)
-        if (!text) {
-          setError(
-            'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
-          )
+        const result = await decodeQrFromImage(file)
+        if (!result.text) {
+          if (result.reason === 'server-error') {
+            setError(`Server decode failed (HTTP ${result.serverStatus}). Try again.`)
+          } else {
+            setError(
+              'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
+            )
+          }
           return
         }
         decoded = true
-        handleRawScanned(text)
+        handleRawScanned(result.text)
       } catch {
         setError('Could not decode the photo. Try again.')
       } finally {

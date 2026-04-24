@@ -124,14 +124,18 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
       stopCamera()
       let decoded = false
       try {
-        const text = await decodeQrFromImage(file)
-        if (!text) {
-          setError(
-            'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
-          )
+        const result = await decodeQrFromImage(file)
+        if (!result.text) {
+          if (result.reason === 'server-error') {
+            setError(`Server decode failed (HTTP ${result.serverStatus}). Try again.`)
+          } else {
+            setError(
+              'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
+            )
+          }
           return
         }
-        const scannedDeviceId = extractDeviceId(text)
+        const scannedDeviceId = extractDeviceId(result.text)
         if (!scannedDeviceId) {
           setError('Photo decoded, but the QR did not contain a label ID.')
           return

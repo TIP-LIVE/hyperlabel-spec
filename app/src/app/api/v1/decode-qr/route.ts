@@ -53,8 +53,12 @@ export async function POST(req: NextRequest) {
     }
 
     const inputBuf = Buffer.from(await image.arrayBuffer())
+    const reqStart = Date.now()
+    console.info('[decode-qr] start', { bytes: inputBuf.byteLength, type: image.type })
 
-    const tryDecode = async (preprocess: (s: sharp.Sharp) => sharp.Sharp): Promise<string | null> => {
+    const tryDecode = async (
+      preprocess: (s: sharp.Sharp) => sharp.Sharp
+    ): Promise<{ text: string | null; w: number; h: number }> => {
       const pipeline = preprocess(
         sharp(inputBuf)
           .rotate() // honor EXIF orientation
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
       new Uint8Array(ab).set(data)
       const symbols = await scanGrayBuffer(ab, info.width, info.height)
       const qr = symbols.find((s) => s.type === ZBarSymbolType.ZBAR_QRCODE)
-      return qr?.decode('utf-8') || null
+      return { text: qr?.decode('utf-8') || null, w: info.width, h: info.height }
     }
 
     // Cheap → aggressive. Most prints decode on the first pass.
@@ -82,19 +86,40 @@ export async function POST(req: NextRequest) {
       { name: 'threshold-160', fn: (s) => s.normalise().threshold(160) },
     ]
 
+    const attempts: Array<{ strategy: string; ms: number; ok: boolean; err?: string }> = []
     for (const { name, fn } of strategies) {
+      const t0 = Date.now()
       try {
-        const text = await tryDecode(fn)
+        const { text, w, h } = await tryDecode(fn)
+        const ms = Date.now() - t0
+        attempts.push({ strategy: name, ms, ok: !!text })
         if (text) {
-          console.info('[decode-qr] hit', { strategy: name, len: text.length })
+          console.info('[decode-qr] hit', {
+            strategy: name,
+            ms,
+            totalMs: Date.now() - reqStart,
+            wh: `${w}x${h}`,
+            len: text.length,
+            attempts,
+          })
           return NextResponse.json({ text, strategy: name })
         }
       } catch (err) {
-        console.warn('[decode-qr] strategy threw', { strategy: name, err })
+        const ms = Date.now() - t0
+        const msg = err instanceof Error ? err.message : String(err)
+        attempts.push({ strategy: name, ms, ok: false, err: msg })
+        console.warn('[decode-qr] strategy threw', { strategy: name, ms, err: msg })
       }
     }
 
-    return NextResponse.json({ error: 'No QR code found in image' }, { status: 404 })
+    console.warn('[decode-qr] all strategies failed', {
+      totalMs: Date.now() - reqStart,
+      attempts,
+    })
+    return NextResponse.json(
+      { error: 'No QR code found after 7 preprocessing strategies', attempts },
+      { status: 404 }
+    )
   } catch (err) {
     return handleApiError(err, 'POST /api/v1/decode-qr')
   }

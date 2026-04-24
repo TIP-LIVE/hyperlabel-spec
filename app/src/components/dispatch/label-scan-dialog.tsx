@@ -250,18 +250,42 @@ export function LabelScanDialog({
       stopCamera()
       let decoded = false
       try {
-        const text = await decodeQrFromImage(file)
-        console.warn('[scan-dialog] decode result', text ? `text (len=${text.length})` : 'null')
-        if (!text) {
-          setScanError(
-            'No QR code found in the photo. Hold the camera 10–20 cm from the label so the QR fills the frame.'
+        const result = await decodeQrFromImage(file)
+        console.warn('[scan-dialog] decode result', result)
+        if (result.text) {
+          decoded = true
+          toast.success(
+            `Decoded${result.strategy ? ` via ${result.strategy}` : ''}: ${
+              result.text.length > 30 ? result.text.slice(0, 30) + '…' : result.text
+            }`
           )
-          toast.error('No QR found in photo')
+          handleQrScanned(result.text)
           return
         }
-        decoded = true
-        toast.success(`Decoded: ${text.length > 30 ? text.slice(0, 30) + '…' : text}`)
-        handleQrScanned(text)
+        // No text — pick a message based on where it failed.
+        switch (result.reason) {
+          case 'no-qr-in-image':
+            setScanError(
+              "Server tried 7 preprocessing passes and couldn't find a QR. The print contrast may be too low; try a tighter frame or use Manual entry."
+            )
+            toast.error('ZBar found no QR — print may be too low-contrast')
+            break
+          case 'server-error':
+            setScanError(
+              `Server decode failed (HTTP ${result.serverStatus}${
+                result.serverError ? `: ${result.serverError}` : ''
+              }). Try again — first request after deploy can cold-start.`
+            )
+            toast.error(`Server error ${result.serverStatus}`)
+            break
+          case 'image-load-failed':
+            setScanError('Could not read the photo file. Try taking it again.')
+            toast.error('Image load failed')
+            break
+          default:
+            setScanError('Could not decode the photo. Try again.')
+            toast.error('Photo decode failed')
+        }
       } catch (err) {
         console.error('[scan-dialog] decode threw', err)
         setScanError('Could not decode the photo. Try again.')
