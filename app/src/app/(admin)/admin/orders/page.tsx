@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { db } from '@/lib/db'
 import { formatDateTime } from '@/lib/utils/format-date'
 import { CreateDispatchButton } from '@/components/admin/create-dispatch-button'
+import { CreateInvoiceButton } from '@/components/admin/create-invoice-button'
 import { Package } from 'lucide-react'
 import { AdminSearch } from '@/components/admin/admin-search'
 import { orderStatusStyles } from '@/lib/status-config'
@@ -121,9 +122,12 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Order Management</h1>
-        <p className="text-muted-foreground">View and fulfill customer orders</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Order Management</h1>
+          <p className="text-muted-foreground">View and fulfill customer orders</p>
+        </div>
+        <CreateInvoiceButton orgNames={orgNames} />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
