@@ -23,11 +23,12 @@ import {
   Search,
   Flashlight,
   FlashlightOff,
+  ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import { ScannedLabelRow } from './scanned-label-row'
-import { startQrScan, type QrScanController } from '@/lib/qr-scan'
+import { startQrScan, decodeQrFromImage, type QrScanController } from '@/lib/qr-scan'
 
 interface ScannedLabel {
   labelId: string
@@ -98,9 +99,14 @@ export function LabelScanDialog({
   const [torchSupported, setTorchSupported] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
 
+  // Still-photo fallback (native camera via <input capture>) for when the
+  // live WebRTC stream can't decode a low-contrast print.
+  const [decodingPhoto, setDecodingPhoto] = useState(false)
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const controllerRef = useRef<QrScanController | null>(null)
   const iccidInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const stopCamera = useCallback(() => {
     controllerRef.current?.stop()
@@ -218,6 +224,32 @@ export function LabelScanDialog({
     await controllerRef.current?.setTorch(next)
     setTorchOn(next)
   }, [torchOn])
+
+  // Still-photo fallback. Native camera capture gives a full-res JPEG that
+  // sidesteps the WebRTC quality cap — useful for low-contrast prints.
+  const handlePhotoSelected = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = '' // allow re-selecting the same file later
+      if (!file) return
+      setScanError(null)
+      setDecodingPhoto(true)
+      stopCamera()
+      try {
+        const text = await decodeQrFromImage(file)
+        if (!text) {
+          setScanError('No QR code found in the photo. Try again with the QR centered and well lit.')
+          return
+        }
+        handleQrScanned(text)
+      } catch {
+        setScanError('Could not decode the photo. Try again.')
+      } finally {
+        setDecodingPhoto(false)
+      }
+    },
+    [handleQrScanned, stopCamera]
+  )
 
   // Handle manual ID submission
   const handleManualSubmit = useCallback(() => {
@@ -418,47 +450,74 @@ export function LabelScanDialog({
 
             {/* Camera view */}
             {mode === 'camera' && (
-              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
-                <video
-                  ref={videoRef}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  playsInline
-                  muted
-                />
-                {scanning && (
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <div className="h-56 w-56 rounded-lg border-2 border-white/70 sm:h-64 sm:w-64">
-                      <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
+              <>
+                <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
+                  <video
+                    ref={videoRef}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    playsInline
+                    muted
+                  />
+                  {scanning && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <div className="h-56 w-56 rounded-lg border-2 border-white/70 sm:h-64 sm:w-64">
+                        <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
+                      </div>
                     </div>
-                  </div>
-                )}
-                {!scanning && !scanError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-                    <p className="mt-2 text-sm text-white/50">Starting camera...</p>
-                  </div>
-                )}
-                {lookingUp && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                    <Loader2 className="h-8 w-8 animate-spin text-white" />
-                  </div>
-                )}
-                {scanning && torchSupported && !lookingUp && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={torchOn ? 'default' : 'secondary'}
-                    onClick={toggleTorch}
-                    className="absolute bottom-8 right-3 gap-1.5"
-                  >
-                    {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
-                    {torchOn ? 'Flash on' : 'Flash'}
-                  </Button>
-                )}
-                <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs text-white/70">
-                  Point at the label&apos;s QR code
-                </p>
-              </div>
+                  )}
+                  {!scanning && !scanError && !decodingPhoto && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+                      <p className="mt-2 text-sm text-white/50">Starting camera...</p>
+                    </div>
+                  )}
+                  {(lookingUp || decodingPhoto) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                      <Loader2 className="h-8 w-8 animate-spin text-white" />
+                      {decodingPhoto && (
+                        <p className="mt-2 text-sm text-white/80">Reading photo...</p>
+                      )}
+                    </div>
+                  )}
+                  {scanning && torchSupported && !lookingUp && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={torchOn ? 'default' : 'secondary'}
+                      onClick={toggleTorch}
+                      className="absolute bottom-8 right-3 gap-1.5"
+                    >
+                      {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
+                      {torchOn ? 'Flash on' : 'Flash'}
+                    </Button>
+                  )}
+                  <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs text-white/70">
+                    Point at the label&apos;s QR code
+                  </p>
+                </div>
+                {/* Native-camera fallback for low-contrast prints. iOS opens
+                    the system camera, which decodes the green-on-navy QR
+                    that the live WebRTC stream can't. */}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoSelected}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={decodingPhoto || lookingUp}
+                  className="w-full gap-1.5"
+                >
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  Can&apos;t scan? Take a photo
+                </Button>
+              </>
             )}
 
             {/* Manual entry */}

@@ -225,3 +225,67 @@ export async function startQrScan(
 
   return { stop, torchSupported, setTorch }
 }
+
+/**
+ * Decode a QR code from a still image (file from camera or upload).
+ *
+ * Use this as a fallback when the live WebRTC stream can't decode a
+ * print — the native iOS camera (`<input capture>`) gives a full-res
+ * JPEG with native HDR/AF/exposure that the live stream is denied.
+ *
+ * Returns the decoded text or `null` if no QR is found.
+ */
+export async function decodeQrFromImage(file: Blob): Promise<string | null> {
+  let bitmap: ImageBitmap | null = null
+  try {
+    bitmap = await createImageBitmap(file)
+  } catch {
+    return null
+  }
+
+  // Path 1: native BarcodeDetector
+  const W = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
+  if (W.BarcodeDetector) {
+    try {
+      const formats = (await W.BarcodeDetector.getSupportedFormats?.()) ?? null
+      if (!formats || formats.includes('qr_code')) {
+        const detector = new W.BarcodeDetector({ formats: ['qr_code'] })
+        const results = await detector.detect(bitmap)
+        if (results.length && results[0].rawValue) {
+          bitmap.close()
+          return results[0].rawValue
+        }
+      }
+    } catch {
+      // Fall through to zxing
+    }
+  }
+
+  // Path 2: zxing via canvas
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.width
+  canvas.height = bitmap.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    bitmap.close()
+    return null
+  }
+  ctx.drawImage(bitmap, 0, 0)
+  bitmap.close()
+
+  try {
+    const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+      import('@zxing/browser'),
+      import('@zxing/library'),
+    ])
+    const hints = new Map()
+    hints.set(DecodeHintType.TRY_HARDER, true)
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
+    const reader = new BrowserQRCodeReader(hints)
+    const dataUrl = canvas.toDataURL('image/png')
+    const result = await reader.decodeFromImageUrl(dataUrl)
+    return result.getText()
+  } catch {
+    return null
+  }
+}

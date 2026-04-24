@@ -12,10 +12,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard, Flashlight, FlashlightOff } from 'lucide-react'
+import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard, Flashlight, FlashlightOff, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
-import { startQrScan, type QrScanController } from '@/lib/qr-scan'
+import { startQrScan, decodeQrFromImage, type QrScanController } from '@/lib/qr-scan'
 
 interface QrScannerProps {
   onDeviceIdScanned: (deviceId: string) => void
@@ -37,8 +37,10 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
   const [scannedValue, setScannedValue] = useState<string | null>(null)
   const [torchSupported, setTorchSupported] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
+  const [decodingPhoto, setDecodingPhoto] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const controllerRef = useRef<QrScanController | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   // extractDeviceId is now imported from @/lib/extract-device-id
 
@@ -110,6 +112,36 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     await controllerRef.current?.setTorch(next)
     setTorchOn(next)
   }, [torchOn])
+
+  // Native-camera fallback for low-contrast prints.
+  const handlePhotoSelected = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      setError(null)
+      setDecodingPhoto(true)
+      stopCamera()
+      try {
+        const text = await decodeQrFromImage(file)
+        if (!text) {
+          setError('No QR code found in the photo. Try again with the QR centered and well lit.')
+          return
+        }
+        const scannedDeviceId = extractDeviceId(text)
+        if (!scannedDeviceId) {
+          setError('Photo decoded, but the QR did not contain a label ID.')
+          return
+        }
+        handleScannedId(scannedDeviceId)
+      } catch {
+        setError('Could not decode the photo. Try again.')
+      } finally {
+        setDecodingPhoto(false)
+      }
+    },
+    [handleScannedId, stopCamera]
+  )
 
   // Handle manual entry — accepts the new 9-digit displayId (e.g. 002011395)
   // or the legacy TIP-001 / HL-001234 format.
@@ -190,53 +222,85 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
 
         {/* Scanner view */}
         {mode === 'scanner' && (
-          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
-            {scannedValue ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
-                  <CheckCircle className="h-10 w-10 text-green-400" />
+          <>
+            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
+              {scannedValue ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+                    <CheckCircle className="h-10 w-10 text-green-400" />
+                  </div>
+                  <p className="mt-4 font-mono text-lg text-white">{scannedValue}</p>
+                  <p className="mt-1 text-sm text-green-400">Label scanned!</p>
                 </div>
-                <p className="mt-4 font-mono text-lg text-white">{scannedValue}</p>
-                <p className="mt-1 text-sm text-green-400">Label scanned!</p>
-              </div>
-            ) : (
-              <>
-                <video
-                  ref={videoRef}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  playsInline
-                  muted
-                />
-                {scanning && (
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    {/* Scanning overlay */}
-                    <div className="h-48 w-48 rounded-lg border-2 border-white/70 sm:h-56 sm:w-56">
-                      {/* Animated scan line */}
-                      <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
+              ) : (
+                <>
+                  <video
+                    ref={videoRef}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    playsInline
+                    muted
+                  />
+                  {scanning && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      {/* Scanning overlay */}
+                      <div className="h-48 w-48 rounded-lg border-2 border-white/70 sm:h-56 sm:w-56">
+                        {/* Animated scan line */}
+                        <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
+                      </div>
                     </div>
-                  </div>
-                )}
-                {scanning && torchSupported && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={torchOn ? 'default' : 'secondary'}
-                    onClick={toggleTorch}
-                    className="absolute bottom-3 right-3 gap-1.5"
-                  >
-                    {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
-                    {torchOn ? 'Flash on' : 'Flash'}
-                  </Button>
-                )}
-                {!scanning && !error && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-                    <p className="mt-2 text-sm text-white/50">Starting camera...</p>
-                  </div>
-                )}
+                  )}
+                  {scanning && torchSupported && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={torchOn ? 'default' : 'secondary'}
+                      onClick={toggleTorch}
+                      className="absolute bottom-3 right-3 gap-1.5"
+                    >
+                      {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
+                      {torchOn ? 'Flash on' : 'Flash'}
+                    </Button>
+                  )}
+                  {!scanning && !error && !decodingPhoto && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+                      <p className="mt-2 text-sm text-white/50">Starting camera...</p>
+                    </div>
+                  )}
+                  {decodingPhoto && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                      <Loader2 className="h-8 w-8 animate-spin text-white" />
+                      <p className="mt-2 text-sm text-white/80">Reading photo...</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            {/* Native-camera fallback for low-contrast prints. */}
+            {!scannedValue && (
+              <>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoSelected}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={decodingPhoto}
+                  className="w-full gap-1.5"
+                >
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  Can&apos;t scan? Take a photo
+                </Button>
               </>
             )}
-          </div>
+          </>
         )}
 
         {/* Manual entry view */}

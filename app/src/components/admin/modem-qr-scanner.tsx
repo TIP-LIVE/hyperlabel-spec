@@ -10,8 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Flashlight, FlashlightOff } from 'lucide-react'
-import { startQrScan, type QrScanController } from '@/lib/qr-scan'
+import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Flashlight, FlashlightOff, ImageIcon } from 'lucide-react'
+import { startQrScan, decodeQrFromImage, type QrScanController } from '@/lib/qr-scan'
 
 interface ModemQrScannerProps {
   /** Called with the raw scanned text, e.g. "P/N:...;IMEI:...;SW:..." */
@@ -42,8 +42,10 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
   const [scannedValue, setScannedValue] = useState<string | null>(null)
   const [torchSupported, setTorchSupported] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
+  const [decodingPhoto, setDecodingPhoto] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const controllerRef = useRef<QrScanController | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const cameraSupported = checkCameraSupport()
 
@@ -109,6 +111,30 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
     await controllerRef.current?.setTorch(next)
     setTorchOn(next)
   }, [torchOn])
+
+  const handlePhotoSelected = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      setError(null)
+      setDecodingPhoto(true)
+      stopCamera()
+      try {
+        const text = await decodeQrFromImage(file)
+        if (!text) {
+          setError('No QR code found in the photo. Try again with the QR centered and well lit.')
+          return
+        }
+        handleRawScanned(text)
+      } catch {
+        setError('Could not decode the photo. Try again.')
+      } finally {
+        setDecodingPhoto(false)
+      }
+    },
+    [handleRawScanned, stopCamera]
+  )
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
@@ -194,15 +220,46 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
                   {torchOn ? 'Flash on' : 'Flash'}
                 </Button>
               )}
-              {!scanning && !error && (
+              {!scanning && !error && !decodingPhoto && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-white/50" />
                   <p className="mt-2 text-sm text-white/50">Starting camera...</p>
                 </div>
               )}
+              {decodingPhoto && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                  <Loader2 className="h-8 w-8 animate-spin text-white" />
+                  <p className="mt-2 text-sm text-white/80">Reading photo...</p>
+                </div>
+              )}
             </>
           )}
         </div>
+
+        {/* Native-camera fallback for low-contrast prints. */}
+        {!scannedValue && (
+          <>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoSelected}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={decodingPhoto}
+              className="w-full gap-1.5"
+            >
+              <ImageIcon className="h-3.5 w-3.5" />
+              Can&apos;t scan? Take a photo
+            </Button>
+          </>
+        )}
 
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
