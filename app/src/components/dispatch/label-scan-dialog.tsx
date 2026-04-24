@@ -242,11 +242,15 @@ export function LabelScanDialog({
     lookupLabel(deviceId)
   }, [manualId, lookupLabel])
 
-  // Fetch available labels for browse mode
+  // Fetch available labels for browse mode. Scoped to this dispatch's order
+  // (or org fallback) so the picker only surfaces labels the buyer paid for,
+  // not unrelated warehouse stock.
   const fetchAvailableLabels = useCallback(async () => {
     setLoadingBrowse(true)
     try {
-      const res = await fetch('/api/v1/labels/lookup/available')
+      const res = await fetch(
+        `/api/v1/labels/lookup/available?shipmentId=${encodeURIComponent(shipmentId)}`
+      )
       if (res.ok) {
         const data = await res.json()
         setAvailableLabels(data.labels)
@@ -256,7 +260,7 @@ export function LabelScanDialog({
     } finally {
       setLoadingBrowse(false)
     }
-  }, [])
+  }, [shipmentId])
 
   // Auto-start camera when dialog opens in camera mode
   useEffect(() => {

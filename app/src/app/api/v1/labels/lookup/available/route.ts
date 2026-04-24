@@ -1,27 +1,60 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 
 /**
- * GET /api/v1/labels/lookup/available
- * List all labels eligible for dispatch (SOLD, INVENTORY, or auto-registered
- * ACTIVE labels that have no active shipment). Admin-only. Used in the label
- * scan dialog "Browse" mode.
+ * GET /api/v1/labels/lookup/available?shipmentId=...
+ * List labels eligible for a specific dispatch's Browse picker. Admin-only.
+ *
+ * Scoping: restricts to labels tied to the dispatch's source order (via
+ * OrderLabel). Falls back to the dispatch's org when orderId is null
+ * (user-created via /api/v1/dispatch, which doesn't set orderId). Without
+ * this scope the picker surfaces unrelated warehouse stock and labels from
+ * other customers' orders.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await requireAdmin()
+
+    const shipmentId = new URL(req.url).searchParams.get('shipmentId')
+
+    let scopeFilter: Prisma.LabelWhereInput | undefined
+    let excludeShipmentId: string | undefined
+
+    if (shipmentId) {
+      const shipment = await db.shipment.findUnique({
+        where: { id: shipmentId },
+        select: { id: true, type: true, orderId: true, orgId: true },
+      })
+
+      if (!shipment || shipment.type !== 'LABEL_DISPATCH') {
+        return NextResponse.json({ error: 'Dispatch not found' }, { status: 404 })
+      }
+
+      excludeShipmentId = shipment.id
+
+      if (shipment.orderId) {
+        scopeFilter = { orderLabels: { some: { orderId: shipment.orderId } } }
+      } else if (shipment.orgId) {
+        scopeFilter = { orderLabels: { some: { order: { orgId: shipment.orgId } } } }
+      }
+    }
 
     const labels = await db.label.findMany({
       where: {
         status: { in: ['SOLD', 'INVENTORY', 'ACTIVE'] },
-        // Exclude labels already linked to an active dispatch
+        ...(scopeFilter ?? {}),
+        // Exclude labels already linked to an *other* active dispatch. The
+        // current dispatch is allowed through so pre-linked labels (set at
+        // dispatch creation) stay visible for re-scan.
         shipmentLabels: {
           none: {
             shipment: {
               type: 'LABEL_DISPATCH',
               status: { in: ['PENDING', 'IN_TRANSIT'] },
+              ...(excludeShipmentId ? { NOT: { id: excludeShipmentId } } : {}),
             },
           },
         },
