@@ -195,12 +195,7 @@ export function LabelScanDialog({
     setScanning(true)
 
     try {
-      if (!videoRef.current) {
-        setScanning(false)
-        return
-      }
-
-      const controller = await startQrScan(videoRef.current, (rawValue) => {
+      const controller = await startQrScan(videoRef, (rawValue) => {
         controllerRef.current = null
         handleQrScanned(rawValue)
       })

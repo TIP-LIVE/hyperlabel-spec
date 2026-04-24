@@ -83,12 +83,7 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     setScannedValue(null)
 
     try {
-      if (!videoRef.current) {
-        setScanning(false)
-        return
-      }
-
-      const controller = await startQrScan(videoRef.current, (rawText) => {
+      const controller = await startQrScan(videoRef, (rawText) => {
         const scannedDeviceId = extractDeviceId(rawText)
         if (scannedDeviceId) {
           controllerRef.current = null

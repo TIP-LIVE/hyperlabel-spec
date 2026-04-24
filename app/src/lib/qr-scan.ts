@@ -21,6 +21,39 @@ export interface QrScanController {
   setTorch: (on: boolean) => Promise<void>
 }
 
+/**
+ * Source of the <video> element to render the camera into.
+ * Accepts either the element directly or a ref-like — the ref form is
+ * preferred because callers often invoke `startQrScan` in the same tick
+ * as the state change that mounts the <video> (e.g. switching dialog
+ * modes). Resolving the ref via polling lets React mount the element
+ * before we try to attach the stream.
+ */
+export type VideoElementSource =
+  | HTMLVideoElement
+  | { current: HTMLVideoElement | null }
+  | (() => HTMLVideoElement | null)
+
+async function resolveVideoElement(
+  source: VideoElementSource,
+  timeoutMs = 1500
+): Promise<HTMLVideoElement> {
+  const read = (): HTMLVideoElement | null => {
+    if (typeof source === 'function') return source()
+    if (source instanceof HTMLVideoElement) return source
+    return source.current
+  }
+
+  const start = performance.now()
+  let el = read()
+  while (!el && performance.now() - start < timeoutMs) {
+    await new Promise<void>((r) => requestAnimationFrame(() => r()))
+    el = read()
+  }
+  if (!el) throw new Error('Video element never became available')
+  return el
+}
+
 async function pickRearCameraConstraints(): Promise<MediaTrackConstraints> {
   let cams: MediaDeviceInfo[] = []
   try {
@@ -77,9 +110,13 @@ async function pushMaxResolution(track: MediaStreamTrack): Promise<void> {
  * responsible for restarting via another `startQrScan` call.
  */
 export async function startQrScan(
-  videoEl: HTMLVideoElement,
+  videoSource: VideoElementSource,
   onResult: (text: string) => void
 ): Promise<QrScanController> {
+  // Resolve the <video> element first — caller may invoke us in the same
+  // tick as the state change that mounts it.
+  const videoEl = await resolveVideoElement(videoSource)
+
   const videoConstraints = await pickRearCameraConstraints()
   const stream = await navigator.mediaDevices.getUserMedia({
     video: videoConstraints,
@@ -96,7 +133,10 @@ export async function startQrScan(
   }
 
   const track = stream.getVideoTracks()[0]
-  await pushMaxResolution(track)
+  // Best-effort max-resolution push. Don't await — some browsers (notably
+  // iOS in-app webviews) can stall on applyConstraints, and the lower
+  // initial resolution still beats a hung scanner.
+  void pushMaxResolution(track)
 
   const torchCaps = track?.getCapabilities?.() as TorchCapabilities | undefined
   const torchSupported = !!torchCaps?.torch

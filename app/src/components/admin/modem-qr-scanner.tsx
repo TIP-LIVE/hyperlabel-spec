@@ -84,12 +84,7 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
     setScannedValue(null)
 
     try {
-      if (!videoRef.current) {
-        setScanning(false)
-        return
-      }
-
-      const controller = await startQrScan(videoRef.current, (rawValue) => {
+      const controller = await startQrScan(videoRef, (rawValue) => {
         if (rawValue) {
           controllerRef.current = null
           handleRawScanned(rawValue)
