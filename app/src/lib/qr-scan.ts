@@ -227,23 +227,112 @@ export async function startQrScan(
 }
 
 /**
+ * Stretch luminance to fill 0–255 and convert to grayscale in place.
+ *
+ * Why: our printed labels use bright green (#66FF00) on dark navy. Both
+ * colors sit in a narrow luminance band that BarcodeDetector and zxing's
+ * HybridBinarizer struggle to threshold. After a global histogram stretch,
+ * the green modules become near-white and the navy background near-black —
+ * what the QR spec assumes.
+ */
+function enhanceContrast(canvas: HTMLCanvasElement): void {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = imgData.data
+
+  let min = 255
+  let max = 0
+  // First pass: convert to grayscale + find min/max luminance
+  const gray = new Uint8Array(canvas.width * canvas.height)
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    const g = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) | 0
+    gray[j] = g
+    if (g < min) min = g
+    if (g > max) max = g
+  }
+  const range = max - min
+  if (range < 8) return // nearly uniform image — stretching would amplify noise
+
+  // Second pass: write stretched grayscale back as RGB
+  const scale = 255 / range
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    const v = ((gray[j] - min) * scale) | 0
+    data[i] = v
+    data[i + 1] = v
+    data[i + 2] = v
+  }
+  ctx.putImageData(imgData, 0, 0)
+}
+
+function drawDownscaled(img: HTMLImageElement, maxSide: number): HTMLCanvasElement | null {
+  const longest = Math.max(img.naturalWidth, img.naturalHeight)
+  const scale = longest > maxSide ? maxSide / longest : 1
+  const dw = Math.max(1, Math.round(img.naturalWidth * scale))
+  const dh = Math.max(1, Math.round(img.naturalHeight * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = dw
+  canvas.height = dh
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.drawImage(img, 0, 0, dw, dh)
+  return canvas
+}
+
+async function detectOnCanvas(canvas: HTMLCanvasElement): Promise<string | null> {
+  // Path 1: native BarcodeDetector
+  const W = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
+  if (W.BarcodeDetector) {
+    try {
+      const formats = (await W.BarcodeDetector.getSupportedFormats?.()) ?? null
+      if (!formats || formats.includes('qr_code')) {
+        const detector = new W.BarcodeDetector({ formats: ['qr_code'] })
+        const results = await detector.detect(canvas)
+        if (results.length && results[0].rawValue) return results[0].rawValue
+      }
+    } catch {
+      // Fall through to zxing
+    }
+  }
+
+  // Path 2: zxing via canvas → JPEG (smaller than PNG, easier on memory).
+  try {
+    const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+      import('@zxing/browser'),
+      import('@zxing/library'),
+    ])
+    const hints = new Map()
+    hints.set(DecodeHintType.TRY_HARDER, true)
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
+    const reader = new BrowserQRCodeReader(hints)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+    const result = await reader.decodeFromImageUrl(dataUrl)
+    return result.getText()
+  } catch {
+    return null
+  }
+}
+
+/**
  * Decode a QR code from a still image (file from camera or upload).
  *
- * Use this as a fallback when the live WebRTC stream can't decode a
- * print — the native iOS camera (`<input capture>`) gives a full-res
- * JPEG with native HDR/AF/exposure that the live stream is denied.
+ * Tries multiple strategies in sequence:
+ *  - Three downscale sizes (1500/1000/750 px on the longest side). Larger
+ *    keeps detail but bloats the dataURL; smaller forces the binarizer to
+ *    work on chunkier pixels which sometimes finds finder patterns the
+ *    full-res scan misses.
+ *  - With and without a global luminance stretch (helps low-contrast
+ *    prints like our green-on-navy labels).
+ *  - Each variant runs through BarcodeDetector → zxing.
  *
- * Returns the decoded text or `null` if no QR is found.
- *
- * Logs progress to console at each stage so failures can be inspected
- * via Safari Web Inspector (USB-connected iPhone debugging).
+ * First success wins. Logs each attempt with the [qr-scan/photo] prefix
+ * so failures can be inspected via Safari Web Inspector.
  */
 export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   const log = (...args: unknown[]) => console.warn('[qr-scan/photo]', ...args)
   log('start', { type: file.type, size: file.size })
 
-  // Load via HTMLImageElement — it respects EXIF orientation natively in
-  // modern browsers, where createImageBitmap may rotate the image wrong.
+  // Load via HTMLImageElement — respects EXIF orientation in modern browsers.
   const url = URL.createObjectURL(file)
   let img: HTMLImageElement
   try {
@@ -260,67 +349,25 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   }
   log('loaded', { w: img.naturalWidth, h: img.naturalHeight })
 
-  // Downscale to a manageable size. iPhone photos are 4032x3024 (12 MP) —
-  // both BarcodeDetector and zxing can stall or run out of memory at that
-  // size, and the resulting toDataURL string is multiple megabytes.
-  // 1500px on the longest side keeps QR modules well above the ~3 px/module
-  // detection floor while staying snappy.
-  const MAX_SIDE = 1500
-  const longest = Math.max(img.naturalWidth, img.naturalHeight)
-  const scale = longest > MAX_SIDE ? MAX_SIDE / longest : 1
-  const dw = Math.round(img.naturalWidth * scale)
-  const dh = Math.round(img.naturalHeight * scale)
-  const canvas = document.createElement('canvas')
-  canvas.width = dw
-  canvas.height = dh
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    URL.revokeObjectURL(url)
-    log('no 2d context')
-    return null
-  }
-  ctx.drawImage(img, 0, 0, dw, dh)
-  URL.revokeObjectURL(url)
-  log('downscaled', { dw, dh, scale })
+  // Strategy matrix. Order matters: cheap-and-likely first.
+  const sizes = [1500, 1000, 750]
+  const enhanceModes = [false, true]
 
-  // Path 1: native BarcodeDetector
-  const W = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
-  if (W.BarcodeDetector) {
-    try {
-      const formats = (await W.BarcodeDetector.getSupportedFormats?.()) ?? null
-      log('BarcodeDetector formats', formats)
-      if (!formats || formats.includes('qr_code')) {
-        const detector = new W.BarcodeDetector({ formats: ['qr_code'] })
-        const results = await detector.detect(canvas)
-        log('BarcodeDetector result count', results.length)
-        if (results.length && results[0].rawValue) {
-          return results[0].rawValue
-        }
+  for (const size of sizes) {
+    for (const enhance of enhanceModes) {
+      const canvas = drawDownscaled(img, size)
+      if (!canvas) continue
+      if (enhance) enhanceContrast(canvas)
+      const found = await detectOnCanvas(canvas)
+      log('attempt', { size, enhance, found: !!found })
+      if (found) {
+        URL.revokeObjectURL(url)
+        return found
       }
-    } catch (err) {
-      log('BarcodeDetector threw', err)
     }
-  } else {
-    log('BarcodeDetector unavailable')
   }
 
-  // Path 2: zxing via canvas → JPEG (smaller than PNG, easier on memory).
-  try {
-    const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
-      import('@zxing/browser'),
-      import('@zxing/library'),
-    ])
-    const hints = new Map()
-    hints.set(DecodeHintType.TRY_HARDER, true)
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
-    const reader = new BrowserQRCodeReader(hints)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
-    log('zxing trying', { dataUrlLen: dataUrl.length })
-    const result = await reader.decodeFromImageUrl(dataUrl)
-    log('zxing decoded')
-    return result.getText()
-  } catch (err) {
-    log('zxing failed', err instanceof Error ? err.message : err)
-    return null
-  }
+  URL.revokeObjectURL(url)
+  log('all strategies failed')
+  return null
 }
