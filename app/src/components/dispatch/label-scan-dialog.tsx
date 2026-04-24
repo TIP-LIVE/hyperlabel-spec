@@ -21,11 +21,16 @@ import {
   Package,
   List,
   Search,
+  Flashlight,
+  FlashlightOff,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import { ScannedLabelRow } from './scanned-label-row'
 import type { IScannerControls } from '@zxing/browser'
+
+// Torch isn't in lib.dom's MediaTrackCapabilities yet (Chrome-only extension).
+type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
 
 interface ScannedLabel {
   labelId: string
@@ -92,9 +97,14 @@ export function LabelScanDialog({
   const [browseFilter, setBrowseFilter] = useState('')
   const [loadingBrowse, setLoadingBrowse] = useState(false)
 
+  // Torch support (Chrome Android only)
+  const [torchSupported, setTorchSupported] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const scannerControlsRef = useRef<IScannerControls | null>(null)
   const iccidInputRef = useRef<HTMLInputElement>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   const stopCamera = useCallback(() => {
     if (scannerControlsRef.current) {
@@ -104,6 +114,9 @@ export function LabelScanDialog({
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
+    mediaStreamRef.current = null
+    setTorchSupported(false)
+    setTorchOn(false)
     setScanning(false)
   }, [])
 
@@ -190,21 +203,47 @@ export function LabelScanDialog({
       // Lazy-load zxing only when the user actually opens the camera.
       // The awaits here also give React time to mount the <video> element
       // after the caller flipped mode to 'camera'.
-      const { BrowserQRCodeReader } = await import('@zxing/browser')
-      const reader = new BrowserQRCodeReader()
+      const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+        import('@zxing/browser'),
+        import('@zxing/library'),
+      ])
 
-      // Prefer the rear camera when available
+      // TRY_HARDER lets zxing spend more cycles on marginal frames (low
+      // contrast, motion blur, partial occlusion). Scoping to QR_CODE keeps
+      // it fast despite the extra effort.
+      const hints = new Map()
+      hints.set(DecodeHintType.TRY_HARDER, true)
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
+
+      const reader = new BrowserQRCodeReader(hints)
+
+      // Prefer the rear camera when available. iOS Safari labels may be empty
+      // until permission is granted — in that case fall back to facingMode.
       const devices = await BrowserQRCodeReader.listVideoInputDevices()
       const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
-      const deviceId = rearCam?.deviceId ?? devices[0]?.deviceId
+
+      // HD resolution dramatically improves detection of small / low-contrast
+      // QR codes — default 640x480 can't resolve finder patterns on the
+      // green-on-navy TIP print from normal working distance.
+      const videoConstraints: MediaTrackConstraints = rearCam?.deviceId
+        ? {
+            deviceId: { exact: rearCam.deviceId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          }
+        : {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          }
 
       if (!videoRef.current) {
         setScanning(false)
         return
       }
 
-      const controls = await reader.decodeFromVideoDevice(
-        deviceId,
+      const controls = await reader.decodeFromConstraints(
+        { video: videoConstraints, audio: false },
         videoRef.current,
         (result, _err, ctrl) => {
           if (result) {
@@ -215,6 +254,15 @@ export function LabelScanDialog({
         }
       )
       scannerControlsRef.current = controls
+
+      // Detect torch capability — supported on Chrome Android, not iOS Safari.
+      const stream = videoRef.current.srcObject as MediaStream | null
+      if (stream) {
+        mediaStreamRef.current = stream
+        const track = stream.getVideoTracks()[0]
+        const caps = track?.getCapabilities?.() as TorchCapabilities | undefined
+        if (caps?.torch) setTorchSupported(true)
+      }
     } catch (err) {
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError') {
@@ -226,6 +274,21 @@ export function LabelScanDialog({
       setMode('manual')
     }
   }, [handleQrScanned])
+
+  const toggleTorch = useCallback(async () => {
+    const stream = mediaStreamRef.current
+    const track = stream?.getVideoTracks()[0]
+    if (!track) return
+    const next = !torchOn
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
+      })
+      setTorchOn(next)
+    } catch (err) {
+      console.warn('[label-scan-dialog] torch toggle failed:', err)
+    }
+  }, [torchOn])
 
   // Handle manual ID submission
   const handleManualSubmit = useCallback(() => {
@@ -452,6 +515,18 @@ export function LabelScanDialog({
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                     <Loader2 className="h-8 w-8 animate-spin text-white" />
                   </div>
+                )}
+                {scanning && torchSupported && !lookingUp && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={torchOn ? 'default' : 'secondary'}
+                    onClick={toggleTorch}
+                    className="absolute bottom-8 right-3 gap-1.5"
+                  >
+                    {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
+                    {torchOn ? 'Flash on' : 'Flash'}
+                  </Button>
                 )}
                 <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs text-white/70">
                   Point at the label&apos;s QR code
