@@ -226,45 +226,6 @@ export async function startQrScan(
   return { stop, torchSupported, setTorch }
 }
 
-/**
- * Stretch luminance to fill 0–255 and convert to grayscale in place.
- *
- * Why: our printed labels use bright green (#66FF00) on dark navy. Both
- * colors sit in a narrow luminance band that BarcodeDetector and zxing's
- * HybridBinarizer struggle to threshold. After a global histogram stretch,
- * the green modules become near-white and the navy background near-black —
- * what the QR spec assumes.
- */
-function enhanceContrast(canvas: HTMLCanvasElement): void {
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const data = imgData.data
-
-  let min = 255
-  let max = 0
-  // First pass: convert to grayscale + find min/max luminance
-  const gray = new Uint8Array(canvas.width * canvas.height)
-  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-    const g = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) | 0
-    gray[j] = g
-    if (g < min) min = g
-    if (g > max) max = g
-  }
-  const range = max - min
-  if (range < 8) return // nearly uniform image — stretching would amplify noise
-
-  // Second pass: write stretched grayscale back as RGB
-  const scale = 255 / range
-  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-    const v = ((gray[j] - min) * scale) | 0
-    data[i] = v
-    data[i + 1] = v
-    data[i + 2] = v
-  }
-  ctx.putImageData(imgData, 0, 0)
-}
-
 function drawDownscaled(img: HTMLImageElement, maxSide: number): HTMLCanvasElement | null {
   const longest = Math.max(img.naturalWidth, img.naturalHeight)
   const scale = longest > maxSide ? maxSide / longest : 1
@@ -279,36 +240,19 @@ function drawDownscaled(img: HTMLImageElement, maxSide: number): HTMLCanvasEleme
   return canvas
 }
 
-async function detectOnCanvas(canvas: HTMLCanvasElement): Promise<string | null> {
-  // Path 1: native BarcodeDetector
-  const W = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
-  if (W.BarcodeDetector) {
-    try {
-      const formats = (await W.BarcodeDetector.getSupportedFormats?.()) ?? null
-      if (!formats || formats.includes('qr_code')) {
-        const detector = new W.BarcodeDetector({ formats: ['qr_code'] })
-        const results = await detector.detect(canvas)
-        if (results.length && results[0].rawValue) return results[0].rawValue
-      }
-    } catch {
-      // Fall through to zxing
-    }
-  }
-
-  // Path 2: zxing via canvas → JPEG (smaller than PNG, easier on memory).
+async function decodeViaServer(blob: Blob): Promise<string | null> {
+  const formData = new FormData()
+  formData.append('image', blob, 'photo.jpg')
   try {
-    const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
-      import('@zxing/browser'),
-      import('@zxing/library'),
-    ])
-    const hints = new Map()
-    hints.set(DecodeHintType.TRY_HARDER, true)
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
-    const reader = new BrowserQRCodeReader(hints)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
-    const result = await reader.decodeFromImageUrl(dataUrl)
-    return result.getText()
-  } catch {
+    const res = await fetch('/api/v1/decode-qr', { method: 'POST', body: formData })
+    if (!res.ok) return null
+    const data = (await res.json()) as { text?: string; strategy?: string }
+    if (data.text) {
+      console.warn('[qr-scan/photo] server decoded', { strategy: data.strategy, len: data.text.length })
+    }
+    return data.text ?? null
+  } catch (err) {
+    console.warn('[qr-scan/photo] server decode failed', err)
     return null
   }
 }
@@ -316,17 +260,16 @@ async function detectOnCanvas(canvas: HTMLCanvasElement): Promise<string | null>
 /**
  * Decode a QR code from a still image (file from camera or upload).
  *
- * Tries multiple strategies in sequence:
- *  - Three downscale sizes (1500/1000/750 px on the longest side). Larger
- *    keeps detail but bloats the dataURL; smaller forces the binarizer to
- *    work on chunkier pixels which sometimes finds finder patterns the
- *    full-res scan misses.
- *  - With and without a global luminance stretch (helps low-contrast
- *    prints like our green-on-navy labels).
- *  - Each variant runs through BarcodeDetector → zxing.
+ * Two-stage pipeline:
+ *  1. Client BarcodeDetector on a 1500px downscale — fast, instant, works
+ *     for normal-contrast prints (white-on-navy, black-on-white).
+ *  2. If that returns nothing, POST the JPEG to /api/v1/decode-qr where
+ *     ZBar (a battle-tested C library used by every Linux distro) runs
+ *     a 7-strategy preprocessing pipeline. ZBar reads marginal prints
+ *     that web detectors can't — including our green-on-navy label.
  *
- * First success wins. Logs each attempt with the [qr-scan/photo] prefix
- * so failures can be inspected via Safari Web Inspector.
+ * Logs each stage with [qr-scan/photo] prefix for Safari Web Inspector
+ * debugging from a USB-tethered iPhone.
  */
 export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   const log = (...args: unknown[]) => console.warn('[qr-scan/photo]', ...args)
@@ -349,25 +292,42 @@ export async function decodeQrFromImage(file: Blob): Promise<string | null> {
   }
   log('loaded', { w: img.naturalWidth, h: img.naturalHeight })
 
-  // Strategy matrix. Order matters: cheap-and-likely first.
-  const sizes = [1500, 1000, 750]
-  const enhanceModes = [false, true]
-
-  for (const size of sizes) {
-    for (const enhance of enhanceModes) {
-      const canvas = drawDownscaled(img, size)
-      if (!canvas) continue
-      if (enhance) enhanceContrast(canvas)
-      const found = await detectOnCanvas(canvas)
-      log('attempt', { size, enhance, found: !!found })
-      if (found) {
-        URL.revokeObjectURL(url)
-        return found
-      }
-    }
+  const canvas = drawDownscaled(img, 1500)
+  URL.revokeObjectURL(url)
+  if (!canvas) {
+    log('canvas alloc failed')
+    return null
   }
 
-  URL.revokeObjectURL(url)
-  log('all strategies failed')
-  return null
+  // Stage 1: client BarcodeDetector. Fast path for normal-contrast prints.
+  const W = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
+  if (W.BarcodeDetector) {
+    try {
+      const formats = (await W.BarcodeDetector.getSupportedFormats?.()) ?? null
+      if (!formats || formats.includes('qr_code')) {
+        const detector = new W.BarcodeDetector({ formats: ['qr_code'] })
+        const results = await detector.detect(canvas)
+        if (results.length && results[0].rawValue) {
+          log('decoded by client BarcodeDetector')
+          return results[0].rawValue
+        }
+        log('BarcodeDetector found 0 codes — escalating to server')
+      }
+    } catch (err) {
+      log('BarcodeDetector threw — escalating to server', err)
+    }
+  } else {
+    log('BarcodeDetector unavailable — escalating to server')
+  }
+
+  // Stage 2: server-side ZBar via /api/v1/decode-qr.
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85)
+  )
+  if (!blob) {
+    log('canvas.toBlob returned null')
+    return null
+  }
+  log('uploading to server', { size: blob.size })
+  return decodeViaServer(blob)
 }
