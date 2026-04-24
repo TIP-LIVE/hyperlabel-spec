@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
-import { PURCHASED_ORDER_FILTER } from '@/lib/dispatch-quota'
+import { PURCHASED_ORDER_FILTER, getDispatchQuota } from '@/lib/dispatch-quota'
 import { getOrgNamesMap } from '@/lib/admin/org-names'
 
 /**
@@ -54,13 +54,35 @@ export async function GET(req: NextRequest) {
       take: 50,
     })
 
+    // Per-order remaining must be capped by org-level remaining — otherwise
+    // dispatches created without an orderId (e.g. via /api/v1/dispatch) eat
+    // into the org's pool without decrementing any order's displayed slot
+    // count, and we'd show (and allow) more labels than the server accepts.
+    const uniqueScopes = new Map<string, { orgId: string } | { userId: string }>()
+    for (const o of orders) {
+      const key = o.orgId ? `org:${o.orgId}` : `user:${o.userId}`
+      if (!uniqueScopes.has(key)) {
+        uniqueScopes.set(key, o.orgId ? { orgId: o.orgId } : { userId: o.userId })
+      }
+    }
+    const scopeRemaining = new Map<string, number>()
+    await Promise.all(
+      Array.from(uniqueScopes.entries()).map(async ([key, scope]) => {
+        const q = await getDispatchQuota(db, scope)
+        scopeRemaining.set(key, q.remaining)
+      }),
+    )
+
     const results = orders
       .map((o) => {
         const dispatched = o.dispatches.reduce(
           (sum, s) => sum + Math.max(s.labelCount ?? 0, s._count.shipmentLabels),
           0,
         )
-        const remaining = Math.max(0, o.quantity - dispatched)
+        const nominalRemaining = Math.max(0, o.quantity - dispatched)
+        const scopeKey = o.orgId ? `org:${o.orgId}` : `user:${o.userId}`
+        const orgRemaining = scopeRemaining.get(scopeKey) ?? 0
+        const remaining = Math.min(nominalRemaining, orgRemaining)
         return {
           id: o.id,
           shortId: o.id.slice(-8).toUpperCase(),
