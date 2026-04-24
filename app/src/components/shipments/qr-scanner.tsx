@@ -12,10 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard } from 'lucide-react'
+import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard, Flashlight, FlashlightOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import type { IScannerControls } from '@zxing/browser'
+
+// Torch isn't in lib.dom's MediaTrackCapabilities yet (Chrome-only extension).
+type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
 
 interface QrScannerProps {
   onDeviceIdScanned: (deviceId: string) => void
@@ -35,8 +38,11 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
   const [manualId, setManualId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [scannedValue, setScannedValue] = useState<string | null>(null)
+  const [torchSupported, setTorchSupported] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scannerControlsRef = useRef<IScannerControls | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   // extractDeviceId is now imported from @/lib/extract-device-id
 
@@ -49,6 +55,9 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
+    mediaStreamRef.current = null
+    setTorchSupported(false)
+    setTorchOn(false)
     setScanning(false)
   }, [])
 
@@ -88,23 +97,48 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     try {
       // Lazy-load zxing only when the user actually opens the camera.
       // The awaits here also give React time to mount the <video> element.
-      const { BrowserQRCodeReader } = await import('@zxing/browser')
-      const reader = new BrowserQRCodeReader()
+      const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+        import('@zxing/browser'),
+        import('@zxing/library'),
+      ])
+
+      // TRY_HARDER tells zxing to spend more cycles on marginal frames
+      // (low contrast, motion blur, partial occlusion). Constraining formats
+      // to QR_CODE keeps it fast despite the extra effort.
+      const hints = new Map()
+      hints.set(DecodeHintType.TRY_HARDER, true)
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
+
+      const reader = new BrowserQRCodeReader(hints)
 
       // Prefer the rear camera when available (iOS Safari labels may be empty
-      // until permission is granted — in that case fall back to the first device
-      // and the browser still honors facingMode: environment on most devices).
+      // until permission is granted — in that case fall back to facingMode,
+      // which most browsers honor).
       const devices = await BrowserQRCodeReader.listVideoInputDevices()
       const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
-      const deviceId = rearCam?.deviceId ?? devices[0]?.deviceId
+
+      // HD resolution dramatically improves detection of low-contrast prints
+      // (our green-on-navy label) — the default 640x480 often can't resolve
+      // the finder patterns when the label is more than ~15cm from the lens.
+      const videoConstraints: MediaTrackConstraints = rearCam?.deviceId
+        ? {
+            deviceId: { exact: rearCam.deviceId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          }
+        : {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          }
 
       if (!videoRef.current) {
         setScanning(false)
         return
       }
 
-      const controls = await reader.decodeFromVideoDevice(
-        deviceId,
+      const controls = await reader.decodeFromConstraints(
+        { video: videoConstraints, audio: false },
         videoRef.current,
         (result, _err, ctrl) => {
           if (!result) return
@@ -117,6 +151,15 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
         }
       )
       scannerControlsRef.current = controls
+
+      // Detect torch capability — supported on Chrome Android, not iOS Safari.
+      const stream = videoRef.current.srcObject as MediaStream | null
+      if (stream) {
+        mediaStreamRef.current = stream
+        const track = stream.getVideoTracks()[0]
+        const caps = track?.getCapabilities?.() as TorchCapabilities | undefined
+        if (caps?.torch) setTorchSupported(true)
+      }
     } catch (err) {
       console.error('Camera error:', err)
       const name = err instanceof Error ? err.name : ''
@@ -129,6 +172,21 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
       setMode('manual')
     }
   }, [handleScannedId])
+
+  const toggleTorch = useCallback(async () => {
+    const stream = mediaStreamRef.current
+    const track = stream?.getVideoTracks()[0]
+    if (!track) return
+    const next = !torchOn
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
+      })
+      setTorchOn(next)
+    } catch (err) {
+      console.warn('Torch toggle failed:', err)
+    }
+  }, [torchOn])
 
   // Handle manual entry — accepts the new 9-digit displayId (e.g. 002011395)
   // or the legacy TIP-001 / HL-001234 format.
@@ -234,6 +292,18 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
                       <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
                     </div>
                   </div>
+                )}
+                {scanning && torchSupported && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={torchOn ? 'default' : 'secondary'}
+                    onClick={toggleTorch}
+                    className="absolute bottom-3 right-3 gap-1.5"
+                  >
+                    {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
+                    {torchOn ? 'Flash on' : 'Flash'}
+                  </Button>
                 )}
                 {!scanning && !error && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">

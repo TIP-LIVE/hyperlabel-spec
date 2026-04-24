@@ -10,8 +10,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Flashlight, FlashlightOff } from 'lucide-react'
 import type { IScannerControls } from '@zxing/browser'
+
+// Torch isn't in lib.dom's MediaTrackCapabilities yet (Chrome-only extension).
+type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
 
 interface ModemQrScannerProps {
   /** Called with the raw scanned text, e.g. "P/N:...;IMEI:...;SW:..." */
@@ -40,8 +43,11 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [scannedValue, setScannedValue] = useState<string | null>(null)
+  const [torchSupported, setTorchSupported] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scannerControlsRef = useRef<IScannerControls | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   const cameraSupported = checkCameraSupport()
 
@@ -53,6 +59,9 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
+    mediaStreamRef.current = null
+    setTorchSupported(false)
+    setTorchOn(false)
     setScanning(false)
   }, [])
 
@@ -88,23 +97,48 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
 
     try {
       // Lazy-load zxing only when the user actually opens the camera.
-      const { BrowserQRCodeReader } = await import('@zxing/browser')
-      const reader = new BrowserQRCodeReader()
+      const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+        import('@zxing/browser'),
+        import('@zxing/library'),
+      ])
+
+      // TRY_HARDER lets zxing spend more cycles on marginal frames (low
+      // contrast, motion blur, partial occlusion). Scoping to QR_CODE keeps
+      // it fast despite the extra effort.
+      const hints = new Map()
+      hints.set(DecodeHintType.TRY_HARDER, true)
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
+
+      const reader = new BrowserQRCodeReader(hints)
 
       // Prefer the rear camera when available. iOS Safari labels may be empty
-      // until permission is granted — in that case fall back to the first device
-      // and the browser still honors facingMode: environment on most devices.
+      // until permission is granted — in that case fall back to facingMode,
+      // which most browsers honor.
       const devices = await BrowserQRCodeReader.listVideoInputDevices()
       const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
-      const deviceId = rearCam?.deviceId ?? devices[0]?.deviceId
+
+      // HD resolution dramatically improves detection of small / low-contrast
+      // QR codes — modem PCB prints are tiny, so the default 640x480 often
+      // can't resolve the finder patterns from a normal working distance.
+      const videoConstraints: MediaTrackConstraints = rearCam?.deviceId
+        ? {
+            deviceId: { exact: rearCam.deviceId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          }
+        : {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          }
 
       if (!videoRef.current) {
         setScanning(false)
         return
       }
 
-      const controls = await reader.decodeFromVideoDevice(
-        deviceId,
+      const controls = await reader.decodeFromConstraints(
+        { video: videoConstraints, audio: false },
         videoRef.current,
         (result, _err, ctrl) => {
           if (!result) return
@@ -117,6 +151,15 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
         }
       )
       scannerControlsRef.current = controls
+
+      // Detect torch capability — supported on Chrome Android, not iOS Safari.
+      const stream = videoRef.current.srcObject as MediaStream | null
+      if (stream) {
+        mediaStreamRef.current = stream
+        const track = stream.getVideoTracks()[0]
+        const caps = track?.getCapabilities?.() as TorchCapabilities | undefined
+        if (caps?.torch) setTorchSupported(true)
+      }
     } catch (err) {
       console.error('[modem-qr-scanner] camera error:', err)
       const name = err instanceof Error ? err.name : ''
@@ -128,6 +171,21 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
       setScanning(false)
     }
   }, [handleRawScanned])
+
+  const toggleTorch = useCallback(async () => {
+    const stream = mediaStreamRef.current
+    const track = stream?.getVideoTracks()[0]
+    if (!track) return
+    const next = !torchOn
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
+      })
+      setTorchOn(next)
+    } catch (err) {
+      console.warn('[modem-qr-scanner] torch toggle failed:', err)
+    }
+  }, [torchOn])
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
@@ -200,6 +258,18 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
                     <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
                   </div>
                 </div>
+              )}
+              {scanning && torchSupported && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={torchOn ? 'default' : 'secondary'}
+                  onClick={toggleTorch}
+                  className="absolute bottom-3 right-3 gap-1.5"
+                >
+                  {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
+                  {torchOn ? 'Flash on' : 'Flash'}
+                </Button>
               )}
               {!scanning && !error && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
