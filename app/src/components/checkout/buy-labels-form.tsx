@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Loader2, CreditCard, Check, ChevronDown, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { LabelPackDisplay } from '@/lib/pricing'
 
 const formSchema = z.object({
   packType: z.enum(['starter', 'team', 'volume']),
@@ -17,35 +18,9 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
-const packs = [
-  {
-    key: 'starter' as const,
-    name: '1 Label',
-    labels: 1,
-    price: 25,
-    perLabel: 25,
-    description: 'Try it out',
-  },
-  {
-    key: 'team' as const,
-    name: '5 Labels',
-    labels: 5,
-    price: 110,
-    perLabel: 22,
-    description: 'Most popular',
-    popular: true,
-    savings: 15,
-  },
-  {
-    key: 'volume' as const,
-    name: '10 Labels',
-    labels: 10,
-    price: 200,
-    perLabel: 20,
-    description: 'Best price per label',
-    savings: 50,
-  },
-]
+function formatPrice(dollars: number): string {
+  return Number.isInteger(dollars) ? dollars.toFixed(0) : dollars.toFixed(2)
+}
 
 const includedFeatures = [
   '60+ days battery life',
@@ -57,16 +32,23 @@ const includedFeatures = [
   'Free worldwide shipping',
 ]
 
-export function BuyLabelsForm() {
+interface BuyLabelsFormProps {
+  packs: LabelPackDisplay[]
+}
+
+export function BuyLabelsForm({ packs }: BuyLabelsFormProps) {
   const [loading, setLoading] = useState(false)
   const [autoSubmitting, setAutoSubmitting] = useState(false)
   const [showFeatures, setShowFeatures] = useState(false)
   const searchParams = useSearchParams()
 
+  const packKeys = packs.map((p) => p.key)
   const packParam = searchParams.get('pack')
-  const validPackParam = packParam && ['starter', 'team', 'volume'].includes(packParam)
+  const validPackParam = packParam && packKeys.includes(packParam)
     ? (packParam as 'starter' | 'team' | 'volume')
     : null
+
+  const defaultPack = packs.find((p) => p.popular)?.key ?? packs[0]?.key ?? 'team'
 
   const {
     handleSubmit,
@@ -75,12 +57,12 @@ export function BuyLabelsForm() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      packType: validPackParam || 'team',
+      packType: validPackParam || (defaultPack as 'starter' | 'team' | 'volume'),
     },
   })
 
   const selectedPack = watch('packType')
-  const currentPack = packs.find((p) => p.key === selectedPack)!
+  const currentPack = packs.find((p) => p.key === selectedPack) ?? packs[0]
 
   // Auto-submit when arriving with a valid ?pack= param
   useEffect(() => {
@@ -136,7 +118,7 @@ export function BuyLabelsForm() {
             type="button"
             aria-label={`Select ${pack.name} for $${pack.price}`}
             aria-pressed={selectedPack === pack.key}
-            onClick={() => setValue('packType', pack.key)}
+            onClick={() => setValue('packType', pack.key as 'starter' | 'team' | 'volume')}
             className={cn(
               'relative rounded-xl border-2 p-5 text-left transition-all hover:border-primary/50',
               selectedPack === pack.key
@@ -157,17 +139,17 @@ export function BuyLabelsForm() {
             <div className="text-lg font-semibold">{pack.name}</div>
             <div className="text-xs text-muted-foreground">{pack.description}</div>
             <div className="mt-3">
-              <span className="text-3xl font-bold">${pack.price}</span>
+              <span className="text-3xl font-bold">${formatPrice(pack.price)}</span>
             </div>
             {pack.labels > 1 && (
               <div className="mt-1 text-sm text-muted-foreground">
-                ${pack.perLabel} per label
+                ${formatPrice(pack.perLabel)} per label
               </div>
             )}
-            {pack.savings && (
+            {pack.savings > 0 && (
               <div className="mt-2">
                 <Badge variant="secondary" className="text-xs text-green-700 dark:text-green-400">
-                  Save ${pack.savings}
+                  Save ${formatPrice(pack.savings)}
                 </Badge>
               </div>
             )}
@@ -185,7 +167,7 @@ export function BuyLabelsForm() {
         ) : (
           <>
             <CreditCard className="mr-2 h-4 w-4" />
-            Pay ${currentPack.price}.00
+            Pay ${currentPack ? formatPrice(currentPack.price) : '0'}
           </>
         )}
       </Button>

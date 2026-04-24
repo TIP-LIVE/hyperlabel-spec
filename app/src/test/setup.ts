@@ -11,9 +11,6 @@ process.env.CLERK_WEBHOOK_SECRET = 'test-clerk-webhook-secret'
 process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000'
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_dummy'
 process.env.CLERK_SECRET_KEY = 'sk_test_dummy'
-process.env.STRIPE_PRICE_STARTER = 'price_test_starter'
-process.env.STRIPE_PRICE_TEAM = 'price_test_team'
-process.env.STRIPE_PRICE_VOLUME = 'price_test_volume'
 
 // Mock Clerk server module globally
 vi.mock('@clerk/nextjs/server', () => ({

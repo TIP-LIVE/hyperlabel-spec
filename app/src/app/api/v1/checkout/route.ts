@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { stripe, LABEL_PRODUCTS, LabelPackType, isStripeConfigured } from '@/lib/stripe'
+import { stripe, isStripeConfigured } from '@/lib/stripe'
+import { getLabelPack } from '@/lib/pricing'
 import { requireOrgAuth } from '@/lib/auth'
 import { rateLimit, RATE_LIMIT_CHECKOUT, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { z } from 'zod'
@@ -46,7 +47,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { packType } = validated.data
-    const product = LABEL_PRODUCTS[packType as LabelPackType]
+
+    step = 'load-pack'
+    const pack = await getLabelPack(packType)
+    if (!pack) {
+      console.error(`[checkout] Pack "${packType}" not found in DB. Visit /admin/pricing to seed defaults.`)
+      return NextResponse.json(
+        { error: 'This label pack is not available for purchase right now. Please contact support.' },
+        { status: 400 }
+      )
+    }
 
     step = 'stripe-config-check'
     if (!isStripeConfigured()) {
@@ -57,15 +67,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!product.priceId) {
-      console.error(`[checkout] Missing Stripe price ID for pack type: ${packType}. Set STRIPE_PRICE_${packType.toUpperCase()} env var.`)
-      return NextResponse.json(
-        { error: `The ${product.name} pack is not available for purchase right now. Please contact support.` },
-        { status: 400 }
-      )
-    }
-
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tip.live'
+    const productName = `${pack.quantity} Tracking Label${pack.quantity > 1 ? 's' : ''}`
 
     step = 'stripe-create-session'
     // Create Stripe Checkout session with retry on connection errors
@@ -75,7 +78,14 @@ export async function POST(req: NextRequest) {
       client_reference_id: user.id,
       line_items: [
         {
-          price: product.priceId,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: productName,
+              description: `Disposable tracking label${pack.quantity > 1 ? 's' : ''} with 60+ day battery`,
+            },
+            unit_amount: pack.priceCents,
+          },
           quantity: 1,
         },
       ],
@@ -83,7 +93,7 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         orgId: context.orgId,
         packType,
-        quantity: product.quantity.toString(),
+        quantity: pack.quantity.toString(),
       },
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/checkout/cancel`,

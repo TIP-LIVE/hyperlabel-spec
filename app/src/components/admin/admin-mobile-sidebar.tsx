@@ -23,6 +23,7 @@ import {
   Menu,
   Activity,
   ClipboardList,
+  DollarSign,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
@@ -36,6 +37,7 @@ const navigation = [
   { name: 'Devices', href: '/admin/devices', icon: Radio },
   { name: 'Webhooks', href: '/admin/webhooks', icon: Activity },
   { name: 'Research', href: '/admin/research', icon: ClipboardList },
+  { name: 'Pricing', href: '/admin/pricing', icon: DollarSign },
   { name: 'Users', href: '/admin/users', icon: Users },
 ]
 

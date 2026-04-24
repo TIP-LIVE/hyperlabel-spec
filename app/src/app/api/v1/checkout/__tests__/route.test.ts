@@ -28,27 +28,18 @@ vi.mock('@/lib/stripe', () => ({
       },
     },
   },
-  LABEL_PRODUCTS: {
-    starter: {
-      name: '1 Tracking Label',
-      description: 'Single disposable tracking label',
-      quantity: 1,
-      priceId: 'price_test_starter',
-    },
-    team: {
-      name: '5 Tracking Labels',
-      description: 'Pack of 5 tracking labels',
-      quantity: 5,
-      priceId: 'price_test_team',
-    },
-    volume: {
-      name: '10 Tracking Labels',
-      description: 'Pack of 10 tracking labels',
-      quantity: 10,
-      priceId: 'price_test_volume',
-    },
-  },
   isStripeConfigured: vi.fn().mockReturnValue(true),
+}))
+
+vi.mock('@/lib/pricing', () => ({
+  getLabelPack: vi.fn(async (key: string) => {
+    const packs: Record<string, { key: string; name: string; description: string; quantity: number; priceCents: number; popular: boolean }> = {
+      starter: { key: 'starter', name: '1 Label', description: 'Try it out', quantity: 1, priceCents: 2500, popular: false },
+      team: { key: 'team', name: '5 Labels', description: 'Most popular', quantity: 5, priceCents: 11000, popular: true },
+      volume: { key: 'volume', name: '10 Labels', description: 'Best price per label', quantity: 10, priceCents: 20000, popular: false },
+    }
+    return packs[key] ?? null
+  }),
 }))
 
 vi.mock('@/lib/admin-whitelist', () => ({

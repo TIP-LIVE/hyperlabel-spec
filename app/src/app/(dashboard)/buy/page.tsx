@@ -1,12 +1,18 @@
 import { BuyLabelsForm } from '@/components/checkout/buy-labels-form'
+import { getLabelPacks, toDisplayPacks } from '@/lib/pricing'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Buy Labels',
   description: 'Purchase tracking labels for your shipments',
 }
 
-export default function BuyLabelsPage() {
+export default async function BuyLabelsPage() {
+  const packs = await getLabelPacks()
+  const displayPacks = toDisplayPacks(packs)
+
   return (
     <div className="mx-auto max-w-4xl">
       {/* Compact Header */}
@@ -17,7 +23,7 @@ export default function BuyLabelsPage() {
         </p>
       </div>
 
-      <BuyLabelsForm />
+      <BuyLabelsForm packs={displayPacks} />
     </div>
   )
 }

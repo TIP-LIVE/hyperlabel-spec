@@ -286,6 +286,20 @@ model ShipmentLabel {
   @@map("shipment_labels")
 }
 
+/// Pricing for label packs sold via Stripe checkout. Edited via /admin/pricing.
+model LabelPack {
+  key         String   @id // "starter" | "team" | "volume"
+  name        String
+  description String
+  quantity    Int
+  priceCents  Int      @map("price_cents")
+  popular     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("label_packs")
+}
+
 /// Organisation-level settings (Clerk org ID)
 model OrgSettings {
   id                        String   @id @default(cuid())
