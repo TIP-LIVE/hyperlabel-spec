@@ -27,10 +27,7 @@ import {
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import { ScannedLabelRow } from './scanned-label-row'
-import type { IScannerControls } from '@zxing/browser'
-
-// Torch isn't in lib.dom's MediaTrackCapabilities yet (Chrome-only extension).
-type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
+import { startQrScan, type QrScanController } from '@/lib/qr-scan'
 
 interface ScannedLabel {
   labelId: string
@@ -102,19 +99,12 @@ export function LabelScanDialog({
   const [torchOn, setTorchOn] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
-  const scannerControlsRef = useRef<IScannerControls | null>(null)
+  const controllerRef = useRef<QrScanController | null>(null)
   const iccidInputRef = useRef<HTMLInputElement>(null)
-  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   const stopCamera = useCallback(() => {
-    if (scannerControlsRef.current) {
-      scannerControlsRef.current.stop()
-      scannerControlsRef.current = null
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-    mediaStreamRef.current = null
+    controllerRef.current?.stop()
+    controllerRef.current = null
     setTorchSupported(false)
     setTorchOn(false)
     setScanning(false)
@@ -205,69 +195,17 @@ export function LabelScanDialog({
     setScanning(true)
 
     try {
-      // Lazy-load zxing only when the user actually opens the camera.
-      // The awaits here also give React time to mount the <video> element
-      // after the caller flipped mode to 'camera'.
-      const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
-        import('@zxing/browser'),
-        import('@zxing/library'),
-      ])
-
-      // TRY_HARDER lets zxing spend more cycles on marginal frames (low
-      // contrast, motion blur, partial occlusion). Scoping to QR_CODE keeps
-      // it fast despite the extra effort.
-      const hints = new Map()
-      hints.set(DecodeHintType.TRY_HARDER, true)
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
-
-      const reader = new BrowserQRCodeReader(hints)
-
-      // Prefer the rear camera when available. iOS Safari labels may be empty
-      // until permission is granted — in that case fall back to facingMode.
-      const devices = await BrowserQRCodeReader.listVideoInputDevices()
-      const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
-
-      // HD resolution dramatically improves detection of small / low-contrast
-      // QR codes — default 640x480 can't resolve finder patterns on the
-      // green-on-navy TIP print from normal working distance.
-      const videoConstraints: MediaTrackConstraints = rearCam?.deviceId
-        ? {
-            deviceId: { exact: rearCam.deviceId },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          }
-        : {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          }
-
       if (!videoRef.current) {
         setScanning(false)
         return
       }
 
-      const controls = await reader.decodeFromConstraints(
-        { video: videoConstraints, audio: false },
-        videoRef.current,
-        (result, _err, ctrl) => {
-          if (result) {
-            ctrl.stop()
-            scannerControlsRef.current = null
-            handleQrScanned(result.getText())
-          }
-        }
-      )
-      scannerControlsRef.current = controls
-
-      // Detect torch capability — supported on Chrome Android, not iOS Safari.
-      const stream = videoRef.current.srcObject as MediaStream | null
-      if (stream) {
-        mediaStreamRef.current = stream
-        const track = stream.getVideoTracks()[0]
-        const caps = track?.getCapabilities?.() as TorchCapabilities | undefined
-        if (caps?.torch) setTorchSupported(true)
-      }
+      const controller = await startQrScan(videoRef.current, (rawValue) => {
+        controllerRef.current = null
+        handleQrScanned(rawValue)
+      })
+      controllerRef.current = controller
+      if (controller.torchSupported) setTorchSupported(true)
     } catch (err) {
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError') {
@@ -281,18 +219,9 @@ export function LabelScanDialog({
   }, [handleQrScanned])
 
   const toggleTorch = useCallback(async () => {
-    const stream = mediaStreamRef.current
-    const track = stream?.getVideoTracks()[0]
-    if (!track) return
     const next = !torchOn
-    try {
-      await track.applyConstraints({
-        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
-      })
-      setTorchOn(next)
-    } catch (err) {
-      console.warn('[label-scan-dialog] torch toggle failed:', err)
-    }
+    await controllerRef.current?.setTorch(next)
+    setTorchOn(next)
   }, [torchOn])
 
   // Handle manual ID submission
@@ -343,10 +272,8 @@ export function LabelScanDialog({
   // would otherwise keep running. Stop it on unmount unconditionally.
   useEffect(() => {
     return () => {
-      if (scannerControlsRef.current) {
-        scannerControlsRef.current.stop()
-        scannerControlsRef.current = null
-      }
+      controllerRef.current?.stop()
+      controllerRef.current = null
     }
   }, [])
 

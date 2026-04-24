@@ -15,10 +15,7 @@ import {
 import { ScanLine, Camera, Loader2, CheckCircle, AlertCircle, Keyboard, Flashlight, FlashlightOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
-import type { IScannerControls } from '@zxing/browser'
-
-// Torch isn't in lib.dom's MediaTrackCapabilities yet (Chrome-only extension).
-type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
+import { startQrScan, type QrScanController } from '@/lib/qr-scan'
 
 interface QrScannerProps {
   onDeviceIdScanned: (deviceId: string) => void
@@ -41,21 +38,14 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
   const [torchSupported, setTorchSupported] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const scannerControlsRef = useRef<IScannerControls | null>(null)
-  const mediaStreamRef = useRef<MediaStream | null>(null)
+  const controllerRef = useRef<QrScanController | null>(null)
 
   // extractDeviceId is now imported from @/lib/extract-device-id
 
   // Stop camera
   const stopCamera = useCallback(() => {
-    if (scannerControlsRef.current) {
-      scannerControlsRef.current.stop()
-      scannerControlsRef.current = null
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-    mediaStreamRef.current = null
+    controllerRef.current?.stop()
+    controllerRef.current = null
     setTorchSupported(false)
     setTorchOn(false)
     setScanning(false)
@@ -66,10 +56,8 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
   // camera LED stays on and the stream keeps decoding in the background.
   useEffect(() => {
     return () => {
-      if (scannerControlsRef.current) {
-        scannerControlsRef.current.stop()
-        scannerControlsRef.current = null
-      }
+      controllerRef.current?.stop()
+      controllerRef.current = null
     }
   }, [])
 
@@ -95,71 +83,20 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
     setScannedValue(null)
 
     try {
-      // Lazy-load zxing only when the user actually opens the camera.
-      // The awaits here also give React time to mount the <video> element.
-      const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
-        import('@zxing/browser'),
-        import('@zxing/library'),
-      ])
-
-      // TRY_HARDER tells zxing to spend more cycles on marginal frames
-      // (low contrast, motion blur, partial occlusion). Constraining formats
-      // to QR_CODE keeps it fast despite the extra effort.
-      const hints = new Map()
-      hints.set(DecodeHintType.TRY_HARDER, true)
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE])
-
-      const reader = new BrowserQRCodeReader(hints)
-
-      // Prefer the rear camera when available (iOS Safari labels may be empty
-      // until permission is granted — in that case fall back to facingMode,
-      // which most browsers honor).
-      const devices = await BrowserQRCodeReader.listVideoInputDevices()
-      const rearCam = devices.find((d) => /back|rear|environment/i.test(d.label))
-
-      // HD resolution dramatically improves detection of low-contrast prints
-      // (our green-on-navy label) — the default 640x480 often can't resolve
-      // the finder patterns when the label is more than ~15cm from the lens.
-      const videoConstraints: MediaTrackConstraints = rearCam?.deviceId
-        ? {
-            deviceId: { exact: rearCam.deviceId },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          }
-        : {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          }
-
       if (!videoRef.current) {
         setScanning(false)
         return
       }
 
-      const controls = await reader.decodeFromConstraints(
-        { video: videoConstraints, audio: false },
-        videoRef.current,
-        (result, _err, ctrl) => {
-          if (!result) return
-          const scannedDeviceId = extractDeviceId(result.getText())
-          if (scannedDeviceId) {
-            ctrl.stop()
-            scannerControlsRef.current = null
-            handleScannedId(scannedDeviceId)
-          }
+      const controller = await startQrScan(videoRef.current, (rawText) => {
+        const scannedDeviceId = extractDeviceId(rawText)
+        if (scannedDeviceId) {
+          controllerRef.current = null
+          handleScannedId(scannedDeviceId)
         }
-      )
-      scannerControlsRef.current = controls
-
-      // Detect torch capability — supported on Chrome Android, not iOS Safari.
-      const stream = videoRef.current.srcObject as MediaStream | null
-      if (stream) {
-        mediaStreamRef.current = stream
-        const track = stream.getVideoTracks()[0]
-        const caps = track?.getCapabilities?.() as TorchCapabilities | undefined
-        if (caps?.torch) setTorchSupported(true)
-      }
+      })
+      controllerRef.current = controller
+      if (controller.torchSupported) setTorchSupported(true)
     } catch (err) {
       console.error('Camera error:', err)
       const name = err instanceof Error ? err.name : ''
@@ -174,18 +111,9 @@ export function QrScanner({ onDeviceIdScanned }: QrScannerProps) {
   }, [handleScannedId])
 
   const toggleTorch = useCallback(async () => {
-    const stream = mediaStreamRef.current
-    const track = stream?.getVideoTracks()[0]
-    if (!track) return
     const next = !torchOn
-    try {
-      await track.applyConstraints({
-        advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }],
-      })
-      setTorchOn(next)
-    } catch (err) {
-      console.warn('Torch toggle failed:', err)
-    }
+    await controllerRef.current?.setTorch(next)
+    setTorchOn(next)
   }, [torchOn])
 
   // Handle manual entry — accepts the new 9-digit displayId (e.g. 002011395)

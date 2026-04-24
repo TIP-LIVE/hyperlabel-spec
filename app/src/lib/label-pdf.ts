@@ -18,7 +18,12 @@ export interface LabelData {
 
 // Layout constants (page is 1000x1500 points)
 // Positions match the reference PDF (TIP-Label-withQR-asreference-10x15cm.pdf)
-const QR_COLOR = rgb(0x66 / 255, 1, 0) // #66FF00
+//
+// QR modules print white-on-navy for maximum scanner contrast. Early prints
+// used #66FF00 green, which scanned poorly on iOS because the green/navy
+// luminance delta is too narrow for most binarizers. Text stays green
+// (#66FF00) for brand continuity — only the QR needs to be high-contrast.
+const QR_COLOR = rgb(1, 1, 1) // #FFFFFF — white on navy band
 
 const LAYOUT = {
   urlText: { x: 128, y: 147, fontSize: 28 },
