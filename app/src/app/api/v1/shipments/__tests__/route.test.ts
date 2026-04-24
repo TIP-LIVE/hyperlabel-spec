@@ -34,6 +34,9 @@ vi.mock('@/lib/db', () => {
       findMany: vi.fn().mockResolvedValue([]),
       createMany: vi.fn(),
     },
+    order: {
+      aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 0 } }),
+    },
     locationEvent: {
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
@@ -289,6 +292,8 @@ describe('POST /api/v1/shipments (LABEL_DISPATCH)', () => {
       { id: 'label-2', deviceId: 'TIP-002', status: 'SOLD', orderLabels: [] },
     ] as never)
     mockDb.shipmentLabel.findMany.mockResolvedValueOnce([] as never) // no active dispatches
+    mockDb.order.aggregate.mockResolvedValueOnce({ _sum: { quantity: 10 } } as never) // 10 purchased
+    mockDb.shipment.findMany.mockResolvedValueOnce([] as never) // no active dispatches in quota lookup
 
     const createdShipment = {
       id: 'ship-dispatch',
@@ -331,5 +336,33 @@ describe('POST /api/v1/shipments (LABEL_DISPATCH)', () => {
       type: 'LABEL_DISPATCH',
       status: 'PENDING',
     })
+  })
+
+  it('returns 400 when dispatch exceeds org quota', async () => {
+    mockAuthenticatedUser()
+    mockDb.user.findUnique.mockResolvedValueOnce(fakeDbUser as never)
+    mockDb.shipment.findUnique.mockResolvedValue(null as never)
+    mockDb.label.findMany.mockResolvedValueOnce([
+      { id: 'label-1', deviceId: 'TIP-001', status: 'SOLD', orderLabels: [] },
+      { id: 'label-2', deviceId: 'TIP-002', status: 'SOLD', orderLabels: [] },
+    ] as never)
+    mockDb.shipmentLabel.findMany.mockResolvedValueOnce([] as never)
+    // Org has bought 10 and already reserved 9 — only 1 remaining, but request asks for 2
+    mockDb.order.aggregate.mockResolvedValueOnce({ _sum: { quantity: 10 } } as never)
+    mockDb.shipment.findMany.mockResolvedValueOnce([
+      { labelCount: 9, _count: { shipmentLabels: 0 } },
+    ] as never)
+
+    const req = createTestRequest('/api/v1/shipments', {
+      method: 'POST',
+      body: validDispatchShipment({ labelIds: ['label-1', 'label-2'] }),
+    })
+
+    const res = await POST(req)
+    const { status, body } = await parseResponse<{ error: string; quota: { remaining: number; totalBought: number } }>(res)
+
+    expect(status).toBe(400)
+    expect(body.error).toMatch(/only 1 of 10 purchased/)
+    expect(body.quota).toMatchObject({ remaining: 1, totalBought: 10 })
   })
 })

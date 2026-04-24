@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { generateShareCode } from '@/lib/utils/share-code'
+import { getDispatchQuota } from '@/lib/dispatch-quota'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -189,18 +190,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Check label count doesn't exceed remaining (order qty minus already-dispatched)
-    const existingDispatches = await db.shipment.aggregate({
-      where: { orderId: id, type: 'LABEL_DISPATCH', status: { not: 'CANCELLED' } },
-      _sum: { labelCount: true },
-    })
-    const alreadyDispatched = existingDispatches._sum.labelCount || 0
-    const remaining = order.quantity - alreadyDispatched
+    // Org-level quota: aggregates across every active LABEL_DISPATCH for this
+    // org — counts both shipmentLabels rows AND labelCount reservations. A
+    // per-order labelCount sum misses dispatches without an orderId or with
+    // only shipmentLabels attached (e.g. anything created via /api/v1/dispatch),
+    // which lets the org double-book purchased slots.
+    const scope = order.orgId ? { orgId: order.orgId } : { userId: order.userId }
+    const quota = await getDispatchQuota(db, scope)
 
-    if (labelCount > remaining) {
+    if (labelCount > quota.remaining) {
       return NextResponse.json(
         {
-          error: `Label count (${labelCount}) exceeds remaining capacity (${remaining} of ${order.quantity})`,
+          error: `Cannot dispatch ${labelCount} label${labelCount === 1 ? '' : 's'} — only ${quota.remaining} of ${quota.totalBought} purchased label${quota.totalBought === 1 ? '' : 's'} remaining`,
+          quota,
         },
         { status: 400 }
       )

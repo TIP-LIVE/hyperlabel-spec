@@ -7,6 +7,7 @@ import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
 import { reverseGeocodeToAddressLine } from '@/lib/geocoding'
 import { isNullIsland } from '@/lib/validations/device'
+import { getDispatchQuota } from '@/lib/dispatch-quota'
 
 /**
  * GET /api/v1/shipments - List user's shipments
@@ -329,6 +330,22 @@ async function createLabelDispatch(
       {
         error: 'Some labels are already in an active dispatch',
         labels: existingDispatch.map((sl) => sl.label.deviceId),
+      },
+      { status: 400 }
+    )
+  }
+
+  // Org-level quota check — counts both shipmentLabels rows and labelCount
+  // reservations across every active LABEL_DISPATCH for this org, so this path
+  // can't be used to double-book slots that were already claimed via
+  // /api/v1/dispatch or an admin blank reservation. Race-safe locking lives in
+  // /api/v1/dispatch; this is a coarser guard for the generic shipments route.
+  const quota = await getDispatchQuota(db, { orgId: context.orgId })
+  if (labelIds.length > quota.remaining) {
+    return NextResponse.json(
+      {
+        error: `Cannot dispatch ${labelIds.length} label${labelIds.length === 1 ? '' : 's'} — only ${quota.remaining} of ${quota.totalBought} purchased label${quota.totalBought === 1 ? '' : 's'} remaining`,
+        quota,
       },
       { status: 400 }
     )
