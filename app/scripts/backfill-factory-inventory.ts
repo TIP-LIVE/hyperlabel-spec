@@ -25,6 +25,11 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
+import { neonConfig } from '@neondatabase/serverless'
+
+// Node < 22 has no global WebSocket; Neon's driver needs one.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+neonConfig.webSocketConstructor = require('ws')
 
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) {
