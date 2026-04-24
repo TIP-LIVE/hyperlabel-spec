@@ -168,7 +168,7 @@ Additional rules:
 2. By ICCID — preferred for cell tower events (SIMs move between devices)
 3. By IMEI — fallback only
 
-If no label found, **auto-registers** a new label (`TIP-001`, `TIP-002`, etc.) with status `ACTIVE` and `manufacturedAt = now()`. The 24h manufacturing cooldown then suppresses LocationEvent creation (see "Manufacturing Cooldown" section above).
+If no label found, **auto-registers** a new label (`TIP-001`, `TIP-002`, etc.) with status `INVENTORY` and `manufacturedAt = now()`. The 24h manufacturing cooldown then suppresses LocationEvent creation (see "Manufacturing Cooldown" section above). Label stays INVENTORY until admin bulk-register (`/api/v1/labels/register`) assigns it to an order → SOLD, then user activation → ACTIVE.
 
 #### Orphaned Device Detection
 If a label reports location but has no active shipment and status is `SOLD`:
@@ -369,7 +369,7 @@ These rules were learned through 14 failed attempts:
 8. **Don't allow direct PATCH to DELIVERED status** — must go through confirm-delivery endpoint
 9. **Don't use `localhost` in CI** — use `127.0.0.1`
 10. **Don't skip lastSeenAt update on deduped events** — "Last Update" will look stale
-11. **Don't set `activatedAt` during auto-registration** — use `manufacturedAt`. `activatedAt` is for user-facing activation ("label entered service"), not factory SIM activation
+11. **Don't set `activatedAt` or `status=ACTIVE` during auto-registration** — use `manufacturedAt` and `status=INVENTORY`. Factory labels stay INVENTORY until admin bulk-register promotes them to SOLD, then user activation (QR / cargo / first in-the-wild signal under an active shipment) promotes to ACTIVE. `activatedAt` is for user-facing activation ("label entered service"), not factory SIM activation
 12. **Don't create LocationEvents during manufacturing cooldown** — first 24h after auto-registration are factory events; `lastSeenAt` heartbeat still updates
 13. **Don't delete LocationEvents from the DB** — soft-exclude by setting `excludedReason`. Use `VALID_LOCATION` filter from `@/lib/db` in all user-facing queries
 14. **Don't forget `VALID_LOCATION` filter on new LocationEvent queries** — omitting it leaks excluded (bogus) events into the UI

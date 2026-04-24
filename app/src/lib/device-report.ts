@@ -197,7 +197,11 @@ export async function processLocationReport(
           displayId,
           imei: input.imei || null,
           iccid: input.iccid || null,
-          status: 'ACTIVE',
+          // Factory SIM activation — label is on the production line, not in a
+          // customer's hands. Stays INVENTORY until admin bulk-register promotes
+          // it to SOLD, then user activation (QR / cargo / first in-the-wild
+          // signal) promotes it to ACTIVE. See pitfall #11 in CLAUDE.md.
+          status: 'INVENTORY',
           manufacturedAt: new Date(),
         },
         include: shipmentInclude,
@@ -671,7 +675,11 @@ export async function processLocationReport(
   // are intentionally skipped — they go through the claim-token flow above.
   if (activeShipment && !label.activatedAt) {
     labelUpdateData.activatedAt = receivedAt
-    if (label.status === 'SOLD') {
+    // Promote to ACTIVE on first in-the-wild signal. INVENTORY covers the rare
+    // path where a factory auto-registered label gets attached to a shipment
+    // before admin bulk-register runs (usually the admin flow has already
+    // promoted it to SOLD by the time cargo exists).
+    if (label.status === 'SOLD' || label.status === 'INVENTORY') {
       labelUpdateData.status = 'ACTIVE'
     }
   }
