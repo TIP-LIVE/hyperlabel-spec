@@ -49,10 +49,10 @@ export async function countActivelyDispatched(
 // - null (legacy rows pre-dating the `source` column): fall back to the old
 //   `totalAmount > 0` heuristic so we don't retroactively grant capacity to
 //   historical £0 labels/register orders.
-export const PURCHASED_ORDER_FILTER = {
-  status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] as const },
+export const PURCHASED_ORDER_FILTER: Prisma.OrderWhereInput = {
+  status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
   OR: [
-    { source: { in: ['STRIPE', 'INVOICE'] as const } },
+    { source: { in: ['STRIPE', 'INVOICE'] } },
     { AND: [{ source: null }, { totalAmount: { gt: 0 } }] },
   ],
 }
@@ -70,7 +70,7 @@ export async function getDispatchQuota(
     countActivelyDispatched(client, scope, excludeShipmentId),
   ])
 
-  const totalBought = purchasedResult._sum.quantity ?? 0
+  const totalBought = purchasedResult._sum?.quantity ?? 0
   const remaining = Math.max(0, totalBought - activelyDispatched)
   return { totalBought, activelyDispatched, remaining }
 }

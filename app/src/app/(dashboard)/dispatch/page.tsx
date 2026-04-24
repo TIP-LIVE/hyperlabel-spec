@@ -82,7 +82,7 @@ export default async function DispatchPage({ searchParams }: DispatchPageProps) 
         countActivelyDispatched(db, orgId ? { orgId } : { userId: user.id }),
       ])
     shipmentCount = shipments
-    const totalBought = purchasedResult._sum.quantity ?? 0
+    const totalBought = purchasedResult._sum?.quantity ?? 0
     const remainingQuota = Math.max(0, totalBought - activelyDispatched)
     warehouseLabelCount = Math.min(availableLabels, remainingQuota)
   }
