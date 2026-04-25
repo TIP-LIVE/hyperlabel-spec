@@ -67,8 +67,10 @@ IMEI identifies the physical device. ICCID identifies the SIM. When a SIM moves 
 #### 5. Accept both string AND numeric lat/lng
 Onomondo's API sends coordinates as strings sometimes, numbers other times. The Zod schema uses `z.union([z.string(), z.number()]).transform(String)` to handle both.
 
-#### 6. Accept ALL event types
-Onomondo sends `location`, `network-registration`, `network-deregistration`, `usage`, etc. The `location` field is optional (only present on `location` type events). Non-location events still update `lastSeenAt` as heartbeats and can auto-promote PENDING → IN_TRANSIT shipments.
+#### 6. Accept ALL event types — but only `location` events create LocationEvents
+Onomondo sends `location`, `network-registration`, `network-deregistration`, `network-authentication`, `usage`, etc. The `location` field is **only present on `location`-type events**. Non-location events update `lastSeenAt` (heartbeat) and can auto-promote PENDING → IN_TRANSIT, and **that is all they should do** — they must NOT create LocationEvents.
+
+Why: non-location webhooks carry no cell info, so the cell-tower fallback chain (Google Geolocation → label.lastLatitude/lastLongitude) either fails or grabs the label's stale cached coords. The resulting phantom LocationEvent then blocks the next real `location` webhook via the velocity sanity check ("teleportation rejected"), pinning the label to its first-ever geocoded position. This is how `traveler_CN` (label `001951600`) showed "Bao'an District" while the container was actually 50km east in Yantian (April 2026 — fixed by short-circuiting non-location events in the handler before the fallback chain).
 
 #### 8. Webhook Payload Structure (validated in `lib/validations/device.ts`)
 ```

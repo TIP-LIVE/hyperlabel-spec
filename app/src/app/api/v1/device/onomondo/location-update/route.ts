@@ -210,6 +210,34 @@ export async function POST(req: NextRequest) {
 
         const loc = data.location ?? null
 
+        // Non-location events (network-registration, network-deregistration,
+        // network-authentication, usage, etc.) are heartbeats only — they
+        // carry no cell info, so the fallback chain below would either fail
+        // (Google Geolocation needs cell_id) or grab the label's stale
+        // lastLatitude/lastLongitude. Either way it writes a phantom
+        // LocationEvent at coords that don't reflect the device's current
+        // position. The phantom then blocks the next real `location` webhook
+        // via the velocity sanity check ("teleportation rejected"), pinning
+        // the label to its first geocoded position forever — exactly the bug
+        // that made Andrii's traveler_CN label show "Bao'an District" while
+        // the container was actually in Yantian (50km east).
+        //
+        // Per CLAUDE.md "Accept ALL event types": non-location events update
+        // lastSeenAt + can auto-promote PENDING → IN_TRANSIT (already done
+        // above), and that is ALL they should do.
+        if (data.type !== 'location') {
+          console.info('[webhook:location-update] heartbeat-only (no LocationEvent)', {
+            iccid: data.iccid,
+            type: data.type,
+          })
+          await upsertWebhookLog(webhookLogParams, {
+            statusCode: 200,
+            processingResult: { success: true, heartbeat: true, type: data.type },
+            durationMs: Date.now() - startTime,
+          })
+          return
+        }
+
         console.info('[webhook:location-update] processing', {
           iccid: data.iccid,
           imei: data.imei,

@@ -1,10 +1,20 @@
 /**
- * One-off: reset geocoded_* fields on LocationEvents whose geocoded_country_code
- * disagrees with the clear majority of neighbours at the same coord cell. These
- * are the rows that the parallel-Promise.all bug in /api/v1/cargo poisoned by
- * trusting wrong-coord Nominatim responses. Resetting (not excluding) lets the
- * daily backfill-geocode cron re-query — and with the new request/response
- * sanity check, the next result will be correct or null.
+ * One-off: reset geocoded_* fields on LocationEvents whose (country, city) pair
+ * disagrees with the clear majority of neighbours at the same ~100m coord cell.
+ *
+ * Catches both:
+ *   - cross-country poisoning (e.g. Warsaw → Bao'an, China)
+ *   - intra-country city poisoning (e.g. Yantian → Bao'an, both China)
+ *
+ * Both stem from the same parallel-Promise.all bug in /api/v1/cargo trusting
+ * wrong-coord Nominatim responses. The earlier version of this script only
+ * flagged country-level disagreement, so intra-country cases survived. At a
+ * 3-decimal (~100m) cell granularity, two different cities/districts in the
+ * same cell is essentially always a poisoned row, not a real boundary.
+ *
+ * Resetting (not excluding) lets the daily backfill-geocode cron re-query —
+ * and with the new request/response sanity check, the next result will be
+ * correct or null.
  *
  * Usage:
  *   npx tsx scripts/cleanup-mis-geocoded.ts              # dry run
@@ -36,6 +46,10 @@ function cellKey(lat: number, lng: number): string {
   return `${lat.toFixed(3)},${lng.toFixed(3)}`
 }
 
+function placeKey(e: { geocodedCountryCode: string | null; geocodedCity: string | null }): string {
+  return `${e.geocodedCountryCode ?? '?'}|${e.geocodedCity ?? '?'}`
+}
+
 async function main() {
   console.log(DRY_RUN ? '=== DRY RUN (pass --apply to reset) ===' : '=== APPLYING RESETS ===')
 
@@ -54,7 +68,7 @@ async function main() {
     },
   })
 
-  // Bucket by coord cell → country → count
+  // Bucket by coord cell → place(country|city) → count
   const cells = new Map<string, { counts: Map<string, number>; events: typeof events }>()
   for (const e of events) {
     const key = cellKey(e.latitude, e.longitude)
@@ -64,8 +78,8 @@ async function main() {
       cells.set(key, cell)
     }
     cell.events.push(e)
-    const cc = e.geocodedCountryCode ?? '?'
-    cell.counts.set(cc, (cell.counts.get(cc) ?? 0) + 1)
+    const place = placeKey(e)
+    cell.counts.set(place, (cell.counts.get(place) ?? 0) + 1)
   }
 
   const toReset: string[] = []
@@ -75,21 +89,21 @@ async function main() {
     if (cell.counts.size < 2) continue  // all agree — nothing to do
     cellsInspected++
 
-    // Find majority country
-    let majority = { cc: '', count: 0 }
-    for (const [cc, count] of cell.counts) {
-      if (count > majority.count) majority = { cc, count }
+    // Find majority place
+    let majority = { place: '', count: 0 }
+    for (const [place, count] of cell.counts) {
+      if (count > majority.count) majority = { place, count }
     }
     if (majority.count < MIN_MAJORITY_SIZE) continue
 
     // Flag anything that disagrees AND is ≤ 30% the size of the majority
-    for (const [cc, count] of cell.counts) {
-      if (cc === majority.cc) continue
+    for (const [place, count] of cell.counts) {
+      if (place === majority.place) continue
       if (count > majority.count * MAX_MINORITY_RATIO) continue
-      const bad = cell.events.filter((e) => e.geocodedCountryCode === cc)
+      const bad = cell.events.filter((e) => placeKey(e) === place)
       for (const e of bad) toReset.push(e.id)
       console.log(
-        `  [RESET] cell ${key}: ${count}× ${cc} (${bad[0]?.geocodedCity}) vs ${majority.count}× ${majority.cc} majority`
+        `  [RESET] cell ${key}: ${count}× ${place} vs ${majority.count}× ${majority.place} majority`
       )
     }
   }
