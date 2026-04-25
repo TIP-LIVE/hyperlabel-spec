@@ -614,9 +614,24 @@ export function LabelScanDialog({
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : availableLabels.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-muted-foreground">
-                      No labels available for dispatch
-                    </p>
+                    <div className="flex flex-col items-center gap-3 py-6 px-4 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        No labels available for dispatch
+                      </p>
+                      <Button asChild variant="outline" size="sm">
+                        <a href="/admin/labels" target="_blank" rel="noopener noreferrer">
+                          Manage inventory
+                        </a>
+                      </Button>
+                      <a
+                        href={`/api/v1/admin/dispatch/${encodeURIComponent(shipmentId)}/diagnose`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                      >
+                        Why is this empty?
+                      </a>
+                    </div>
                   ) : (
                     availableLabels
                       .filter((l) => {
