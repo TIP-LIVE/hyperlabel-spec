@@ -183,17 +183,75 @@ export async function startQrScan(
     }
 
     if (detector) {
+      // Channel-extraction loop. Same root-cause fix as the server endpoint:
+      // BarcodeDetector internally converts to luminance, which collapses
+      // green and dark navy into similar values and misses our printed QR.
+      // We render each frame to a working canvas, replace pixels with a
+      // single-channel buffer (rotating through luminance / green / G-B /
+      // ExG across frames), and hand the transformed canvas to the
+      // detector. Most prints decode on the cheap luminance frame; the
+      // channel passes are for two-color prints like our green-on-navy.
+      const workCanvas = document.createElement('canvas')
+      const workCtx = workCanvas.getContext('2d', { willReadFrequently: true })
+      if (!workCtx) {
+        throw new Error('Could not allocate 2d canvas for live channel extraction')
+      }
+
+      type ChannelTx = (r: number, g: number, b: number) => number
+      const strategies: Array<{ name: string; tx: ChannelTx | null }> = [
+        // null tx = pass canvas straight to detector (it does its own gray
+        // conversion). Cheapest path; covers normal-contrast prints.
+        { name: 'luminance', tx: null },
+        { name: 'green-channel', tx: (_r, g) => g },
+        { name: 'g-minus-b', tx: (_r, g, b) => Math.max(0, g - b) },
+        { name: 'exg', tx: (r, g, b) => Math.max(0, Math.min(255, 2 * g - r - b)) },
+      ]
+      let stratIdx = 0
+      const MAX_LIVE_SIDE = 1500 // cap for getImageData cost on 4K cameras
+
       const tick = async () => {
         if (stopped) return
         try {
-          if (videoEl.readyState >= 2 /* HAVE_CURRENT_DATA */) {
-            const results = await detector.detect(videoEl)
+          if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
+            // Size canvas to video frame (with cap to keep getImageData cheap).
+            const vw = videoEl.videoWidth
+            const vh = videoEl.videoHeight
+            const longest = Math.max(vw, vh)
+            const scale = longest > MAX_LIVE_SIDE ? MAX_LIVE_SIDE / longest : 1
+            const cw = Math.round(vw * scale)
+            const ch = Math.round(vh * scale)
+            if (workCanvas.width !== cw || workCanvas.height !== ch) {
+              workCanvas.width = cw
+              workCanvas.height = ch
+            }
+            workCtx.drawImage(videoEl, 0, 0, cw, ch)
+
+            const tx = strategies[stratIdx].tx
+            if (tx) {
+              // Replace canvas pixels with single-channel buffer. Writing
+              // R=G=B=v gives BarcodeDetector a clean grayscale to work on
+              // without it doing its own (wrong) luminance conversion.
+              const imgData = workCtx.getImageData(0, 0, cw, ch)
+              const data = imgData.data
+              for (let i = 0; i < data.length; i += 4) {
+                const v = tx(data[i], data[i + 1], data[i + 2])
+                data[i] = v
+                data[i + 1] = v
+                data[i + 2] = v
+              }
+              workCtx.putImageData(imgData, 0, 0)
+            }
+
+            const results = await detector.detect(workCanvas)
             if (results.length && results[0].rawValue) {
               const text = results[0].rawValue
+              console.warn('[qr-scan/live] decoded via', strategies[stratIdx].name)
               stop()
               onResult(text)
               return
             }
+            // Advance strategy for the next frame so the rotation cycles.
+            stratIdx = (stratIdx + 1) % strategies.length
           }
         } catch {
           // Skip frame — BarcodeDetector.detect can throw on decode-specific errors.
