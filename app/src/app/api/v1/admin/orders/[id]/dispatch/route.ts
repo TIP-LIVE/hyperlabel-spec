@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { getDispatchQuota } from '@/lib/dispatch-quota'
+import { topUpOrderLabels } from '@/lib/order-labels'
 import { z } from 'zod'
 
 interface RouteParams {
@@ -225,28 +226,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // were never allocated. Without this, Scan & Ship's Browse list is empty
     // and admin has to register/assign labels in a separate flow first.
     const { shipment, toppedUp, shortBy } = await db.$transaction(async (tx) => {
-      const existing = await tx.orderLabel.count({ where: { orderId: order.id } })
-      const needed = order.quantity - existing
-      let allocated = 0
-
-      if (needed > 0) {
-        const stock = await tx.label.findMany({
-          where: { status: 'INVENTORY', orderLabels: { none: {} } },
-          take: needed,
-          select: { id: true },
-        })
-        if (stock.length > 0) {
-          await tx.orderLabel.createMany({
-            data: stock.map((l) => ({ orderId: order.id, labelId: l.id })),
-            skipDuplicates: true,
-          })
-          await tx.label.updateMany({
-            where: { id: { in: stock.map((l) => l.id) } },
-            data: { status: 'SOLD' },
-          })
-          allocated = stock.length
-        }
-      }
+      const result = await topUpOrderLabels(tx, { id: order.id, quantity: order.quantity })
 
       // Create dispatch shipment (no ShipmentLabel entries — labels linked at scan time).
       // Order stays PAID until labels are actually scanned via verify-labels — a dispatch
@@ -280,11 +260,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         },
       })
 
-      return {
-        shipment: created,
-        toppedUp: allocated,
-        shortBy: Math.max(0, needed - allocated),
-      }
+      return { shipment: created, ...result }
     })
 
     const shareLink = hasReceiverDetails ? null : `/track/${shipment.shareCode}`
