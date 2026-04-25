@@ -218,40 +218,85 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       attempts++
     }
 
-    // Create dispatch shipment (no ShipmentLabel entries — labels linked at scan time).
-    // Order stays PAID until labels are actually scanned via verify-labels — a dispatch
-    // container existing doesn't mean anything physically shipped yet.
-    const shipment = await db.shipment.create({
-      data: {
-        type: 'LABEL_DISPATCH',
-        name,
-        shareCode,
-        userId: order.userId,
-        orgId: order.orgId,
-        orderId: order.id,
-        labelCount,
-        status: 'PENDING',
-        destinationAddress,
-        destinationLat,
-        destinationLng,
-        destinationName,
-        destinationLine1,
-        destinationLine2,
-        destinationCity,
-        destinationState,
-        destinationPostalCode,
-        destinationCountry,
-        receiverFirstName,
-        receiverLastName,
-        consigneeEmail: receiverEmail,
-        consigneePhone: receiverPhone,
-        addressSubmittedAt,
-        shareLinkExpiresAt,
-      },
+    // Top up OrderLabels if the order is short, then create the dispatch in one
+    // transaction. Orders can end up under-filled when inventory was empty at
+    // mark-paid / Stripe-allocation time — `LowInventoryAlert` fires but no
+    // automatic top-up runs later, so the buyer's order is "owed" labels that
+    // were never allocated. Without this, Scan & Ship's Browse list is empty
+    // and admin has to register/assign labels in a separate flow first.
+    const { shipment, toppedUp, shortBy } = await db.$transaction(async (tx) => {
+      const existing = await tx.orderLabel.count({ where: { orderId: order.id } })
+      const needed = order.quantity - existing
+      let allocated = 0
+
+      if (needed > 0) {
+        const stock = await tx.label.findMany({
+          where: { status: 'INVENTORY', orderLabels: { none: {} } },
+          take: needed,
+          select: { id: true },
+        })
+        if (stock.length > 0) {
+          await tx.orderLabel.createMany({
+            data: stock.map((l) => ({ orderId: order.id, labelId: l.id })),
+            skipDuplicates: true,
+          })
+          await tx.label.updateMany({
+            where: { id: { in: stock.map((l) => l.id) } },
+            data: { status: 'SOLD' },
+          })
+          allocated = stock.length
+        }
+      }
+
+      // Create dispatch shipment (no ShipmentLabel entries — labels linked at scan time).
+      // Order stays PAID until labels are actually scanned via verify-labels — a dispatch
+      // container existing doesn't mean anything physically shipped yet.
+      const created = await tx.shipment.create({
+        data: {
+          type: 'LABEL_DISPATCH',
+          name,
+          shareCode,
+          userId: order.userId,
+          orgId: order.orgId,
+          orderId: order.id,
+          labelCount,
+          status: 'PENDING',
+          destinationAddress,
+          destinationLat,
+          destinationLng,
+          destinationName,
+          destinationLine1,
+          destinationLine2,
+          destinationCity,
+          destinationState,
+          destinationPostalCode,
+          destinationCountry,
+          receiverFirstName,
+          receiverLastName,
+          consigneeEmail: receiverEmail,
+          consigneePhone: receiverPhone,
+          addressSubmittedAt,
+          shareLinkExpiresAt,
+        },
+      })
+
+      return {
+        shipment: created,
+        toppedUp: allocated,
+        shortBy: Math.max(0, needed - allocated),
+      }
     })
 
     const shareLink = hasReceiverDetails ? null : `/track/${shipment.shareCode}`
-    return NextResponse.json({ shipment, shareLink, awaitingReceiverDetails: !hasReceiverDetails }, { status: 201 })
+    return NextResponse.json(
+      {
+        shipment,
+        shareLink,
+        awaitingReceiverDetails: !hasReceiverDetails,
+        allocation: { toppedUp, shortBy },
+      },
+      { status: 201 }
+    )
   } catch (error) {
     return handleApiError(error, 'creating dispatch for order')
   }
