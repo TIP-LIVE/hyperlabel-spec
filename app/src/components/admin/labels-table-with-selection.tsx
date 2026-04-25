@@ -91,12 +91,12 @@ export function LabelsTableWithSelection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Label Inventory</h1>
           <p className="text-muted-foreground">Track and manage all labels</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild className="border-border">
             <Link href={assignHref}>
               <Building2 className="mr-2 h-4 w-4" />
