@@ -353,12 +353,15 @@ export function LabelScanDialog({
     }
   }, [])
 
-  // Auto-fetch when switching to browse mode
+  // Auto-fetch when the dialog opens in browse mode, or when the user toggles
+  // back to browse. Don't depend on availableLabels.length / loadingBrowse —
+  // when the API returns an empty list (legitimate empty state), those deps
+  // re-fire this effect after every fetch and spin forever.
   useEffect(() => {
-    if (mode === 'browse' && availableLabels.length === 0 && !loadingBrowse) {
+    if (open && mode === 'browse') {
       fetchAvailableLabels()
     }
-  }, [mode, availableLabels.length, loadingBrowse, fetchAvailableLabels])
+  }, [open, mode, fetchAvailableLabels])
 
   // Confirm ICCID and add label to scanned list
   const handleConfirmIccid = useCallback(() => {
