@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { haversineDistanceM } from '@/lib/utils/geo'
 
 export interface GeocodedResult {
   city: string
@@ -6,6 +7,13 @@ export interface GeocodedResult {
   country: string
   countryCode: string
 }
+
+// Nominatim's public endpoint is fronted by a CDN/cache proxy that, under
+// burst load, occasionally serves a response for a different coord. Reject
+// any response whose returned lat/lon is more than this many metres from
+// our request — that's far enough to tolerate zoom=14 feature centroids
+// while still catching wrong-country responses.
+const NOMINATIM_COORD_MISMATCH_THRESHOLD_M = 10_000
 
 // In-memory cache to avoid redundant API calls within the same server process
 const geocodeCache = new Map<string, GeocodedResult>()
@@ -33,7 +41,9 @@ export async function reverseGeocode(
   const cached = geocodeCache.get(key)
   if (cached && cached.area) return cached
 
-  // 2. Check DB for a nearby already-geocoded record
+  // 2. Check DB for a nearby already-geocoded record.
+  // Pick the MOST RECENTLY geocoded neighbour — gives stable, reproducible
+  // results and lets a corrected geocode supersede an older bad one.
   const roundedLat = parseFloat(lat.toFixed(3))
   const roundedLng = parseFloat(lng.toFixed(3))
   try {
@@ -42,8 +52,8 @@ export async function reverseGeocode(
         latitude: { gte: roundedLat - 0.0005, lte: roundedLat + 0.0005 },
         longitude: { gte: roundedLng - 0.0005, lte: roundedLng + 0.0005 },
         geocodedCity: { not: null },
-        geocodedArea: { gt: '' },
       },
+      orderBy: { geocodedAt: 'desc' },
       select: {
         geocodedCity: true,
         geocodedArea: true,
@@ -76,6 +86,26 @@ export async function reverseGeocode(
     if (!res.ok) return null
 
     const data = await res.json()
+
+    // Sanity-check: Nominatim's response must correspond to our request.
+    // Under burst load its CDN occasionally serves a response keyed on a
+    // different coord — which is how Warsaw events ended up geocoded as
+    // "Bao'an District, China". Compare the returned lat/lon against what
+    // we asked for and reject mismatches.
+    const respLat = parseFloat(data.lat)
+    const respLng = parseFloat(data.lon)
+    if (Number.isFinite(respLat) && Number.isFinite(respLng)) {
+      const distanceM = haversineDistanceM(lat, lng, respLat, respLng)
+      if (distanceM > NOMINATIM_COORD_MISMATCH_THRESHOLD_M) {
+        console.warn('[geocoding] rejected Nominatim mismatch', {
+          request: { lat, lng },
+          response: { lat: respLat, lng: respLng, display_name: data.display_name },
+          distanceM: Math.round(distanceM),
+        })
+        return null
+      }
+    }
+
     const address = data.address || {}
 
     const city =

@@ -5,7 +5,7 @@ import { handleApiError } from '@/lib/api-utils'
 import { createCargoShipmentSchema } from '@/lib/validations/shipment'
 import { generateShareCode } from '@/lib/utils/share-code'
 import { sendLabelActivatedNotification, sendConsigneeTrackingNotification } from '@/lib/notifications'
-import { reverseGeocode, reverseGeocodeToAddressLine } from '@/lib/geocoding'
+import { reverseGeocodeToAddressLine } from '@/lib/geocoding'
 import { isNullIsland } from '@/lib/validations/device'
 
 /**
@@ -69,44 +69,13 @@ export async function GET(req: NextRequest) {
       db.shipment.count({ where }),
     ])
 
-    // Backfill geocoding for locations that have coordinates but no geocoded data
-    // Await so the response includes geocoded names instead of raw coordinates
-    const ungeocodedLocations = shipments
-      .flatMap((s) => s.locations)
-      .filter((loc) => loc.latitude && loc.longitude && !loc.geocodedCity)
-
-    if (ungeocodedLocations.length > 0) {
-      await Promise.all(
-        ungeocodedLocations.map(async (loc) => {
-          try {
-            const geo = await reverseGeocode(loc.latitude, loc.longitude)
-            // Stamp geocodedAt on every attempt so the UI can tell pending
-            // from failed and the cron knows not to retry immediately.
-            await db.locationEvent.update({
-              where: { id: loc.id },
-              data: geo
-                ? {
-                    geocodedCity: geo.city,
-                    geocodedArea: geo.area,
-                    geocodedCountry: geo.country,
-                    geocodedCountryCode: geo.countryCode,
-                    geocodedAt: new Date(),
-                  }
-                : { geocodedAt: new Date() },
-            })
-            if (geo) {
-              // Update the in-memory object so the response includes geocoded data
-              loc.geocodedCity = geo.city
-              loc.geocodedArea = geo.area
-              loc.geocodedCountry = geo.country
-              loc.geocodedCountryCode = geo.countryCode
-            }
-          } catch (err) {
-            console.warn(`[cargo] geocoding backfill failed for location ${loc.id}:`, err)
-          }
-        })
-      )
-    }
+    // NOTE: dashboard-load geocoding was removed — a parallel `Promise.all`
+    // over up to `limit` events was bursting Nominatim past its 1 req/sec
+    // policy, which caused its CDN to return wrong-coord responses and
+    // poison geocoded_* fields across labels. New events are geocoded
+    // synchronously in the webhook `after()` block; stragglers are handled
+    // by the daily backfill-geocode cron. UI renders "Locating…" in the
+    // meantime.
 
     console.info('[cargo GET] results', { orgId: context.orgId, total, shipmentCount: shipments.length })
 

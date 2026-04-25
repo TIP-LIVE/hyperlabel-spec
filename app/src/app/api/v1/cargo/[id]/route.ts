@@ -107,40 +107,15 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const ungeocodedLocations = deduped.filter(
       (loc) => loc.latitude && loc.longitude && !isNullIsland(loc.latitude, loc.longitude) && (!loc.geocodedCity || !loc.geocodedArea)
     )
-    // Await geocoding for the first batch so the response includes geocoded names
-    const urgent = ungeocodedLocations.slice(0, 10)
-    const rest = ungeocodedLocations.slice(10)
 
-    for (const loc of urgent) {
-      try {
-        const geo = await reverseGeocode(loc.latitude, loc.longitude)
-        await db.locationEvent.update({
-          where: { id: loc.id },
-          data: geo
-            ? {
-                geocodedCity: geo.city,
-                geocodedArea: geo.area,
-                geocodedCountry: geo.country,
-                geocodedCountryCode: geo.countryCode,
-                geocodedAt: new Date(),
-              }
-            : { geocodedAt: new Date() },
-        })
-        if (geo) {
-          Object.assign(loc, {
-            geocodedCity: geo.city,
-            geocodedArea: geo.area,
-            geocodedCountry: geo.country,
-            geocodedCountryCode: geo.countryCode,
-          })
-        }
-      } catch {}
-    }
-
-    // Use after() so background geocoding survives after response is sent on Vercel
-    if (rest.length > 0) {
+    // Geocode in the background, serialized at 1 req/sec to respect Nominatim's
+    // usage policy. Doing this in-request with Promise.all used to burst Nominatim
+    // past its rate limit, which caused its CDN to serve wrong-coord responses
+    // (Warsaw events ending up as "Bao'an, China"). UI renders "Locating…" until
+    // these complete; refresh picks up the filled-in names.
+    if (ungeocodedLocations.length > 0) {
       after(async () => {
-        for (const loc of rest) {
+        for (const loc of ungeocodedLocations) {
           try {
             const geo = await reverseGeocode(loc.latitude, loc.longitude)
             await db.locationEvent.update({
@@ -156,6 +131,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
                 : { geocodedAt: new Date() },
             })
           } catch {}
+          await new Promise((r) => setTimeout(r, 1100))
         }
       })
     }
