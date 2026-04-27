@@ -2,11 +2,23 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { formatDateTime } from '@/lib/utils/format-date'
-import { Building2, Plus, ScanLine } from 'lucide-react'
+import { Building2, Loader2, Plus, ScanLine, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const statusStyles: Record<string, string> = {
@@ -53,7 +65,10 @@ export function LabelsTableWithSelection({
   orgFilter,
   orgFilterName,
 }: LabelsTableWithSelectionProps) {
+  const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const onPageDeviceIds = labels.map((l) => l.deviceId)
   const allOnPageSelected =
@@ -89,6 +104,47 @@ export function LabelsTableWithSelection({
       ? `/admin/labels/assign?ids=${encodeURIComponent([...selectedIds].join(','))}`
       : '/admin/labels/assign'
 
+  const onConfirmDelete = async () => {
+    const deviceIds = [...selectedIds]
+    if (deviceIds.length === 0) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/v1/admin/labels/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceIds }),
+      })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: 'Request failed' }))
+        toast.error(error || 'Failed to delete labels')
+        return
+      }
+      const { deleted, skipped } = (await res.json()) as {
+        deleted: Array<{ deviceId: string; displayId: string | null }>
+        skipped: Array<{ deviceId: string; reason: string }>
+      }
+      if (deleted.length > 0) {
+        toast.success(
+          skipped.length > 0
+            ? `Deleted ${deleted.length} label${deleted.length === 1 ? '' : 's'} — ${skipped.length} skipped (had history)`
+            : `Deleted ${deleted.length} label${deleted.length === 1 ? '' : 's'}`,
+        )
+      } else if (skipped.length > 0) {
+        toast.error(
+          `Nothing deleted — ${skipped.length} label${skipped.length === 1 ? '' : 's'} had location or shipment history`,
+        )
+      }
+      setSelectedIds(new Set())
+      setDeleteOpen(false)
+      router.refresh()
+    } catch (err) {
+      console.error('Error deleting labels:', err)
+      toast.error('Something went wrong')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -105,6 +161,16 @@ export function LabelsTableWithSelection({
                 : 'Assign to org(s)'}
             </Link>
           </Button>
+          {selectedIds.size > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(true)}
+              className="border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete ({selectedIds.size})
+            </Button>
+          )}
           <Button asChild variant="outline">
             <Link href="/admin/labels/generate">
               <ScanLine className="mr-2 h-4 w-4" />
@@ -119,6 +185,35 @@ export function LabelsTableWithSelection({
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="border-border bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">
+              Delete {selectedIds.size} label{selectedIds.size === 1 ? '' : 's'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected label{selectedIds.size === 1 ? '' : 's'} and any
+              order assignments. Labels with location history or active shipments will be skipped to
+              preserve audit data. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Keep labels</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                onConfirmDelete()
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {orgFilter && (
         <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
@@ -145,7 +240,7 @@ export function LabelsTableWithSelection({
             {q ? `Showing results for "${q}"` : 'Complete inventory list'}
             {selectedIds.size > 0 && (
               <span className="ml-2 text-primary">
-                — {selectedIds.size} selected for assignment
+                — {selectedIds.size} selected
               </span>
             )}
           </CardDescription>
