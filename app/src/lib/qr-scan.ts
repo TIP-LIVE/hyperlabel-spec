@@ -157,8 +157,8 @@ export async function captureSnapshot(videoEl: HTMLVideoElement): Promise<Blob> 
 // anyway. All scanner UIs now go through `decodeQrFromImage` with a single
 // still photo (mobile native camera or desktop webcam shutter via
 // `startWebcamPreview` + `captureSnapshot`). The still-photo path runs a
-// heavier preprocessing pipeline (BarcodeDetector → Nimiq → server ZBar
-// with 11 strategies) that wouldn't fit in a 16ms frame budget.
+// heavier preprocessing pipeline (BarcodeDetector → server ZBar with
+// 7 strategies) that wouldn't fit in a 16ms frame budget.
 
 function drawDownscaled(img: HTMLImageElement, maxSide: number): HTMLCanvasElement | null {
   const longest = Math.max(img.naturalWidth, img.naturalHeight)
