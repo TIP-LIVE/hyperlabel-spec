@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Camera, Loader2 } from 'lucide-react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { decodeQrFromImage } from '@/lib/qr-scan'
+import { PhotoCaptureButton } from '@/components/shared/photo-capture-button'
 
 interface ModemQrScannerProps {
   /** Called with the raw scanned text, e.g. "P/N:...;IMEI:...;SW:..." */
@@ -14,20 +13,17 @@ interface ModemQrScannerProps {
 }
 
 /**
- * Photo-capture QR reader for modem QR codes. Opens the device's native
- * camera via `<input capture="environment">`, then decodes the captured
- * image server-side. Live WebRTC scanning was removed because the
- * still-photo path is more reliable on iOS for low-contrast PCB prints.
+ * Photo-capture QR reader for modem QR codes. Mobile uses the native camera
+ * via `<input capture>`; desktop opens an in-app webcam preview with a
+ * manual shutter. Either path produces a still photo, which is decoded
+ * server-side. Live continuous scanning was removed because the still-photo
+ * path is more reliable for low-contrast PCB prints.
  */
 export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }: ModemQrScannerProps) {
   const [decoding, setDecoding] = useState(false)
-  const photoInputRef = useRef<HTMLInputElement>(null)
 
-  const handlePhotoSelected = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      e.target.value = '' // allow re-selecting the same file later
-      if (!file) return
+  const handlePhoto = useCallback(
+    async (file: Blob) => {
       if (file.size === 0) {
         toast.error('Photo was empty (0 bytes). Try again.')
         return
@@ -54,29 +50,12 @@ export function ModemQrScanner({ onScanned, triggerLabel = 'Scan with camera' }:
   )
 
   return (
-    <>
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handlePhotoSelected}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        className="gap-2"
-        onClick={() => photoInputRef.current?.click()}
-        disabled={decoding}
-      >
-        {decoding ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Camera className="h-4 w-4" />
-        )}
-        {triggerLabel}
-      </Button>
-    </>
+    <PhotoCaptureButton
+      onPhoto={handlePhoto}
+      label={decoding ? 'Reading photo…' : triggerLabel}
+      disabled={decoding}
+      variant="outline"
+      className="gap-2"
+    />
   )
 }

@@ -99,6 +99,67 @@ async function pushMaxResolution(track: MediaStreamTrack): Promise<void> {
 }
 
 /**
+ * Start a rear-camera webcam preview WITHOUT continuous QR detection.
+ *
+ * Used by the manual photo-capture flow (desktop): show a live preview, let
+ * the user click a shutter button, then call `captureSnapshot` to pull a
+ * still frame for server-side decoding. Reuses the same camera-selection
+ * and resolution-push logic as `startQrScan`.
+ */
+export async function startWebcamPreview(
+  videoSource: VideoElementSource
+): Promise<{ stop: () => void }> {
+  const videoEl = await resolveVideoElement(videoSource)
+  const videoConstraints = await pickRearCameraConstraints()
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: videoConstraints,
+    audio: false,
+  })
+
+  videoEl.srcObject = stream
+  videoEl.muted = true
+  videoEl.setAttribute('playsinline', 'true')
+  try {
+    await videoEl.play()
+  } catch {
+    // Autoplay quirks — preview still works once user interacts.
+  }
+
+  const track = stream.getVideoTracks()[0]
+  if (track) void pushMaxResolution(track)
+
+  return {
+    stop: () => {
+      stream.getTracks().forEach((t) => t.stop())
+      if (videoEl.srcObject === stream) videoEl.srcObject = null
+    },
+  }
+}
+
+/**
+ * Capture a still frame from a live <video> element as a JPEG blob.
+ * Throws if the video isn't yet streaming dimensions.
+ */
+export async function captureSnapshot(videoEl: HTMLVideoElement): Promise<Blob> {
+  const w = videoEl.videoWidth
+  const h = videoEl.videoHeight
+  if (!w || !h) throw new Error('Video not ready')
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('No canvas 2d context')
+  ctx.drawImage(videoEl, 0, 0)
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Canvas snapshot failed'))),
+      'image/jpeg',
+      0.92
+    )
+  })
+}
+
+/**
  * Start a QR scan against a <video> element.
  *
  * Strategy:
