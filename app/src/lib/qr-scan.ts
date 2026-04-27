@@ -157,8 +157,8 @@ export async function captureSnapshot(videoEl: HTMLVideoElement): Promise<Blob> 
 // anyway. All scanner UIs now go through `decodeQrFromImage` with a single
 // still photo (mobile native camera or desktop webcam shutter via
 // `startWebcamPreview` + `captureSnapshot`). The still-photo path runs a
-// heavier preprocessing pipeline (BarcodeDetector → server ZBar with
-// 7 strategies) that wouldn't fit in a 16ms frame budget.
+// heavier preprocessing pipeline (BarcodeDetector → Nimiq → server ZBar
+// with 7 strategies) that wouldn't fit in a 16ms frame budget.
 
 function drawDownscaled(img: HTMLImageElement, maxSide: number): HTMLCanvasElement | null {
   const longest = Math.max(img.naturalWidth, img.naturalHeight)
@@ -289,16 +289,36 @@ export async function decodeQrFromImage(file: Blob): Promise<PhotoDecodeResult> 
           log('decoded by client BarcodeDetector')
           return { text: results[0].rawValue, strategy: 'client-BarcodeDetector' }
         }
-        log('BarcodeDetector found 0 codes — escalating to server')
+        log('BarcodeDetector found 0 codes — escalating to Nimiq qr-scanner')
       }
     } catch (err) {
-      log('BarcodeDetector threw — escalating to server', err)
+      log('BarcodeDetector threw — escalating to Nimiq qr-scanner', err)
     }
   } else {
-    log('BarcodeDetector unavailable — escalating to server')
+    log('BarcodeDetector unavailable — escalating to Nimiq qr-scanner')
   }
 
-  // Stage 2: server-side ZBar via /api/v1/decode-qr.
+  // Stage 2: Nimiq qr-scanner. Different decoder than ZBar (jsQR-derived, with
+  // worker-based binarization). Often catches mid-contrast prints that
+  // BarcodeDetector misses and where ZBar's heavy preprocessing is overkill.
+  // Cheap to try (~30kb worker, ~50ms on a 1500px canvas) and runs entirely
+  // client-side, so escalating to the server is the next step if it whiffs.
+  try {
+    const { default: QrScanner } = await import('qr-scanner')
+    const result = await QrScanner.scanImage(canvas, {
+      returnDetailedScanResult: true,
+      alsoTryWithoutScanRegion: true,
+    })
+    if (result?.data) {
+      log('decoded by Nimiq qr-scanner')
+      return { text: result.data, strategy: 'nimiq-qr-scanner' }
+    }
+  } catch (err) {
+    // qr-scanner throws when no code is found — that's the normal "miss" path.
+    log('Nimiq qr-scanner found nothing — escalating to server', err)
+  }
+
+  // Stage 3: server-side ZBar via /api/v1/decode-qr.
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85)
   )
