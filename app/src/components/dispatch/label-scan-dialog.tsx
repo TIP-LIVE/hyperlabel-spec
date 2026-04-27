@@ -32,7 +32,7 @@ interface ScannedLabel {
   labelId: string
   deviceId: string
   displayId: string
-  iccid: string
+  iccid: string | null
 }
 
 interface LabelScanDialogProps {
@@ -413,6 +413,31 @@ export function LabelScanDialog({
     }
   }, [pendingLabel, iccidValue, mode, cameraSupported, startScanning])
 
+  // Ship without ICCID — the label will pair on the first Onomondo signal
+  // via IMEI fallback in device-report.ts. Useful when shipping bare modems
+  // before the SIM has been inserted/paired.
+  const handleShipWithoutIccid = useCallback(() => {
+    if (!pendingLabel) return
+
+    setScannedLabels((prev) => [
+      ...prev,
+      {
+        labelId: pendingLabel.id,
+        deviceId: pendingLabel.deviceId,
+        displayId: pendingLabel.displayId,
+        iccid: null,
+      },
+    ])
+    setPendingLabel(null)
+    setIccidValue('')
+    setStep('scan')
+    setScanError(null)
+
+    if (mode === 'camera' && cameraSupported) {
+      setTimeout(() => startScanning(), 200)
+    }
+  }, [pendingLabel, mode, cameraSupported, startScanning])
+
   // Remove a scanned label
   const handleRemoveLabel = useCallback((labelId: string) => {
     setScannedLabels((prev) => prev.filter((sl) => sl.labelId !== labelId))
@@ -428,7 +453,10 @@ export function LabelScanDialog({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          scannedLabels: scannedLabels.map(({ labelId, iccid }) => ({ labelId, iccid })),
+          scannedLabels: scannedLabels.map(({ labelId, iccid }) => ({
+            labelId,
+            iccid: iccid ?? null,
+          })),
         }),
       })
 
@@ -722,20 +750,30 @@ export function LabelScanDialog({
                 </p>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              onClick={() => {
-                setPendingLabel(null)
-                setIccidValue('')
-                setStep('scan')
-                setScanError(null)
-                if (mode === 'camera' && cameraSupported) startScanning()
-              }}
-            >
-              Cancel this label
-            </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => {
+                  setPendingLabel(null)
+                  setIccidValue('')
+                  setStep('scan')
+                  setScanError(null)
+                  if (mode === 'camera' && cameraSupported) startScanning()
+                }}
+              >
+                Cancel this label
+              </Button>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs text-muted-foreground"
+                onClick={handleShipWithoutIccid}
+              >
+                No SIM yet? Ship and pair on first signal →
+              </Button>
+            </div>
           </div>
         )}
 

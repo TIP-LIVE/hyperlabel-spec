@@ -19,7 +19,10 @@ const verifyLabelsSchema = z.object({
   scannedLabels: z.array(
     z.object({
       labelId: z.string().min(1),
-      iccid: z.string().min(1).max(25),
+      // ICCID is optional — labels shipped without one (no SIM yet) self-heal
+      // when the first Onomondo webhook arrives: device-report.ts resolves
+      // by IMEI and backfills the real ICCID.
+      iccid: z.string().min(1).max(25).nullable().optional(),
     })
   ).min(1, 'At least one label must be scanned'),
 })
@@ -128,37 +131,42 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Some labels are not eligible', details: errors }, { status: 400 })
     }
 
-    // Check ICCID uniqueness
-    const iccids = scannedLabels.map((sl) => sl.iccid)
-    const existingIccids = await db.label.findMany({
-      where: {
-        iccid: { in: iccids },
-        id: { notIn: labelIds },
-      },
-      select: { id: true, deviceId: true, displayId: true, iccid: true },
-    })
+    // Check ICCID uniqueness — only for labels that provided one. Labels
+    // without an ICCID will pair on first Onomondo signal via IMEI fallback.
+    const providedIccids = scannedLabels
+      .map((sl) => sl.iccid)
+      .filter((iccid): iccid is string => !!iccid)
+    if (providedIccids.length > 0) {
+      const existingIccids = await db.label.findMany({
+        where: {
+          iccid: { in: providedIccids },
+          id: { notIn: labelIds },
+        },
+        select: { id: true, deviceId: true, displayId: true, iccid: true },
+      })
 
-    if (existingIccids.length > 0) {
-      const conflicts = existingIccids.map((l) => ({
-        iccid: l.iccid,
-        existingLabel: l.displayId || l.deviceId,
-      }))
-      return NextResponse.json(
-        { error: 'ICCID conflict — already in use by another label', conflicts },
-        { status: 400 }
-      )
-    }
-
-    // Check for duplicate ICCIDs within the request
-    const iccidSet = new Set<string>()
-    for (const { iccid } of scannedLabels) {
-      if (iccidSet.has(iccid)) {
+      if (existingIccids.length > 0) {
+        const conflicts = existingIccids.map((l) => ({
+          iccid: l.iccid,
+          existingLabel: l.displayId || l.deviceId,
+        }))
         return NextResponse.json(
-          { error: `Duplicate ICCID in request: ${iccid}` },
+          { error: 'ICCID conflict — already in use by another label', conflicts },
           { status: 400 }
         )
       }
-      iccidSet.add(iccid)
+
+      // Check for duplicate ICCIDs within the request
+      const iccidSet = new Set<string>()
+      for (const iccid of providedIccids) {
+        if (iccidSet.has(iccid)) {
+          return NextResponse.json(
+            { error: `Duplicate ICCID in request: ${iccid}` },
+            { status: 400 }
+          )
+        }
+        iccidSet.add(iccid)
+      }
     }
 
     // Per-dispatch cap: the admin scan replaces the original set, so it must
@@ -210,8 +218,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         })),
       })
 
-      // Update ICCID for each label
+      // Update ICCID only for labels where one was provided. Don't overwrite
+      // an existing ICCID with null — that would unpair a previously-bound SIM.
       for (const { labelId, iccid } of scannedLabels) {
+        if (!iccid) continue
         await tx.label.update({
           where: { id: labelId },
           data: { iccid },
