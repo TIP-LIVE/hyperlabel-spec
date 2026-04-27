@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { handleApiError } from '@/lib/api-utils'
 
 /**
  * GET /api/v1/labels/lookup/available?shipmentId=...
- * List labels eligible for a specific dispatch's Browse picker. Admin-only.
+ * List warehouse labels eligible to be physically dispatched. Admin-only.
  *
- * Scoping: restricts to labels tied to the dispatch's source order (via
- * OrderLabel). Falls back to the dispatch's org when orderId is null
- * (user-created via /api/v1/dispatch, which doesn't set orderId). Without
- * this scope the picker surfaces unrelated warehouse stock and labels from
- * other customers' orders.
+ * Scope: ALL warehouse stock with real hardware (imei present), not just
+ * the dispatch's pre-allocated order labels. Admin ships from whatever is
+ * physically on the shelf — the verify-labels endpoint re-binds OrderLabels
+ * on confirm. `shipmentId` is still used to allow re-scanning labels already
+ * pre-linked to *this* dispatch.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -20,48 +19,27 @@ export async function GET(req: NextRequest) {
 
     const shipmentId = new URL(req.url).searchParams.get('shipmentId')
 
-    let scopeFilter: Prisma.LabelWhereInput | undefined
     let excludeShipmentId: string | undefined
-
     if (shipmentId) {
       const shipment = await db.shipment.findUnique({
         where: { id: shipmentId },
-        select: { id: true, type: true, orderId: true, orgId: true },
+        select: { id: true, type: true },
       })
-
       if (!shipment || shipment.type !== 'LABEL_DISPATCH') {
         return NextResponse.json({ error: 'Dispatch not found' }, { status: 404 })
       }
-
       excludeShipmentId = shipment.id
-
-      // Prefer the dispatch's source order — tight scope to what the buyer
-      // paid for. Fall back to the org when the order has no OrderLabels
-      // attached (legacy source=null rows, or INVOICE/Stripe allocations
-      // that ran short of inventory) so admin doesn't face an empty list
-      // for orders that still owe labels.
-      if (shipment.orderId) {
-        const hasOrderLabels = await db.orderLabel.findFirst({
-          where: { orderId: shipment.orderId },
-          select: { orderId: true },
-        })
-        if (hasOrderLabels) {
-          scopeFilter = { orderLabels: { some: { orderId: shipment.orderId } } }
-        }
-      }
-
-      if (!scopeFilter && shipment.orgId) {
-        scopeFilter = { orderLabels: { some: { order: { orgId: shipment.orgId } } } }
-      }
     }
 
     const labels = await db.label.findMany({
       where: {
+        // Real hardware only — placeholder slots from order checkout (no
+        // imei) are not physically dispatchable.
+        imei: { not: null },
         status: { in: ['SOLD', 'INVENTORY', 'ACTIVE'] },
-        ...(scopeFilter ?? {}),
         // Exclude labels already linked to an *other* active dispatch. The
-        // current dispatch is allowed through so pre-linked labels (set at
-        // dispatch creation) stay visible for re-scan.
+        // current dispatch is allowed through so pre-linked labels stay
+        // visible for re-scan.
         shipmentLabels: {
           none: {
             shipment: {
@@ -87,7 +65,12 @@ export async function GET(req: NextRequest) {
         status: true,
         batteryPct: true,
       },
-      orderBy: { deviceId: 'asc' },
+      orderBy: [
+        // INVENTORY first (purest free stock), then SOLD, then ACTIVE
+        { status: 'asc' },
+        { deviceId: 'asc' },
+      ],
+      take: 100,
     })
 
     return NextResponse.json({ labels })

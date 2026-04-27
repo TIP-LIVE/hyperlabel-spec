@@ -19,8 +19,6 @@ import {
   Loader2,
   AlertCircle,
   Package,
-  List,
-  Search,
   Flashlight,
   FlashlightOff,
   ImageIcon,
@@ -74,7 +72,7 @@ export function LabelScanDialog({
 
   const [scannedLabels, setScannedLabels] = useState<ScannedLabel[]>([])
   const [step, setStep] = useState<ScanStep>('scan')
-  const [mode, setMode] = useState<'camera' | 'manual' | 'browse'>('browse')
+  const [mode, setMode] = useState<'camera' | 'manual'>('manual')
   const [scanning, setScanning] = useState(false)
   const [manualId, setManualId] = useState('')
   const [scanError, setScanError] = useState<string | null>(null)
@@ -90,10 +88,9 @@ export function LabelScanDialog({
   } | null>(null)
   const [iccidValue, setIccidValue] = useState('')
 
-  // Browse mode state
+  // Available warehouse labels (rendered as a picker under the Manual input)
   const [availableLabels, setAvailableLabels] = useState<AvailableLabel[]>([])
-  const [browseFilter, setBrowseFilter] = useState('')
-  const [loadingBrowse, setLoadingBrowse] = useState(false)
+  const [loadingAvailable, setLoadingAvailable] = useState(false)
 
   // Torch support (Chrome Android only)
   const [torchSupported, setTorchSupported] = useState(false)
@@ -123,7 +120,7 @@ export function LabelScanDialog({
     stopCamera()
     setScannedLabels([])
     setStep('scan')
-    setMode('browse')
+    setMode('manual')
     setManualId('')
     setScanError(null)
     setPendingLabel(null)
@@ -131,8 +128,7 @@ export function LabelScanDialog({
     setIsSubmitting(false)
     setLookingUp(false)
     setAvailableLabels([])
-    setBrowseFilter('')
-    setLoadingBrowse(false)
+    setLoadingAvailable(false)
   }, [stopCamera])
 
   // Look up a label by deviceId/displayId
@@ -346,11 +342,10 @@ export function LabelScanDialog({
     lookupLabel(deviceId)
   }, [manualId, lookupLabel])
 
-  // Fetch available labels for browse mode. Scoped to this dispatch's order
-  // (or org fallback) so the picker only surfaces labels the buyer paid for,
-  // not unrelated warehouse stock.
+  // Fetch warehouse labels (real hardware, free of active dispatch/cargo)
+  // for the Manual picker.
   const fetchAvailableLabels = useCallback(async () => {
-    setLoadingBrowse(true)
+    setLoadingAvailable(true)
     try {
       const res = await fetch(
         `/api/v1/labels/lookup/available?shipmentId=${encodeURIComponent(shipmentId)}`
@@ -362,7 +357,7 @@ export function LabelScanDialog({
     } catch {
       // Silently fail — user can retry by switching modes
     } finally {
-      setLoadingBrowse(false)
+      setLoadingAvailable(false)
     }
   }, [shipmentId])
 
@@ -384,12 +379,12 @@ export function LabelScanDialog({
     }
   }, [])
 
-  // Auto-fetch when the dialog opens in browse mode, or when the user toggles
-  // back to browse. Don't depend on availableLabels.length / loadingBrowse —
-  // when the API returns an empty list (legitimate empty state), those deps
-  // re-fire this effect after every fetch and spin forever.
+  // Auto-fetch the warehouse picker when the dialog opens in Manual mode, or
+  // when the user toggles back to Manual. Don't depend on availableLabels /
+  // loadingAvailable — when the API returns an empty list (legitimate empty
+  // state), those deps re-fire this effect after every fetch and spin forever.
   useEffect(() => {
-    if (open && mode === 'browse') {
+    if (open && mode === 'manual') {
       fetchAvailableLabels()
     }
   }, [open, mode, fetchAvailableLabels])
@@ -488,19 +483,6 @@ export function LabelScanDialog({
           <div className="space-y-3">
             {/* Mode toggle */}
             <div className="flex gap-2">
-              <Button
-                variant={mode === 'browse' ? 'default' : 'outline'}
-                size="sm"
-                className="flex-1 gap-1.5"
-                onClick={() => {
-                  setMode('browse')
-                  stopCamera()
-                  setScanError(null)
-                }}
-              >
-                <List className="h-3.5 w-3.5" />
-                Browse
-              </Button>
               {cameraSupported && (
                 <Button
                   variant={mode === 'camera' ? 'default' : 'outline'}
@@ -603,107 +585,103 @@ export function LabelScanDialog({
               </>
             )}
 
-            {/* Manual entry */}
-            {mode === 'manual' && (
-              <div className="space-y-2">
-                <Label htmlFor="scan-manual-id">Label ID</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="scan-manual-id"
-                    placeholder="002011395 or TIP-001"
-                    value={manualId}
-                    onChange={(e) => {
-                      setManualId(e.target.value)
-                      setScanError(null)
-                    }}
-                    onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                    className="font-mono"
-                    disabled={lookingUp}
-                  />
-                  <Button onClick={handleManualSubmit} disabled={!manualId.trim() || lookingUp}>
-                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Find'}
-                  </Button>
-                </div>
-              </div>
-            )}
+            {/* Manual entry — search + warehouse picker */}
+            {mode === 'manual' && (() => {
+              const trimmed = manualId.trim().toLowerCase()
+              const filtered = availableLabels
+                .filter((l) => !scannedLabels.some((sl) => sl.labelId === l.id))
+                .filter((l) => {
+                  if (!trimmed) return true
+                  return (
+                    l.deviceId.toLowerCase().includes(trimmed) ||
+                    (l.displayId?.toLowerCase().includes(trimmed) ?? false)
+                  )
+                })
+              const visible = filtered.slice(0, 10)
+              const hiddenCount = filtered.length - visible.length
 
-            {/* Browse available labels */}
-            {mode === 'browse' && (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Filter by ID..."
-                    value={browseFilter}
-                    onChange={(e) => setBrowseFilter(e.target.value)}
-                    className="pl-9 font-mono"
-                  />
-                </div>
-                <div className="max-h-[240px] overflow-y-auto rounded-lg border border-border">
-                  {loadingBrowse ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : availableLabels.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 py-6 px-4 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        No labels available for dispatch
-                      </p>
-                      <Button asChild variant="outline" size="sm">
-                        <a href="/admin/labels" target="_blank" rel="noopener noreferrer">
-                          Manage inventory
-                        </a>
-                      </Button>
-                      <a
-                        href={`/api/v1/admin/dispatch/${encodeURIComponent(shipmentId)}/diagnose`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-                      >
-                        Why is this empty?
-                      </a>
-                    </div>
-                  ) : (
-                    availableLabels
-                      .filter((l) => {
-                        if (!browseFilter) return true
-                        const q = browseFilter.toLowerCase()
-                        return (
-                          l.deviceId.toLowerCase().includes(q) ||
-                          (l.displayId?.toLowerCase().includes(q) ?? false)
-                        )
-                      })
-                      .filter((l) => !scannedLabels.some((sl) => sl.labelId === l.id))
-                      .map((label) => (
-                        <button
-                          key={label.id}
-                          type="button"
-                          className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-muted/50 disabled:opacity-50"
-                          onClick={() => lookupLabel(label.displayId || label.deviceId)}
-                          disabled={lookingUp}
-                        >
-                          <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-sm font-medium text-foreground">
-                                {label.displayId || label.deviceId}
-                              </span>
-                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                                {label.status}
-                              </span>
+              return (
+                <div className="space-y-2">
+                  <Label htmlFor="scan-manual-id">Label ID</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="scan-manual-id"
+                      placeholder="Search or type 002011395 / TIP-001"
+                      value={manualId}
+                      onChange={(e) => {
+                        setManualId(e.target.value)
+                        setScanError(null)
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+                      className="font-mono"
+                      disabled={lookingUp}
+                    />
+                    <Button onClick={handleManualSubmit} disabled={!manualId.trim() || lookingUp}>
+                      {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
+                    </Button>
+                  </div>
+
+                  <div className="rounded-lg border border-border">
+                    {loadingAvailable ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : availableLabels.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2 py-5 px-4 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          No warehouse labels available
+                        </p>
+                        <Button asChild variant="outline" size="sm">
+                          <a href="/admin/labels" target="_blank" rel="noopener noreferrer">
+                            Manage inventory
+                          </a>
+                        </Button>
+                      </div>
+                    ) : visible.length === 0 ? (
+                      <div className="py-5 px-4 text-center text-sm text-muted-foreground">
+                        No labels match &ldquo;{manualId.trim()}&rdquo;. Press Add to look it up anyway.
+                      </div>
+                    ) : (
+                      <>
+                        <div className="border-b border-border bg-muted/30 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Warehouse · {filtered.length} available
+                        </div>
+                        {visible.map((label) => (
+                          <button
+                            key={label.id}
+                            type="button"
+                            className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-muted/50 disabled:opacity-50"
+                            onClick={() => lookupLabel(label.displayId || label.deviceId)}
+                            disabled={lookingUp}
+                          >
+                            <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm font-medium text-foreground">
+                                  {label.displayId || label.deviceId}
+                                </span>
+                                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+                                  {label.status}
+                                </span>
+                              </div>
+                              <div className="flex gap-3 text-xs text-muted-foreground">
+                                {label.iccid && <span>ICCID: {label.iccid}</span>}
+                                {label.batteryPct != null && <span>{label.batteryPct}%</span>}
+                              </div>
                             </div>
-                            <div className="flex gap-3 text-xs text-muted-foreground">
-                              {label.displayId && <span>{label.deviceId}</span>}
-                              {label.iccid && <span>ICCID: {label.iccid}</span>}
-                              {label.batteryPct != null && <span>{label.batteryPct}%</span>}
-                            </div>
+                          </button>
+                        ))}
+                        {hiddenCount > 0 && (
+                          <div className="border-t border-border px-3 py-1.5 text-center text-[11px] text-muted-foreground">
+                            +{hiddenCount} more — refine search to narrow
                           </div>
-                        </button>
-                      ))
-                  )}
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </div>
         )}
 
