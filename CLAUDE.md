@@ -201,6 +201,56 @@ Result: collapsed entry like **"Berlin, Germany (x5)"** instead of 5 separate it
 #### Step 3: Expandable Area Sub-Grouping
 On expand, events within a city group are further grouped by `geocodedArea` (suburb/neighborhood). This merges A→B→A→B cell tower jitter into clean area groups ordered by first appearance.
 
+### QR Scanning (Multi-Decoder)
+
+QR scanning is the most-fought UI flow in the app — labels are printed in green-on-navy, which collapses to similar luminance values and breaks single-decoder pipelines. The current stack runs **multiple decoders in parallel** so any one of them can win.
+
+#### Live camera scan (`startQrScan` in `lib/qr-scan.ts`)
+
+Three decoders, all watching the same `MediaStream`:
+
+1. **Native `BarcodeDetector`** (iOS Safari 17+, Chrome) — runs at ~60fps with a 4-strategy channel-extraction loop rotating per frame:
+   - `luminance` (no transform) — covers normal-contrast prints
+   - `green-channel` — picks out green ink
+   - `g-minus-b` — separates green from navy background
+   - `exg` (Excess Green = 2G - R - B) — the heavy-hitter for our prints
+2. **Nimiq `qr-scanner`** (jsQR-derived, worker-based) — runs in parallel at ~5fps via `setTimeout`. Different decoder algorithm than BarcodeDetector; catches QRs the channel-extraction loop misses on marginal contrast.
+3. **`@zxing/browser`** with `TRY_HARDER` — last-resort fallback only when `BarcodeDetector` is unavailable. Runs alongside Nimiq.
+
+First decoder to call `onResult()` wins; `stop()` cancels all three. **Console logs (`[qr-scan/live] decoded via …`) tell you which decoder succeeded** — useful when tuning.
+
+#### Photo upload (`decodeQrFromImage`)
+
+Three-stage chain, escalates only on miss:
+
+1. Client `BarcodeDetector` on a 1500px downscale (fast, ~50ms)
+2. Nimiq `qr-scanner.scanImage()` (different decoder, client-side, ~50ms)
+3. Server-side ZBar WASM via `/api/v1/decode-qr` — runs an 11-strategy preprocessing pipeline (4 channel extractions + 7 grayscale strategies). The big-guns endpoint, but slow (~500ms+).
+
+#### Critical rules
+
+1. **Channel extraction is real work — don't remove it** for "simplicity". Green-on-navy prints decode on the `g-minus-b` and `exg` channels but fail on luminance. Removing it regresses the green-on-navy case even if BarcodeDetector "looks like it works" on a black-on-white test.
+2. **Always run decoders in parallel, not in sequence** in the live path. Sequential fallback after N seconds feels broken to users — they think the camera is frozen. Concurrent decoders hide each other's blind spots without UI delay.
+3. **`QrScanner.scanImage` throws on miss** — that's the normal "no QR found" path. Wrap in `try/catch` and continue, don't surface the throw as an error.
+4. **Throttle Nimiq to ~5fps in live scan**. The worker is heavier than per-frame BarcodeDetector calls; running it every frame causes thermal throttling on mid-range Android.
+5. **Don't mix the channel-extracted canvas with Nimiq.** Pass the raw video element to `QrScanner.scanImage(videoEl)` — Nimiq's worker does its own preprocessing (including inversion attempts) and gets confused by pre-transformed buffers.
+6. **Never gate the photo upload on camera availability.** Desktop users with no rear camera (and users whose camera permission is denied) need the photo upload path to work standalone — see `startWebcamPreview` + `captureSnapshot` for the manual-shutter desktop flow.
+
+#### Files
+
+| File | Role |
+|------|------|
+| `app/src/lib/qr-scan.ts` | All client-side scan logic (live + photo + webcam preview) |
+| `app/src/app/api/v1/decode-qr/route.ts` | Server ZBar endpoint with 11-strategy preprocessing |
+| `app/src/lib/qr-parser.ts` | Modem PCB QR format parser (`P/N:...;SN:...;IMEI:...`) |
+| `app/src/lib/extract-device-id.ts` | URL/QR payload → device ID extractor (`tip.live/000062345`, `TIP-XXX`, `HL-XXXXXX`) |
+| `app/src/components/shipments/qr-scanner.tsx` | User-facing label scanner UI |
+| `app/src/components/admin/modem-qr-scanner.tsx` | Admin modem-PCB scanner UI |
+
+#### Print quality is the actual upstream problem
+
+Andrii's note (Apr 2026): white-ink thermal printers are expensive and hard to source — that's why labels print green-on-navy in the first place. No SDK fully solves a low-contrast print; the multi-decoder stack is mitigation, not a fix. If contrast can be improved at the printer (white-ink upgrade, neon-on-black sticker stock with black thermal print), drop scanner complexity rather than adding more decoders.
+
 ---
 
 ## Auth & Security
@@ -375,6 +425,8 @@ These rules were learned through 14 failed attempts:
 12. **Don't create LocationEvents during manufacturing cooldown** — first 24h after auto-registration are factory events; `lastSeenAt` heartbeat still updates
 13. **Don't delete LocationEvents from the DB** — soft-exclude by setting `excludedReason`. Use `VALID_LOCATION` filter from `@/lib/db` in all user-facing queries
 14. **Don't forget `VALID_LOCATION` filter on new LocationEvent queries** — omitting it leaks excluded (bogus) events into the UI
+15. **Don't replace the multi-decoder QR stack with a single library** — green-on-navy prints decode on different channels per decoder; parallel-decoder redundancy is the only thing that gets above ~80% scan success on real labels
+16. **Don't run Nimiq `qr-scanner` every frame in live scan** — throttle to ~5fps via `setTimeout`. The worker is heavier than BarcodeDetector and full-rate runs cause thermal throttling on mid-range Android
 
 ---
 
