@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import { ScannedLabelRow } from './scanned-label-row'
 import { decodeQrFromImage } from '@/lib/qr-scan'
+import { PhotoCaptureButton } from '@/components/shared/photo-capture-button'
 
 interface ScannedLabel {
   labelId: string
@@ -76,6 +77,10 @@ export function LabelScanDialog({
     existingIccid: string | null
   } | null>(null)
   const [iccidValue, setIccidValue] = useState('')
+  // Two-step confirm before allowing ICCID-less dispatch. ICCID is the
+  // expected path (see CLAUDE.md rule #4 — Onomondo routes by ICCID), and
+  // skipping it should feel deliberate.
+  const [confirmingBypass, setConfirmingBypass] = useState(false)
 
   // Available warehouse labels (rendered as a picker under the Manual input)
   const [availableLabels, setAvailableLabels] = useState<AvailableLabel[]>([])
@@ -86,7 +91,6 @@ export function LabelScanDialog({
   const [decodingPhoto, setDecodingPhoto] = useState(false)
 
   const iccidInputRef = useRef<HTMLInputElement>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const resetDialog = useCallback(() => {
     setScannedLabels([])
@@ -96,6 +100,7 @@ export function LabelScanDialog({
     setScanError(null)
     setPendingLabel(null)
     setIccidValue('')
+    setConfirmingBypass(false)
     setIsSubmitting(false)
     setLookingUp(false)
     setAvailableLabels([])
@@ -183,14 +188,11 @@ export function LabelScanDialog({
     [lookupLabel]
   )
 
-  // Native-camera capture. Opens the system camera, decodes the still photo
-  // server-side. Replaces the live WebRTC stream — that path was unreliable
-  // on iOS for low-contrast PCB prints.
-  const handlePhotoSelected = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      e.target.value = '' // allow re-selecting the same file later
-      if (!file) return
+  // Snapshot decode. Mobile gets the still via native camera, desktop via
+  // the in-app webcam preview. Live continuous decoding was removed because
+  // the still-photo path is more reliable for low-contrast PCB prints.
+  const handlePhoto = useCallback(
+    async (file: Blob) => {
       if (file.size === 0) {
         toast.error('Photo was empty (0 bytes). Try again.')
         return
@@ -290,13 +292,15 @@ export function LabelScanDialog({
     ])
     setPendingLabel(null)
     setIccidValue('')
+    setConfirmingBypass(false)
     setStep('scan')
     setScanError(null)
   }, [pendingLabel, iccidValue])
 
   // Ship without ICCID — the label will pair on the first Onomondo signal
   // via IMEI fallback in device-report.ts. Useful when shipping bare modems
-  // before the SIM has been inserted/paired.
+  // before the SIM has been inserted/paired. Reached only after the user
+  // confirms the inline warning.
   const handleShipWithoutIccid = useCallback(() => {
     if (!pendingLabel) return
 
@@ -311,6 +315,7 @@ export function LabelScanDialog({
     ])
     setPendingLabel(null)
     setIccidValue('')
+    setConfirmingBypass(false)
     setStep('scan')
     setScanError(null)
   }, [pendingLabel])
@@ -414,30 +419,15 @@ export function LabelScanDialog({
               </Button>
             </div>
 
-            {/* Photo capture: native camera via <input capture> */}
+            {/* Photo capture: native camera on mobile, webcam dialog on desktop */}
             {mode === 'photo' && (
               <div className="space-y-2">
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handlePhotoSelected}
-                />
-                <Button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
+                <PhotoCaptureButton
+                  onPhoto={handlePhoto}
+                  label={decodingPhoto ? 'Reading photo…' : 'Take photo of QR'}
                   disabled={decodingPhoto || lookingUp}
                   className="w-full gap-1.5"
-                >
-                  {decodingPhoto || lookingUp ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImageIcon className="h-4 w-4" />
-                  )}
-                  {decodingPhoto ? 'Reading photo…' : 'Take photo of QR'}
-                </Button>
+                />
                 <p className="text-xs text-muted-foreground">
                   Hold the camera 10–20 cm from the label so the QR fills the frame.
                 </p>
@@ -554,56 +544,98 @@ export function LabelScanDialog({
               </span>
               <span className="text-xs text-muted-foreground">found</span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="iccid-input" className="text-sm font-medium">
-                Step 2 — Enter the SIM ICCID
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                The 19–20 digit number printed on the SIM tray inside this label.
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  id="iccid-input"
-                  ref={iccidInputRef}
-                  placeholder="e.g. 89457300000038022292"
-                  value={iccidValue}
-                  onChange={(e) => setIccidValue(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmIccid()}
-                  className="font-mono"
-                />
-                <Button onClick={handleConfirmIccid} disabled={!iccidValue.trim()}>
-                  Add label
-                </Button>
+
+            {confirmingBypass ? (
+              <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Ship{' '}
+                      <span className="font-mono">{pendingLabel.displayId}</span>{' '}
+                      without an ICCID?
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      The label will pair to a SIM only when the device first
+                      connects to the network. Enter the ICCID now if you have it
+                      — that&apos;s the reliable path.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setConfirmingBypass(false)
+                      setTimeout(() => iccidInputRef.current?.focus(), 50)
+                    }}
+                  >
+                    Back to ICCID
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShipWithoutIccid}
+                  >
+                    Ship without ICCID
+                  </Button>
+                </div>
               </div>
-              {pendingLabel.existingIccid && (
-                <p className="text-xs text-muted-foreground">
-                  Current ICCID: <span className="font-mono">{pendingLabel.existingIccid}</span>
-                </p>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground"
-                onClick={() => {
-                  setPendingLabel(null)
-                  setIccidValue('')
-                  setStep('scan')
-                  setScanError(null)
-                }}
-              >
-                Cancel this label
-              </Button>
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto p-0 text-xs text-muted-foreground"
-                onClick={handleShipWithoutIccid}
-              >
-                No SIM yet? Ship and pair on first signal →
-              </Button>
-            </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="iccid-input" className="text-sm font-medium">
+                    Step 2 — Enter the SIM ICCID
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    The 19–20 digit number printed on the SIM tray inside this label.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      id="iccid-input"
+                      ref={iccidInputRef}
+                      placeholder="e.g. 89457300000038022292"
+                      value={iccidValue}
+                      onChange={(e) => setIccidValue(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleConfirmIccid()}
+                      className="font-mono"
+                    />
+                    <Button onClick={handleConfirmIccid} disabled={!iccidValue.trim()}>
+                      Add label
+                    </Button>
+                  </div>
+                  {pendingLabel.existingIccid && (
+                    <p className="text-xs text-muted-foreground">
+                      Current ICCID: <span className="font-mono">{pendingLabel.existingIccid}</span>
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => {
+                      setPendingLabel(null)
+                      setIccidValue('')
+                      setConfirmingBypass(false)
+                      setStep('scan')
+                      setScanError(null)
+                    }}
+                  >
+                    Cancel this label
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingBypass(true)}
+                    className="text-[11px] text-muted-foreground/70 underline-offset-2 hover:text-muted-foreground hover:underline"
+                  >
+                    I don&apos;t have the ICCID
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
