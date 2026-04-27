@@ -306,12 +306,6 @@ export function LabelProvisionForm() {
             <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
               <ParsedRow label="IMEI" value={parsed.imei} />
               <ParsedRow label="Firmware" value={parsed.firmwareVersion ?? '—'} />
-              {parsed.partNumber && (
-                <ParsedRow label="Part number" value={parsed.partNumber} muted />
-              )}
-              {parsed.serialNumber && (
-                <ParsedRow label="Module serial" value={parsed.serialNumber} muted />
-              )}
             </div>
 
             <details
