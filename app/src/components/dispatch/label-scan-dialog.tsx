@@ -14,19 +14,16 @@ import {
 } from '@/components/ui/dialog'
 import {
   ScanLine,
-  Camera,
   Keyboard,
   Loader2,
   AlertCircle,
   Package,
-  Flashlight,
-  FlashlightOff,
   ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractDeviceId } from '@/lib/extract-device-id'
 import { ScannedLabelRow } from './scanned-label-row'
-import { startQrScan, decodeQrFromImage, type QrScanController } from '@/lib/qr-scan'
+import { decodeQrFromImage } from '@/lib/qr-scan'
 
 interface ScannedLabel {
   labelId: string
@@ -55,11 +52,6 @@ interface AvailableLabel {
 
 type ScanStep = 'scan' | 'iccid'
 
-const checkCameraSupport = () => {
-  if (typeof navigator === 'undefined') return false
-  return !!navigator.mediaDevices?.getUserMedia
-}
-
 export function LabelScanDialog({
   shipmentId,
   shipmentName,
@@ -68,12 +60,9 @@ export function LabelScanDialog({
   onOpenChange,
   onConfirmed,
 }: LabelScanDialogProps) {
-  const cameraSupported = checkCameraSupport()
-
   const [scannedLabels, setScannedLabels] = useState<ScannedLabel[]>([])
   const [step, setStep] = useState<ScanStep>('scan')
-  const [mode, setMode] = useState<'camera' | 'manual'>('manual')
-  const [scanning, setScanning] = useState(false)
+  const [mode, setMode] = useState<'photo' | 'manual'>('manual')
   const [manualId, setManualId] = useState('')
   const [scanError, setScanError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -92,32 +81,14 @@ export function LabelScanDialog({
   const [availableLabels, setAvailableLabels] = useState<AvailableLabel[]>([])
   const [loadingAvailable, setLoadingAvailable] = useState(false)
 
-  // Torch support (Chrome Android only)
-  const [torchSupported, setTorchSupported] = useState(false)
-  const [torchOn, setTorchOn] = useState(false)
-
-  // Still-photo fallback (native camera via <input capture>) for when the
-  // live WebRTC stream can't decode a low-contrast print.
+  // Photo decode state. Live WebRTC scanning was removed because the
+  // still-photo path is more reliable on iOS for low-contrast prints.
   const [decodingPhoto, setDecodingPhoto] = useState(false)
 
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const controllerRef = useRef<QrScanController | null>(null)
   const iccidInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
-  // Ref-indirection so lookupLabel (defined earlier in the file) can call
-  // startScanning (defined later) without a TDZ on the dependency array.
-  const startScanningRef = useRef<(() => Promise<void>) | null>(null)
-
-  const stopCamera = useCallback(() => {
-    controllerRef.current?.stop()
-    controllerRef.current = null
-    setTorchSupported(false)
-    setTorchOn(false)
-    setScanning(false)
-  }, [])
 
   const resetDialog = useCallback(() => {
-    stopCamera()
     setScannedLabels([])
     setStep('scan')
     setMode('manual')
@@ -129,7 +100,7 @@ export function LabelScanDialog({
     setLookingUp(false)
     setAvailableLabels([])
     setLoadingAvailable(false)
-  }, [stopCamera])
+  }, [])
 
   // Look up a label by deviceId/displayId
   const lookupLabel = useCallback(
@@ -175,10 +146,6 @@ export function LabelScanDialog({
             },
           ])
           setStep('scan')
-          // Restart camera in camera mode so the next QR can be scanned
-          if (mode === 'camera' && cameraSupported) {
-            setTimeout(() => startScanningRef.current?.(), 200)
-          }
           return
         }
 
@@ -191,7 +158,6 @@ export function LabelScanDialog({
         })
         setIccidValue('')
         setStep('iccid')
-        stopCamera()
 
         // Auto-focus ICCID input after render
         setTimeout(() => iccidInputRef.current?.focus(), 100)
@@ -201,7 +167,7 @@ export function LabelScanDialog({
         setLookingUp(false)
       }
     },
-    [scannedLabels, stopCamera, shipmentId, mode, cameraSupported]
+    [scannedLabels, shipmentId]
   )
 
   // Handle a scanned QR value
@@ -217,85 +183,31 @@ export function LabelScanDialog({
     [lookupLabel]
   )
 
-  // Start camera scanning
-  const startScanning = useCallback(async () => {
-    setScanError(null)
-    setScanning(true)
-
-    try {
-      const controller = await startQrScan(videoRef, (rawValue) => {
-        controllerRef.current = null
-        handleQrScanned(rawValue)
-      })
-      controllerRef.current = controller
-      if (controller.torchSupported) setTorchSupported(true)
-    } catch (err) {
-      const name = err instanceof Error ? err.name : ''
-      if (name === 'NotAllowedError') {
-        setScanError('Camera permission denied. Enable it in browser settings or use manual entry.')
-      } else {
-        setScanError('Could not access camera. Check permissions or use manual entry.')
-      }
-      setScanning(false)
-      setMode('manual')
-    }
-  }, [handleQrScanned])
-
-  // Keep ref in sync so lookupLabel (defined earlier) can call latest startScanning
-  useEffect(() => {
-    startScanningRef.current = startScanning
-  }, [startScanning])
-
-  const toggleTorch = useCallback(async () => {
-    const next = !torchOn
-    await controllerRef.current?.setTorch(next)
-    setTorchOn(next)
-  }, [torchOn])
-
-  // Still-photo fallback. Native camera capture gives a full-res JPEG that
-  // sidesteps the WebRTC quality cap — useful for low-contrast prints.
-  // Chatty toasts/logs so iOS-side failures (in-app browser quirks, missing
-  // change events, empty files, etc.) are visible without a debugger.
+  // Native-camera capture. Opens the system camera, decodes the still photo
+  // server-side. Replaces the live WebRTC stream — that path was unreliable
+  // on iOS for low-contrast PCB prints.
   const handlePhotoSelected = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const fileList = e.target.files
-      console.warn('[scan-dialog] photo change event', { count: fileList?.length ?? 0 })
-      const file = fileList?.[0]
+      const file = e.target.files?.[0]
       e.target.value = '' // allow re-selecting the same file later
-      if (!file) {
-        toast.error('No photo received from the camera.')
-        return
-      }
-      console.warn('[scan-dialog] photo file', { name: file.name, type: file.type, size: file.size })
+      if (!file) return
       if (file.size === 0) {
         toast.error('Photo was empty (0 bytes). Try again.')
         return
       }
-      toast.info('Reading photo…')
       setScanError(null)
       setDecodingPhoto(true)
-      stopCamera()
-      let decoded = false
       try {
         const result = await decodeQrFromImage(file)
-        console.warn('[scan-dialog] decode result', result)
         if (result.text) {
-          decoded = true
-          toast.success(
-            `Decoded${result.strategy ? ` via ${result.strategy}` : ''}: ${
-              result.text.length > 30 ? result.text.slice(0, 30) + '…' : result.text
-            }`
-          )
           handleQrScanned(result.text)
           return
         }
-        // No text — pick a message based on where it failed.
         switch (result.reason) {
           case 'no-qr-in-image':
             setScanError(
-              "Server tried 7 preprocessing passes and couldn't find a QR. The print contrast may be too low; try a tighter frame or use Manual entry."
+              "Couldn't find a QR in the photo. Try a tighter frame, better lighting, or use Manual entry."
             )
-            toast.error('ZBar found no QR — print may be too low-contrast')
             break
           case 'server-error':
             setScanError(
@@ -303,28 +215,20 @@ export function LabelScanDialog({
                 result.serverError ? `: ${result.serverError}` : ''
               }). Try again — first request after deploy can cold-start.`
             )
-            toast.error(`Server error ${result.serverStatus}`)
             break
           case 'image-load-failed':
             setScanError('Could not read the photo file. Try taking it again.')
-            toast.error('Image load failed')
             break
           default:
             setScanError('Could not decode the photo. Try again.')
-            toast.error('Photo decode failed')
         }
-      } catch (err) {
-        console.error('[scan-dialog] decode threw', err)
+      } catch {
         setScanError('Could not decode the photo. Try again.')
-        toast.error('Photo decode failed')
       } finally {
         setDecodingPhoto(false)
-        // Restart the live scanner after a failed photo so the user can
-        // try again without re-tapping Camera mode.
-        if (!decoded && cameraSupported) startScanning()
       }
     },
-    [handleQrScanned, stopCamera, cameraSupported, startScanning]
+    [handleQrScanned]
   )
 
   // Handle manual ID submission
@@ -361,24 +265,6 @@ export function LabelScanDialog({
     }
   }, [shipmentId])
 
-  // Auto-start camera when dialog opens in camera mode
-  useEffect(() => {
-    if (open && mode === 'camera' && cameraSupported && !scanning) {
-      startScanning()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
-  // Unmount safety: dialog-close cleanup runs in handleOpenChange, but if the
-  // parent route unmounts while the dialog is still open, the camera stream
-  // would otherwise keep running. Stop it on unmount unconditionally.
-  useEffect(() => {
-    return () => {
-      controllerRef.current?.stop()
-      controllerRef.current = null
-    }
-  }, [])
-
   // Auto-fetch the warehouse picker when the dialog opens in Manual mode, or
   // when the user toggles back to Manual. Don't depend on availableLabels /
   // loadingAvailable — when the API returns an empty list (legitimate empty
@@ -406,12 +292,7 @@ export function LabelScanDialog({
     setIccidValue('')
     setStep('scan')
     setScanError(null)
-
-    // Auto-start camera for next scan if in camera mode
-    if (mode === 'camera' && cameraSupported) {
-      setTimeout(() => startScanning(), 200)
-    }
-  }, [pendingLabel, iccidValue, mode, cameraSupported, startScanning])
+  }, [pendingLabel, iccidValue])
 
   // Ship without ICCID — the label will pair on the first Onomondo signal
   // via IMEI fallback in device-report.ts. Useful when shipping bare modems
@@ -432,11 +313,7 @@ export function LabelScanDialog({
     setIccidValue('')
     setStep('scan')
     setScanError(null)
-
-    if (mode === 'camera' && cameraSupported) {
-      setTimeout(() => startScanning(), 200)
-    }
-  }, [pendingLabel, mode, cameraSupported, startScanning])
+  }, [pendingLabel])
 
   // Remove a scanned label
   const handleRemoveLabel = useCallback((labelId: string) => {
@@ -511,28 +388,24 @@ export function LabelScanDialog({
           <div className="space-y-3">
             {/* Mode toggle */}
             <div className="flex gap-2">
-              {cameraSupported && (
-                <Button
-                  variant={mode === 'camera' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1 gap-1.5"
-                  onClick={() => {
-                    setMode('camera')
-                    setScanError(null)
-                    startScanning()
-                  }}
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                  Camera
-                </Button>
-              )}
+              <Button
+                variant={mode === 'photo' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1 gap-1.5"
+                onClick={() => {
+                  setMode('photo')
+                  setScanError(null)
+                }}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                Photo
+              </Button>
               <Button
                 variant={mode === 'manual' ? 'default' : 'outline'}
                 size="sm"
                 className="flex-1 gap-1.5"
                 onClick={() => {
                   setMode('manual')
-                  stopCamera()
                   setScanError(null)
                 }}
               >
@@ -541,56 +414,9 @@ export function LabelScanDialog({
               </Button>
             </div>
 
-            {/* Camera view */}
-            {mode === 'camera' && (
-              <>
-                <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black">
-                  <video
-                    ref={videoRef}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    playsInline
-                    muted
-                  />
-                  {scanning && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                      <div className="h-56 w-56 rounded-lg border-2 border-white/70 sm:h-64 sm:w-64">
-                        <div className="h-full w-full animate-pulse rounded-lg border-2 border-primary/60" />
-                      </div>
-                    </div>
-                  )}
-                  {!scanning && !scanError && !decodingPhoto && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-                      <p className="mt-2 text-sm text-white/50">Starting camera...</p>
-                    </div>
-                  )}
-                  {(lookingUp || decodingPhoto) && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
-                      <Loader2 className="h-8 w-8 animate-spin text-white" />
-                      {decodingPhoto && (
-                        <p className="mt-2 text-sm text-white/80">Reading photo...</p>
-                      )}
-                    </div>
-                  )}
-                  {scanning && torchSupported && !lookingUp && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={torchOn ? 'default' : 'secondary'}
-                      onClick={toggleTorch}
-                      className="absolute bottom-8 right-3 gap-1.5"
-                    >
-                      {torchOn ? <Flashlight className="h-3.5 w-3.5" /> : <FlashlightOff className="h-3.5 w-3.5" />}
-                      {torchOn ? 'Flash on' : 'Flash'}
-                    </Button>
-                  )}
-                  <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs text-white/70">
-                    Point at the label&apos;s QR code
-                  </p>
-                </div>
-                {/* Native-camera fallback for low-contrast prints. iOS opens
-                    the system camera, which decodes the green-on-navy QR
-                    that the live WebRTC stream can't. */}
+            {/* Photo capture: native camera via <input capture> */}
+            {mode === 'photo' && (
+              <div className="space-y-2">
                 <input
                   ref={photoInputRef}
                   type="file"
@@ -601,16 +427,21 @@ export function LabelScanDialog({
                 />
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => photoInputRef.current?.click()}
                   disabled={decodingPhoto || lookingUp}
                   className="w-full gap-1.5"
                 >
-                  <ImageIcon className="h-3.5 w-3.5" />
-                  Can&apos;t scan? Take a photo
+                  {decodingPhoto || lookingUp ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4" />
+                  )}
+                  {decodingPhoto ? 'Reading photo…' : 'Take photo of QR'}
                 </Button>
-              </>
+                <p className="text-xs text-muted-foreground">
+                  Hold the camera 10–20 cm from the label so the QR fills the frame.
+                </p>
+              </div>
             )}
 
             {/* Manual entry — search + warehouse picker */}
@@ -760,7 +591,6 @@ export function LabelScanDialog({
                   setIccidValue('')
                   setStep('scan')
                   setScanError(null)
-                  if (mode === 'camera' && cameraSupported) startScanning()
                 }}
               >
                 Cancel this label
