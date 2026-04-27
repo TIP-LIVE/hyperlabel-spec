@@ -107,6 +107,9 @@ export function LabelScanDialog({
   const controllerRef = useRef<QrScanController | null>(null)
   const iccidInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  // Ref-indirection so lookupLabel (defined earlier in the file) can call
+  // startScanning (defined later) without a TDZ on the dependency array.
+  const startScanningRef = useRef<(() => Promise<void>) | null>(null)
 
   const stopCamera = useCallback(() => {
     controllerRef.current?.stop()
@@ -160,14 +163,37 @@ export function LabelScanDialog({
           return
         }
 
-        // Label is eligible — move to ICCID step
+        const displayId = data.label.displayId || data.label.deviceId
+
+        // Fast path: label already has an ICCID on file (set during
+        // manufacturing/SIM pairing). Add directly without forcing the user
+        // to retype it. They can still remove + redo if the SIM was swapped.
+        if (data.label.iccid) {
+          setScannedLabels((prev) => [
+            ...prev,
+            {
+              labelId: data.label.id,
+              deviceId: data.label.deviceId,
+              displayId,
+              iccid: data.label.iccid,
+            },
+          ])
+          setStep('scan')
+          // Restart camera in camera mode so the next QR can be scanned
+          if (mode === 'camera' && cameraSupported) {
+            setTimeout(() => startScanningRef.current?.(), 200)
+          }
+          return
+        }
+
+        // No ICCID on file — ask the user to type the one printed on the SIM tray.
         setPendingLabel({
           id: data.label.id,
           deviceId: data.label.deviceId,
-          displayId: data.label.displayId || data.label.deviceId,
+          displayId,
           existingIccid: data.label.iccid,
         })
-        setIccidValue(data.label.iccid || '')
+        setIccidValue('')
         setStep('iccid')
         stopCamera()
 
@@ -179,7 +205,7 @@ export function LabelScanDialog({
         setLookingUp(false)
       }
     },
-    [scannedLabels, stopCamera, shipmentId]
+    [scannedLabels, stopCamera, shipmentId, mode, cameraSupported]
   )
 
   // Handle a scanned QR value
@@ -218,6 +244,11 @@ export function LabelScanDialog({
       setMode('manual')
     }
   }, [handleQrScanned])
+
+  // Keep ref in sync so lookupLabel (defined earlier) can call latest startScanning
+  useEffect(() => {
+    startScanningRef.current = startScanning
+  }, [startScanning])
 
   const toggleTorch = useCallback(async () => {
     const next = !torchOn
@@ -590,7 +621,7 @@ export function LabelScanDialog({
                     disabled={lookingUp}
                   />
                   <Button onClick={handleManualSubmit} disabled={!manualId.trim() || lookingUp}>
-                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
+                    {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Find'}
                   </Button>
                 </div>
               </div>
@@ -678,16 +709,21 @@ export function LabelScanDialog({
 
         {/* Step: Enter ICCID */}
         {step === 'iccid' && pendingLabel && (
-          <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
+          <div className="space-y-3 rounded-lg border-2 border-primary/40 bg-primary/5 p-4">
             <div className="flex items-center gap-2">
               <ScanLine className="h-4 w-4 text-green-600 dark:text-green-400" />
               <span className="font-mono text-sm font-medium text-foreground">
                 {pendingLabel.displayId}
               </span>
-              <span className="text-xs text-muted-foreground">scanned</span>
+              <span className="text-xs text-muted-foreground">found</span>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="iccid-input">ICCID (SIM card ID)</Label>
+              <Label htmlFor="iccid-input" className="text-sm font-medium">
+                Step 2 — Enter the SIM ICCID
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                The 19–20 digit number printed on the SIM tray inside this label.
+              </p>
               <div className="flex gap-2">
                 <Input
                   id="iccid-input"
@@ -699,7 +735,7 @@ export function LabelScanDialog({
                   className="font-mono"
                 />
                 <Button onClick={handleConfirmIccid} disabled={!iccidValue.trim()}>
-                  Add
+                  Add label
                 </Button>
               </div>
               {pendingLabel.existingIccid && (
