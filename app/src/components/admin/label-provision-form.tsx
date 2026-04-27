@@ -122,6 +122,21 @@ export function LabelProvisionForm() {
     [tryParse]
   )
 
+  // Auto-parse as soon as the input contains a complete-looking QR
+  // (IMEI: followed by 15 digits). On iOS Safari the first tap on the Read QR
+  // button can be eaten by the soft keyboard dismiss, so the explicit click
+  // doesn't always register. Auto-parsing on paste/type sidesteps that.
+  useEffect(() => {
+    if (stage !== 'IDLE') return
+    if (!qrText.trim()) return
+    if (!/\bIMEI\s*:\s*\d{15}\b/i.test(qrText)) return
+    const result = tryParse(qrText)
+    if (result) {
+      setParsed(result)
+      setStage('PARSED')
+    }
+  }, [qrText, stage, tryParse])
+
   const downloadPdf = useCallback(
     async (pdfUrl: string, displayId: string) => {
       try {
