@@ -102,9 +102,13 @@ async function pushMaxResolution(track: MediaStreamTrack): Promise<void> {
  * Start a QR scan against a <video> element.
  *
  * Strategy:
- *  1. Try native `BarcodeDetector` (iOS Safari 17+, Chrome). OS-level vision
- *     is usually more robust than zxing on marginal prints.
- *  2. Fall back to `@zxing/browser` with TRY_HARDER + QR_CODE hints.
+ *  1. Native `BarcodeDetector` (iOS Safari 17+, Chrome) with channel-extraction
+ *     loop for green-on-navy prints — runs at ~60fps.
+ *  2. Nimiq `qr-scanner` (jsQR-derived, worker-based) running in parallel —
+ *     throttled to ~5fps because the worker is heavier. Different decoder
+ *     algorithm, catches what BarcodeDetector misses on marginal contrast.
+ *  3. `@zxing/browser` with TRY_HARDER as final fallback when neither
+ *     BarcodeDetector nor a worker context is available.
  *
  * On first successful decode the controller auto-stops. Callers are
  * responsible for restarting via another `startQrScan` call.
@@ -143,6 +147,7 @@ export async function startQrScan(
 
   let stopped = false
   let rafId: number | null = null
+  let nimiqTimeoutId: ReturnType<typeof setTimeout> | null = null
   let zxingStop: (() => void) | null = null
 
   const stop = () => {
@@ -152,10 +157,54 @@ export async function startQrScan(
       cancelAnimationFrame(rafId)
       rafId = null
     }
+    if (nimiqTimeoutId !== null) {
+      clearTimeout(nimiqTimeoutId)
+      nimiqTimeoutId = null
+    }
     zxingStop?.()
     zxingStop = null
     stream.getTracks().forEach((t) => t.stop())
     if (videoEl.srcObject === stream) videoEl.srcObject = null
+  }
+
+  // Parallel Nimiq qr-scanner loop. Runs at ~5fps regardless of which
+  // primary decoder (BarcodeDetector or zxing) is in play. The worker is
+  // heavier than per-frame BarcodeDetector calls, so we throttle — but the
+  // jsQR-derived decoder catches QRs that BarcodeDetector misses on
+  // marginal-contrast prints. First decoder to win calls stop().
+  const startNimiqLoop = async () => {
+    let QrScanner: typeof import('qr-scanner').default
+    try {
+      ;({ default: QrScanner } = await import('qr-scanner'))
+    } catch (err) {
+      console.warn('[qr-scan/live] Nimiq qr-scanner failed to load', err)
+      return
+    }
+    const tickNimiq = async () => {
+      if (stopped) return
+      try {
+        if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
+          const result = await QrScanner.scanImage(videoEl, {
+            returnDetailedScanResult: true,
+          })
+          if (result?.data && !stopped) {
+            console.warn('[qr-scan/live] decoded via Nimiq qr-scanner')
+            stop()
+            onResult(result.data)
+            return
+          }
+        }
+      } catch {
+        // qr-scanner throws when nothing decodes — that's the normal miss path.
+      }
+      if (!stopped) {
+        nimiqTimeoutId = setTimeout(() => {
+          nimiqTimeoutId = null
+          if (!stopped) void tickNimiq()
+        }, 200)
+      }
+    }
+    void tickNimiq()
   }
 
   const setTorch = async (on: boolean) => {
@@ -259,11 +308,20 @@ export async function startQrScan(
         rafId = requestAnimationFrame(tick)
       }
       rafId = requestAnimationFrame(tick)
+      // Run Nimiq qr-scanner in parallel — different decoder, catches what
+      // BarcodeDetector + channel extraction misses.
+      void startNimiqLoop()
       return { stop, torchSupported, setTorch }
     }
   }
 
-  // Path 2: zxing fallback with TRY_HARDER
+  // Path 2 (no BarcodeDetector): Nimiq qr-scanner as primary, zxing as
+  // last-resort fallback. Nimiq is generally more robust than zxing on
+  // marginal prints, so it gets first crack.
+  void startNimiqLoop()
+
+  // Path 3: zxing fallback with TRY_HARDER. Runs alongside Nimiq for
+  // belt-and-braces — either can win.
   const [{ BrowserQRCodeReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
     import('@zxing/browser'),
     import('@zxing/library'),
@@ -276,6 +334,7 @@ export async function startQrScan(
   const controls = await reader.decodeFromStream(stream, videoEl, (result) => {
     if (stopped || !result) return
     const text = result.getText()
+    console.warn('[qr-scan/live] decoded via zxing')
     stop()
     onResult(text)
   })
@@ -413,16 +472,36 @@ export async function decodeQrFromImage(file: Blob): Promise<PhotoDecodeResult> 
           log('decoded by client BarcodeDetector')
           return { text: results[0].rawValue, strategy: 'client-BarcodeDetector' }
         }
-        log('BarcodeDetector found 0 codes — escalating to server')
+        log('BarcodeDetector found 0 codes — escalating to Nimiq qr-scanner')
       }
     } catch (err) {
-      log('BarcodeDetector threw — escalating to server', err)
+      log('BarcodeDetector threw — escalating to Nimiq qr-scanner', err)
     }
   } else {
-    log('BarcodeDetector unavailable — escalating to server')
+    log('BarcodeDetector unavailable — escalating to Nimiq qr-scanner')
   }
 
-  // Stage 2: server-side ZBar via /api/v1/decode-qr.
+  // Stage 2: Nimiq qr-scanner. Different decoder than ZBar (jsQR-derived, with
+  // worker-based binarization). Often catches mid-contrast prints that
+  // BarcodeDetector misses and where ZBar's heavy preprocessing is overkill.
+  // Cheap to try (~30kb worker, ~50ms on a 1500px canvas) and runs entirely
+  // client-side, so escalating to the server is the next step if it whiffs.
+  try {
+    const { default: QrScanner } = await import('qr-scanner')
+    const result = await QrScanner.scanImage(canvas, {
+      returnDetailedScanResult: true,
+      alsoTryWithoutScanRegion: true,
+    })
+    if (result?.data) {
+      log('decoded by Nimiq qr-scanner')
+      return { text: result.data, strategy: 'nimiq-qr-scanner' }
+    }
+  } catch (err) {
+    // qr-scanner throws when no code is found — that's the normal "miss" path.
+    log('Nimiq qr-scanner found nothing — escalating to server', err)
+  }
+
+  // Stage 3: server-side ZBar via /api/v1/decode-qr.
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85)
   )
