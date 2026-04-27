@@ -286,6 +286,44 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       data: { status: 'CANCELLED' },
     })
 
+    // Revert orphan-SOLD labels back to INVENTORY. verify-labels promotes
+    // INVENTORY→SOLD on scan even when no Order is linked; without this
+    // revert those labels stay stuck as SOLD with no order forever.
+    const dispatchLabels = await db.shipmentLabel.findMany({
+      where: { shipmentId: id },
+      include: {
+        label: {
+          select: {
+            id: true,
+            status: true,
+            orderLabels: { select: { orderId: true } },
+            shipmentLabels: {
+              where: {
+                shipmentId: { not: id },
+                shipment: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
+              },
+              select: { shipmentId: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    })
+    const orphanIds = dispatchLabels
+      .filter(
+        (sl) =>
+          sl.label.status === 'SOLD' &&
+          sl.label.orderLabels.length === 0 &&
+          sl.label.shipmentLabels.length === 0,
+      )
+      .map((sl) => sl.label.id)
+    if (orphanIds.length > 0) {
+      await db.label.updateMany({
+        where: { id: { in: orphanIds } },
+        data: { status: 'INVENTORY' },
+      })
+    }
+
     // Reconcile parent order status — if cancelling this dispatch means not
     // every label is in flight anymore, revert SHIPPED→PAID.
     await reconcileOrdersForDispatch(existing)

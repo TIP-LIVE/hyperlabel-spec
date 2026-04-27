@@ -668,17 +668,16 @@ export async function processLocationReport(
   if (!label.lastSeenAt || receivedAt > label.lastSeenAt) {
     labelUpdateData.lastSeenAt = receivedAt
   }
-  // First in-the-wild location for a label that has an assigned owner (any
-  // shipment) → stamp activatedAt and promote SOLD → ACTIVE. This gives us a
-  // clean "first reported from the field" timestamp independent of whether a
-  // cargo shipment was pre-created. Orphaned SOLD labels (no active shipment)
-  // are intentionally skipped — they go through the claim-token flow above.
-  if (activeShipment && !label.activatedAt) {
-    labelUpdateData.activatedAt = receivedAt
-    // Promote to ACTIVE on first in-the-wild signal. INVENTORY covers the rare
-    // path where a factory auto-registered label gets attached to a shipment
-    // before admin bulk-register runs (usually the admin flow has already
-    // promoted it to SOLD by the time cargo exists).
+  // In-the-wild location for a label with an active shipment → stamp
+  // activatedAt (first time only) and promote SOLD/INVENTORY → ACTIVE.
+  // The status check runs every signal, not just the first, so a label that
+  // was reverted to SOLD by a prior cancellation re-promotes when it joins
+  // a new active shipment. Orphaned labels (no active shipment) are
+  // intentionally skipped — they go through the claim-token flow above.
+  if (activeShipment) {
+    if (!label.activatedAt) {
+      labelUpdateData.activatedAt = receivedAt
+    }
     if (label.status === 'SOLD' || label.status === 'INVENTORY') {
       labelUpdateData.status = 'ACTIVE'
     }
