@@ -335,15 +335,20 @@ export async function processLocationReport(
 
   // Get the active shipment (if any).
   //
-  // Prefer an active LABEL_DISPATCH (label.shipmentLabels) over a
-  // CARGO_TRACKING (label.shipments). While a dispatch is still PENDING or
-  // IN_TRANSIT the label is in the courier's hands, so reports belong to the
-  // dispatch so the receiver's tracking page stays live. Only once the dispatch
-  // completes does a pre-created cargo take over — and the 1-hour DELIVERED
-  // grace window baked into `activeShipmentWhere` keeps late-arriving courier
-  // events attached to the dispatch too.
+  // Active LABEL_DISPATCH (PENDING/IN_TRANSIT) wins — the label is still in
+  // the courier's hands, so reports belong to the dispatch so the receiver's
+  // tracking page stays live. Once the dispatch is DELIVERED the user has
+  // taken possession; if they've created a CARGO_TRACKING, that wins from
+  // here on out. The 1-hour DELIVERED grace window in `activeShipmentWhere`
+  // only matters when there's no cargo yet to claim late-arriving events —
+  // otherwise it would steal events from the cargo's "Waiting for first
+  // signal" view (the standard Phase 3 → Phase 4 onboarding transition).
+  const dispatchShipment = label.shipmentLabels[0]?.shipment
+  const cargoShipment = label.shipments[0]
   const activeShipment =
-    label.shipmentLabels[0]?.shipment ?? label.shipments[0]
+    dispatchShipment && dispatchShipment.status !== 'DELIVERED'
+      ? dispatchShipment
+      : (cargoShipment ?? dispatchShipment)
 
   if (process.env.NODE_ENV !== 'test') {
     console.info('[Device report] resolved', {

@@ -230,6 +230,35 @@ export async function POST(req: NextRequest) {
         data: { shipmentId: s.id },
       })
 
+      // Reclaim post-delivery events that the dispatch's 1h DELIVERED grace
+      // window in `processLocationReport` attached to a now-completed
+      // LABEL_DISPATCH. Once the user has created a cargo, those events
+      // describe the user's location (not the courier's) and belong here.
+      // Scope: events with recordedAt after the dispatch's deliveredAt — the
+      // dispatch's actual transit history (recordedAt ≤ deliveredAt) stays
+      // with the dispatch.
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const recentDeliveredDispatches = await tx.shipment.findMany({
+        where: {
+          type: 'LABEL_DISPATCH',
+          status: 'DELIVERED',
+          deliveredAt: { gte: oneHourAgo },
+          shipmentLabels: { some: { labelId: label.id } },
+        },
+        select: { id: true, deliveredAt: true },
+      })
+      for (const d of recentDeliveredDispatches) {
+        if (!d.deliveredAt) continue
+        await tx.locationEvent.updateMany({
+          where: {
+            labelId: label.id,
+            shipmentId: d.id,
+            recordedAt: { gt: d.deliveredAt },
+          },
+          data: { shipmentId: s.id },
+        })
+      }
+
       if (label.status === 'SOLD' || label.status === 'INVENTORY') {
         await tx.label.update({
           where: { id: label.id },
